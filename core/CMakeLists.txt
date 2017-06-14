@@ -4,7 +4,7 @@ include_directories(${VISUALCLOUD_INCLUDE_DIRS})
 
 file(GLOB VISUALCLOUD_SOURCE_DIRS "*/src")
 foreach(subdir ${VISUALCLOUD_SOURCE_DIRS})
-  add_subdirectory(${VISUALCLOUD_SOURCE_DIRS}/..)
+  add_subdirectory(${subdir}/..)
 endforeach()
 
 #add_subdirectory("video")
