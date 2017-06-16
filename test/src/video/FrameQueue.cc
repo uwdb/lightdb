@@ -1,11 +1,10 @@
 #include <gtest/gtest.h>
-#include "dynlink_cuda.h"
-#include "dynlink_nvcuvid.h"
+#include "FrameQueue.h"
 
 class FrameQueueTestFixture : public testing::Test
 {
 public:
-        virtual void SetUp()
+	virtual void SetUp()
 	{
 	ASSERT_EQ(cuInit(0, __CUDA_API_VERSION, nullptr), CUDA_SUCCESS);
 	ASSERT_EQ(cuvidInit(0), CUDA_SUCCESS);
@@ -13,13 +12,19 @@ public:
 	ASSERT_EQ(cuCtxCreate(&context, CU_CTX_SCHED_AUTO, device), CUDA_SUCCESS);
 	ASSERT_EQ(cuCtxPopCurrent(&context), CUDA_SUCCESS);
 	ASSERT_EQ(cuvidCtxLockCreate(&lock, context), CUDA_SUCCESS);
+
+	queue = new CUVIDFrameQueue(lock);
 	}
 
-        virtual void TearDown()
+	virtual void TearDown()
 	{
+	delete queue;
 	ASSERT_EQ(cuvidCtxLockDestroy(lock), CUDA_SUCCESS);
 	ASSERT_EQ(cuCtxDestroy(context), CUDA_SUCCESS);
 	}
+
+protected:
+	FrameQueue *queue;
 
 private:
 	CUdevice device;
@@ -27,7 +32,48 @@ private:
 	CUvideoctxlock lock;
 };
 
-TEST_F(FrameQueueTestFixture, test_RLE)
+TEST_F(FrameQueueTestFixture, testInit)
 {
+	queue->init(1920, 1080);
+	ASSERT_TRUE(queue->isEmpty());
+	ASSERT_FALSE(queue->isEndOfDecode());
+}
 
+TEST_F(FrameQueueTestFixture, testEmptyDequeue)
+{
+	char data2[1024] = {0};
+	queue->init(1920, 1080);
+	ASSERT_FALSE(queue->dequeue(data2));
+}
+
+TEST_F(FrameQueueTestFixture, testEndOfDecode)
+{
+	queue->init(1920, 1080);
+	queue->endDecode();
+	ASSERT_TRUE(queue->isEndOfDecode());
+}
+
+TEST_F(FrameQueueTestFixture, testEnqueue)
+{
+	CUVIDPARSERDISPINFO parameters = {.picture_index = 1};
+
+	queue->init(1920, 1080);
+
+	ASSERT_TRUE(queue->isEmpty());
+	queue->enqueue(&parameters);
+    ASSERT_FALSE(queue->isEmpty());
+}
+
+TEST_F(FrameQueueTestFixture, testEnqueueDequeue)
+{
+	CUVIDPARSERDISPINFO parameters = {.picture_index = 1};
+
+	queue->init(1920, 1080);
+
+	ASSERT_TRUE(queue->isEmpty());
+	queue->enqueue(&parameters);
+	ASSERT_FALSE(queue->isEmpty());
+	queue->dequeue(&parameters);
+	ASSERT_TRUE(queue->isEmpty());
+	ASSERT_EQ(parameters.picture_index, 1);
 }
