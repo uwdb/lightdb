@@ -6,7 +6,7 @@ file(GLOB VISUALCLOUD_TEST_INCLUDE_DIRS "include/*")
 include_directories(${VISUALCLOUD_TEST_INCLUDE_DIRS})
 
 # Include core header directories
-file(GLOB VISUALCLOUD_CORE_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/core/include/*")
+file(GLOB VISUALCLOUD_CORE_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/core/*/include/")
 include_directories(${VISUALCLOUD_CORE_INCLUDE_DIRS})
 
 # Get test source files
