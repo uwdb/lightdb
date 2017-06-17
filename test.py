@@ -1,6 +1,6 @@
 from dashtranscoder import DashTranscoder
 
-print 'Tiler:'
+print 'Tiler: qqq'
 print len(DashTranscoder().tile('foo', 3, 4).tobytes())
 
 

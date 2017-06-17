@@ -39,6 +39,7 @@ find_package(Boost COMPONENTS python REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
 find_package(GTest)
+find_package(ClangTidy)
 
 # Set compiler flags
 set (CMAKE_CXX_STANDARD 11)
@@ -47,9 +48,6 @@ set (CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -g3 -Wall")
 set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -fvisibility=hidden -Wall")
 set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG --coverage -g3 -Wall")
-if(NOT APPLE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-literal-suffix")
-endif()
 
 # Enable testing
 enable_testing()

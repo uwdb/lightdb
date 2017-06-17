@@ -15,7 +15,7 @@ file(GLOB_RECURSE VISUALCLOUD_TEST_SOURCES "src/*.cc")
 # Build tests
 add_executable(visualcloud_test EXCLUDE_FROM_ALL ${VISUALCLOUD_TEST_SOURCES})
 target_link_libraries(
-    visualcloud_test   ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} 
+    visualcloud_test   ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
     visualcloud_static ${VISUALCLOUD_LIB_DEPENDENCIES}
 )
 add_test(visualcloud_test visualcloud_test)

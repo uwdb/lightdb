@@ -4,8 +4,8 @@
 class FrameQueueTestFixture : public testing::Test
 {
 public:
-	virtual void SetUp()
-	{
+	void SetUp() override
+    {
 	ASSERT_EQ(cuInit(0, __CUDA_API_VERSION, nullptr), CUDA_SUCCESS);
 	ASSERT_EQ(cuvidInit(0), CUDA_SUCCESS);
 	ASSERT_EQ(cuDeviceGet(&device, 0), CUDA_SUCCESS);
@@ -16,8 +16,8 @@ public:
 	queue = new CUVIDFrameQueue(lock);
 	}
 
-	virtual void TearDown()
-	{
+    void TearDown() override
+    {
 	delete queue;
 	ASSERT_EQ(cuvidCtxLockDestroy(lock), CUDA_SUCCESS);
 	ASSERT_EQ(cuCtxDestroy(context), CUDA_SUCCESS);
@@ -85,13 +85,17 @@ TEST_F(FrameQueueTestFixture, testMultipleEnqueue)
 	queue->init(1920, 1080);
 
 	for(unsigned int i = 0; i < queue->cnMaximumSize; i++, parameters.picture_index++)
+    {
 		queue->enqueue(&parameters);
+    }
 
-	for(unsigned int i = 0; i < queue->cnMaximumSize; i++)
-	{
-		queue->dequeue(&parameters);
-		ASSERT_EQ(parameters.picture_index, i);
-	}
+    ASSERT_FALSE(queue->isEmpty());
 
-	ASSERT_TRUE(queue->isEmpty());
+    for(unsigned int i = 0; i < queue->cnMaximumSize; i++)
+    {
+        queue->dequeue(&parameters);
+        ASSERT_EQ(parameters.picture_index, i);
+    }
+
+    ASSERT_TRUE(queue->isEmpty());
 }
