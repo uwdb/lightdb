@@ -14,8 +14,7 @@
 #include <stdio.h>
 
 FrameQueue::FrameQueue(CUvideoctxlock ctxLock)
-    : hEvent_(0), nReadPosition_(0), nWritePosition_(0), nFramesInQueue_(0),
-      bEndOfDecode_(0), m_ctxLock(ctxLock) {
+    : hEvent_(0), nReadPosition_(0), nWritePosition_(0), nFramesInQueue_(0), bEndOfDecode_(0), m_ctxLock(ctxLock) {
 #ifdef _WIN32
   hEvent_ = CreateEvent(NULL, false, false, NULL);
   InitializeCriticalSection(&oCriticalSection_);

@@ -31,18 +31,18 @@
 #include "dynlink_cuda.h"    // <cuda.h>
 #include "dynlink_nvcuvid.h" // <nvcuvid.h>
 
-#define __cu(a)                                                                \
-  do {                                                                         \
-    CUresult ret;                                                              \
-    if ((ret = (a)) != CUDA_SUCCESS) {                                         \
-      fprintf(stderr, "%s has returned CUDA error %d\n", #a, ret);             \
-      return NV_ENC_ERR_GENERIC;                                               \
-    }                                                                          \
+#define __cu(a)                                                                                                        \
+  do {                                                                                                                 \
+    CUresult ret;                                                                                                      \
+    if ((ret = (a)) != CUDA_SUCCESS) {                                                                                 \
+      fprintf(stderr, "%s has returned CUDA error %d\n", #a, ret);                                                     \
+      return NV_ENC_ERR_GENERIC;                                                                                       \
+    }                                                                                                                  \
   } while (0)
 
 #define MAX_ENCODE_QUEUE 32
 
-#define SET_VER(configStruct, type)                                            \
+#define SET_VER(configStruct, type)                                                                                    \
   { configStruct.version = type##_VER; }
 
 template <class T> class CNvQueue {
@@ -53,9 +53,7 @@ template <class T> class CNvQueue {
   unsigned int m_uPendingndex;
 
 public:
-  CNvQueue()
-      : m_pBuffer(NULL), m_uSize(0), m_uPendingCount(0), m_uAvailableIdx(0),
-        m_uPendingndex(0) {}
+  CNvQueue() : m_pBuffer(NULL), m_uSize(0), m_uPendingCount(0), m_uAvailableIdx(0), m_uPendingndex(0) {}
 
   ~CNvQueue() { delete[] m_pBuffer; }
 
@@ -121,8 +119,7 @@ protected:
 public:
   CNvHWEncoder *GetHWEncoder() { return m_pNvHWEncoder; }
   NVENCSTATUS Deinitialize();
-  NVENCSTATUS EncodeFrame(EncodeFrameConfig *pEncodeFrame,
-                          NV_ENC_PIC_STRUCT picType = NV_ENC_PIC_STRUCT_FRAME,
+  NVENCSTATUS EncodeFrame(EncodeFrameConfig *pEncodeFrame, NV_ENC_PIC_STRUCT picType = NV_ENC_PIC_STRUCT_FRAME,
                           bool bFlush = false);
   NVENCSTATUS AllocateIOBuffers(EncodeConfig *pEncodeConfig);
   int32_t GetEncodedFrames() { return m_iEncodedFrames; }

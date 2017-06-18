@@ -75,8 +75,7 @@ TEST_F(FrameQueueTestFixture, testMultipleEnqueue) {
 
   queue->init(1920, 1080);
 
-  for (unsigned int i = 0; i < queue->cnMaximumSize;
-       i++, parameters.picture_index++) {
+  for (unsigned int i = 0; i < queue->cnMaximumSize; i++, parameters.picture_index++) {
     queue->enqueue(&parameters);
   }
 

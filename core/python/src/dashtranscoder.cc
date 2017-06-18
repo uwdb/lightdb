@@ -21,11 +21,9 @@ class Constants {};
 namespace Python {
 class Transcoder {
 public:
-  Transcoder(unsigned int height, unsigned int width, unsigned int codec,
-             std::string preset, unsigned int fps, unsigned int gop_length,
-             unsigned long bitrate, unsigned int rcmode, unsigned int deviceId)
-      : gpuTranscoder(height, width, codec, preset, fps, gop_length, bitrate,
-                      rcmode, deviceId) {
+  Transcoder(unsigned int height, unsigned int width, unsigned int codec, std::string preset, unsigned int fps,
+             unsigned int gop_length, unsigned long bitrate, unsigned int rcmode, unsigned int deviceId)
+      : gpuTranscoder(height, width, codec, preset, fps, gop_length, bitrate, rcmode, deviceId) {
     if (gpuTranscoder.initialize() != 0)
       throw std::runtime_error("Transcoder initialization error");
   }
@@ -42,8 +40,7 @@ public:
       throw std::runtime_error("PyBytes_AsStringAndSize");
     else if ((inputDescriptor = mkstemp(inputFilename)) < 0)
       throw std::runtime_error("Input mkstemp");
-    else if (write(inputDescriptor, inputData, inputDataLength) !=
-             inputDataLength)
+    else if (write(inputDescriptor, inputData, inputDataLength) != inputDataLength)
       throw std::runtime_error("Input write");
     else if (close(inputDescriptor) != 0)
       throw std::runtime_error("Input close");
@@ -52,8 +49,7 @@ public:
 
     printf("output filename: %s\n", outputFilename);
 
-    if (gpuTranscoder.transcode(std::string(inputFilename),
-                                std::string(outputFilename)) != 0)
+    if (gpuTranscoder.transcode(std::string(inputFilename), std::string(outputFilename)) != 0)
       throw std::runtime_error("transcode error");
     else if ((outputDataLength = lseek(outputDescriptor, 0, SEEK_END)) < 0)
       throw std::runtime_error("Output length seek to end");
@@ -61,8 +57,7 @@ public:
       throw std::runtime_error("Output length seek to start");
     else if ((outputData = new char[outputDataLength]) == nullptr)
       throw std::runtime_error("Output buffer allocation");
-    else if (read(outputDescriptor, outputData, outputDataLength) !=
-             outputDataLength)
+    else if (read(outputDescriptor, outputData, outputDataLength) != outputDataLength)
       throw std::runtime_error("Output read underflow");
     else if (close(outputDescriptor) != 0)
       throw std::runtime_error("Output close");
@@ -72,8 +67,7 @@ public:
       throw std::runtime_error("Output remove");
     else if ((resultBuffer = new Py_buffer()) == nullptr)
       throw std::runtime_error("allocate buffer fail");
-    else if (PyBuffer_FillInfo(resultBuffer, nullptr, outputData,
-                               outputDataLength, true, PyBUF_CONTIG_RO) != 0)
+    else if (PyBuffer_FillInfo(resultBuffer, nullptr, outputData, outputDataLength, true, PyBUF_CONTIG_RO) != 0)
       throw std::runtime_error("PyBuffer_FillInfo");
     else
       return PyMemoryView_FromBuffer(resultBuffer);
@@ -85,13 +79,11 @@ private:
 
 class Tiler {
 public:
-  Tiler(unsigned int height, unsigned int width, unsigned int tileRows,
-        unsigned int tileColumns, PyObject *qualities, unsigned int codec,
-        unsigned int fps, unsigned int gop_length, unsigned int deviceId)
-      : configurations(getConfigurations(
-            inputFilename, height, width, tileRows,
-            tileColumns, // TODO change parameter to TileDimensions&
-            qualities, codec, fps, gop_length, deviceId)),
+  Tiler(unsigned int height, unsigned int width, unsigned int tileRows, unsigned int tileColumns, PyObject *qualities,
+        unsigned int codec, unsigned int fps, unsigned int gop_length, unsigned int deviceId)
+      : configurations(getConfigurations(inputFilename, height, width, tileRows,
+                                         tileColumns, // TODO change parameter to TileDimensions&
+                                         qualities, codec, fps, gop_length, deviceId)),
         tileDimensions{tileRows, tileColumns, tileRows * tileColumns} {}
 
   ~Tiler() {
@@ -99,32 +91,26 @@ public:
       delete configuration.outputFileName;
   }
 
-  static std::vector<EncodeConfig>
-  getConfigurations(char *inputFilename, unsigned int height,
-                    unsigned int width, unsigned int tileRows,
-                    unsigned int tileColumns, PyObject *qualities,
-                    unsigned int codec, unsigned int fps,
-                    unsigned int gop_length, unsigned int deviceId) {
+  static std::vector<EncodeConfig> getConfigurations(char *inputFilename, unsigned int height, unsigned int width,
+                                                     unsigned int tileRows, unsigned int tileColumns,
+                                                     PyObject *qualities, unsigned int codec, unsigned int fps,
+                                                     unsigned int gop_length, unsigned int deviceId) {
     auto *sequence = PySequence_Fast(qualities, "expected a sequence");
     auto length = PySequence_Size(sequence);
     std::vector<EncodeConfig> configurations;
 
     for (auto i = 0; i < length; i++) {
       auto quality = PySequence_Fast_GET_ITEM(sequence, i);
-      auto bitrate =
-          PyLong_AsLong(PyObject_GetAttrString(quality, "bitrate")) * 1024;
-      auto rate_control_mode =
-          PyLong_AsLong(PyObject_GetAttrString(quality, "rate_control_mode"));
-      auto *preset =
-          PyString_AsString(PyObject_GetAttrString(quality, "preset"));
+      auto bitrate = PyLong_AsLong(PyObject_GetAttrString(quality, "bitrate")) * 1024;
+      auto rate_control_mode = PyLong_AsLong(PyObject_GetAttrString(quality, "rate_control_mode"));
+      auto *preset = PyString_AsString(PyObject_GetAttrString(quality, "preset"));
       auto *outputFilenameFormat = new char[64]; // TODO leaks on failure?
 
       snprintf(outputFilenameFormat, 64, outputFilenameFormatTemplate, i);
 
-      configurations.push_back(MakeTilerConfiguration(
-          inputFilename, outputFilenameFormat, height, width, tileRows,
-          tileColumns, codec, preset, fps, gop_length, bitrate,
-          rate_control_mode, deviceId));
+      configurations.push_back(MakeTilerConfiguration(inputFilename, outputFilenameFormat, height, width, tileRows,
+                                                      tileColumns, codec, preset, fps, gop_length, bitrate,
+                                                      rate_control_mode, deviceId));
     }
 
     Py_DECREF(sequence);
@@ -141,48 +127,38 @@ public:
     if (PyBytes_AsStringAndSize(inputBuffer, &inputData, &inputDataLength) != 0)
       throw std::runtime_error("PyBytes_AsStringAndSize");
     else {
-      tileFuture =
-          std::async(std::launch::async, [this, inputData, inputDataLength] {
-            int inputDescriptor;
+      tileFuture = std::async(std::launch::async, [this, inputData, inputDataLength] {
+                     int inputDescriptor;
 
-            if ((inputDescriptor = mkstemp(inputFilename)) < 0)
-              throw std::runtime_error("Input mkstemp");
-            else if (write(inputDescriptor, inputData, inputDataLength) !=
-                     inputDataLength)
-              throw std::runtime_error("Input write");
-            else if (close(inputDescriptor) != 0)
-              throw std::runtime_error("Input close");
-            else if (ExecuteTiler(configurations, tileDimensions) != 0)
-              throw std::runtime_error("tiler");
-            else
-              return true;
-          }).share();
+                     if ((inputDescriptor = mkstemp(inputFilename)) < 0)
+                       throw std::runtime_error("Input mkstemp");
+                     else if (write(inputDescriptor, inputData, inputDataLength) != inputDataLength)
+                       throw std::runtime_error("Input write");
+                     else if (close(inputDescriptor) != 0)
+                       throw std::runtime_error("Input close");
+                     else if (ExecuteTiler(configurations, tileDimensions) != 0)
+                       throw std::runtime_error("tiler");
+                     else
+                       return true;
+                   }).share();
       ;
     }
   }
 
-  bool complete() {
-    return tileFuture.wait_for(std::chrono::milliseconds(0)) ==
-           std::future_status::ready;
-  }
+  bool complete() { return tileFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready; }
 
-  PyObject *tiles() {
-    return make_list(tileDimensions.count, configurations.size());
-  }
+  PyObject *tiles() { return make_list(tileDimensions.count, configurations.size()); }
 
-  static PyObject *make_list(const size_t tile_count,
-                             const size_t quality_count) {
+  static PyObject *make_list(const size_t tile_count, const size_t quality_count) {
     Py_buffer *buffer;
-    PyObject *list =
-        PyList_New(tile_count * quality_count); // TODO leaks on failure
+    PyObject *list = PyList_New(tile_count * quality_count); // TODO leaks on failure
     char filename[1024], *outputData;
     ssize_t outputFileSize;
     FILE *outputFile;
 
     for (auto quality = 0; quality < quality_count; quality++)
       for (auto tile = 0; tile < tile_count; tile++) {
-        if (snprintf(filename, sizeof(filename), outputFilenameFormat, quality,
-                     tile) < 0)
+        if (snprintf(filename, sizeof(filename), outputFilenameFormat, quality, tile) < 0)
           throw std::runtime_error("snprintf");
         else if ((outputFile = fopen(filename, "rb")) == nullptr)
           throw std::runtime_error("fopen");
@@ -194,8 +170,7 @@ public:
           throw std::runtime_error("Output length seek to start");
         else if ((outputData = new char[outputFileSize]) == nullptr)
           throw std::runtime_error("Output buffer allocation");
-        else if (fread(outputData, 1, outputFileSize, outputFile) !=
-                 outputFileSize)
+        else if (fread(outputData, 1, outputFileSize, outputFile) != outputFileSize)
           throw std::runtime_error("Output read underflow");
         else if (fclose(outputFile) != 0)
           throw std::runtime_error("Output close");
@@ -203,22 +178,18 @@ public:
           throw std::runtime_error("Output remove");
         else if ((buffer = new Py_buffer()) == nullptr)
           throw std::runtime_error("new pybuffer"); // leaks outputData
-        else if (PyBuffer_FillInfo(buffer, nullptr, outputData, outputFileSize,
-                                   true, PyBUF_CONTIG_RO) != 0)
+        else if (PyBuffer_FillInfo(buffer, nullptr, outputData, outputFileSize, true, PyBUF_CONTIG_RO) != 0)
           throw std::runtime_error("PyBuffer_FillInfo");
         else
-          PyList_SET_ITEM(list, tile + (tile_count * quality),
-                          PyMemoryView_FromBuffer(buffer));
+          PyList_SET_ITEM(list, tile + (tile_count * quality), PyMemoryView_FromBuffer(buffer));
       }
 
     return list;
   }
 
 private:
-  static constexpr const char *outputFilenameFormatTemplate =
-      "/tmp/tilerOutput-quality%d-tile%%d";
-  static constexpr const char *outputFilenameFormat =
-      "/tmp/tilerOutput-quality%d-tile%d";
+  static constexpr const char *outputFilenameFormatTemplate = "/tmp/tilerOutput-quality%d-tile%%d";
+  static constexpr const char *outputFilenameFormat = "/tmp/tilerOutput-quality%d-tile%d";
   static constexpr const char *inputFilenameTemplate = "/tmp/tilerInputXXXXXX";
   char inputFilename[64]; // TODO these should all be static, fix this
   std::shared_future<bool> tileFuture;
@@ -227,10 +198,9 @@ private:
 };
 
 BOOST_PYTHON_MODULE(dashtranscoder) {
-  boost::python::class_<Tiler>(
-      "Tiler", boost::python::init<unsigned int, unsigned int, unsigned int,
-                                   unsigned int, PyObject *, unsigned int,
-                                   unsigned int, unsigned int, unsigned int>())
+  boost::python::class_<Tiler>("Tiler",
+                               boost::python::init<unsigned int, unsigned int, unsigned int, unsigned int, PyObject *,
+                                                   unsigned int, unsigned int, unsigned int, unsigned int>())
       .def("start", &Tiler::start)
       .def("complete", &Tiler::complete)
       .def("tiles", &Tiler::tiles);
@@ -238,14 +208,11 @@ BOOST_PYTHON_MODULE(dashtranscoder) {
   //.def("tile_all", &Tiler::tile_all);
 
   boost::python::class_<Transcoder>(
-      "Transcoder",
-      boost::python::init<unsigned int, unsigned int, unsigned int, std::string,
-                          unsigned int, unsigned int, unsigned long,
-                          unsigned int, unsigned int>())
+      "Transcoder", boost::python::init<unsigned int, unsigned int, unsigned int, std::string, unsigned int,
+                                        unsigned int, unsigned long, unsigned int, unsigned int>())
       .def("transcode", &Transcoder::transcode);
 
-  boost::python::scope constants =
-      boost::python::class_<Constants>("constants");
+  boost::python::scope constants = boost::python::class_<Constants>("constants");
 
   constants.attr("H264") = static_cast<unsigned int>(NV_ENC_H264);
   constants.attr("H265") = static_cast<unsigned int>(NV_ENC_HEVC);

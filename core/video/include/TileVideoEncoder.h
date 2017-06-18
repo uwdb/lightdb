@@ -22,11 +22,9 @@ typedef struct TileDimensions {
 
 class TileVideoEncoder {
 public:
-  TileVideoEncoder(CUvideoctxlock lock, const unsigned int tileColumns,
-                   const unsigned int tileRows)
-      : tileDimensions({tileRows, tileColumns, tileColumns * tileRows}),
-        tileEncodeContext(tileDimensions.count), lock(lock),
-        encodeBufferSize(0), framesEncoded(0) {
+  TileVideoEncoder(CUvideoctxlock lock, const unsigned int tileColumns, const unsigned int tileRows)
+      : tileDimensions({tileRows, tileColumns, tileColumns * tileRows}), tileEncodeContext(tileDimensions.count),
+        lock(lock), encodeBufferSize(0), framesEncoded(0) {
     assert(tileColumns > 0 && tileRows > 0);
   }
   virtual ~TileVideoEncoder() {}
@@ -35,9 +33,7 @@ public:
   NVENCSTATUS CreateEncoders(EncodeConfig &);
   NVENCSTATUS Deinitialize();
   NVENCSTATUS
-  EncodeFrame(EncodeFrameConfig *,
-              const NV_ENC_PIC_STRUCT type = NV_ENC_PIC_STRUCT_FRAME,
-              const bool flush = false);
+  EncodeFrame(EncodeFrameConfig *, const NV_ENC_PIC_STRUCT type = NV_ENC_PIC_STRUCT_FRAME, const bool flush = false);
   NVENCSTATUS AllocateIOBuffers(const EncodeConfig *);
   size_t GetEncodedFrames() const { return framesEncoded; }
   GUID GetPresetGUID() const { return presetGUID; }

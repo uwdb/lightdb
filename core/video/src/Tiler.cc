@@ -8,9 +8,7 @@
 #include "VideoDecoder.h"
 #include <algorithm>
 
-typedef struct Statistics {
-  unsigned long long start, end, frequency;
-} Statistics;
+typedef struct Statistics { unsigned long long start, end, frequency; } Statistics;
 
 std::vector<std::string> split(const std::string &input, char delimiter) {
   std::vector<std::string> elements;
@@ -34,8 +32,7 @@ void *DecodeWorker(void *arg) {
   return NULL;
 }
 
-int TilerMatchFPS(const float fpsRatio, const int decodedFrames,
-                  const int encodedFrames) {
+int TilerMatchFPS(const float fpsRatio, const int decodedFrames, const int encodedFrames) {
   if (fpsRatio < 1.f) {
     // need to drop frame
     if (decodedFrames * fpsRatio < (encodedFrames + 1))
@@ -53,88 +50,78 @@ int TilerMatchFPS(const float fpsRatio, const int decodedFrames,
 }
 
 int PrintHelp() {
-  std::cout
-      << "Usage : NvTranscoder \n"
-         "-i <string>                  Specify input .h264 file\n"
-         "-o <string>                  Specify output bitstream file\n"
-         "\n### Optional parameters ###\n"
-         "-size <int int>              Specify output resolution <width "
-         "height>\n"
-         "-codec <integer>             Specify the codec \n"
-         "                                 0: H264\n"
-         "                                 1: HEVC\n"
-         "-preset <string>             Specify the preset for encoder "
-         "settings\n"
-         "                                 hq : nvenc HQ \n"
-         "                                 hp : nvenc HP \n"
-         "                                 lowLatencyHP : nvenc low latency HP "
-         "\n"
-         "                                 lowLatencyHQ : nvenc low latency HQ "
-         "\n"
-         "                                 lossless : nvenc Lossless HP \n"
-         "-fps <integer>               Specify encoding frame rate\n"
-         "-goplength <integer>         Specify gop length\n"
-         "-numB <integer>              Specify number of B frames\n"
-         "-bitrate <integer>           Specify the encoding average bitrate\n"
-         "-vbvMaxBitrate <integer>     Specify the vbv max bitrate\n"
-         "-vbvSize <integer>           Specify the encoding vbv/hrd buffer "
-         "size\n"
-         "-rcmode <integer>            Specify the rate control mode\n"
-         "                                 0:  Constant QP\n"
-         "                                 1:  Single pass VBR\n"
-         "                                 2:  Single pass CBR\n"
-         "                                 4:  Single pass VBR minQP\n"
-         "                                 8:  Two pass frame quality\n"
-         "                                 16: Two pass frame size cap\n"
-         "                                 32: Two pass VBR\n"
-         "-qp <integer>                Specify qp for Constant QP mode\n"
-         "-i_qfactor <float>           Specify qscale difference between "
-         "I-frames and P-frames\n"
-         "-b_qfactor <float>           Specify qscale difference between "
-         "P-frames and B-frames\n"
-         "-i_qoffset <float>           Specify qscale offset between I-frames "
-         "and P-frames\n"
-         "-b_qoffset <float>           Specify qscale offset between P-frames "
-         "and B-frames\n"
-         "-deviceID <integer>          Specify the GPU device on which "
-         "encoding will take place\n"
-         "-help                        Prints Help Information\n\n";
+  std::cout << "Usage : NvTranscoder \n"
+               "-i <string>                  Specify input .h264 file\n"
+               "-o <string>                  Specify output bitstream file\n"
+               "\n### Optional parameters ###\n"
+               "-size <int int>              Specify output resolution <width "
+               "height>\n"
+               "-codec <integer>             Specify the codec \n"
+               "                                 0: H264\n"
+               "                                 1: HEVC\n"
+               "-preset <string>             Specify the preset for encoder "
+               "settings\n"
+               "                                 hq : nvenc HQ \n"
+               "                                 hp : nvenc HP \n"
+               "                                 lowLatencyHP : nvenc low latency HP "
+               "\n"
+               "                                 lowLatencyHQ : nvenc low latency HQ "
+               "\n"
+               "                                 lossless : nvenc Lossless HP \n"
+               "-fps <integer>               Specify encoding frame rate\n"
+               "-goplength <integer>         Specify gop length\n"
+               "-numB <integer>              Specify number of B frames\n"
+               "-bitrate <integer>           Specify the encoding average bitrate\n"
+               "-vbvMaxBitrate <integer>     Specify the vbv max bitrate\n"
+               "-vbvSize <integer>           Specify the encoding vbv/hrd buffer "
+               "size\n"
+               "-rcmode <integer>            Specify the rate control mode\n"
+               "                                 0:  Constant QP\n"
+               "                                 1:  Single pass VBR\n"
+               "                                 2:  Single pass CBR\n"
+               "                                 4:  Single pass VBR minQP\n"
+               "                                 8:  Two pass frame quality\n"
+               "                                 16: Two pass frame size cap\n"
+               "                                 32: Two pass VBR\n"
+               "-qp <integer>                Specify qp for Constant QP mode\n"
+               "-i_qfactor <float>           Specify qscale difference between "
+               "I-frames and P-frames\n"
+               "-b_qfactor <float>           Specify qscale difference between "
+               "P-frames and B-frames\n"
+               "-i_qoffset <float>           Specify qscale offset between I-frames "
+               "and P-frames\n"
+               "-b_qoffset <float>           Specify qscale offset between P-frames "
+               "and B-frames\n"
+               "-deviceID <integer>          Specify the GPU device on which "
+               "encoding will take place\n"
+               "-help                        Prints Help Information\n\n";
   return 1;
 }
 
-int DisplayConfiguration(const EncodeConfig &configuration,
-                         const TileDimensions &dimensions) {
+int DisplayConfiguration(const EncodeConfig &configuration, const TileDimensions &dimensions) {
   printf("Encoding input           : \"%s\"\n", configuration.inputFileName);
   printf("         output          : \"%s\"\n", configuration.outputFileName);
-  printf("         codec           : \"%s\"\n",
-         configuration.codec == NV_ENC_HEVC ? "HEVC" : "H264");
-  printf("         size            : %dx%d\n", configuration.width,
-         configuration.height);
+  printf("         codec           : \"%s\"\n", configuration.codec == NV_ENC_HEVC ? "HEVC" : "H264");
+  printf("         size            : %dx%d\n", configuration.width, configuration.height);
   printf("         bitrate         : %d bits/sec\n", configuration.bitrate);
-  printf("         vbvMaxBitrate   : %d bits/sec\n",
-         configuration.vbvMaxBitrate);
+  printf("         vbvMaxBitrate   : %d bits/sec\n", configuration.vbvMaxBitrate);
   printf("         vbvSize         : %d bits\n", configuration.vbvSize);
   printf("         fps             : %d frames/sec\n", configuration.fps);
-  printf(
-      "         rcMode          : %s\n",
-      configuration.rcMode == NV_ENC_PARAMS_RC_CONSTQP
-          ? "CONSTQP"
-          : configuration.rcMode == NV_ENC_PARAMS_RC_VBR
-                ? "VBR"
-                : configuration.rcMode == NV_ENC_PARAMS_RC_CBR
-                      ? "CBR"
-                      : configuration.rcMode == NV_ENC_PARAMS_RC_VBR_MINQP
-                            ? "VBR MINQP"
-                            : configuration.rcMode ==
-                                      NV_ENC_PARAMS_RC_2_PASS_QUALITY
-                                  ? "TWO_PASS_QUALITY"
-                                  : configuration.rcMode ==
-                                            NV_ENC_PARAMS_RC_2_PASS_FRAMESIZE_CAP
-                                        ? "TWO_PASS_FRAMESIZE_CAP"
-                                        : configuration.rcMode ==
-                                                  NV_ENC_PARAMS_RC_2_PASS_VBR
-                                              ? "TWO_PASS_VBR"
-                                              : "UNKNOWN");
+  printf("         rcMode          : %s\n",
+         configuration.rcMode == NV_ENC_PARAMS_RC_CONSTQP
+             ? "CONSTQP"
+             : configuration.rcMode == NV_ENC_PARAMS_RC_VBR
+                   ? "VBR"
+                   : configuration.rcMode == NV_ENC_PARAMS_RC_CBR
+                         ? "CBR"
+                         : configuration.rcMode == NV_ENC_PARAMS_RC_VBR_MINQP
+                               ? "VBR MINQP"
+                               : configuration.rcMode == NV_ENC_PARAMS_RC_2_PASS_QUALITY
+                                     ? "TWO_PASS_QUALITY"
+                                     : configuration.rcMode == NV_ENC_PARAMS_RC_2_PASS_FRAMESIZE_CAP
+                                           ? "TWO_PASS_FRAMESIZE_CAP"
+                                           : configuration.rcMode == NV_ENC_PARAMS_RC_2_PASS_VBR ? "TWO_PASS_VBR"
+                                                                                                 : "UNKNOWN");
   if (configuration.gopLength == NVENC_INFINITE_GOPLENGTH)
     printf("         goplength       : INFINITE GOP \n");
   else
@@ -150,26 +137,21 @@ int DisplayConfiguration(const EncodeConfig &configuration,
                          ? "HQ_PRESET"
                          : (configuration.presetGUID == NV_ENC_PRESET_HP_GUID)
                                ? "HP_PRESET"
-                               : (configuration.presetGUID ==
-                                  NV_ENC_PRESET_LOSSLESS_HP_GUID)
-                                     ? "LOSSLESS_HP"
-                                     : "LOW_LATENCY_DEFAULT");
-  printf("         Tiles           : %lu, %lu\n", dimensions.rows,
-         dimensions.columns);
+                               : (configuration.presetGUID == NV_ENC_PRESET_LOSSLESS_HP_GUID) ? "LOSSLESS_HP"
+                                                                                              : "LOW_LATENCY_DEFAULT");
+  printf("         Tiles           : %lu, %lu\n", dimensions.rows, dimensions.columns);
   printf("\n");
 
   return 0;
 }
 
-float InitializeDecoder(CudaDecoder &decoder, CUVIDFrameQueue &queue,
-                        CUvideoctxlock &lock, EncodeConfig &configuration) {
+float InitializeDecoder(CudaDecoder &decoder, CUVIDFrameQueue &queue, CUvideoctxlock &lock,
+                        EncodeConfig &configuration) {
   int decodedW, decodedH, decodedFRN, decodedFRD, isProgressive;
 
-  decoder.InitVideoDecoder(configuration.inputFileName, lock, &queue,
-                           configuration.width, configuration.height);
+  decoder.InitVideoDecoder(configuration.inputFileName, lock, &queue, configuration.width, configuration.height);
 
-  decoder.GetCodecParam(&decodedW, &decodedH, &decodedFRN, &decodedFRD,
-                        &isProgressive);
+  decoder.GetCodecParam(&decodedW, &decodedH, &decodedFRN, &decodedFRD, &isProgressive);
   if (decodedFRN <= 0 || decodedFRD <= 0) {
     decodedFRN = 30;
     decodedFRD = 1;
@@ -209,8 +191,7 @@ void EncodeWorker(EncodeContext &context)
   auto frmProcessed = 0;
   auto frmActual = 0;
 
-  while (
-      !(context.frameQueue.isEndOfDecode() && context.frameQueue.isEmpty())) {
+  while (!(context.frameQueue.isEndOfDecode() && context.frameQueue.isEmpty())) {
     CUVIDPARSERDISPINFO frame;
 
     if (context.frameQueue.dequeue(&frame)) {
@@ -221,26 +202,22 @@ void EncodeWorker(EncodeContext &context)
       oVPP.progressive_frame = frame.progressive_frame;
       oVPP.second_field = 0;
       oVPP.top_field_first = frame.top_field_first;
-      oVPP.unpaired_field =
-          (frame.progressive_frame == 1 || frame.repeat_first_field <= 1);
+      oVPP.unpaired_field = (frame.progressive_frame == 1 || frame.repeat_first_field <= 1);
 
-      cuvidMapVideoFrame(context.decoder.GetDecoder(), frame.picture_index,
-                         &mappedFrame, &pitch, &oVPP);
+      cuvidMapVideoFrame(context.decoder.GetDecoder(), frame.picture_index, &mappedFrame, &pitch, &oVPP);
 
       EncodeFrameConfig stEncodeConfig = {0};
       auto pictureType =
           (frame.progressive_frame || frame.repeat_first_field >= 2
                ? NV_ENC_PIC_STRUCT_FRAME
-               : (frame.top_field_first ? NV_ENC_PIC_STRUCT_FIELD_TOP_BOTTOM
-                                        : NV_ENC_PIC_STRUCT_FIELD_BOTTOM_TOP));
+               : (frame.top_field_first ? NV_ENC_PIC_STRUCT_FIELD_TOP_BOTTOM : NV_ENC_PIC_STRUCT_FIELD_BOTTOM_TOP));
 
       stEncodeConfig.dptr = mappedFrame;
       stEncodeConfig.pitch = pitch;
       stEncodeConfig.width = context.configuration.width;
       stEncodeConfig.height = context.configuration.height;
 
-      auto dropOrDuplicate =
-          TilerMatchFPS(context.fpsRatio, frmProcessed, frmActual);
+      auto dropOrDuplicate = TilerMatchFPS(context.fpsRatio, frmProcessed, frmActual);
       if (dropOrDuplicate != 1)
         printf("DoD %d\n", dropOrDuplicate);
       for (auto i = 0; i <= dropOrDuplicate; i++) {
@@ -266,21 +243,17 @@ void EncodeWorker(EncodeContext &context)
   // context.encoder3.EncodeFrame(nullptr, NV_ENC_PIC_STRUCT_FRAME, true);
 }
 
-int ExecuteWorkers(CudaDecoder &decoder,
-                   std::vector<TileVideoEncoder *> &encoders,
-                   CUVIDFrameQueue &frameQueue, EncodeConfig &configuration,
-                   float fpsRatio, Statistics &statistics) {
+int ExecuteWorkers(CudaDecoder &decoder, std::vector<TileVideoEncoder *> &encoders, CUVIDFrameQueue &frameQueue,
+                   EncodeConfig &configuration, float fpsRatio, Statistics &statistics) {
   pthread_t decode_pid;
 
   NvQueryPerformanceCounter(&statistics.start);
 
   // Start decoding thread
-  pthread_create(&decode_pid, nullptr, DecodeWorker,
-                 static_cast<void *>(&decoder));
+  pthread_create(&decode_pid, nullptr, DecodeWorker, static_cast<void *>(&decoder));
 
   // Execute encoder in main thread
-  EncodeContext context = {decoder,       encoders, frameQueue,
-                           configuration, fpsRatio, statistics};
+  EncodeContext context = {decoder, encoders, frameQueue, configuration, fpsRatio, statistics};
   EncodeWorker(context);
 
   pthread_join(decode_pid, nullptr);
@@ -288,32 +261,26 @@ int ExecuteWorkers(CudaDecoder &decoder,
   return 0;
 }
 
-int DisplayStatistics(CudaDecoder &decoder, TileVideoEncoder &encoder,
-                      Statistics &statistics) {
+int DisplayStatistics(CudaDecoder &decoder, TileVideoEncoder &encoder, Statistics &statistics) {
   if (encoder.GetEncodedFrames() > 0) {
     NvQueryPerformanceCounter(&statistics.end);
     NvQueryPerformanceFrequency(&statistics.frequency);
 
-    auto elapsedTime = static_cast<double>(statistics.end - statistics.start) /
-                       statistics.frequency;
+    auto elapsedTime = static_cast<double>(statistics.end - statistics.start) / statistics.frequency;
     printf("Total time: %fms, Decoded Frames: %d, Encoded Frames: %ld, Average "
            "FPS: %f\n",
-           elapsedTime * 1000, decoder.m_decodedFrames,
-           encoder.GetEncodedFrames(),
+           elapsedTime * 1000, decoder.m_decodedFrames, encoder.GetEncodedFrames(),
            static_cast<float>(encoder.GetEncodedFrames()) / elapsedTime);
   }
 
   return 0;
 }
 
-int ParseTileParameters(EncodeConfig &configuration,
-                        TileDimensions &tileDimensions) {
+int ParseTileParameters(EncodeConfig &configuration, TileDimensions &tileDimensions) {
   auto values = split(configuration.outputFileName, ',');
 
   if (values.size() != 3)
-    return error(
-        "Expected three arguments in output filename (e.g., '4,8,%d.h265')\n",
-        -1);
+    return error("Expected three arguments in output filename (e.g., '4,8,%d.h265')\n", -1);
   else {
     tileDimensions.rows = stoi(values.at(0));
     tileDimensions.columns = stoi(values.at(1));
@@ -324,30 +291,25 @@ int ParseTileParameters(EncodeConfig &configuration,
   return 0;
 }
 
-int InitializeEncoder(CUcontext &cudaContext, EncodeConfig &configuration,
-                      unsigned long bitrate, int encoderIndex,
-                      TileVideoEncoder &encoder,
-                      const TileDimensions &tileDimensions) {
+int InitializeEncoder(CUcontext &cudaContext, EncodeConfig &configuration, unsigned long bitrate, int encoderIndex,
+                      TileVideoEncoder &encoder, const TileDimensions &tileDimensions) {
   NVENCSTATUS status;
 
   //    configuration.presetGUID = NV_ENC_PRESET_DEFAULT_GUID;
   //    //encoder->GetPresetGUID();
 
   // Initialize encoder
-  if ((status = encoder.Initialize(cudaContext, NV_ENC_DEVICE_TYPE_CUDA)) !=
-      NV_ENC_SUCCESS)
+  if ((status = encoder.Initialize(cudaContext, NV_ENC_DEVICE_TYPE_CUDA)) != NV_ENC_SUCCESS)
     return error("encoder.Initialize", -1);
   else if ((status = encoder.CreateEncoders(configuration)) != NV_ENC_SUCCESS)
     return error("CreateEncoders", -1);
-  else if ((status = encoder.AllocateIOBuffers(&configuration)) !=
-           NV_ENC_SUCCESS)
+  else if ((status = encoder.AllocateIOBuffers(&configuration)) != NV_ENC_SUCCESS)
     return error("encoder.AllocateIOBuffers", -1);
   else
     return 0;
 }
 
-int ExecuteTiler(std::vector<EncodeConfig> &configurations,
-                 const TileDimensions tileDimensions) {
+int ExecuteTiler(std::vector<EncodeConfig> &configurations, const TileDimensions tileDimensions) {
   typedef void *CUDADRIVER;
   CUDADRIVER hHandleDriver = nullptr;
   CUcontext cudaCtx;
@@ -367,18 +329,15 @@ int ExecuteTiler(std::vector<EncodeConfig> &configurations,
     return error("Error in cuInit", result);
   else if ((result = cuvidInit(0)) != CUDA_SUCCESS)
     return error("Error in cuInit", result);
-  else if ((result = cuDeviceGet(&device, configurations.at(0).deviceID)) !=
-           CUDA_SUCCESS)
+  else if ((result = cuDeviceGet(&device, configurations.at(0).deviceID)) != CUDA_SUCCESS)
     return error("cuDeviceGet", result);
-  else if ((result = cuCtxCreate(&cudaCtx, CU_CTX_SCHED_AUTO, device)) !=
-           CUDA_SUCCESS)
+  else if ((result = cuCtxCreate(&cudaCtx, CU_CTX_SCHED_AUTO, device)) != CUDA_SUCCESS)
     return error("cuCtxCreate", result);
   else if ((result = cuCtxPopCurrent(&curCtx)) != CUDA_SUCCESS)
     return error("cuCtxPopCurrent", result);
   else if ((result = cuvidCtxLockCreate(&lock, curCtx)) != CUDA_SUCCESS)
     return error("cuvidCtxLockCreate", result);
-  else if ((fpsRatio = InitializeDecoder(decoder, frameQueue, lock,
-                                         configurations.at(0))) < 0)
+  else if ((fpsRatio = InitializeDecoder(decoder, frameQueue, lock, configurations.at(0))) < 0)
     return error("InitializeDecoder", -1);
   // else if (DisplayConfiguration(configurations.at(0), tileDimensions) != 0)
   //	return error("DisplayConfiguration", -1);
@@ -386,17 +345,14 @@ int ExecuteTiler(std::vector<EncodeConfig> &configurations,
   auto index = 0;
   for (auto &configuration : configurations) {
     // TODO leaks
-    auto *encoder =
-        new TileVideoEncoder(lock, tileDimensions.columns, tileDimensions.rows);
-    if (InitializeEncoder(cudaCtx, configuration, configuration.bitrate,
-                          index++, *encoder, tileDimensions))
+    auto *encoder = new TileVideoEncoder(lock, tileDimensions.columns, tileDimensions.rows);
+    if (InitializeEncoder(cudaCtx, configuration, configuration.bitrate, index++, *encoder, tileDimensions))
       return error("InitializeEncoder", -1);
     else
       encoders.push_back(encoder);
   }
 
-  if (ExecuteWorkers(decoder, encoders, frameQueue, configurations.at(0),
-                     fpsRatio, statistics) != 0)
+  if (ExecuteWorkers(decoder, encoders, frameQueue, configurations.at(0), fpsRatio, statistics) != 0)
     return error("ExecuteWorkers", -1);
 
   for (auto &encoder : encoders) {
@@ -413,12 +369,11 @@ int ExecuteTiler(std::vector<EncodeConfig> &configurations,
     return 0;
 }
 
-EncodeConfig MakeTilerConfiguration(
-    char *inputFilename, char *outputFilenameFormat, const unsigned int height,
-    const unsigned int width, const size_t tileRows, const size_t tileColumns,
-    const unsigned int codec, char *preset, const unsigned int fps,
-    const unsigned int gop_length, const size_t bitrate,
-    const unsigned int rcmode, const unsigned int deviceId) {
+EncodeConfig MakeTilerConfiguration(char *inputFilename, char *outputFilenameFormat, const unsigned int height,
+                                    const unsigned int width, const size_t tileRows, const size_t tileColumns,
+                                    const unsigned int codec, char *preset, const unsigned int fps,
+                                    const unsigned int gop_length, const size_t bitrate, const unsigned int rcmode,
+                                    const unsigned int deviceId) {
   EncodeConfig configuration = {0};
 
   configuration.height = height;
@@ -445,17 +400,13 @@ EncodeConfig MakeTilerConfiguration(
   return configuration;
 }
 
-int ExecuteTiler(const std::string inputFilename,
-                 const std::string outputFilenameFormat, unsigned int height,
-                 unsigned int width, size_t tileRows, size_t tileColumns,
-                 unsigned int codec, std::string preset, unsigned int fps,
-                 unsigned int gop_length, size_t bitrate, unsigned int rcmode,
+int ExecuteTiler(const std::string inputFilename, const std::string outputFilenameFormat, unsigned int height,
+                 unsigned int width, size_t tileRows, size_t tileColumns, unsigned int codec, std::string preset,
+                 unsigned int fps, unsigned int gop_length, size_t bitrate, unsigned int rcmode,
                  unsigned int deviceId) {
   EncodeConfig configuration = MakeTilerConfiguration(
-      const_cast<char *>(inputFilename.c_str()),
-      const_cast<char *>(outputFilenameFormat.c_str()), height, width, tileRows,
-      tileColumns, codec, const_cast<char *>(preset.c_str()), fps, gop_length,
-      bitrate, rcmode, deviceId);
+      const_cast<char *>(inputFilename.c_str()), const_cast<char *>(outputFilenameFormat.c_str()), height, width,
+      tileRows, tileColumns, codec, const_cast<char *>(preset.c_str()), fps, gop_length, bitrate, rcmode, deviceId);
 
   TileDimensions tileDimensions = {tileRows, tileColumns};
 
@@ -494,8 +445,7 @@ int foo(int argc, char *argv[]) {
   configurations.push_back(configuration);
 
   // Verify arguments
-  if ((status = CNvHWEncoder::ParseArguments(&configuration, argc, argv)) !=
-      NV_ENC_SUCCESS)
+  if ((status = CNvHWEncoder::ParseArguments(&configuration, argc, argv)) != NV_ENC_SUCCESS)
     return PrintHelp();
   else if (!configuration.inputFileName || !configuration.outputFileName)
     return PrintHelp();

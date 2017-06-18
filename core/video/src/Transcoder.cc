@@ -38,10 +38,9 @@ int MatchFPS(const float fpsRatio, int decodedFrames, int encodedFrames) {
   return 0;
 }
 
-Transcoder::Transcoder(unsigned int height, unsigned int width,
-                       unsigned int codec, std::string preset, unsigned int fps,
-                       unsigned int gop_length, unsigned long bitrate,
-                       unsigned int rcmode, unsigned int deviceId)
+Transcoder::Transcoder(unsigned int height, unsigned int width, unsigned int codec, std::string preset,
+                       unsigned int fps, unsigned int gop_length, unsigned long bitrate, unsigned int rcmode,
+                       unsigned int deviceId)
     : preset(preset), encoder(nullptr), frameQueue(nullptr), configuration{0} {
   outputFilename.reserve(1024);
 
@@ -80,11 +79,9 @@ int Transcoder::initialize() {
     return 1;
   else if ((result = cuvidInit(0)) != CUDA_SUCCESS)
     return 2;
-  else if ((result = cuDeviceGet(&device, configuration.deviceID)) !=
-           CUDA_SUCCESS)
+  else if ((result = cuDeviceGet(&device, configuration.deviceID)) != CUDA_SUCCESS)
     return 3;
-  else if ((result = cuCtxCreate(&context, CU_CTX_SCHED_AUTO, device)) !=
-           CUDA_SUCCESS)
+  else if ((result = cuCtxCreate(&context, CU_CTX_SCHED_AUTO, device)) != CUDA_SUCCESS)
     return 4;
   else if ((result = cuCtxPopCurrent(&context)) != CUDA_SUCCESS)
     return 5;
@@ -125,12 +122,10 @@ int Transcoder::initialize() {
   encoder = new VideoEncoder(lock);
   assert(encoder->GetHWEncoder());
 
-  if ((nvStatus = encoder->GetHWEncoder()->Initialize(
-           context, NV_ENC_DEVICE_TYPE_CUDA)) != NV_ENC_SUCCESS)
+  if ((nvStatus = encoder->GetHWEncoder()->Initialize(context, NV_ENC_DEVICE_TYPE_CUDA)) != NV_ENC_SUCCESS)
     return 6;
 
-  configuration.presetGUID = encoder->GetHWEncoder()->GetPresetGUID(
-      configuration.encoderPreset, configuration.codec);
+  configuration.presetGUID = encoder->GetHWEncoder()->GetPresetGUID(configuration.encoderPreset, configuration.codec);
 
   frameQueue = new CUVIDFrameQueue(lock);
   frameQueue->init(configuration.width, configuration.height);
@@ -147,8 +142,7 @@ void Transcoder::InitializeDecoder(const std::string &inputFilename) {
   this->inputFilename = inputFilename;
   configuration.inputFileName = const_cast<char *>(inputFilename.c_str());
 
-  decoder.InitVideoDecoder(configuration.inputFileName, lock, frameQueue,
-                           configuration.width, configuration.height);
+  decoder.InitVideoDecoder(configuration.inputFileName, lock, frameQueue, configuration.width, configuration.height);
 
   /*
   int decodedW, decodedH, decodedFRN, decodedFRD, isProgressive;
@@ -192,18 +186,15 @@ int Transcoder::InitializeEncoder(const std::string &outputFilename) {
   configuration.fOutput = fopen(configuration.outputFileName, "wb");
   encoder->GetHWEncoder()->m_fOutput = configuration.fOutput;
 
-  if ((nvStatus = encoder->GetHWEncoder()->CreateEncoder(&configuration)) !=
-      NV_ENC_SUCCESS)
+  if ((nvStatus = encoder->GetHWEncoder()->CreateEncoder(&configuration)) != NV_ENC_SUCCESS)
     return 7;
-  else if ((nvStatus = encoder->AllocateIOBuffers(&configuration)) !=
-           NV_ENC_SUCCESS)
+  else if ((nvStatus = encoder->AllocateIOBuffers(&configuration)) != NV_ENC_SUCCESS)
     return 8;
   else
     return 0;
 }
 
-int Transcoder::transcode(const std::string &inputFilename,
-                          const std::string &outputFilename) {
+int Transcoder::transcode(const std::string &inputFilename, const std::string &outputFilename) {
   int result;
   NVENCSTATUS nvStatus;
 
@@ -229,18 +220,15 @@ int Transcoder::transcode(const std::string &inputFilename,
       oVPP.progressive_frame = pInfo.progressive_frame;
       oVPP.second_field = 0;
       oVPP.top_field_first = pInfo.top_field_first;
-      oVPP.unpaired_field =
-          (pInfo.progressive_frame == 1 || pInfo.repeat_first_field <= 1);
+      oVPP.unpaired_field = (pInfo.progressive_frame == 1 || pInfo.repeat_first_field <= 1);
 
-      cuvidMapVideoFrame(decoder.GetDecoder(), pInfo.picture_index,
-                         &dMappedFrame, &pitch, &oVPP);
+      cuvidMapVideoFrame(decoder.GetDecoder(), pInfo.picture_index, &dMappedFrame, &pitch, &oVPP);
 
       EncodeFrameConfig stEncodeConfig = {0};
       auto picType =
           (pInfo.progressive_frame || pInfo.repeat_first_field >= 2
                ? NV_ENC_PIC_STRUCT_FRAME
-               : (pInfo.top_field_first ? NV_ENC_PIC_STRUCT_FIELD_TOP_BOTTOM
-                                        : NV_ENC_PIC_STRUCT_FIELD_BOTTOM_TOP));
+               : (pInfo.top_field_first ? NV_ENC_PIC_STRUCT_FIELD_TOP_BOTTOM : NV_ENC_PIC_STRUCT_FIELD_BOTTOM_TOP));
 
       stEncodeConfig.dptr = dMappedFrame;
       stEncodeConfig.pitch = pitch;
