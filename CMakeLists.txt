@@ -60,6 +60,16 @@ if(GTEST_FOUND)
   add_subdirectory(test)
 endif()
 
+# Add clang-format target
+file(GLOB_RECURSE FORMATTED_SOURCE_FILES *.cc *.h)
+add_custom_target(
+  clang-format
+  COMMAND /usr/bin/clang-format
+  -style=file
+  -i
+  ${FORMATTED_SOURCE_FILES}
+)
+
 # Uninstall
 set(CMD "xargs printf '-- Uninstalling: %s\\\\n' <install_manifest.txt")
 add_custom_target(

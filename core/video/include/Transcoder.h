@@ -3,46 +3,45 @@
 
 #include <string>
 
-#include "dynlink_cuda.h"
 #include "VideoDecoder.h"
 #include "VideoEncoder.h"
+#include "dynlink_cuda.h"
 
-class Transcoder
-{
+class Transcoder {
 public:
-	Transcoder(unsigned int height, unsigned int width,
-			   unsigned int codec, std::string preset, unsigned int fps, unsigned int gop_length,
-			   unsigned long bitrate, unsigned int rcmode, unsigned int deviceId);
-	~Transcoder()
-	{
-		if(encoder != nullptr)
-			encoder->Deinitialize();
+  Transcoder(unsigned int height, unsigned int width, unsigned int codec,
+             std::string preset, unsigned int fps, unsigned int gop_length,
+             unsigned long bitrate, unsigned int rcmode, unsigned int deviceId);
+  ~Transcoder() {
+    if (encoder != nullptr)
+      encoder->Deinitialize();
 
-		delete encoder;
-		delete frameQueue;
+    delete encoder;
+    delete frameQueue;
 
-		cuvidCtxLockDestroy(lock);
-		cuCtxDestroy(context);
-	}
+    cuvidCtxLockDestroy(lock);
+    cuCtxDestroy(context);
+  }
 
-	int initialize();
-	int transcode(const std::string& inputFilename, const std::string& outputFilename);
+  int initialize();
+  int transcode(const std::string &inputFilename,
+                const std::string &outputFilename);
 
 private:
-	int InitializeEncoder(const std::string& outputFilename);
-	void InitializeDecoder(const std::string& inputFilename);
+  int InitializeEncoder(const std::string &outputFilename);
+  void InitializeDecoder(const std::string &inputFilename);
 
-	std::string inputFilename;
-	std::string outputFilename;
-	const std::string preset;
+  std::string inputFilename;
+  std::string outputFilename;
+  const std::string preset;
 
-	CUcontext context;
-	CUvideoctxlock lock;
-	VideoEncoder* encoder; //TODO
-	CudaDecoder decoder;
-	FrameQueue* frameQueue; //TODO 
-	EncodeConfig configuration;
-	float fpsRatio;
+  CUcontext context;
+  CUvideoctxlock lock;
+  VideoEncoder *encoder; // TODO
+  CudaDecoder decoder;
+  FrameQueue *frameQueue; // TODO
+  EncodeConfig configuration;
+  float fpsRatio;
 };
 
-#endif 
+#endif
