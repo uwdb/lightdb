@@ -18,8 +18,10 @@ public:
     delete encoder;
     delete frameQueue;
 
-    cuvidCtxLockDestroy(lock);
-    cuCtxDestroy(context);
+    if(lock != nullptr)
+      cuvidCtxLockDestroy(lock);
+    if(context != nullptr)
+      cuCtxDestroy(context);
   }
 
   int initialize();
