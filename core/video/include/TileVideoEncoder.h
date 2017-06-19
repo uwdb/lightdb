@@ -8,7 +8,7 @@
 #include <cassert>
 
 typedef struct TileEncodeContext {
-  CNvHWEncoder hardwareEncoder;
+  EncodeAPI hardwareEncoder;
   EncodeBuffer encodeBuffer[MAX_ENCODE_QUEUE];
   CNvQueue<EncodeBuffer> encodeBufferQueue;
   size_t offsetX, offsetY;

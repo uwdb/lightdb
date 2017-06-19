@@ -4,7 +4,7 @@
 #define BITSTREAM_BUFFER_SIZE 2 * 1024 * 1024
 
 VideoEncoder::VideoEncoder(CUvideoctxlock ctxLock) {
-  m_pNvHWEncoder = new CNvHWEncoder;
+  m_pNvHWEncoder = new EncodeAPI();
   m_ctxLock = ctxLock;
 
   m_uEncodeBufferCount = 0;

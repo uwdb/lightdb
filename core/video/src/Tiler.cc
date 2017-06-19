@@ -421,6 +421,7 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
+/*
 int foo(int argc, char *argv[]) {
   NVENCSTATUS status;
   CUresult result;
@@ -445,7 +446,7 @@ int foo(int argc, char *argv[]) {
   configurations.push_back(configuration);
 
   // Verify arguments
-  if ((status = CNvHWEncoder::ParseArguments(&configuration, argc, argv)) != NV_ENC_SUCCESS)
+  if ((status = EncodeAPI::ParseArguments(&configuration, argc, argv)) != NV_ENC_SUCCESS)
     return PrintHelp();
   else if (!configuration.inputFileName || !configuration.outputFileName)
     return PrintHelp();
@@ -454,3 +455,4 @@ int foo(int argc, char *argv[]) {
   else
     return ExecuteTiler(configurations, tileDimensions);
 }
+*/

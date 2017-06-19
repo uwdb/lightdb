@@ -25,7 +25,7 @@
 #endif
 
 #include "FrameQueue.h"
-#include "NvHWEncoder.h"
+#include "EncodeAPI.h"
 #include "nvEncodeAPI.h"
 
 #include "dynlink_cuda.h"    // <cuda.h>
@@ -105,7 +105,7 @@ public:
   virtual ~VideoEncoder();
 
 protected:
-  CNvHWEncoder *m_pNvHWEncoder;
+  EncodeAPI *m_pNvHWEncoder;
   CUvideoctxlock m_ctxLock;
   uint32_t m_uEncodeBufferCount;
   EncodeBuffer m_stEncodeBuffer[MAX_ENCODE_QUEUE];
@@ -117,7 +117,7 @@ protected:
   int32_t m_iEncodedFrames;
 
 public:
-  CNvHWEncoder *GetHWEncoder() { return m_pNvHWEncoder; }
+  EncodeAPI *GetHWEncoder() { return m_pNvHWEncoder; }
   NVENCSTATUS Deinitialize();
   NVENCSTATUS EncodeFrame(EncodeFrameConfig *pEncodeFrame, NV_ENC_PIC_STRUCT picType = NV_ENC_PIC_STRUCT_FRAME,
                           bool bFlush = false);

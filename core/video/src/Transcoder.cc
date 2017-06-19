@@ -200,6 +200,9 @@ int Transcoder::transcode(const std::string &inputFilename, const std::string &o
 
   frameQueue->reset();
 
+  // Destroy previously-initialized encoder, if any exists
+  //encoder->GetHWEncoder()->NvEncDestroyEncoder();
+
   if ((result = InitializeEncoder(outputFilename)) != 0)
     return result;
 
