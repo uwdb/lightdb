@@ -43,3 +43,12 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 
+# CUDA
+cuda-*.send
+cuda-*.recv
+
+# Google Test
+Testing/
+
+
+.idea/

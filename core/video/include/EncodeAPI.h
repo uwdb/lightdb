@@ -1,11 +1,16 @@
-#include <stdlib.h>
-#include <stdio.h>
+#ifndef _ENCODE_API
+#define _ENCODE_API
+
 #include <assert.h>
 
 #include "dynlink_cuda.h"
 
 #include "nvEncodeAPI.h"
 #include "nvUtils.h"
+
+typedef struct _EncodeConfig EncodeConfig;
+typedef struct _EncodeBuffer EncodeBuffer;
+typedef struct _MotionEstimationBuffer MotionEstimationBuffer;
 
 #define SET_VER(configStruct, type) {configStruct.version = type##_VER;}
 
@@ -23,88 +28,6 @@
 #define DEFAULT_B_QFACTOR 1.25f
 #define DEFAULT_I_QOFFSET 0.f
 #define DEFAULT_B_QOFFSET 1.25f
-
-typedef struct _EncodeConfig
-{
-    int              width;
-    int              height;
-    int              maxWidth;
-    int              maxHeight;
-    int              fps;
-    int              bitrate;
-    int              vbvMaxBitrate;
-    int              vbvSize;
-    int              rcMode;
-    int              qp;
-    float            i_quant_factor;
-    float            b_quant_factor;
-    float            i_quant_offset;
-    float            b_quant_offset;
-    GUID             presetGUID;
-    FILE            *fOutput;
-    int              codec;
-    int              invalidateRefFramesEnableFlag;
-    int              intraRefreshEnableFlag;
-    int              intraRefreshPeriod;
-    int              intraRefreshDuration;
-    int              deviceType;
-    int              startFrameIdx;
-    int              endFrameIdx;
-    int              gopLength;
-    int              numB;
-    int              pictureStruct;
-    int              deviceID;
-    NV_ENC_BUFFER_FORMAT inputFormat;
-    char            *qpDeltaMapFile;
-    char* inputFileName;
-    char* outputFileName;
-    char* encoderPreset;
-    char* inputFilePath;
-    char *encCmdFileName;
-    int  enableMEOnly;
-    int  enableAsyncMode;
-    int  preloadedFrameCount;
-    int  enableTemporalAQ;
-}EncodeConfig;
-
-typedef struct _EncodeInputBuffer
-{
-    unsigned int      dwWidth;
-    unsigned int      dwHeight;
-#if defined (NV_WINDOWS)
-    IDirect3DSurface9 *pNV12Surface;
-#endif
-    CUdeviceptr       pNV12devPtr;
-    uint32_t          uNV12Stride;
-    CUdeviceptr       pNV12TempdevPtr;
-    uint32_t          uNV12TempStride;
-    void*             nvRegisteredResource;
-    NV_ENC_INPUT_PTR  hInputSurface;
-    NV_ENC_BUFFER_FORMAT bufferFmt;
-}EncodeInputBuffer;
-
-typedef struct _EncodeOutputBuffer
-{
-    unsigned int          dwBitstreamBufferSize;
-    NV_ENC_OUTPUT_PTR     hBitstreamBuffer;
-    HANDLE                hOutputEvent;
-    bool                  bWaitOnEvent;
-    bool                  bEOSFlag;
-}EncodeOutputBuffer;
-
-typedef struct _EncodeBuffer
-{
-    EncodeOutputBuffer      stOutputBfr;
-    EncodeInputBuffer       stInputBfr;
-}EncodeBuffer;
-
-typedef struct _MotionEstimationBuffer
-{
-    EncodeOutputBuffer      stOutputBfr;
-    EncodeInputBuffer       stInputBfr[2];
-    unsigned int            inputFrameIndex;
-    unsigned int            referenceFrameIndex;
-}MotionEstimationBuffer;
 
 typedef struct _NvEncPictureCommand
 {
@@ -202,19 +125,20 @@ public:
     EncodeAPI();
     virtual ~EncodeAPI();
     NVENCSTATUS                                          Initialize(void* device, NV_ENC_DEVICE_TYPE deviceType);
-    NVENCSTATUS                                          Deinitialize();
+    NVENCSTATUS                                          Deinitialize() { return NvEncDestroyEncoder(); }
+    NVENCSTATUS                                          CreateEncoder(EncodeConfig *pEncCfg);
     NVENCSTATUS                                          NvEncEncodeFrame(EncodeBuffer *pEncodeBuffer, NvEncPictureCommand *encPicCommand,
-                                                                          uint32_t width, uint32_t height,
                                                                           NV_ENC_PIC_STRUCT ePicStruct = NV_ENC_PIC_STRUCT_FRAME,
                                                                           int8_t *qpDeltaMapArray = NULL, uint32_t qpDeltaMapArraySize = 0);
-    NVENCSTATUS                                          CreateEncoder(EncodeConfig *pEncCfg);
     GUID                                                 GetPresetGUID(char* encoderPreset, int codec);
     NVENCSTATUS                                          ProcessOutput(const EncodeBuffer *pEncodeBuffer);
     NVENCSTATUS                                          ProcessMVOutput(const MotionEstimationBuffer *pEncodeBuffer);
-    NVENCSTATUS                                          FlushEncoder();
+
+protected:
     NVENCSTATUS                                          ValidateEncodeGUID(GUID inputCodecGuid);
     NVENCSTATUS                                          ValidatePresetGUID(GUID presetCodecGuid, GUID inputCodecGuid);
-    static NVENCSTATUS                                   ParseArguments(EncodeConfig *encodeConfig, int argc, char *argv[]);
 };
 
 typedef NVENCSTATUS (NVENCAPI *MYPROC)(NV_ENCODE_API_FUNCTION_LIST*); 
+
+#endif

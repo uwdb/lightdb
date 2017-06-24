@@ -278,7 +278,8 @@ NVENCSTATUS TileVideoEncoder::EncodeFrame(EncodeFrameConfig *inputFrame,
                 &encodeBuffer->stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
             return status;
         else
-            context.hardwareEncoder.NvEncEncodeFrame(encodeBuffer, NULL, tileWidth, tileHeight, inputFrameType);
+            context.hardwareEncoder.NvEncEncodeFrame(encodeBuffer, NULL, inputFrameType);
+            //context.hardwareEncoder.NvEncEncodeFrame(encodeBuffer, NULL, tileWidth, tileHeight, inputFrameType);
     }
 
     framesEncoded++;

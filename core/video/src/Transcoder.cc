@@ -41,7 +41,7 @@ int MatchFPS(const float fpsRatio, int decodedFrames, int encodedFrames) {
 Transcoder::Transcoder(unsigned int height, unsigned int width, unsigned int codec, std::string preset,
                        unsigned int fps, unsigned int gop_length, unsigned long bitrate, unsigned int rcmode,
                        unsigned int deviceId)
-    : preset(preset), encoder(nullptr), frameQueue(nullptr), lock(nullptr), context(nullptr), configuration{0} {
+    : preset(preset), encoder(nullptr), frameQueue(nullptr), lock(nullptr), context(nullptr), configuration() {
   outputFilename.reserve(1024);
 
   configuration.height = height;

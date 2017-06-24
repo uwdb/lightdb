@@ -194,7 +194,8 @@ NVENCSTATUS VideoEncoder::EncodeFrame(EncodeFrameConfig *pEncodeFrame, NV_ENC_PI
     return nvStatus;
   }
 
-  m_pNvHWEncoder->NvEncEncodeFrame(pEncodeBuffer, NULL, pEncodeFrame->width, pEncodeFrame->height, picType);
+  m_pNvHWEncoder->NvEncEncodeFrame(pEncodeBuffer, NULL, picType);
+  //m_pNvHWEncoder->NvEncEncodeFrame(pEncodeBuffer, NULL, pEncodeFrame->width, pEncodeFrame->height, picType);
   m_iEncodedFrames++;
 
   return NV_ENC_SUCCESS;

@@ -25,6 +25,7 @@
 #endif
 
 #include "FrameQueue.h"
+#include "EncodeBuffer.h"
 #include "EncodeAPI.h"
 #include "nvEncodeAPI.h"
 

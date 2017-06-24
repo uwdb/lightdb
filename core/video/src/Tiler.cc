@@ -369,6 +369,8 @@ int ExecuteTiler(std::vector<EncodeConfig> &configurations, const TileDimensions
     return 0;
 }
 
+/*
+//TODO moved to EncodeConfig::Create
 EncodeConfig MakeTilerConfiguration(char *inputFilename, char *outputFilenameFormat, const unsigned int height,
                                     const unsigned int width, const size_t tileRows, const size_t tileColumns,
                                     const unsigned int codec, char *preset, const unsigned int fps,
@@ -399,14 +401,18 @@ EncodeConfig MakeTilerConfiguration(char *inputFilename, char *outputFilenameFor
 
   return configuration;
 }
+*/
 
 int ExecuteTiler(const std::string inputFilename, const std::string outputFilenameFormat, unsigned int height,
                  unsigned int width, size_t tileRows, size_t tileColumns, unsigned int codec, std::string preset,
                  unsigned int fps, unsigned int gop_length, size_t bitrate, unsigned int rcmode,
                  unsigned int deviceId) {
-  EncodeConfig configuration = MakeTilerConfiguration(
-      const_cast<char *>(inputFilename.c_str()), const_cast<char *>(outputFilenameFormat.c_str()), height, width,
-      tileRows, tileColumns, codec, const_cast<char *>(preset.c_str()), fps, gop_length, bitrate, rcmode, deviceId);
+  EncodeConfig configuration(
+          const_cast<char *>(inputFilename.c_str()), const_cast<char *>(outputFilenameFormat.c_str()), height, width,
+          tileRows, tileColumns, codec, const_cast<char *>(preset.c_str()), fps, gop_length, bitrate, rcmode, deviceId);
+  //EncodeConfig configuration = MakeTilerConfiguration(
+  //    const_cast<char *>(inputFilename.c_str()), const_cast<char *>(outputFilenameFormat.c_str()), height, width,
+  //    tileRows, tileColumns, codec, const_cast<char *>(preset.c_str()), fps, gop_length, bitrate, rcmode, deviceId);
 
   TileDimensions tileDimensions = {tileRows, tileColumns};
 

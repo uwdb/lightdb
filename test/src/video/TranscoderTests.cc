@@ -24,3 +24,9 @@ TEST_F(TranscoderTestFixture, testConstructor) {
 TEST_F(TranscoderTestFixture, testInitialize) {
   ASSERT_EQ(transcoder.initialize(), NV_ENC_SUCCESS);
 }
+
+TEST_F(TranscoderTestFixture, testFileTranscoder) {
+  ASSERT_EQ(transcoder.initialize(), NV_ENC_SUCCESS);
+  //ASSERT_EQ(transcoder.transcode("/home/bhaynes/projects/visualcloud/test/resources/test-pattern.h264",
+  //                               "/tmp/out.h265"), NV_ENC_SUCCESS);
+}
