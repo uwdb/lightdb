@@ -47,7 +47,10 @@ typedef struct _EncodeConfig
     int  preloadedFrameCount;
     int  enableTemporalAQ;
 
-    _EncodeConfig() { }
+    _EncodeConfig() :
+        EncodeConfig(nullptr, nullptr, 0, 0, 0, 0, 0, nullptr, 0, 0, 0, 0, 0)
+        { }
+
     _EncodeConfig(const struct _EncodeConfig& copy) = default;
 
     _EncodeConfig(char *inputFilename, char *outputFilenameFormat, const unsigned int height,
@@ -128,7 +131,7 @@ typedef struct _EncodeBuffer
     EncodeOutputBuffer      stOutputBfr;
     EncodeInputBuffer       stInputBfr;
     EncodeAPI&              api;
-    const EncodeConfig&     configuration;
+    EncodeConfig&     configuration; // TODO change this to const (possibly others)
     const size_t            size;
 
     //TODO remove first overload

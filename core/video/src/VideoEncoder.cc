@@ -11,7 +11,7 @@ VideoEncoder::VideoEncoder(CUvideoctxlock ctxLock) {
   m_iEncodedFrames = 0;
   memset(&m_stEncoderInput, 0, sizeof(m_stEncoderInput));
   memset(&m_stEOSOutputBfr, 0, sizeof(m_stEOSOutputBfr));
-  memset(&m_stEncodeBuffer, 0, sizeof(m_stEncodeBuffer));
+  //memset(&m_stEncodeBuffer, 0, sizeof(m_stEncodeBuffer));
 }
 
 VideoEncoder::~VideoEncoder(void) {
@@ -27,42 +27,45 @@ NVENCSTATUS VideoEncoder::AllocateIOBuffers(EncodeConfig *pEncodeConfig) {
 
   m_uEncodeBufferCount = pEncodeConfig->numB + 4;
 
+    for(auto i = 0; i < MAX_ENCODE_QUEUE; i++)
+        buffers.push_back(EncodeBuffer(*m_pNvHWEncoder, *pEncodeConfig));
+
   uint32_t uInputWidth = pEncodeConfig->width;
   uint32_t uInputHeight = pEncodeConfig->height;
-  m_EncodeBufferQueue.Initialize(m_stEncodeBuffer, m_uEncodeBufferCount);
+  m_EncodeBufferQueue.Initialize(&buffers[0], m_uEncodeBufferCount);
   m_stEncoderInput.enableAsyncMode = pEncodeConfig->enableAsyncMode;
 
   // Allocate input buffer
   for (uint32_t i = 0; i < m_uEncodeBufferCount; i++) {
     __cu(cuvidCtxLock(m_ctxLock, 0));
-    __cu(cuMemAllocPitch(&m_stEncodeBuffer[i].stInputBfr.pNV12devPtr,
-                         (size_t *)&m_stEncodeBuffer[i].stInputBfr.uNV12Stride, uInputWidth, uInputHeight * 3 / 2, 16));
+    __cu(cuMemAllocPitch(&buffers[i].stInputBfr.pNV12devPtr,
+                         (size_t *)&buffers[i].stInputBfr.uNV12Stride, uInputWidth, uInputHeight * 3 / 2, 16));
     __cu(cuvidCtxUnlock(m_ctxLock, 0));
 
     nvStatus = m_pNvHWEncoder->NvEncRegisterResource(
-        NV_ENC_INPUT_RESOURCE_TYPE_CUDADEVICEPTR, (void *)m_stEncodeBuffer[i].stInputBfr.pNV12devPtr, uInputWidth,
-        uInputHeight, m_stEncodeBuffer[i].stInputBfr.uNV12Stride, &m_stEncodeBuffer[i].stInputBfr.nvRegisteredResource);
+        NV_ENC_INPUT_RESOURCE_TYPE_CUDADEVICEPTR, (void *)buffers[i].stInputBfr.pNV12devPtr, uInputWidth,
+        uInputHeight, buffers[i].stInputBfr.uNV12Stride, &buffers[i].stInputBfr.nvRegisteredResource);
 
     if (nvStatus != NV_ENC_SUCCESS)
       return nvStatus;
 
-    m_stEncodeBuffer[i].stInputBfr.bufferFmt = NV_ENC_BUFFER_FORMAT_NV12_PL;
-    m_stEncodeBuffer[i].stInputBfr.dwWidth = uInputWidth;
-    m_stEncodeBuffer[i].stInputBfr.dwHeight = uInputHeight;
+    buffers[i].stInputBfr.bufferFmt = NV_ENC_BUFFER_FORMAT_NV12_PL;
+    buffers[i].stInputBfr.dwWidth = uInputWidth;
+    buffers[i].stInputBfr.dwHeight = uInputHeight;
 
     nvStatus = m_pNvHWEncoder->NvEncCreateBitstreamBuffer(BITSTREAM_BUFFER_SIZE,
-                                                          &m_stEncodeBuffer[i].stOutputBfr.hBitstreamBuffer);
+                                                          &buffers[i].stOutputBfr.hBitstreamBuffer);
     if (nvStatus != NV_ENC_SUCCESS)
       return nvStatus;
-    m_stEncodeBuffer[i].stOutputBfr.dwBitstreamBufferSize = BITSTREAM_BUFFER_SIZE;
+    buffers[i].stOutputBfr.dwBitstreamBufferSize = BITSTREAM_BUFFER_SIZE;
 
     if (m_stEncoderInput.enableAsyncMode) {
-      nvStatus = m_pNvHWEncoder->NvEncRegisterAsyncEvent(&m_stEncodeBuffer[i].stOutputBfr.hOutputEvent);
+      nvStatus = m_pNvHWEncoder->NvEncRegisterAsyncEvent(&buffers[i].stOutputBfr.hOutputEvent);
       if (nvStatus != NV_ENC_SUCCESS)
         return nvStatus;
-      m_stEncodeBuffer[i].stOutputBfr.bWaitOnEvent = true;
+      buffers[i].stOutputBfr.bWaitOnEvent = true;
     } else
-      m_stEncodeBuffer[i].stOutputBfr.hOutputEvent = NULL;
+      buffers[i].stOutputBfr.hOutputEvent = NULL;
   }
 
   m_stEOSOutputBfr.bEOSFlag = TRUE;
@@ -79,16 +82,16 @@ NVENCSTATUS VideoEncoder::AllocateIOBuffers(EncodeConfig *pEncodeConfig) {
 NVENCSTATUS VideoEncoder::ReleaseIOBuffers() {
   for (uint32_t i = 0; i < m_uEncodeBufferCount; i++) {
     __cu(cuvidCtxLock(m_ctxLock, 0));
-    cuMemFree(m_stEncodeBuffer[i].stInputBfr.pNV12devPtr);
+    cuMemFree(buffers[i].stInputBfr.pNV12devPtr);
     __cu(cuvidCtxUnlock(m_ctxLock, 0));
 
-    m_pNvHWEncoder->NvEncDestroyBitstreamBuffer(m_stEncodeBuffer[i].stOutputBfr.hBitstreamBuffer);
-    m_stEncodeBuffer[i].stOutputBfr.hBitstreamBuffer = NULL;
+    m_pNvHWEncoder->NvEncDestroyBitstreamBuffer(buffers[i].stOutputBfr.hBitstreamBuffer);
+    buffers[i].stOutputBfr.hBitstreamBuffer = NULL;
 
     if (m_stEncoderInput.enableAsyncMode) {
-      m_pNvHWEncoder->NvEncUnregisterAsyncEvent(m_stEncodeBuffer[i].stOutputBfr.hOutputEvent);
-      nvCloseFile(m_stEncodeBuffer[i].stOutputBfr.hOutputEvent);
-      m_stEncodeBuffer[i].stOutputBfr.hOutputEvent = NULL;
+      m_pNvHWEncoder->NvEncUnregisterAsyncEvent(buffers[i].stOutputBfr.hOutputEvent);
+      nvCloseFile(buffers[i].stOutputBfr.hOutputEvent);
+      buffers[i].stOutputBfr.hOutputEvent = NULL;
     }
   }
 

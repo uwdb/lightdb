@@ -24,6 +24,7 @@
 #include <unistd.h>
 #endif
 
+#include <vector>
 #include "FrameQueue.h"
 #include "EncodeBuffer.h"
 #include "EncodeAPI.h"
@@ -109,8 +110,9 @@ protected:
   EncodeAPI *m_pNvHWEncoder;
   CUvideoctxlock m_ctxLock;
   uint32_t m_uEncodeBufferCount;
-  EncodeBuffer m_stEncodeBuffer[MAX_ENCODE_QUEUE];
+  //EncodeBuffer m_stEncodeBuffer[MAX_ENCODE_QUEUE];
   CNvQueue<EncodeBuffer> m_EncodeBufferQueue;
+  std::vector<EncodeBuffer> buffers;
 
   EncodeConfig m_stEncoderInput;
   EncodeOutputBuffer m_stEOSOutputBfr;

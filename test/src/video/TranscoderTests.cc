@@ -27,6 +27,9 @@ TEST_F(TranscoderTestFixture, testInitialize) {
 
 TEST_F(TranscoderTestFixture, testFileTranscoder) {
   ASSERT_EQ(transcoder.initialize(), NV_ENC_SUCCESS);
-  //ASSERT_EQ(transcoder.transcode("/home/bhaynes/projects/visualcloud/test/resources/test-pattern.h264",
-  //                               "/tmp/out.h265"), NV_ENC_SUCCESS);
+  ASSERT_EQ(transcoder.transcode("resources/test-pattern.h264",
+                                 "resources/test-pattern.h265"), NV_ENC_SUCCESS);
+
+  EXPECT_EQ(system("ffprobe -hide_banner -loglevel quiet resources/test-pattern.h265"), 0);
+  ASSERT_EQ(remove("resources/test-pattern.h265"), 0);
 }

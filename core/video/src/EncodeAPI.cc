@@ -715,7 +715,6 @@ NVENCSTATUS EncodeAPI::CreateEncoder(EncodeConfig *pEncCfg)
     m_uMaxHeight = (pEncCfg->maxHeight > 0 ? pEncCfg->maxHeight : pEncCfg->height);
 
     if ((m_uCurWidth > m_uMaxWidth) || (m_uCurHeight > m_uMaxHeight)) {
-printf("*** 1\n");
         return NV_ENC_ERR_INVALID_PARAM;
     }
 
@@ -724,7 +723,6 @@ printf("*** 1\n");
     // TODO need to remove fOutput from configuration if (!pEncCfg->width || !pEncCfg->height || !m_fOutput)
     if (!pEncCfg->width || !pEncCfg->height)
     {
-printf("*** 2\n");
         return NV_ENC_ERR_INVALID_PARAM;
     }
 
@@ -956,7 +954,6 @@ printf("*** 2\n");
     nvStatus = m_pEncodeAPI->nvEncInitializeEncoder(m_hEncoder, &m_stCreateEncodeParams);
     if (nvStatus != NV_ENC_SUCCESS)
     {
-        printf("\n*** fooqqq\n");
         PRINTERR("Encode Session Initialization failed");
         return nvStatus;
     }
@@ -1038,7 +1035,6 @@ NVENCSTATUS EncodeAPI::ProcessOutput(const EncodeBuffer *pEncodeBuffer)
     lockBitstreamData.outputBitstream = pEncodeBuffer->stOutputBfr.hBitstreamBuffer;
     lockBitstreamData.doNotWait = false;
 
-    printf("*** 5\n");
     nvStatus = m_pEncodeAPI->nvEncLockBitstream(m_hEncoder, &lockBitstreamData);
     if (nvStatus == NV_ENC_SUCCESS)
     {
