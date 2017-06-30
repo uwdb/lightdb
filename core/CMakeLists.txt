@@ -11,7 +11,7 @@ endforeach()
 
 # Gather the core source files
 file(GLOB_RECURSE VISUALCLOUD_SOURCES "*.cc")
-set(VISUALCLOUD_SOURCES ${VISUALCLOUD_SOURCES} ${NVIDIASDK_SOURCES})
+set(VISUALCLOUD_SOURCES ${VISUALCLOUD_SOURCES} ${NVIDIASDK_SOURCES} video/include/DecoderLock.h)
 
 # Compile sources with PIC
 add_library(visualcloud OBJECT ${VISUALCLOUD_SOURCES})
