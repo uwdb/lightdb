@@ -4,13 +4,14 @@
 #include <dynlink_cuda.h>
 #include <dynlink_cuviddec.h>
 #include <cstdio>
+#include "GPUContext.h"
 
 class DecoderLock {
 public:
-    DecoderLock(CUcontext context) : context(context) { // TODO shared pointer for context
+    DecoderLock(GPUContext& context) : context(context) { // TODO shared pointer for context
         CUresult result;
 
-        if ((result = cuvidCtxLockCreate(&lock, context)) != CUDA_SUCCESS)
+        if ((result = cuvidCtxLockCreate(&lock, context.get())) != CUDA_SUCCESS)
             printf("throw %d\n", result);
     }
     ~DecoderLock() {
@@ -20,7 +21,7 @@ public:
     CUvideoctxlock get() { return lock; }
 
 private:
-    const CUcontext context;
+    const GPUContext& context;
     CUvideoctxlock lock = nullptr;
 };
 
