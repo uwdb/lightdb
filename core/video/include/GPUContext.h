@@ -1,6 +1,7 @@
 #ifndef VISUALCLOUD_GPUCONTEXT_H
 #define VISUALCLOUD_GPUCONTEXT_H
 
+#include <stdexcept>
 #include <dynlink_cuda.h>
 #include <cstdio>
 #include <dynlink_nvcuvid.h>
@@ -11,13 +12,18 @@ public:
         CUresult result;
 
         if(!ensureInitialized())
-            printf("throw");
+            throw "throw\n"; //TODO
+        else if((result = cuCtxGetCurrent(&context)) != CUDA_SUCCESS)
+            throw "throw\n"; //TODO
+        else if(context != nullptr)
+            ;
         else if((result = cuDeviceGet(&device, deviceId)) != CUDA_SUCCESS)
-            printf("throw");
+            throw std::invalid_argument("Getting CUDA device " + std::to_string(deviceId) +
+                                                " generated error " + std::to_string(result));
         else if((result = cuCtxCreate(&context, CU_CTX_SCHED_AUTO, device)) != CUDA_SUCCESS)
-            printf("throw");
-        else if((result = cuCtxPopCurrent(&context)) != CUDA_SUCCESS)
-            printf("throw");
+            throw "throw\n"; //TODO
+        //else if((result = cuCtxPopCurrent(&context)) != CUDA_SUCCESS)
+        //    throw "throw\n"; //TODO
     }
     ~GPUContext() {
         CUresult result;
@@ -36,9 +42,9 @@ private:
             if(isInitialized)
                 return true;
             else if((result = cuInit(0, __CUDA_API_VERSION, nullptr)) != CUDA_SUCCESS)
-                printf("throw\n");
+                throw "throw\n"; //TODO
             else if(cuvidInit(0) != CUDA_SUCCESS)
-                printf("throw\n");
+                throw "throw\n"; //TODO
             else
                 return (isInitialized = true);
         }

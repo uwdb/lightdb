@@ -46,7 +46,7 @@ public:
 
   void reset_event(HANDLE event);
 
-  virtual void init(int frameWidth, int frameHeight) {}
+  //virtual void init(int frameWidth, int frameHeight) {}
 
   virtual void enqueue(const void *pData) = 0;
 

@@ -5,6 +5,7 @@
 #include "EncodeAPI.h"
 #include "nvEncodeAPI.h"
 #include "nvUtils.h"
+#include "GPUContext.h"
 
 typedef struct _EncodeConfig
 {
@@ -131,58 +132,69 @@ typedef struct _EncodeBuffer
     EncodeOutputBuffer      stOutputBfr;
     EncodeInputBuffer       stInputBfr;
     EncodeAPI&              api;
-    EncodeConfig&     configuration; // TODO change this to const (possibly others)
+    EncodeConfig&           configuration; // TODO change this to const (possibly others)
     const size_t            size;
 
-    //TODO remove first overload
-    _EncodeBuffer() : _EncodeBuffer(*new EncodeAPI(), *new EncodeConfig()) { }
-    _EncodeBuffer(EncodeAPI &api, EncodeConfig& configuration, size_t size=2*1024*1024)
-            : stOutputBfr{0}, stInputBfr{0}, api(api), configuration(configuration), size(size) {}
+    _EncodeBuffer(const _EncodeBuffer& other)
+            : _EncodeBuffer(other.api, other.configuration, other.size)
+    { }
 
-    NVENCSTATUS Initialize() {
+    _EncodeBuffer(_EncodeBuffer&& other)
+            : stOutputBfr(other.stOutputBfr), stInputBfr(other.stInputBfr),
+              api(other.api), configuration(other.configuration), size(other.size),
+              owner(true) {
+        other.owner = false;
+    }
+
+    //TODO remove first overload
+    _EncodeBuffer(GPUContext& context) : _EncodeBuffer(*new EncodeAPI(context.get()), *new EncodeConfig()) { }
+    _EncodeBuffer(EncodeAPI &api, EncodeConfig& configuration, size_t size=2*1024*1024)
+            : stOutputBfr{0}, stInputBfr{0}, api(api), configuration(configuration), size(size), owner(true) {
         NVENCSTATUS status;
 
-        if(cuMemAllocPitch(&stInputBfr.pNV12devPtr,
-                        (size_t*)&stInputBfr.uNV12Stride,
-                        configuration.width,
-                        configuration.height * 3 / 2,
-                        16) != CUDA_SUCCESS)
-            return NV_ENC_ERR_OUT_OF_MEMORY;
+        if((status = api.CreateEncoder(&configuration)) != NV_ENC_SUCCESS)
+            throw status; //TODO
+        else if(cuMemAllocPitch(&stInputBfr.pNV12devPtr,
+                           (size_t*)&stInputBfr.uNV12Stride,
+                           configuration.width,
+                           configuration.height * 3 / 2,
+                           16) != CUDA_SUCCESS)
+            throw "NV_ENC_ERR_OUT_OF_MEMORY"; //tODO
         else if((status = api.NvEncRegisterResource(
                 NV_ENC_INPUT_RESOURCE_TYPE_CUDADEVICEPTR, (void *)stInputBfr.pNV12devPtr,
                 configuration.width, configuration.height,
                 stInputBfr.uNV12Stride, &stInputBfr.nvRegisteredResource)) != NV_ENC_SUCCESS)
-            return status;
+            throw status; //TODO
         else if((status = api.NvEncMapInputResource(stInputBfr.nvRegisteredResource,
                                                     &stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
-            return (NVENCSTATUS)998;
+            throw "998"; //TODO
         else if((status = api.NvEncCreateBitstreamBuffer(
                 size, &stOutputBfr.hBitstreamBuffer)) != NV_ENC_SUCCESS)
-            return (NVENCSTATUS)997;
+            throw "997"; //TODO
 
         stInputBfr.bufferFmt = NV_ENC_BUFFER_FORMAT_NV12_PL;
         stInputBfr.dwWidth = configuration.width;
         stInputBfr.dwHeight = configuration.height;
         stOutputBfr.dwBitstreamBufferSize = size;
         stOutputBfr.hOutputEvent = nullptr;
-
-        return NV_ENC_SUCCESS;
     }
 
-    NVENCSTATUS Release() {
+    ~_EncodeBuffer() {
         NVENCSTATUS status;
 
-        if((status = api.NvEncDestroyBitstreamBuffer(stOutputBfr.hBitstreamBuffer)) != NV_ENC_SUCCESS)
-            return status;
+        if(!owner)
+            ;
+        else if((status = api.NvEncDestroyBitstreamBuffer(stOutputBfr.hBitstreamBuffer)) != NV_ENC_SUCCESS)
+            printf("log\n"); //TODO log
         else if((status = api.NvEncUnmapInputResource(stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
-            return status;
+            printf("log\n"); //TODO log
         else if((api.NvEncUnregisterResource(stInputBfr.nvRegisteredResource)) != NV_ENC_SUCCESS)
-            return status;
+            printf("log\n"); //TODO log
         else if(cuMemFree(stInputBfr.pNV12devPtr) != CUDA_SUCCESS)
-            return NV_ENC_ERR_OUT_OF_MEMORY;
-        else
-            return NV_ENC_SUCCESS;
+            printf("log\n"); //TODO log
     }
+private:
+    bool owner;
 } EncodeBuffer;
 
 typedef struct _MotionEstimationBuffer

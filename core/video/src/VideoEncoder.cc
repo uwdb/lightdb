@@ -3,9 +3,10 @@
 
 #define BITSTREAM_BUFFER_SIZE 2 * 1024 * 1024
 
-VideoEncoder::VideoEncoder(CUvideoctxlock ctxLock) {
-  m_pNvHWEncoder = new EncodeAPI();
-  m_ctxLock = ctxLock;
+VideoEncoder::VideoEncoder(EncodeAPI& api, EncodeConfig& configuration, CUvideoctxlock ctxLock)
+        : api(api), configuration(configuration), m_ctxLock(ctxLock) {
+  //m_pNvHWEncoder = new EncodeAPI(context.get());
+  //m_ctxLock = ctxLock;
 
   m_uEncodeBufferCount = 0;
   m_iEncodedFrames = 0;
@@ -15,34 +16,49 @@ VideoEncoder::VideoEncoder(CUvideoctxlock ctxLock) {
 }
 
 VideoEncoder::~VideoEncoder(void) {
+    FlushEncoder();
+  ReleaseIOBuffers();
+  //Deinitialize();
+
   // clean up encode API resources here
-  if (m_pNvHWEncoder) {
+  /*if (m_pNvHWEncoder) {
     delete m_pNvHWEncoder;
     m_pNvHWEncoder = NULL;
-  }
+  }*/
 }
 
-NVENCSTATUS VideoEncoder::AllocateIOBuffers(EncodeConfig *pEncodeConfig) {
+NVENCSTATUS VideoEncoder::AllocateIOBuffers() {
   NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-  m_uEncodeBufferCount = pEncodeConfig->numB + 4;
+    if(isIOBufferAllocated)
+        return NV_ENC_SUCCESS;
 
-    for(auto i = 0; i < MAX_ENCODE_QUEUE; i++)
-        buffers.push_back(EncodeBuffer(*m_pNvHWEncoder, *pEncodeConfig));
+    isIOBufferAllocated = true;
+  m_uEncodeBufferCount = configuration.numB + 4;
 
-  uint32_t uInputWidth = pEncodeConfig->width;
-  uint32_t uInputHeight = pEncodeConfig->height;
+    for(auto i = 0; i < m_uEncodeBufferCount; i++) {
+        buffers.emplace_back(api, configuration);
+        //buffers.push_back(EncodeBuffer(api, *pEncodeConfig));
+        //buffers[i].Initialize();
+    }
+
+
+  //uint32_t uInputWidth = pEncodeConfig->width;
+  //uint32_t uInputHeight = pEncodeConfig->height;
   m_EncodeBufferQueue.Initialize(&buffers[0], m_uEncodeBufferCount);
-  m_stEncoderInput.enableAsyncMode = pEncodeConfig->enableAsyncMode;
+  m_stEncoderInput.enableAsyncMode = configuration.enableAsyncMode;
 
   // Allocate input buffer
+  // TODO this all moved to the EncodeBuffer init/release methods (which need to be RAII'd)
+  /*
   for (uint32_t i = 0; i < m_uEncodeBufferCount; i++) {
     __cu(cuvidCtxLock(m_ctxLock, 0));
     __cu(cuMemAllocPitch(&buffers[i].stInputBfr.pNV12devPtr,
                          (size_t *)&buffers[i].stInputBfr.uNV12Stride, uInputWidth, uInputHeight * 3 / 2, 16));
     __cu(cuvidCtxUnlock(m_ctxLock, 0));
 
-    nvStatus = m_pNvHWEncoder->NvEncRegisterResource(
+      printf("### %d\n", i);
+    nvStatus = api.NvEncRegisterResource(
         NV_ENC_INPUT_RESOURCE_TYPE_CUDADEVICEPTR, (void *)buffers[i].stInputBfr.pNV12devPtr, uInputWidth,
         uInputHeight, buffers[i].stInputBfr.uNV12Stride, &buffers[i].stInputBfr.nvRegisteredResource);
 
@@ -53,24 +69,24 @@ NVENCSTATUS VideoEncoder::AllocateIOBuffers(EncodeConfig *pEncodeConfig) {
     buffers[i].stInputBfr.dwWidth = uInputWidth;
     buffers[i].stInputBfr.dwHeight = uInputHeight;
 
-    nvStatus = m_pNvHWEncoder->NvEncCreateBitstreamBuffer(BITSTREAM_BUFFER_SIZE,
+    nvStatus = api.NvEncCreateBitstreamBuffer(BITSTREAM_BUFFER_SIZE,
                                                           &buffers[i].stOutputBfr.hBitstreamBuffer);
     if (nvStatus != NV_ENC_SUCCESS)
       return nvStatus;
     buffers[i].stOutputBfr.dwBitstreamBufferSize = BITSTREAM_BUFFER_SIZE;
 
     if (m_stEncoderInput.enableAsyncMode) {
-      nvStatus = m_pNvHWEncoder->NvEncRegisterAsyncEvent(&buffers[i].stOutputBfr.hOutputEvent);
+      nvStatus = api.NvEncRegisterAsyncEvent(&buffers[i].stOutputBfr.hOutputEvent);
       if (nvStatus != NV_ENC_SUCCESS)
         return nvStatus;
       buffers[i].stOutputBfr.bWaitOnEvent = true;
     } else
       buffers[i].stOutputBfr.hOutputEvent = NULL;
-  }
+  }*/
 
   m_stEOSOutputBfr.bEOSFlag = TRUE;
   if (m_stEncoderInput.enableAsyncMode) {
-    nvStatus = m_pNvHWEncoder->NvEncRegisterAsyncEvent(&m_stEOSOutputBfr.hOutputEvent);
+    nvStatus = api.NvEncRegisterAsyncEvent(&m_stEOSOutputBfr.hOutputEvent);
     if (nvStatus != NV_ENC_SUCCESS)
       return nvStatus;
   } else
@@ -80,24 +96,38 @@ NVENCSTATUS VideoEncoder::AllocateIOBuffers(EncodeConfig *pEncodeConfig) {
 }
 
 NVENCSTATUS VideoEncoder::ReleaseIOBuffers() {
+    if(!isIOBufferAllocated)
+        return NV_ENC_SUCCESS;
+
+    buffers.clear();
+    isIOBufferAllocated = false;
+    // TODO this all moved to the EncodeBuffer init/release methods (which need to be RAII'd)
+    //for(auto i = 0; i < m_uEncodeBufferCount; i++) {
+    //    buffers[i].Release();
+    //}
+
+    /*
   for (uint32_t i = 0; i < m_uEncodeBufferCount; i++) {
     __cu(cuvidCtxLock(m_ctxLock, 0));
     cuMemFree(buffers[i].stInputBfr.pNV12devPtr);
     __cu(cuvidCtxUnlock(m_ctxLock, 0));
 
-    m_pNvHWEncoder->NvEncDestroyBitstreamBuffer(buffers[i].stOutputBfr.hBitstreamBuffer);
+    api.NvEncDestroyBitstreamBuffer(buffers[i].stOutputBfr.hBitstreamBuffer);
     buffers[i].stOutputBfr.hBitstreamBuffer = NULL;
 
+      printf("*** %d\n", i);
+      api.NvEncUnregisterResource(buffers[i].stInputBfr.nvRegisteredResource);
+
     if (m_stEncoderInput.enableAsyncMode) {
-      m_pNvHWEncoder->NvEncUnregisterAsyncEvent(buffers[i].stOutputBfr.hOutputEvent);
+      api.NvEncUnregisterAsyncEvent(buffers[i].stOutputBfr.hOutputEvent);
       nvCloseFile(buffers[i].stOutputBfr.hOutputEvent);
       buffers[i].stOutputBfr.hOutputEvent = NULL;
     }
-  }
+  }*/
 
   if (m_stEOSOutputBfr.hOutputEvent) {
     if (m_stEncoderInput.enableAsyncMode) {
-      m_pNvHWEncoder->NvEncUnregisterAsyncEvent(m_stEOSOutputBfr.hOutputEvent);
+      api.NvEncUnregisterAsyncEvent(m_stEOSOutputBfr.hOutputEvent);
       nvCloseFile(m_stEOSOutputBfr.hOutputEvent);
       m_stEOSOutputBfr.hOutputEvent = NULL;
     }
@@ -107,7 +137,10 @@ NVENCSTATUS VideoEncoder::ReleaseIOBuffers() {
 }
 
 NVENCSTATUS VideoEncoder::FlushEncoder() {
-  NVENCSTATUS nvStatus = m_pNvHWEncoder->NvEncFlushEncoderQueue(m_stEOSOutputBfr.hOutputEvent);
+    if(!isIOBufferAllocated)
+        return NV_ENC_SUCCESS;
+
+  NVENCSTATUS nvStatus = api.NvEncFlushEncoderQueue(m_stEOSOutputBfr.hOutputEvent);
   if (nvStatus != NV_ENC_SUCCESS) {
     assert(0);
     return nvStatus;
@@ -115,11 +148,11 @@ NVENCSTATUS VideoEncoder::FlushEncoder() {
 
   EncodeBuffer *pEncodeBuffer = m_EncodeBufferQueue.GetPending();
   while (pEncodeBuffer) {
-    m_pNvHWEncoder->ProcessOutput(pEncodeBuffer);
+    api.ProcessOutput(pEncodeBuffer);
     pEncodeBuffer = m_EncodeBufferQueue.GetPending();
     // UnMap the input buffer after frame is done
     if (pEncodeBuffer && pEncodeBuffer->stInputBfr.hInputSurface) {
-      nvStatus = m_pNvHWEncoder->NvEncUnmapInputResource(pEncodeBuffer->stInputBfr.hInputSurface);
+      nvStatus = api.NvEncUnmapInputResource(pEncodeBuffer->stInputBfr.hInputSurface);
       pEncodeBuffer->stInputBfr.hInputSurface = NULL;
     }
   }
@@ -133,22 +166,25 @@ NVENCSTATUS VideoEncoder::FlushEncoder() {
 #endif
   return nvStatus;
 }
-
+/*
 NVENCSTATUS VideoEncoder::Deinitialize() {
   NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
   ReleaseIOBuffers();
 
-  nvStatus = m_pNvHWEncoder->NvEncDestroyEncoder();
-  if (nvStatus != NV_ENC_SUCCESS) {
-    assert(0);
-  }
+  //nvStatus = api.NvEncDestroyEncoder();
+  //if (nvStatus != NV_ENC_SUCCESS) {
+  //  assert(0);
+  //}
 
   return NV_ENC_SUCCESS;
 }
-
+*/
 NVENCSTATUS VideoEncoder::EncodeFrame(EncodeFrameConfig *pEncodeFrame, NV_ENC_PIC_STRUCT picType, bool bFlush) {
   NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
+
+  if(!isIOBufferAllocated)
+      AllocateIOBuffers();
 
   if (bFlush) {
     FlushEncoder();
@@ -160,10 +196,10 @@ NVENCSTATUS VideoEncoder::EncodeFrame(EncodeFrameConfig *pEncodeFrame, NV_ENC_PI
   EncodeBuffer *pEncodeBuffer = m_EncodeBufferQueue.GetAvailable();
   if (!pEncodeBuffer) {
     pEncodeBuffer = m_EncodeBufferQueue.GetPending();
-    m_pNvHWEncoder->ProcessOutput(pEncodeBuffer);
+    api.ProcessOutput(pEncodeBuffer);
     // UnMap the input buffer after frame done
     if (pEncodeBuffer->stInputBfr.hInputSurface) {
-      nvStatus = m_pNvHWEncoder->NvEncUnmapInputResource(pEncodeBuffer->stInputBfr.hInputSurface);
+      nvStatus = api.NvEncUnmapInputResource(pEncodeBuffer->stInputBfr.hInputSurface);
       pEncodeBuffer->stInputBfr.hInputSurface = NULL;
     }
     pEncodeBuffer = m_EncodeBufferQueue.GetAvailable();
@@ -190,15 +226,15 @@ NVENCSTATUS VideoEncoder::EncodeFrame(EncodeFrameConfig *pEncodeFrame, NV_ENC_PI
 
   cuvidCtxUnlock(m_ctxLock, 0);
 
-  nvStatus = m_pNvHWEncoder->NvEncMapInputResource(pEncodeBuffer->stInputBfr.nvRegisteredResource,
+  nvStatus = api.NvEncMapInputResource(pEncodeBuffer->stInputBfr.nvRegisteredResource,
                                                    &pEncodeBuffer->stInputBfr.hInputSurface);
   if (nvStatus != NV_ENC_SUCCESS) {
     PRINTERR("Failed to Map input buffer %p\n", pEncodeBuffer->stInputBfr.hInputSurface);
     return nvStatus;
   }
 
-  m_pNvHWEncoder->NvEncEncodeFrame(pEncodeBuffer, NULL, picType);
-  //m_pNvHWEncoder->NvEncEncodeFrame(pEncodeBuffer, NULL, pEncodeFrame->width, pEncodeFrame->height, picType);
+  api.NvEncEncodeFrame(pEncodeBuffer, NULL, picType);
+  //api.NvEncEncodeFrame(pEncodeBuffer, NULL, pEncodeFrame->width, pEncodeFrame->height, picType);
   m_iEncodedFrames++;
 
   return NV_ENC_SUCCESS;

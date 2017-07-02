@@ -5,6 +5,7 @@
 
 #include "dynlink_cuda.h"
 
+#include "GPUContext.h"
 #include "nvEncodeAPI.h"
 #include "nvUtils.h"
 
@@ -65,6 +66,8 @@ struct MEOnlyConfig
     unsigned int referenceFrameIndex;
 };
 
+typedef void EncodeSessionHandle;
+
 class EncodeAPI
 {
 public:
@@ -77,15 +80,17 @@ public:
 
 protected:
     bool                                                 m_bEncoderInitialized;
+    bool                                                 encoderCreated = false;
     GUID                                                 codecGUID;
 
     NV_ENCODE_API_FUNCTION_LIST*                         m_pEncodeAPI;
     HINSTANCE                                            m_hinstLib;
-    void                                                *m_hEncoder;
+    EncodeSessionHandle                                  *encodeSessionHandle;
     NV_ENC_INITIALIZE_PARAMS                             m_stCreateEncodeParams;
     NV_ENC_CONFIG                                        m_stEncodeConfig;
 
 public:
+    NVENCSTATUS NvEncOpenEncodeSession(CUcontext context);
     NVENCSTATUS NvEncOpenEncodeSession(void* device, uint32_t deviceType);
     NVENCSTATUS NvEncGetEncodeGUIDCount(uint32_t* encodeGUIDCount);
     NVENCSTATUS NvEncGetEncodeProfileGUIDCount(GUID encodeGUID, uint32_t* encodeProfileGUIDCount);
@@ -122,10 +127,10 @@ public:
     NVENCSTATUS NvEncReconfigureEncoder(const NvEncPictureCommand *pEncPicCommand);
     NVENCSTATUS NvEncFlushEncoderQueue(void *hEOSEvent);
 
-    EncodeAPI();
+    EncodeAPI(GPUContext& context) : EncodeAPI(context.get()) { }
+    EncodeAPI(CUcontext context) : EncodeAPI(context, NV_ENC_DEVICE_TYPE_CUDA) { }
+    EncodeAPI(void* device, NV_ENC_DEVICE_TYPE deviceType);
     virtual ~EncodeAPI();
-    NVENCSTATUS                                          Initialize(void* device, NV_ENC_DEVICE_TYPE deviceType);
-    NVENCSTATUS                                          Deinitialize() { return NvEncDestroyEncoder(); }
     NVENCSTATUS                                          CreateEncoder(EncodeConfig *pEncCfg);
     NVENCSTATUS                                          NvEncEncodeFrame(EncodeBuffer *pEncodeBuffer, NvEncPictureCommand *encPicCommand,
                                                                           NV_ENC_PIC_STRUCT ePicStruct = NV_ENC_PIC_STRUCT_FRAME,
@@ -135,6 +140,9 @@ public:
     NVENCSTATUS                                          ProcessMVOutput(const MotionEstimationBuffer *pEncodeBuffer);
 
 protected:
+    //TODO these two functions should just be removed entirely
+    NVENCSTATUS                                          Initialize(void* device, NV_ENC_DEVICE_TYPE deviceType);
+    NVENCSTATUS                                          Deinitialize() { return NvEncDestroyEncoder(); }
     NVENCSTATUS                                          ValidateEncodeGUID(GUID inputCodecGuid);
     NVENCSTATUS                                          ValidatePresetGUID(GUID presetCodecGuid, GUID inputCodecGuid);
 };

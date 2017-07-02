@@ -1,11 +1,16 @@
 #include "EncodeAPI.h"
 #include "EncodeBuffer.h"
 
+NVENCSTATUS EncodeAPI::NvEncOpenEncodeSession(CUcontext context)
+{
+    return NvEncOpenEncodeSession((void*)context, NV_ENC_DEVICE_TYPE_CUDA);
+}
+
 NVENCSTATUS EncodeAPI::NvEncOpenEncodeSession(void* device, uint32_t deviceType)
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncOpenEncodeSession(device, deviceType, &m_hEncoder);
+    nvStatus = m_pEncodeAPI->nvEncOpenEncodeSession(device, deviceType, &encodeSessionHandle);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -18,7 +23,7 @@ NVENCSTATUS EncodeAPI::NvEncGetEncodeGUIDCount(uint32_t* encodeGUIDCount)
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncGetEncodeGUIDCount(m_hEncoder, encodeGUIDCount);
+    nvStatus = m_pEncodeAPI->nvEncGetEncodeGUIDCount(encodeSessionHandle, encodeGUIDCount);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -31,7 +36,7 @@ NVENCSTATUS EncodeAPI::NvEncGetEncodeProfileGUIDCount(GUID encodeGUID, uint32_t*
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncGetEncodeProfileGUIDCount(m_hEncoder, encodeGUID, encodeProfileGUIDCount);
+    nvStatus = m_pEncodeAPI->nvEncGetEncodeProfileGUIDCount(encodeSessionHandle, encodeGUID, encodeProfileGUIDCount);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -44,7 +49,7 @@ NVENCSTATUS EncodeAPI::NvEncGetEncodeProfileGUIDs(GUID encodeGUID, GUID* profile
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncGetEncodeProfileGUIDs(m_hEncoder, encodeGUID, profileGUIDs, guidArraySize, GUIDCount);
+    nvStatus = m_pEncodeAPI->nvEncGetEncodeProfileGUIDs(encodeSessionHandle, encodeGUID, profileGUIDs, guidArraySize, GUIDCount);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -57,7 +62,7 @@ NVENCSTATUS EncodeAPI::NvEncGetEncodeGUIDs(GUID* GUIDs, uint32_t guidArraySize, 
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncGetEncodeGUIDs(m_hEncoder, GUIDs, guidArraySize, GUIDCount);
+    nvStatus = m_pEncodeAPI->nvEncGetEncodeGUIDs(encodeSessionHandle, GUIDs, guidArraySize, GUIDCount);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -70,7 +75,7 @@ NVENCSTATUS EncodeAPI::NvEncGetInputFormatCount(GUID encodeGUID, uint32_t* input
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncGetInputFormatCount(m_hEncoder, encodeGUID, inputFmtCount);
+    nvStatus = m_pEncodeAPI->nvEncGetInputFormatCount(encodeSessionHandle, encodeGUID, inputFmtCount);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -83,7 +88,7 @@ NVENCSTATUS EncodeAPI::NvEncGetInputFormats(GUID encodeGUID, NV_ENC_BUFFER_FORMA
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncGetInputFormats(m_hEncoder, encodeGUID, inputFmts, inputFmtArraySize, inputFmtCount);
+    nvStatus = m_pEncodeAPI->nvEncGetInputFormats(encodeSessionHandle, encodeGUID, inputFmts, inputFmtArraySize, inputFmtCount);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -96,7 +101,7 @@ NVENCSTATUS EncodeAPI::NvEncGetEncodeCaps(GUID encodeGUID, NV_ENC_CAPS_PARAM* ca
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncGetEncodeCaps(m_hEncoder, encodeGUID, capsParam, capsVal);
+    nvStatus = m_pEncodeAPI->nvEncGetEncodeCaps(encodeSessionHandle, encodeGUID, capsParam, capsVal);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -109,7 +114,7 @@ NVENCSTATUS EncodeAPI::NvEncGetEncodePresetCount(GUID encodeGUID, uint32_t* enco
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncGetEncodePresetCount(m_hEncoder, encodeGUID, encodePresetGUIDCount);
+    nvStatus = m_pEncodeAPI->nvEncGetEncodePresetCount(encodeSessionHandle, encodeGUID, encodePresetGUIDCount);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -122,7 +127,7 @@ NVENCSTATUS EncodeAPI::NvEncGetEncodePresetGUIDs(GUID encodeGUID, GUID* presetGU
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncGetEncodePresetGUIDs(m_hEncoder, encodeGUID, presetGUIDs, guidArraySize, encodePresetGUIDCount);
+    nvStatus = m_pEncodeAPI->nvEncGetEncodePresetGUIDs(encodeSessionHandle, encodeGUID, presetGUIDs, guidArraySize, encodePresetGUIDCount);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -135,7 +140,7 @@ NVENCSTATUS EncodeAPI::NvEncGetEncodePresetConfig(GUID encodeGUID, GUID  presetG
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncGetEncodePresetConfig(m_hEncoder, encodeGUID, presetGUID, presetConfig);
+    nvStatus = m_pEncodeAPI->nvEncGetEncodePresetConfig(encodeSessionHandle, encodeGUID, presetGUID, presetConfig);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -157,7 +162,7 @@ NVENCSTATUS EncodeAPI::NvEncCreateInputBuffer(uint32_t width, uint32_t height, v
     createInputBufferParams.memoryHeap = NV_ENC_MEMORY_HEAP_SYSMEM_CACHED;
     createInputBufferParams.bufferFmt = inputFormat;
 
-    nvStatus = m_pEncodeAPI->nvEncCreateInputBuffer(m_hEncoder, &createInputBufferParams);
+    nvStatus = m_pEncodeAPI->nvEncCreateInputBuffer(encodeSessionHandle, &createInputBufferParams);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -174,7 +179,7 @@ NVENCSTATUS EncodeAPI::NvEncDestroyInputBuffer(NV_ENC_INPUT_PTR inputBuffer)
 
     if (inputBuffer)
     {
-        nvStatus = m_pEncodeAPI->nvEncDestroyInputBuffer(m_hEncoder, inputBuffer);
+        nvStatus = m_pEncodeAPI->nvEncDestroyInputBuffer(encodeSessionHandle, inputBuffer);
         if (nvStatus != NV_ENC_SUCCESS)
         {
             assert(0);
@@ -190,7 +195,7 @@ NVENCSTATUS EncodeAPI::NvEncCreateMVBuffer(uint32_t size, void** bitstreamBuffer
     NV_ENC_CREATE_MV_BUFFER stAllocMVBuffer;
     memset(&stAllocMVBuffer, 0, sizeof(stAllocMVBuffer));
     SET_VER(stAllocMVBuffer, NV_ENC_CREATE_MV_BUFFER);
-    status = m_pEncodeAPI->nvEncCreateMVBuffer(m_hEncoder, &stAllocMVBuffer);
+    status = m_pEncodeAPI->nvEncCreateMVBuffer(encodeSessionHandle, &stAllocMVBuffer);
     if (status != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -205,7 +210,7 @@ NVENCSTATUS EncodeAPI::NvEncDestroyMVBuffer(NV_ENC_OUTPUT_PTR bitstreamBuffer)
     NV_ENC_CREATE_MV_BUFFER stAllocMVBuffer;
     memset(&stAllocMVBuffer, 0, sizeof(stAllocMVBuffer));
     SET_VER(stAllocMVBuffer, NV_ENC_CREATE_MV_BUFFER);
-    status = m_pEncodeAPI->nvEncDestroyMVBuffer(m_hEncoder, bitstreamBuffer);
+    status = m_pEncodeAPI->nvEncDestroyMVBuffer(encodeSessionHandle, bitstreamBuffer);
     if (status != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -226,7 +231,7 @@ NVENCSTATUS EncodeAPI::NvRunMotionEstimationOnly(MotionEstimationBuffer *pMEBuff
     stMEOnlyParams.inputHeight = pMEBuffer->stInputBfr[1].dwHeight;
     stMEOnlyParams.mvBuffer = pMEBuffer->stOutputBfr.hBitstreamBuffer;
     stMEOnlyParams.completionEvent = pMEBuffer->stOutputBfr.hOutputEvent;
-    nvStatus = m_pEncodeAPI->nvEncRunMotionEstimationOnly(m_hEncoder, &stMEOnlyParams);
+    nvStatus = m_pEncodeAPI->nvEncRunMotionEstimationOnly(encodeSessionHandle, &stMEOnlyParams);
     return nvStatus;
 }
 
@@ -241,7 +246,7 @@ NVENCSTATUS EncodeAPI::NvEncCreateBitstreamBuffer(uint32_t size, void** bitstrea
     createBitstreamBufferParams.size = size;
     createBitstreamBufferParams.memoryHeap = NV_ENC_MEMORY_HEAP_SYSMEM_CACHED;
 
-    nvStatus = m_pEncodeAPI->nvEncCreateBitstreamBuffer(m_hEncoder, &createBitstreamBufferParams);
+    nvStatus = m_pEncodeAPI->nvEncCreateBitstreamBuffer(encodeSessionHandle, &createBitstreamBufferParams);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -258,7 +263,7 @@ NVENCSTATUS EncodeAPI::NvEncDestroyBitstreamBuffer(NV_ENC_OUTPUT_PTR bitstreamBu
 
     if (bitstreamBuffer)
     {
-        nvStatus = m_pEncodeAPI->nvEncDestroyBitstreamBuffer(m_hEncoder, bitstreamBuffer);
+        nvStatus = m_pEncodeAPI->nvEncDestroyBitstreamBuffer(encodeSessionHandle, bitstreamBuffer);
         if (nvStatus != NV_ENC_SUCCESS)
         {
             assert(0);
@@ -272,7 +277,7 @@ NVENCSTATUS EncodeAPI::NvEncLockBitstream(NV_ENC_LOCK_BITSTREAM* lockBitstreamBu
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncLockBitstream(m_hEncoder, lockBitstreamBufferParams);
+    nvStatus = m_pEncodeAPI->nvEncLockBitstream(encodeSessionHandle, lockBitstreamBufferParams);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -285,7 +290,7 @@ NVENCSTATUS EncodeAPI::NvEncUnlockBitstream(NV_ENC_OUTPUT_PTR bitstreamBuffer)
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncUnlockBitstream(m_hEncoder, bitstreamBuffer);
+    nvStatus = m_pEncodeAPI->nvEncUnlockBitstream(encodeSessionHandle, bitstreamBuffer);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -303,7 +308,7 @@ NVENCSTATUS EncodeAPI::NvEncLockInputBuffer(void* inputBuffer, void** bufferData
     SET_VER(lockInputBufferParams, NV_ENC_LOCK_INPUT_BUFFER);
 
     lockInputBufferParams.inputBuffer = inputBuffer;
-    nvStatus = m_pEncodeAPI->nvEncLockInputBuffer(m_hEncoder, &lockInputBufferParams);
+    nvStatus = m_pEncodeAPI->nvEncLockInputBuffer(encodeSessionHandle, &lockInputBufferParams);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -319,7 +324,7 @@ NVENCSTATUS EncodeAPI::NvEncUnlockInputBuffer(NV_ENC_INPUT_PTR inputBuffer)
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncUnlockInputBuffer(m_hEncoder, inputBuffer);
+    nvStatus = m_pEncodeAPI->nvEncUnlockInputBuffer(encodeSessionHandle, inputBuffer);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -332,7 +337,7 @@ NVENCSTATUS EncodeAPI::NvEncGetEncodeStats(NV_ENC_STAT* encodeStats)
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncGetEncodeStats(m_hEncoder, encodeStats);
+    nvStatus = m_pEncodeAPI->nvEncGetEncodeStats(encodeSessionHandle, encodeStats);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -345,7 +350,7 @@ NVENCSTATUS EncodeAPI::NvEncGetSequenceParams(NV_ENC_SEQUENCE_PARAM_PAYLOAD* seq
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncGetSequenceParams(m_hEncoder, sequenceParamPayload);
+    nvStatus = m_pEncodeAPI->nvEncGetSequenceParams(encodeSessionHandle, sequenceParamPayload);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -367,7 +372,7 @@ NVENCSTATUS EncodeAPI::NvEncRegisterAsyncEvent(void** completionEvent)
 #else
     eventParams.completionEvent = NULL;
 #endif
-    nvStatus = m_pEncodeAPI->nvEncRegisterAsyncEvent(m_hEncoder, &eventParams);
+    nvStatus = m_pEncodeAPI->nvEncRegisterAsyncEvent(encodeSessionHandle, &eventParams);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -390,7 +395,7 @@ NVENCSTATUS EncodeAPI::NvEncUnregisterAsyncEvent(void* completionEvent)
 
         eventParams.completionEvent = completionEvent;
 
-        nvStatus = m_pEncodeAPI->nvEncUnregisterAsyncEvent(m_hEncoder, &eventParams);
+        nvStatus = m_pEncodeAPI->nvEncUnregisterAsyncEvent(encodeSessionHandle, &eventParams);
         if (nvStatus != NV_ENC_SUCCESS)
         {
             assert(0);
@@ -410,7 +415,7 @@ NVENCSTATUS EncodeAPI::NvEncMapInputResource(void* registeredResource, void** ma
 
     mapInputResParams.registeredResource = registeredResource;
 
-    nvStatus = m_pEncodeAPI->nvEncMapInputResource(m_hEncoder, &mapInputResParams);
+    nvStatus = m_pEncodeAPI->nvEncMapInputResource(encodeSessionHandle, &mapInputResParams);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -427,7 +432,7 @@ NVENCSTATUS EncodeAPI::NvEncUnmapInputResource(NV_ENC_INPUT_PTR mappedInputBuffe
     
     if (mappedInputBuffer)
     {
-        nvStatus = m_pEncodeAPI->nvEncUnmapInputResource(m_hEncoder, mappedInputBuffer);
+        nvStatus = m_pEncodeAPI->nvEncUnmapInputResource(encodeSessionHandle, mappedInputBuffer);
         if (nvStatus != NV_ENC_SUCCESS)
         {
             assert(0);
@@ -443,9 +448,11 @@ NVENCSTATUS EncodeAPI::NvEncDestroyEncoder()
 
     if (m_bEncoderInitialized)
     {
-        nvStatus = m_pEncodeAPI->nvEncDestroyEncoder(m_hEncoder);
+        nvStatus = m_pEncodeAPI->nvEncDestroyEncoder(encodeSessionHandle);
 
+        encodeSessionHandle = nullptr;
         m_bEncoderInitialized = false;
+        encoderCreated = false;
     }
 
     return nvStatus;
@@ -457,11 +464,12 @@ NVENCSTATUS EncodeAPI::NvEncInvalidateRefFrames(const NvEncPictureCommand *pEncP
 
     for (uint32_t i = 0; i < pEncPicCommand->numRefFramesToInvalidate; i++)
     {
-        nvStatus = m_pEncodeAPI->nvEncInvalidateRefFrames(m_hEncoder, pEncPicCommand->refFrameNumbers[i]);
+        nvStatus = m_pEncodeAPI->nvEncInvalidateRefFrames(encodeSessionHandle, pEncPicCommand->refFrameNumbers[i]);
     }
 
     return nvStatus;
 }
+
 
 NVENCSTATUS EncodeAPI::NvEncOpenEncodeSessionEx(void* device, NV_ENC_DEVICE_TYPE deviceType)
 {
@@ -475,7 +483,7 @@ NVENCSTATUS EncodeAPI::NvEncOpenEncodeSessionEx(void* device, NV_ENC_DEVICE_TYPE
     openSessionExParams.deviceType = deviceType;
     openSessionExParams.apiVersion = NVENCAPI_VERSION;
 
-    nvStatus = m_pEncodeAPI->nvEncOpenEncodeSessionEx(&openSessionExParams, &m_hEncoder);
+    nvStatus = m_pEncodeAPI->nvEncOpenEncodeSessionEx(&openSessionExParams, &encodeSessionHandle);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -500,7 +508,7 @@ NVENCSTATUS EncodeAPI::NvEncRegisterResource(NV_ENC_INPUT_RESOURCE_TYPE resource
     registerResParams.pitch = pitch;
     registerResParams.bufferFormat = NV_ENC_BUFFER_FORMAT_NV12_PL;
 
-    nvStatus = m_pEncodeAPI->nvEncRegisterResource(m_hEncoder, &registerResParams);
+    nvStatus = m_pEncodeAPI->nvEncRegisterResource(encodeSessionHandle, &registerResParams);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -515,9 +523,10 @@ NVENCSTATUS EncodeAPI::NvEncUnregisterResource(NV_ENC_REGISTERED_PTR registeredR
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    nvStatus = m_pEncodeAPI->nvEncUnregisterResource(m_hEncoder, registeredRes);
+    nvStatus = m_pEncodeAPI->nvEncUnregisterResource(encodeSessionHandle, registeredRes);
     if (nvStatus != NV_ENC_SUCCESS)
     {
+        printf("nvEncUnregisterResource error %d %ld\n", nvStatus, registeredRes);
         assert(0);
     }
 
@@ -558,7 +567,7 @@ NVENCSTATUS EncodeAPI::NvEncReconfigureEncoder(const NvEncPictureCommand *pEncPi
         stReconfigParams.version = NV_ENC_RECONFIGURE_PARAMS_VER;
         stReconfigParams.forceIDR = pEncPicCommand->bResolutionChangePending ? 1 : 0;
 
-        nvStatus = m_pEncodeAPI->nvEncReconfigureEncoder(m_hEncoder, &stReconfigParams);
+        nvStatus = m_pEncodeAPI->nvEncReconfigureEncoder(encodeSessionHandle, &stReconfigParams);
         if (nvStatus != NV_ENC_SUCCESS)
         {
             assert(0);
@@ -568,9 +577,9 @@ NVENCSTATUS EncodeAPI::NvEncReconfigureEncoder(const NvEncPictureCommand *pEncPi
     return nvStatus;
 }
 
-EncodeAPI::EncodeAPI()
+EncodeAPI::EncodeAPI(void* device, NV_ENC_DEVICE_TYPE deviceType)
 {
-    m_hEncoder = NULL;
+    encodeSessionHandle = NULL;
     m_bEncoderInitialized = false;
     m_pEncodeAPI = NULL;
     m_hinstLib = NULL;
@@ -586,10 +595,16 @@ EncodeAPI::EncodeAPI()
 
     memset(&m_stEncodeConfig, 0, sizeof(m_stEncodeConfig));
     SET_VER(m_stEncodeConfig, NV_ENC_CONFIG);
+
+    if(Initialize(device, deviceType) != NV_ENC_SUCCESS)
+        throw "TODO throw\n"; //TODO throw
 }
 
 EncodeAPI::~EncodeAPI()
 {
+    //TODO log error on failure
+    Deinitialize(); //TODO just remove init/deinit functions
+
     // clean up encode API resources here
     if (m_pEncodeAPI)
     {
@@ -615,7 +630,7 @@ NVENCSTATUS EncodeAPI::ValidateEncodeGUID (GUID inputCodecGuid)
     NVENCSTATUS nvStatus;
     GUID *encodeGUIDArray;
 
-    nvStatus = m_pEncodeAPI->nvEncGetEncodeGUIDCount(m_hEncoder, &encodeGUIDCount);
+    nvStatus = m_pEncodeAPI->nvEncGetEncodeGUIDCount(encodeSessionHandle, &encodeGUIDCount);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -626,7 +641,7 @@ NVENCSTATUS EncodeAPI::ValidateEncodeGUID (GUID inputCodecGuid)
     memset(encodeGUIDArray, 0, sizeof(GUID)* encodeGUIDCount);
 
     encodeGUIDArraySize = 0;
-    nvStatus = m_pEncodeAPI->nvEncGetEncodeGUIDs(m_hEncoder, encodeGUIDArray, encodeGUIDCount, &encodeGUIDArraySize);
+    nvStatus = m_pEncodeAPI->nvEncGetEncodeGUIDs(encodeSessionHandle, encodeGUIDArray, encodeGUIDCount, &encodeGUIDArraySize);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         delete[] encodeGUIDArray;
@@ -660,7 +675,7 @@ NVENCSTATUS EncodeAPI::ValidatePresetGUID(GUID inputPresetGuid, GUID inputCodecG
     NVENCSTATUS nvStatus;
     GUID *presetGUIDArray;
 
-    nvStatus = m_pEncodeAPI->nvEncGetEncodePresetCount(m_hEncoder, inputCodecGuid, &presetGUIDCount);
+    nvStatus = m_pEncodeAPI->nvEncGetEncodePresetCount(encodeSessionHandle, inputCodecGuid, &presetGUIDCount);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -671,7 +686,7 @@ NVENCSTATUS EncodeAPI::ValidatePresetGUID(GUID inputPresetGuid, GUID inputCodecG
     memset(presetGUIDArray, 0, sizeof(GUID)* presetGUIDCount);
 
     presetGUIDArraySize = 0;
-    nvStatus = m_pEncodeAPI->nvEncGetEncodePresetGUIDs(m_hEncoder, inputCodecGuid, presetGUIDArray, presetGUIDCount, &presetGUIDArraySize);
+    nvStatus = m_pEncodeAPI->nvEncGetEncodePresetGUIDs(encodeSessionHandle, inputCodecGuid, presetGUIDArray, presetGUIDCount, &presetGUIDArraySize);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);
@@ -702,6 +717,9 @@ NVENCSTATUS EncodeAPI::ValidatePresetGUID(GUID inputPresetGuid, GUID inputCodecG
 NVENCSTATUS EncodeAPI::CreateEncoder(EncodeConfig *pEncCfg)
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
+
+    if(encoderCreated)
+        return NV_ENC_SUCCESS;
 
     if (pEncCfg == NULL)
     {
@@ -766,7 +784,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(EncodeConfig *pEncCfg)
     SET_VER(stPresetCfg, NV_ENC_PRESET_CONFIG);
     SET_VER(stPresetCfg.presetCfg, NV_ENC_CONFIG);
 
-    nvStatus = m_pEncodeAPI->nvEncGetEncodePresetConfig(m_hEncoder, m_stCreateEncodeParams.encodeGUID, m_stCreateEncodeParams.presetGUID, &stPresetCfg);
+    nvStatus = m_pEncodeAPI->nvEncGetEncodePresetConfig(encodeSessionHandle, m_stCreateEncodeParams.encodeGUID, m_stCreateEncodeParams.presetGUID, &stPresetCfg);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         PRINTERR("nvEncGetEncodePresetConfig returned failure");
@@ -893,7 +911,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(EncodeConfig *pEncCfg)
     SET_VER(stCapsParam, NV_ENC_CAPS_PARAM);
 
     stCapsParam.capsToQuery = NV_ENC_CAPS_ASYNC_ENCODE_SUPPORT;
-    m_pEncodeAPI->nvEncGetEncodeCaps(m_hEncoder, m_stCreateEncodeParams.encodeGUID, &stCapsParam, &asyncMode);
+    m_pEncodeAPI->nvEncGetEncodeCaps(encodeSessionHandle, m_stCreateEncodeParams.encodeGUID, &stCapsParam, &asyncMode);
     m_stCreateEncodeParams.enableEncodeAsync = asyncMode;
 
     pEncCfg->enableAsyncMode = asyncMode;
@@ -904,7 +922,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(EncodeConfig *pEncCfg)
         stCapsParam.capsToQuery = NV_ENC_CAPS_SUPPORT_MEONLY_MODE;
         m_stCreateEncodeParams.enableMEOnlyMode =  true;
         int meonlyMode = 0;
-        nvStatus = m_pEncodeAPI->nvEncGetEncodeCaps(m_hEncoder, m_stCreateEncodeParams.encodeGUID, &stCapsParam, &meonlyMode);
+        nvStatus = m_pEncodeAPI->nvEncGetEncodeCaps(encodeSessionHandle, m_stCreateEncodeParams.encodeGUID, &stCapsParam, &meonlyMode);
         if (nvStatus != NV_ENC_SUCCESS)
         {
             PRINTERR("Encode Session Initialization failed");
@@ -931,7 +949,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(EncodeConfig *pEncCfg)
         SET_VER(stCapsParam, NV_ENC_CAPS_PARAM);
         stCapsParam.capsToQuery = NV_ENC_CAPS_SUPPORT_TEMPORAL_AQ;
         int temporalAQSupported = 0;
-        nvStatus = m_pEncodeAPI->nvEncGetEncodeCaps(m_hEncoder, m_stCreateEncodeParams.encodeGUID, &stCapsParam, &temporalAQSupported);
+        nvStatus = m_pEncodeAPI->nvEncGetEncodeCaps(encodeSessionHandle, m_stCreateEncodeParams.encodeGUID, &stCapsParam, &temporalAQSupported);
         if (nvStatus != NV_ENC_SUCCESS)
         {
             PRINTERR("Encode Session Initialization failed");
@@ -951,13 +969,14 @@ NVENCSTATUS EncodeAPI::CreateEncoder(EncodeConfig *pEncCfg)
         }
     }
 
-    nvStatus = m_pEncodeAPI->nvEncInitializeEncoder(m_hEncoder, &m_stCreateEncodeParams);
+    nvStatus = m_pEncodeAPI->nvEncInitializeEncoder(encodeSessionHandle, &m_stCreateEncodeParams);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         PRINTERR("Encode Session Initialization failed");
         return nvStatus;
     }
     m_bEncoderInitialized = true;
+    encoderCreated = true;
 
     return nvStatus;
 }
@@ -1035,11 +1054,11 @@ NVENCSTATUS EncodeAPI::ProcessOutput(const EncodeBuffer *pEncodeBuffer)
     lockBitstreamData.outputBitstream = pEncodeBuffer->stOutputBfr.hBitstreamBuffer;
     lockBitstreamData.doNotWait = false;
 
-    nvStatus = m_pEncodeAPI->nvEncLockBitstream(m_hEncoder, &lockBitstreamData);
+    nvStatus = m_pEncodeAPI->nvEncLockBitstream(encodeSessionHandle, &lockBitstreamData);
     if (nvStatus == NV_ENC_SUCCESS)
     {
         fwrite(lockBitstreamData.bitstreamBufferPtr, 1, lockBitstreamData.bitstreamSizeInBytes, m_fOutput);
-        nvStatus = m_pEncodeAPI->nvEncUnlockBitstream(m_hEncoder, pEncodeBuffer->stOutputBfr.hBitstreamBuffer);
+        nvStatus = m_pEncodeAPI->nvEncUnlockBitstream(encodeSessionHandle, pEncodeBuffer->stOutputBfr.hBitstreamBuffer);
     }
     else
     {
@@ -1079,7 +1098,7 @@ NVENCSTATUS EncodeAPI::ProcessMVOutput(const MotionEstimationBuffer *pMEBuffer)
     lockBitstreamData.outputBitstream = pMEBuffer->stOutputBfr.hBitstreamBuffer;
     lockBitstreamData.doNotWait = false;
 
-    nvStatus = m_pEncodeAPI->nvEncLockBitstream(m_hEncoder, &lockBitstreamData);
+    nvStatus = m_pEncodeAPI->nvEncLockBitstream(encodeSessionHandle, &lockBitstreamData);
     if (nvStatus == NV_ENC_SUCCESS)
     {
         if (codecGUID == NV_ENC_CODEC_H264_GUID)
@@ -1120,7 +1139,7 @@ NVENCSTATUS EncodeAPI::ProcessMVOutput(const MotionEstimationBuffer *pMEBuffer)
             }
             fprintf(m_fOutput, "\n");
         }
-        nvStatus = m_pEncodeAPI->nvEncUnlockBitstream(m_hEncoder, pMEBuffer->stOutputBfr.hBitstreamBuffer);
+        nvStatus = m_pEncodeAPI->nvEncUnlockBitstream(encodeSessionHandle, pMEBuffer->stOutputBfr.hBitstreamBuffer);
     }
     else
     {
@@ -1218,7 +1237,7 @@ NVENCSTATUS EncodeAPI::NvEncEncodeFrame(EncodeBuffer *pEncodeBuffer, NvEncPictur
         }
     }
 
-    nvStatus = m_pEncodeAPI->nvEncEncodePicture(m_hEncoder, &encPicParams);
+    nvStatus = m_pEncodeAPI->nvEncEncodePicture(encodeSessionHandle, &encPicParams);
     if (nvStatus != NV_ENC_SUCCESS && nvStatus != NV_ENC_ERR_NEED_MORE_INPUT)
     {
         assert(0);
@@ -1238,7 +1257,7 @@ NVENCSTATUS EncodeAPI::NvEncFlushEncoderQueue(void *hEOSEvent)
     SET_VER(encPicParams, NV_ENC_PIC_PARAMS);
     encPicParams.encodePicFlags = NV_ENC_PIC_FLAG_EOS;
     encPicParams.completionEvent = hEOSEvent;
-    nvStatus = m_pEncodeAPI->nvEncEncodePicture(m_hEncoder, &encPicParams);
+    nvStatus = m_pEncodeAPI->nvEncEncodePicture(encodeSessionHandle, &encPicParams);
     if (nvStatus != NV_ENC_SUCCESS)
     {
         assert(0);

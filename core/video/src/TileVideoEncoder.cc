@@ -20,6 +20,7 @@ TCode error(const char* component, const TCode code)
     return error(component, code, code);
 }
 
+/*
 NVENCSTATUS TileVideoEncoder::Initialize(void* device, const NV_ENC_DEVICE_TYPE deviceType)
 {
     NVENCSTATUS status;
@@ -29,7 +30,7 @@ NVENCSTATUS TileVideoEncoder::Initialize(void* device, const NV_ENC_DEVICE_TYPE 
             return status;
 
     return NV_ENC_SUCCESS;
-}
+}*/
 
 NVENCSTATUS TileVideoEncoder::CreateEncoders(EncodeConfig& rootConfiguration)
 {
@@ -64,7 +65,7 @@ NVENCSTATUS TileVideoEncoder::AllocateIOBuffers(const EncodeConfig* configuratio
 
     for(TileEncodeContext& context: tileEncodeContext)
     {
-        context.encodeBufferQueue.Initialize(context.encodeBuffer, encodeBufferSize);
+        context.encodeBufferQueue.Initialize(context.encodeBuffer.data(), encodeBufferSize);
         AllocateIOBuffer(context, *configuration);
     }
 
@@ -164,18 +165,19 @@ NVENCSTATUS TileVideoEncoder::FlushEncoder()
     return status;
 }
 
+/*
 NVENCSTATUS TileVideoEncoder::Deinitialize()
 {
     NVENCSTATUS status;
 
-    ReleaseIOBuffers();
+    //ReleaseIOBuffers();
 
-    for(TileEncodeContext& context: tileEncodeContext)
-        if((status = context.hardwareEncoder.NvEncDestroyEncoder()) != NV_ENC_SUCCESS)
-            return status;
+    //for(TileEncodeContext& context: tileEncodeContext)
+    //    if((status = context.hardwareEncoder.NvEncDestroyEncoder()) != NV_ENC_SUCCESS)
+    //        return status;
 
     return NV_ENC_SUCCESS;
-}
+}*/
 
 EncodeBuffer* GetEncodeBuffer(TileEncodeContext& context)
 {

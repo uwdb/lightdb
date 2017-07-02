@@ -59,6 +59,7 @@ public:
 
   ~CNvQueue() { delete[] m_pBuffer; }
 
+    // TODO make RAII, should take vector of items
   bool Initialize(T *pItems, unsigned int uSize) {
     m_uSize = uSize;
     m_uPendingCount = 0;
@@ -103,34 +104,39 @@ typedef struct _EncodeFrameConfig {
 
 class VideoEncoder {
 public:
-  VideoEncoder(CUvideoctxlock ctxLock);
+  VideoEncoder(EncodeAPI& api, EncodeConfig& configuration, CUvideoctxlock ctxLock);
   virtual ~VideoEncoder();
 
 protected:
-  EncodeAPI *m_pNvHWEncoder;
+  EncodeAPI& api;
+  EncodeConfig& configuration;
   CUvideoctxlock m_ctxLock;
   uint32_t m_uEncodeBufferCount;
-  //EncodeBuffer m_stEncodeBuffer[MAX_ENCODE_QUEUE];
   CNvQueue<EncodeBuffer> m_EncodeBufferQueue;
-  std::vector<EncodeBuffer> buffers;
 
   EncodeConfig m_stEncoderInput;
   EncodeOutputBuffer m_stEOSOutputBfr;
 
   int32_t m_iEncodedFrames;
 
+    //NVENCSTATUS Deinitialize();
+
 public:
-  EncodeAPI *GetHWEncoder() { return m_pNvHWEncoder; }
-  NVENCSTATUS Deinitialize();
+  EncodeAPI *GetHWEncoder() { return &api; } // TODO don't leak api (and if so leak reference)
   NVENCSTATUS EncodeFrame(EncodeFrameConfig *pEncodeFrame, NV_ENC_PIC_STRUCT picType = NV_ENC_PIC_STRUCT_FRAME,
                           bool bFlush = false);
-  NVENCSTATUS AllocateIOBuffers(EncodeConfig *pEncodeConfig);
   int32_t GetEncodedFrames() { return m_iEncodedFrames; }
 
+    NVENCSTATUS AllocateIOBuffers();
   NVENCSTATUS ReleaseIOBuffers();
 
 protected:
+    bool isIOBufferAllocated = false; //TODO not needed
   NVENCSTATUS FlushEncoder();
+
+private:
+    std::vector<EncodeBuffer> buffers;
+
 };
 
 // NVEncodeAPI entry point

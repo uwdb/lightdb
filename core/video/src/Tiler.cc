@@ -169,7 +169,7 @@ float InitializeDecoder(CudaDecoder &decoder, CUVIDFrameQueue &queue, CUvideoctx
     fpsRatio = (float)configuration.fps * decodedFRD / decodedFRN;
 
   configuration.pictureStruct = isProgressive ? NV_ENC_PIC_STRUCT_FRAME : 0;
-  queue.init(configuration.width, configuration.height);
+  //queue.init(configuration.width, configuration.height);
 
   return fpsRatio;
 }
@@ -299,9 +299,10 @@ int InitializeEncoder(CUcontext &cudaContext, EncodeConfig &configuration, unsig
   //    //encoder->GetPresetGUID();
 
   // Initialize encoder
-  if ((status = encoder.Initialize(cudaContext, NV_ENC_DEVICE_TYPE_CUDA)) != NV_ENC_SUCCESS)
-    return error("encoder.Initialize", -1);
-  else if ((status = encoder.CreateEncoders(configuration)) != NV_ENC_SUCCESS)
+  //if ((status = encoder.Initialize(cudaContext, NV_ENC_DEVICE_TYPE_CUDA)) != NV_ENC_SUCCESS)
+  //  return error("encoder.Initialize", -1);
+ // else
+  if ((status = encoder.CreateEncoders(configuration)) != NV_ENC_SUCCESS)
     return error("CreateEncoders", -1);
   else if ((status = encoder.AllocateIOBuffers(&configuration)) != NV_ENC_SUCCESS)
     return error("encoder.AllocateIOBuffers", -1);
@@ -323,7 +324,10 @@ int ExecuteTiler(std::vector<EncodeConfig> &configurations, const TileDimensions
   Statistics statistics;
   auto fpsRatio = 1.f;
   std::vector<TileVideoEncoder *> encoders;
+  GPUContext gpuContext(configurations.at(0).deviceID);
+  EncodeAPI api(gpuContext.get());
 
+  //TODO this can all die
   // Initialize CUDA
   if ((result = cuInit(0, __CUDA_API_VERSION, hHandleDriver)) != CUDA_SUCCESS)
     return error("Error in cuInit", result);
@@ -345,7 +349,7 @@ int ExecuteTiler(std::vector<EncodeConfig> &configurations, const TileDimensions
   auto index = 0;
   for (auto &configuration : configurations) {
     // TODO leaks
-    auto *encoder = new TileVideoEncoder(lock, tileDimensions.columns, tileDimensions.rows);
+    auto *encoder = new TileVideoEncoder(api, lock, configuration, tileDimensions.columns, tileDimensions.rows);
     if (InitializeEncoder(cudaCtx, configuration, configuration.bitrate, index++, *encoder, tileDimensions))
       return error("InitializeEncoder", -1);
     else
@@ -356,8 +360,8 @@ int ExecuteTiler(std::vector<EncodeConfig> &configurations, const TileDimensions
     return error("ExecuteWorkers", -1);
 
   for (auto &encoder : encoders) {
-    if ((status = encoder->Deinitialize()) != NV_ENC_SUCCESS)
-      return error("encoder.Deinitialize", result);
+    //if ((status = encoder->Deinitialize()) != NV_ENC_SUCCESS)
+    //  return error("encoder.Deinitialize", result);
     delete encoder;
   }
 

@@ -43,20 +43,21 @@ int MatchFPS(const float fpsRatio, int decodedFrames, int encodedFrames) {
 ///
 ///
 
-Transcoder::Transcoder(GPUContext& context, EncodeConfig& configuration)
-        : lock(context), encoder(lock.get()), frameQueue(lock.get()), configuration(configuration), fpsRatio(1) {
+Transcoder::Transcoder(GPUContext& context, EncodeAPI& api, EncodeConfig& configuration)
+        : lock(context), encoder(api, configuration, lock.get()),
+          frameQueue(lock.get()), configuration(configuration), fpsRatio(1) {
     outputFilename.reserve(1024);
 
     NVENCSTATUS nvStatus;
 
     assert(encoder.GetHWEncoder());
 
-    if ((nvStatus = encoder.GetHWEncoder()->Initialize(context.get(), NV_ENC_DEVICE_TYPE_CUDA)) != NV_ENC_SUCCESS)
-        ;
+    //if ((nvStatus = encoder.GetHWEncoder()->Initialize(context.get(), NV_ENC_DEVICE_TYPE_CUDA)) != NV_ENC_SUCCESS)
+    //    ;
 
     configuration.presetGUID = encoder.GetHWEncoder()->GetPresetGUID(configuration.encoderPreset, configuration.codec);
 
-    frameQueue.init(configuration.width, configuration.height);
+    //`frameQueue.init(configuration.width, configuration.height);
 
     auto isProgressive = true;
     configuration.pictureStruct = (isProgressive ? NV_ENC_PIC_STRUCT_FRAME : 0);
@@ -88,8 +89,8 @@ int Transcoder::InitializeEncoder(const std::string &outputFilename) {
 
     if ((nvStatus = encoder.GetHWEncoder()->CreateEncoder(&configuration)) != NV_ENC_SUCCESS)
         return 7;
-    else if ((nvStatus = encoder.AllocateIOBuffers(&configuration)) != NV_ENC_SUCCESS)
-        return 8;
+    //else if ((nvStatus = encoder.AllocateIOBuffers(&configuration)) != NV_ENC_SUCCESS)
+    //    return 8;
     else
         return 0;
 }

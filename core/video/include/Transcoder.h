@@ -11,9 +11,9 @@
 
 class Transcoder {
 public:
-    Transcoder(GPUContext& context, EncodeConfig& configuration);
+    Transcoder(GPUContext& context, EncodeAPI& api, EncodeConfig& configuration);
     ~Transcoder() {
-        encoder.Deinitialize();
+//        encoder.Deinitialize();
     }
 
     int transcode(const std::string &inputFilename, const std::string &outputFilename);
