@@ -5,7 +5,7 @@
 class EncodeAPITestFixture : public testing::Test {
 public:
     EncodeAPITestFixture()
-      : context(0), encodeAPI(context.get())
+      : context(0), encodeAPI(context)
     { }
 
 protected:

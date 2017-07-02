@@ -8,7 +8,7 @@ public:
             configuration("/dev/null", "/dev/null", 1080, 1920, 2, 2,
                           NV_ENC_HEVC, "hq", 30, 30, 1024*1024, 0, 0),
             context(configuration.deviceID),
-            encodeAPI(context.get())
+            encodeAPI(context)
     { }
 
 protected:

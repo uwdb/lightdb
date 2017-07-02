@@ -325,7 +325,7 @@ int ExecuteTiler(std::vector<EncodeConfig> &configurations, const TileDimensions
   auto fpsRatio = 1.f;
   std::vector<TileVideoEncoder *> encoders;
   GPUContext gpuContext(configurations.at(0).deviceID);
-  EncodeAPI api(gpuContext.get());
+  EncodeAPI api(gpuContext);
 
   //TODO this can all die
   // Initialize CUDA

@@ -146,8 +146,7 @@ typedef struct _EncodeBuffer
         other.owner = false;
     }
 
-    //TODO remove first overload
-    _EncodeBuffer(GPUContext& context) : _EncodeBuffer(*new EncodeAPI(context.get()), *new EncodeConfig()) { }
+    // TODO is this size reasonable?
     _EncodeBuffer(EncodeAPI &api, EncodeConfig& configuration, size_t size=2*1024*1024)
             : stOutputBfr{0}, stInputBfr{0}, api(api), configuration(configuration), size(size), owner(true) {
         NVENCSTATUS status;

@@ -24,7 +24,7 @@ public:
   Transcoder(unsigned int height, unsigned int width, unsigned int codec, std::string preset, unsigned int fps,
              unsigned int gop_length, unsigned long bitrate, unsigned int rcmode, unsigned int deviceId)
       : context(deviceId),
-        api(context.get()),
+        api(context),
         configuration(nullptr, nullptr, height, width, 0, 0, codec, preset.data(), fps, gop_length, bitrate, rcmode, deviceId),
         gpuTranscoder(context, api, configuration) {
       //: gpuTranscoder(height, width, codec, preset, fps, gop_length, bitrate, rcmode, deviceId) {
