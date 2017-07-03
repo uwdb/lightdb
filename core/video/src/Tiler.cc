@@ -98,9 +98,9 @@ int PrintHelp() {
   return 1;
 }
 
-int DisplayConfiguration(const EncodeConfig &configuration, const TileDimensions &dimensions) {
-  printf("Encoding input           : \"%s\"\n", configuration.inputFileName);
-  printf("         output          : \"%s\"\n", configuration.outputFileName);
+int DisplayConfiguration(const std::string &inputFilename, const std::string &outputFilename, const EncodeConfig &configuration, const TileDimensions &dimensions) {
+  printf("Encoding input           : \"%s\"\n", inputFilename);
+  printf("         output          : \"%s\"\n", outputFilename);
   printf("         codec           : \"%s\"\n", configuration.codec == NV_ENC_HEVC ? "HEVC" : "H264");
   printf("         size            : %dx%d\n", configuration.width, configuration.height);
   printf("         bitrate         : %d bits/sec\n", configuration.bitrate);
@@ -145,11 +145,11 @@ int DisplayConfiguration(const EncodeConfig &configuration, const TileDimensions
   return 0;
 }
 
-float InitializeDecoder(CudaDecoder &decoder, CUVIDFrameQueue &queue, DecoderLock &lock,
+float InitializeDecoder(const std::string &inputFilename, CudaDecoder &decoder, CUVIDFrameQueue &queue, DecoderLock &lock,
                         EncodeConfig &configuration) {
   int decodedW, decodedH, decodedFRN, decodedFRD, isProgressive;
 
-  decoder.InitVideoDecoder(configuration.inputFileName, configuration);
+  decoder.InitVideoDecoder(inputFilename);
 
   decoder.GetCodecParam(&decodedW, &decodedH, &decodedFRN, &decodedFRD, &isProgressive);
   if (decodedFRN <= 0 || decodedFRD <= 0) {
@@ -276,8 +276,9 @@ int DisplayStatistics(CudaDecoder &decoder, TileVideoEncoder &encoder, Statistic
   return 0;
 }
 
-int ParseTileParameters(EncodeConfig &configuration, TileDimensions &tileDimensions) {
-  auto values = split(configuration.outputFileName, ',');
+int ParseTileParameters(std::string metadata, EncodeConfig &configuration, TileDimensions &tileDimensions, std::string &outputFilename) {
+    //auto values = split(configuration.outputFileName, ',');
+    auto values = split(metadata, ',');
 
   if (values.size() != 3)
     return error("Expected three arguments in output filename (e.g., '4,8,%d.h265')\n", -1);
@@ -285,13 +286,15 @@ int ParseTileParameters(EncodeConfig &configuration, TileDimensions &tileDimensi
     tileDimensions.rows = stoi(values.at(0));
     tileDimensions.columns = stoi(values.at(1));
     tileDimensions.count = tileDimensions.rows * tileDimensions.columns;
-    strcpy(configuration.outputFileName, values.at(2).c_str());
+      //configuration.outputFileName = values.at(2);
+      outputFilename = values.at(2);
+    //strcpy(configuration.outputFileName, values.at(2).c_str());
   }
 
   return 0;
 }
 
-int InitializeEncoder(GPUContext &cudaContext, EncodeConfig &configuration, unsigned long bitrate, int encoderIndex,
+int InitializeEncoder(const std::string &outputFilenameFormat, GPUContext &cudaContext, EncodeConfig &configuration, unsigned long bitrate, int encoderIndex,
                       TileVideoEncoder &encoder, const TileDimensions &tileDimensions) {
   NVENCSTATUS status;
 
@@ -302,7 +305,7 @@ int InitializeEncoder(GPUContext &cudaContext, EncodeConfig &configuration, unsi
   //if ((status = encoder.Initialize(cudaContext, NV_ENC_DEVICE_TYPE_CUDA)) != NV_ENC_SUCCESS)
   //  return error("encoder.Initialize", -1);
  // else
-  if ((status = encoder.CreateEncoders(configuration)) != NV_ENC_SUCCESS)
+  if ((status = encoder.CreateEncoders(outputFilenameFormat, configuration)) != NV_ENC_SUCCESS)
     return error("CreateEncoders", -1);
   else if ((status = encoder.AllocateIOBuffers(&configuration)) != NV_ENC_SUCCESS)
     return error("encoder.AllocateIOBuffers", -1);
@@ -310,7 +313,7 @@ int InitializeEncoder(GPUContext &cudaContext, EncodeConfig &configuration, unsi
     return 0;
 }
 
-int ExecuteTiler(std::vector<EncodeConfig> &configurations, const TileDimensions tileDimensions) {
+int ExecuteTiler(std::string inputFilename, std::string outputFilenameFormat, std::vector<EncodeConfig> &configurations, const TileDimensions tileDimensions) {
   typedef void *CUDADRIVER;
   CUDADRIVER hHandleDriver = nullptr;
   GPUContext context(configurations.at(0).deviceID);
@@ -318,7 +321,7 @@ int ExecuteTiler(std::vector<EncodeConfig> &configurations, const TileDimensions
   CUresult result;
   NVENCSTATUS status;
   CUVIDFrameQueue frameQueue(lock.get());
-  CudaDecoder decoder(frameQueue, lock);
+  CudaDecoder decoder(configurations.at(0), frameQueue, lock); // TODO Don't we need n decoders?
   Statistics statistics;
   auto fpsRatio = 1.f;
   std::vector<TileVideoEncoder *> encoders;
@@ -338,7 +341,7 @@ int ExecuteTiler(std::vector<EncodeConfig> &configurations, const TileDimensions
   //  return error("cuCtxPopCurrent", result);
   //else if ((result = cuvidCtxLockCreate(&lock, curCtx)) != CUDA_SUCCESS)
   //  return error("cuvidCtxLockCreate", result);
-  if ((fpsRatio = InitializeDecoder(decoder, frameQueue, lock, configurations.at(0))) < 0)
+  if ((fpsRatio = InitializeDecoder(inputFilename, decoder, frameQueue, lock, configurations.at(0))) < 0)
     return error("InitializeDecoder", -1);
   // else if (DisplayConfiguration(configurations.at(0), tileDimensions) != 0)
   //	return error("DisplayConfiguration", -1);
@@ -347,7 +350,7 @@ int ExecuteTiler(std::vector<EncodeConfig> &configurations, const TileDimensions
   for (auto &configuration : configurations) {
     // TODO leaks
     auto *encoder = new TileVideoEncoder(api, lock.get(), configuration, tileDimensions.columns, tileDimensions.rows);
-    if (InitializeEncoder(context, configuration, configuration.bitrate, index++, *encoder, tileDimensions))
+    if (InitializeEncoder(outputFilenameFormat, context, configuration, configuration.bitrate, index++, *encoder, tileDimensions))
       return error("InitializeEncoder", -1);
     else
       encoders.push_back(encoder);
@@ -408,9 +411,7 @@ int ExecuteTiler(const std::string inputFilename, const std::string outputFilena
                  unsigned int width, size_t tileRows, size_t tileColumns, unsigned int codec, std::string preset,
                  unsigned int fps, unsigned int gop_length, size_t bitrate, unsigned int rcmode,
                  unsigned int deviceId) {
-  EncodeConfig configuration(
-          const_cast<char *>(inputFilename.c_str()), const_cast<char *>(outputFilenameFormat.c_str()), height, width,
-          tileRows, tileColumns, codec, const_cast<char *>(preset.c_str()), fps, gop_length, bitrate, rcmode, deviceId);
+  EncodeConfig configuration(height, width, tileRows, tileColumns, codec, const_cast<char *>(preset.c_str()), fps, gop_length, bitrate, rcmode, deviceId);
   //EncodeConfig configuration = MakeTilerConfiguration(
   //    const_cast<char *>(inputFilename.c_str()), const_cast<char *>(outputFilenameFormat.c_str()), height, width,
   //    tileRows, tileColumns, codec, const_cast<char *>(preset.c_str()), fps, gop_length, bitrate, rcmode, deviceId);
@@ -420,7 +421,7 @@ int ExecuteTiler(const std::string inputFilename, const std::string outputFilena
   std::vector<EncodeConfig> configurations;
   configurations.push_back(configuration);
 
-  return ExecuteTiler(configurations, tileDimensions);
+  return ExecuteTiler(inputFilename, outputFilenameFormat, configurations, tileDimensions);
 }
 
 int main(int argc, char *argv[]) {

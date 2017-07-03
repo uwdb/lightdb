@@ -7,7 +7,7 @@ VideoEncoder::VideoEncoder(GPUContext& context, EncodeConfig& configuration, CUv
         : configuration(configuration), api(context), m_ctxLock(ctxLock) {
   //m_pNvHWEncoder = new EncodeAPI(context.get());
   //m_ctxLock = ctxLock;
-  configuration.presetGUID = api.GetPresetGUID(configuration.encoderPreset, configuration.codec);
+  configuration.presetGUID = api.GetPresetGUID(configuration.encoderPreset.c_str(), configuration.codec);
 
   m_uEncodeBufferCount = 0;
   m_iEncodedFrames = 0;

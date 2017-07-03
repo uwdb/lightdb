@@ -984,7 +984,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(EncodeConfig *pEncCfg)
     return nvStatus;
 }
 
-GUID EncodeAPI::GetPresetGUID(char* encoderPreset, int codec)
+GUID EncodeAPI::GetPresetGUID(const char* encoderPreset, int codec)
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
     GUID presetGUID = NV_ENC_PRESET_DEFAULT_GUID;

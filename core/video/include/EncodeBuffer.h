@@ -1,6 +1,7 @@
 #ifndef VISUALCLOUD_ENCODEBUFFER_H
 #define VISUALCLOUD_ENCODEBUFFER_H
 
+#include <string>
 #include <stdint.h>
 #include "EncodeAPI.h"
 #include "nvEncodeAPI.h"
@@ -36,27 +37,26 @@ typedef struct _EncodeConfig
     int              gopLength;
     int              numB;
     int              pictureStruct;
-    int              deviceID;
+    const unsigned int              deviceID;
     NV_ENC_BUFFER_FORMAT inputFormat;
     char            *qpDeltaMapFile;
-    char* inputFileName;
-    char* outputFileName;
-    char* encoderPreset;
-    char* inputFilePath;
+    //std::string inputFileName;
+    //std::string outputFileName;
+    std::string encoderPreset;
     int  enableMEOnly;
     int  enableAsyncMode;
     int  preloadedFrameCount;
     int  enableTemporalAQ;
 
     _EncodeConfig() :
-        EncodeConfig(nullptr, nullptr, 0, 0, 0, 0, 0, nullptr, 0, 0, 0, 0, 0)
+        EncodeConfig(0, 0, 0, 0, 0, "hq", 0, 0, 0, 0, 0)
         { }
 
     _EncodeConfig(const struct _EncodeConfig& copy) = default;
 
-    _EncodeConfig(char *inputFilename, char *outputFilenameFormat, const unsigned int height,
+    _EncodeConfig(const unsigned int height,
                   const unsigned int width, const size_t tileRows, const size_t tileColumns,
-                  const unsigned int codec, char *preset, const unsigned int fps,
+                  const unsigned int codec, std::string preset, const unsigned int fps,
                   const unsigned int gop_length, const size_t bitrate, const unsigned int rcmode,
                   const unsigned int deviceId) :
             height(height),
@@ -79,8 +79,8 @@ typedef struct _EncodeConfig
             pictureStruct(NV_ENC_PIC_STRUCT_FRAME),
             encoderPreset(preset),
             deviceID(deviceId),
-            inputFileName(inputFilename),
-            outputFileName(outputFilenameFormat),
+            //inputFileName(inputFilename),
+            //outputFileName(outputFilenameFormat),
             fOutput(nullptr),
             vbvMaxBitrate(0),
             vbvSize(0),
@@ -92,7 +92,7 @@ typedef struct _EncodeConfig
             numB(0),
             inputFormat(NV_ENC_BUFFER_FORMAT_NV12),
             qpDeltaMapFile(nullptr),
-            inputFilePath(nullptr),
+            //inputFilePath(nullptr),
             enableMEOnly(0),
             enableAsyncMode(0),
             preloadedFrameCount(0),

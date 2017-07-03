@@ -8,7 +8,7 @@
 
 class GPUContext {
 public:
-    GPUContext(unsigned int deviceId) {
+    GPUContext(const unsigned int deviceId) {
         CUresult result;
 
         if(!ensureInitialized())

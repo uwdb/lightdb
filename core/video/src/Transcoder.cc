@@ -46,9 +46,9 @@ int MatchFPS(const float fpsRatio, int decodedFrames, int encodedFrames) {
 Transcoder::Transcoder(GPUContext& context, EncodeConfig& configuration)
         : lock(context), encoder(context, configuration, lock.get()),
           frameQueue(lock.get()), configuration(configuration),
-          decoder(frameQueue, lock),
+          decoder(configuration, frameQueue, lock),
           fpsRatio(1) {
-    outputFilename.reserve(1024);
+    //outputFilename.reserve(1024);
 
     //NVENCSTATUS nvStatus;
 
@@ -65,28 +65,28 @@ Transcoder::Transcoder(GPUContext& context, EncodeConfig& configuration)
     //configuration.pictureStruct = (isProgressive ? NV_ENC_PIC_STRUCT_FRAME : 0);
 }
 
+/*
 void Transcoder::InitializeDecoder(const std::string &inputFilename) {
     NVENCSTATUS nvStatus;
 
-    this->inputFilename = inputFilename;
-    configuration.inputFileName = const_cast<char *>(inputFilename.c_str());
+    //this->inputFilename = inputFilename;
+    //configuration.inputFileName = inputFilename; //const_cast<char *>(inputFilename.c_str());
 
-    decoder.InitVideoDecoder(configuration.inputFileName, configuration);
 
-    assert(configuration.width > 0);
-    assert(configuration.height > 0);
-    auto isProgressive = true;
+    //assert(configuration.width > 0);
+    //assert(configuration.height > 0);
+    //auto isProgressive = true;
 
-    configuration.pictureStruct = (isProgressive ? NV_ENC_PIC_STRUCT_FRAME : 0);
-}
+    //configuration.pictureStruct = (isProgressive ? NV_ENC_PIC_STRUCT_FRAME : 0);
+}*/
 
 int Transcoder::InitializeEncoder(const std::string &outputFilename) {
     NVENCSTATUS nvStatus;
 
-    this->outputFilename = outputFilename;
+    //this->outputFilename = outputFilename;
 
-    configuration.outputFileName = const_cast<char *>(outputFilename.c_str());
-    configuration.fOutput = fopen(configuration.outputFileName, "wb");
+    //configuration.outputFileName = outputFilename;
+    configuration.fOutput = fopen(outputFilename.c_str(), "wb");
     //encoder.GetHWEncoder()->m_fOutput = configuration.fOutput;
 
 //    if ((nvStatus = encoder.GetHWEncoder()->CreateEncoder(&configuration)) != NV_ENC_SUCCESS)
@@ -109,7 +109,7 @@ int Transcoder::transcode(const std::string &inputFilename, const std::string &o
     if ((result = InitializeEncoder(outputFilename)) != 0)
         return result;
 
-    InitializeDecoder(inputFilename);
+    decoder.InitVideoDecoder(inputFilename);
 
     pthread_t pid;
     pthread_create(&pid, nullptr, DecodeProc, static_cast<void *>(&decoder));

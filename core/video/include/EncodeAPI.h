@@ -135,7 +135,7 @@ public:
     NVENCSTATUS                                          NvEncEncodeFrame(EncodeBuffer *pEncodeBuffer, NvEncPictureCommand *encPicCommand,
                                                                           NV_ENC_PIC_STRUCT ePicStruct = NV_ENC_PIC_STRUCT_FRAME,
                                                                           int8_t *qpDeltaMapArray = NULL, uint32_t qpDeltaMapArraySize = 0);
-    GUID                                                 GetPresetGUID(char* encoderPreset, int codec);
+    GUID                                                 GetPresetGUID(const char* encoderPreset, int codec);
     NVENCSTATUS                                          ProcessOutput(FILE* output, const EncodeBuffer *pEncodeBuffer);
     NVENCSTATUS                                          ProcessMVOutput(FILE* output, const MotionEstimationBuffer *pEncodeBuffer);
 

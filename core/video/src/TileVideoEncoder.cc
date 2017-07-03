@@ -32,17 +32,18 @@ NVENCSTATUS TileVideoEncoder::Initialize(void* device, const NV_ENC_DEVICE_TYPE 
     return NV_ENC_SUCCESS;
 }*/
 
-NVENCSTATUS TileVideoEncoder::CreateEncoders(EncodeConfig& rootConfiguration)
+NVENCSTATUS TileVideoEncoder::CreateEncoders(const std::string &filenameTemplate, EncodeConfig& rootConfiguration)
 {
     NVENCSTATUS status;
-    auto filenameTemplate = std::string(rootConfiguration.outputFileName);
+    //std::string f = filenameTemplate; //rootConfiguration.outputFileName;
 
     assert(tileDimensions.count);
 
     for(int i = 0; i < tileDimensions.count; i++)
         {
         auto tileConfiguration = rootConfiguration;
-        auto tileFilename = std::string(filenameTemplate).replace(filenameTemplate.find('%'), 2, std::to_string(i));
+        auto tileFilename(filenameTemplate);
+        tileFilename.replace(filenameTemplate.find('%'), 2, std::to_string(i));
 
         tileConfiguration.width = rootConfiguration.width / tileDimensions.columns;
         tileConfiguration.height = rootConfiguration.height / tileDimensions.rows;
@@ -54,7 +55,7 @@ NVENCSTATUS TileVideoEncoder::CreateEncoders(EncodeConfig& rootConfiguration)
         }
 
     presetGUID = tileEncodeContext[0].hardwareEncoder.GetPresetGUID(
-            rootConfiguration.encoderPreset, rootConfiguration.codec);
+            rootConfiguration.encoderPreset.c_str(), rootConfiguration.codec);
 
     return NV_ENC_SUCCESS;
 }

@@ -24,7 +24,7 @@ public:
   Transcoder(unsigned int height, unsigned int width, unsigned int codec, std::string preset, unsigned int fps,
              unsigned int gop_length, unsigned long bitrate, unsigned int rcmode, unsigned int deviceId)
       : context(deviceId),
-        configuration(nullptr, nullptr, height, width, 0, 0, codec, preset.data(), fps, gop_length, bitrate, rcmode, deviceId),
+        configuration(height, width, 0, 0, codec, preset.data(), fps, gop_length, bitrate, rcmode, deviceId),
         gpuTranscoder(context, configuration) {
       //: gpuTranscoder(height, width, codec, preset, fps, gop_length, bitrate, rcmode, deviceId) {
     //if (gpuTranscoder.initialize() != 0)
@@ -92,8 +92,8 @@ public:
         tileDimensions{tileRows, tileColumns, tileRows * tileColumns} {}
 
   ~Tiler() {
-    for (auto &configuration : configurations)
-      delete configuration.outputFileName;
+    //for (auto &configuration : configurations)
+    //  delete configuration.outputFileName;
   }
 
   static std::vector<EncodeConfig> getConfigurations(char *inputFilename, unsigned int height, unsigned int width,
@@ -109,9 +109,10 @@ public:
       auto bitrate = PyLong_AsLong(PyObject_GetAttrString(quality, "bitrate")) * 1024;
       auto rate_control_mode = PyLong_AsLong(PyObject_GetAttrString(quality, "rate_control_mode"));
       auto *preset = PyString_AsString(PyObject_GetAttrString(quality, "preset"));
-      auto *outputFilenameFormat = new char[64]; // TODO leaks on failure?
+      std::string outputFilenameFormat;
 
-      snprintf(outputFilenameFormat, 64, outputFilenameFormatTemplate, i);
+      outputFilenameFormat.reserve(65);
+      snprintf(outputFilenameFormat.data(), 64, outputFilenameFormatTemplate, i);
 
       configurations.push_back(MakeTilerConfiguration(inputFilename, outputFilenameFormat, height, width, tileRows,
                                                       tileColumns, codec, preset, fps, gop_length, bitrate,

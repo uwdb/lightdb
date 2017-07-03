@@ -50,7 +50,7 @@ public:
   virtual ~TileVideoEncoder() {  ReleaseIOBuffers(); }
 
   //NVENCSTATUS Initialize(void *, const NV_ENC_DEVICE_TYPE);
-  NVENCSTATUS CreateEncoders(EncodeConfig &);
+  NVENCSTATUS CreateEncoders(const std::string &filenameTemplate, EncodeConfig &);
   //NVENCSTATUS Deinitialize();
   NVENCSTATUS
   EncodeFrame(EncodeFrameConfig *, const NV_ENC_PIC_STRUCT type = NV_ENC_PIC_STRUCT_FRAME, const bool flush = false);

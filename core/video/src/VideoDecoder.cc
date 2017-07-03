@@ -63,16 +63,16 @@ static int CUDAAPI HandlePictureDisplay(void *pUserData, CUVIDPARSERDISPINFO *pP
   return 1;
 }
 
-CudaDecoder::CudaDecoder(FrameQueue& frameQueue, DecoderLock& lock)
+CudaDecoder::CudaDecoder(const EncodeConfig &configuration, FrameQueue& frameQueue, DecoderLock& lock)
     : m_videoSource(NULL), m_videoParser(NULL), m_videoDecoder(NULL), lock(lock), m_decodedFrames(0),
-      m_bFinish(false), frameQueue(frameQueue) {}
+      m_bFinish(false), frameQueue(frameQueue), configuration(configuration) {}
 
 CudaDecoder::~CudaDecoder(void) {
     Deinitialize();
 }
 
-void CudaDecoder::InitVideoDecoder(const char *videoPath, EncodeConfig &configuration) {
-  assert(videoPath);
+void CudaDecoder::InitVideoDecoder(const std::string &inputFilename) {
+  //assert(configuration.inputFileName);
 
   CUresult oResult;
 
@@ -83,7 +83,7 @@ void CudaDecoder::InitVideoDecoder(const char *videoPath, EncodeConfig &configur
   oVideoSourceParameters.pfnVideoDataHandler = HandleVideoData;
   oVideoSourceParameters.pfnAudioDataHandler = NULL;
 
-  oResult = cuvidCreateVideoSource(&m_videoSource, videoPath, &oVideoSourceParameters);
+  oResult = cuvidCreateVideoSource(&m_videoSource, inputFilename.c_str(), &oVideoSourceParameters);
   if (oResult != CUDA_SUCCESS) {
     fprintf(stderr, "cuvidCreateVideoSource failed\n");
     fprintf(stderr, "Please check if the path exists, or the video is a valid H264 file\n");

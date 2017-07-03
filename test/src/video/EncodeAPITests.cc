@@ -24,26 +24,23 @@ TEST_F(EncodeAPITestFixture, testPresetGUIDs) {
 }
 
 TEST_F(EncodeAPITestFixture, testCreateEncoder) {
-  EncodeConfig configuration("/dev/null", "/dev/null", 1080, 1920, 2, 2,
-                             NV_ENC_HEVC, preset, 30, 30, 1024*1024, 0, 0);
+  EncodeConfig configuration(1080, 1920, 2, 2, NV_ENC_HEVC, preset, 30, 30, 1024*1024, 0, 0);
 
   ASSERT_EQ(encodeAPI.CreateEncoder(&configuration), NV_ENC_SUCCESS);
 }
 
 TEST_F(EncodeAPITestFixture, testEncodeFrame) {
-  EncodeConfig configuration("/dev/null", "/dev/null", 1080, 1920, 2, 2,
-                             NV_ENC_HEVC, preset, 30, 30, 1024*1024, 0, 0);
+  EncodeConfig configuration(1080, 1920, 2, 2, NV_ENC_HEVC, preset, 30, 30, 1024*1024, 0, 0);
   EncodeBuffer encodeBuffer(encodeAPI, configuration);
 
   EXPECT_EQ(encodeAPI.NvEncEncodeFrame(&encodeBuffer, nullptr, NV_ENC_PIC_STRUCT_FRAME), NV_ENC_SUCCESS);
 }
 
 TEST_F(EncodeAPITestFixture, testProcessOutput) {
-  EncodeConfig configuration("/dev/null", "/dev/null", 1080, 1920, 2, 2,
-                             NV_ENC_HEVC, preset, 30, 30, 1024*1024, 0, 0);
+  EncodeConfig configuration(1080, 1920, 2, 2, NV_ENC_HEVC, preset, 30, 30, 1024*1024, 0, 0);
   EncodeBuffer encodeBuffer(encodeAPI, configuration);
 
-  configuration.fOutput = fopen(configuration.outputFileName, "wb");
+  configuration.fOutput = fopen("/dev/null", "wb");
 
   EXPECT_NE(configuration.fOutput, nullptr);
 

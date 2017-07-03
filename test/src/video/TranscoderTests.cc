@@ -5,7 +5,7 @@ class TranscoderTestFixture : public testing::Test {
 public:
     TranscoderTestFixture()
         : context(0),
-          configuration("/dev/null", "/dev/null", 1080, 1920, 2, 2, NV_ENC_HEVC, "hq", 30, 30, 1024*1024, 0, 0),
+          configuration(1080, 1920, 2, 2, NV_ENC_HEVC, "hq", 30, 30, 1024*1024, 0, 0),
           transcoder(context, configuration)
     {}
 
