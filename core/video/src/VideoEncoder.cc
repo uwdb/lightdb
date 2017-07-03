@@ -3,10 +3,11 @@
 
 #define BITSTREAM_BUFFER_SIZE 2 * 1024 * 1024
 
-VideoEncoder::VideoEncoder(EncodeAPI& api, EncodeConfig& configuration, CUvideoctxlock ctxLock)
-        : api(api), configuration(configuration), m_ctxLock(ctxLock) {
+VideoEncoder::VideoEncoder(GPUContext& context, EncodeConfig& configuration, CUvideoctxlock ctxLock)
+        : configuration(configuration), api(context), m_ctxLock(ctxLock) {
   //m_pNvHWEncoder = new EncodeAPI(context.get());
   //m_ctxLock = ctxLock;
+  configuration.presetGUID = api.GetPresetGUID(configuration.encoderPreset, configuration.codec);
 
   m_uEncodeBufferCount = 0;
   m_iEncodedFrames = 0;
@@ -148,7 +149,7 @@ NVENCSTATUS VideoEncoder::FlushEncoder() {
 
   EncodeBuffer *pEncodeBuffer = m_EncodeBufferQueue.GetPending();
   while (pEncodeBuffer) {
-    api.ProcessOutput(pEncodeBuffer);
+    api.ProcessOutput(configuration.fOutput, pEncodeBuffer);
     pEncodeBuffer = m_EncodeBufferQueue.GetPending();
     // UnMap the input buffer after frame is done
     if (pEncodeBuffer && pEncodeBuffer->stInputBfr.hInputSurface) {
@@ -196,7 +197,7 @@ NVENCSTATUS VideoEncoder::EncodeFrame(EncodeFrameConfig *pEncodeFrame, NV_ENC_PI
   EncodeBuffer *pEncodeBuffer = m_EncodeBufferQueue.GetAvailable();
   if (!pEncodeBuffer) {
     pEncodeBuffer = m_EncodeBufferQueue.GetPending();
-    api.ProcessOutput(pEncodeBuffer);
+    api.ProcessOutput(configuration.fOutput, pEncodeBuffer);
     // UnMap the input buffer after frame done
     if (pEncodeBuffer->stInputBfr.hInputSurface) {
       nvStatus = api.NvEncUnmapInputResource(pEncodeBuffer->stInputBfr.hInputSurface);

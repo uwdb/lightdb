@@ -11,7 +11,7 @@
 
 class Transcoder {
 public:
-    Transcoder(GPUContext& context, EncodeAPI& api, EncodeConfig& configuration);
+    Transcoder(GPUContext& context, EncodeConfig& configuration);
     ~Transcoder() {
 //        encoder.Deinitialize();
     }
@@ -27,9 +27,9 @@ private:
     const std::string preset;
 
     DecoderLock lock;
+    CUVIDFrameQueue frameQueue;
     VideoEncoder encoder;
     CudaDecoder decoder;
-    CUVIDFrameQueue frameQueue;
     EncodeConfig& configuration;
     float fpsRatio;
 };

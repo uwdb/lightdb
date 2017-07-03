@@ -1,7 +1,6 @@
 #include "VideoDecoder.h"
+#include "EncodeBuffer.h"
 #include <assert.h>
-#include <stdio.h>
-#include <string.h>
 
 /*
 static const char* getProfileName(int profile)
@@ -50,7 +49,7 @@ static int CUDAAPI HandleVideoSequence(void *pUserData, CUVIDEOFORMAT *pFormat) 
 static int CUDAAPI HandlePictureDecode(void *pUserData, CUVIDPICPARAMS *pPicParams) {
   assert(pUserData);
   CudaDecoder *pDecoder = (CudaDecoder *)pUserData;
-  pDecoder->m_pFrameQueue->waitUntilFrameAvailable(pPicParams->CurrPicIdx);
+  pDecoder->frameQueue.waitUntilFrameAvailable(pPicParams->CurrPicIdx);
   assert(CUDA_SUCCESS == cuvidDecodePicture(pDecoder->m_videoDecoder, pPicParams));
   return 1;
 }
@@ -58,35 +57,24 @@ static int CUDAAPI HandlePictureDecode(void *pUserData, CUVIDPICPARAMS *pPicPara
 static int CUDAAPI HandlePictureDisplay(void *pUserData, CUVIDPARSERDISPINFO *pPicParams) {
   assert(pUserData);
   CudaDecoder *pDecoder = (CudaDecoder *)pUserData;
-  pDecoder->m_pFrameQueue->enqueue(pPicParams);
+  pDecoder->frameQueue.enqueue(pPicParams);
   pDecoder->m_decodedFrames++;
 
   return 1;
 }
 
-CudaDecoder::CudaDecoder()
-    : m_videoSource(NULL), m_videoParser(NULL), m_videoDecoder(NULL), m_ctxLock(NULL), m_decodedFrames(0),
-      m_bFinish(false) {}
+CudaDecoder::CudaDecoder(FrameQueue& frameQueue, DecoderLock& lock)
+    : m_videoSource(NULL), m_videoParser(NULL), m_videoDecoder(NULL), lock(lock), m_decodedFrames(0),
+      m_bFinish(false), frameQueue(frameQueue) {}
 
 CudaDecoder::~CudaDecoder(void) {
-  if (m_videoDecoder)
-    cuvidDestroyDecoder(m_videoDecoder);
-  if (m_videoParser)
-    cuvidDestroyVideoParser(m_videoParser);
-  if (m_videoSource)
-    cuvidDestroyVideoSource(m_videoSource);
+    Deinitialize();
 }
 
-void CudaDecoder::InitVideoDecoder(const char *videoPath, CUvideoctxlock ctxLock, FrameQueue *pFrameQueue,
-                                   int targetWidth, int targetHeight) {
+void CudaDecoder::InitVideoDecoder(const char *videoPath, EncodeConfig &configuration) {
   assert(videoPath);
-  assert(ctxLock);
-  assert(pFrameQueue);
-
-  m_pFrameQueue = pFrameQueue;
 
   CUresult oResult;
-  m_ctxLock = ctxLock;
 
   // init video source
   CUVIDSOURCEPARAMS oVideoSourceParameters;
@@ -151,12 +139,12 @@ void CudaDecoder::InitVideoDecoder(const char *videoPath, CUvideoctxlock ctxLock
   oVideoDecodeCreateInfo.OutputFormat = cudaVideoSurfaceFormat_NV12;
   oVideoDecodeCreateInfo.DeinterlaceMode = cudaVideoDeinterlaceMode_Weave;
 
-  if (targetWidth <= 0 || targetHeight <= 0) {
+  if (configuration.width <= 0 || configuration.height <= 0) {
     oVideoDecodeCreateInfo.ulTargetWidth = oFormat.display_area.right - oFormat.display_area.left;
     oVideoDecodeCreateInfo.ulTargetHeight = oFormat.display_area.bottom - oFormat.display_area.top;
   } else {
-    oVideoDecodeCreateInfo.ulTargetWidth = targetWidth;
-    oVideoDecodeCreateInfo.ulTargetHeight = targetHeight;
+    oVideoDecodeCreateInfo.ulTargetWidth = configuration.width;
+    oVideoDecodeCreateInfo.ulTargetHeight = configuration.height;
   }
   oVideoDecodeCreateInfo.display_area.left = 0;
   oVideoDecodeCreateInfo.display_area.right = oVideoDecodeCreateInfo.ulTargetWidth;
@@ -165,7 +153,7 @@ void CudaDecoder::InitVideoDecoder(const char *videoPath, CUvideoctxlock ctxLock
 
   oVideoDecodeCreateInfo.ulNumOutputSurfaces = 2;
   oVideoDecodeCreateInfo.ulCreationFlags = cudaVideoCreate_PreferCUVID;
-  oVideoDecodeCreateInfo.vidLock = m_ctxLock;
+  oVideoDecodeCreateInfo.vidLock = lock.get();
 
   oResult = cuvidCreateDecoder(&m_videoDecoder, &oVideoDecodeCreateInfo);
   if (oResult != CUDA_SUCCESS) {
@@ -193,6 +181,19 @@ void CudaDecoder::InitVideoDecoder(const char *videoPath, CUvideoctxlock ctxLock
   }
 }
 
+void CudaDecoder::Deinitialize() {
+    if (m_videoDecoder)
+        cuvidDestroyDecoder(m_videoDecoder);
+    if (m_videoParser)
+        cuvidDestroyVideoParser(m_videoParser);
+    if (m_videoSource)
+        cuvidDestroyVideoSource(m_videoSource);
+
+    m_videoDecoder = nullptr;
+    m_videoParser = nullptr;
+    m_videoSource = nullptr;
+}
+
 void CudaDecoder::Start() {
   CUresult oResult;
 
@@ -204,7 +205,7 @@ void CudaDecoder::Start() {
 
   m_bFinish = true;
 
-  m_pFrameQueue->endDecode();
+  frameQueue.endDecode();
 }
 
 void CudaDecoder::GetCodecParam(int *width, int *height, int *frame_rate_num, int *frame_rate_den,

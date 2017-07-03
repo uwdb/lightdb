@@ -151,7 +151,7 @@ NVENCSTATUS TileVideoEncoder::FlushEncoder()
         EncodeBuffer *encodeBuffer = context.encodeBufferQueue.GetPending();
         while (encodeBuffer)
         {
-            context.hardwareEncoder.ProcessOutput(encodeBuffer);
+            context.hardwareEncoder.ProcessOutput(context.configuration.fOutput, encodeBuffer);
             encodeBuffer = context.encodeBufferQueue.GetPending();
 
             if (encodeBuffer && encodeBuffer->stInputBfr.hInputSurface)
@@ -185,7 +185,7 @@ EncodeBuffer* GetEncodeBuffer(TileEncodeContext& context)
     if (!encodeBuffer)
     {
         encodeBuffer = context.encodeBufferQueue.GetPending();
-        context.hardwareEncoder.ProcessOutput(encodeBuffer);
+        context.hardwareEncoder.ProcessOutput(context.configuration.fOutput, encodeBuffer);
 
         // UnMap the input buffer after frame done
         if (encodeBuffer->stInputBfr.hInputSurface)

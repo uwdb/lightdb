@@ -5,18 +5,17 @@ class TranscoderTestFixture : public testing::Test {
 public:
     TranscoderTestFixture()
         : context(0),
-          api(context),
           configuration("/dev/null", "/dev/null", 1080, 1920, 2, 2, NV_ENC_HEVC, "hq", 30, 30, 1024*1024, 0, 0),
-          transcoder(context, api, configuration)
+          transcoder(context, configuration)
     {}
 
 protected:
     GPUContext context;
-    EncodeAPI api;
     EncodeConfig configuration;
     Transcoder transcoder;
 
 };
+
 
 TEST_F(TranscoderTestFixture, testConstructor) {
 }
@@ -43,7 +42,6 @@ TEST_F(TranscoderTestFixture, testTwoFileTranscoder) {
     EXPECT_EQ(remove("resources/test-pattern-2.h265"), 0);
 }
 
-/*
 TEST_F(TranscoderTestFixture, testMultipleFileTranscoder) {
     for(int i = 0; i < 10; i++) {
         ASSERT_EQ(transcoder.transcode("resources/test-pattern.h264",
@@ -52,4 +50,4 @@ TEST_F(TranscoderTestFixture, testMultipleFileTranscoder) {
         EXPECT_EQ(system("ffprobe -hide_banner -loglevel quiet resources/test-pattern.h265"), 0);
         EXPECT_EQ(remove("resources/test-pattern.h265"), 0);
     }
-}*/
+}

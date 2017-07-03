@@ -11,13 +11,14 @@
 
 typedef struct TileEncodeContext {
   EncodeAPI& hardwareEncoder;
+  EncodeConfig& configuration;
   std::vector<EncodeBuffer> encodeBuffer;
   //EncodeBuffer encodeBuffer[MAX_ENCODE_QUEUE];
   CNvQueue<EncodeBuffer> encodeBufferQueue;
   size_t offsetX, offsetY;
 
   TileEncodeContext(EncodeAPI& api, EncodeConfig& configuration)
-    : hardwareEncoder(api), encodeBufferQueue(), offsetX(0), offsetY(0) {
+    : hardwareEncoder(api), configuration(configuration), encodeBufferQueue(), offsetX(0), offsetY(0) {
 
     std::generate_n(std::back_inserter(encodeBuffer),
                     MAX_ENCODE_QUEUE,

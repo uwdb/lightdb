@@ -145,11 +145,11 @@ int DisplayConfiguration(const EncodeConfig &configuration, const TileDimensions
   return 0;
 }
 
-float InitializeDecoder(CudaDecoder &decoder, CUVIDFrameQueue &queue, CUvideoctxlock &lock,
+float InitializeDecoder(CudaDecoder &decoder, CUVIDFrameQueue &queue, DecoderLock &lock,
                         EncodeConfig &configuration) {
   int decodedW, decodedH, decodedFRN, decodedFRD, isProgressive;
 
-  decoder.InitVideoDecoder(configuration.inputFileName, lock, &queue, configuration.width, configuration.height);
+  decoder.InitVideoDecoder(configuration.inputFileName, configuration);
 
   decoder.GetCodecParam(&decodedW, &decodedH, &decodedFRN, &decodedFRD, &isProgressive);
   if (decodedFRN <= 0 || decodedFRD <= 0) {
@@ -291,7 +291,7 @@ int ParseTileParameters(EncodeConfig &configuration, TileDimensions &tileDimensi
   return 0;
 }
 
-int InitializeEncoder(CUcontext &cudaContext, EncodeConfig &configuration, unsigned long bitrate, int encoderIndex,
+int InitializeEncoder(GPUContext &cudaContext, EncodeConfig &configuration, unsigned long bitrate, int encoderIndex,
                       TileVideoEncoder &encoder, const TileDimensions &tileDimensions) {
   NVENCSTATUS status;
 
@@ -313,35 +313,32 @@ int InitializeEncoder(CUcontext &cudaContext, EncodeConfig &configuration, unsig
 int ExecuteTiler(std::vector<EncodeConfig> &configurations, const TileDimensions tileDimensions) {
   typedef void *CUDADRIVER;
   CUDADRIVER hHandleDriver = nullptr;
-  CUcontext cudaCtx;
-  CUdevice device;
-  CUcontext curCtx;
-  CUvideoctxlock lock;
+  GPUContext context(configurations.at(0).deviceID);
+  DecoderLock lock(context);
   CUresult result;
   NVENCSTATUS status;
-  CudaDecoder decoder;
-  CUVIDFrameQueue frameQueue(lock);
+  CUVIDFrameQueue frameQueue(lock.get());
+  CudaDecoder decoder(frameQueue, lock);
   Statistics statistics;
   auto fpsRatio = 1.f;
   std::vector<TileVideoEncoder *> encoders;
-  GPUContext gpuContext(configurations.at(0).deviceID);
-  EncodeAPI api(gpuContext);
+  EncodeAPI api(context);
 
   //TODO this can all die
   // Initialize CUDA
-  if ((result = cuInit(0, __CUDA_API_VERSION, hHandleDriver)) != CUDA_SUCCESS)
-    return error("Error in cuInit", result);
-  else if ((result = cuvidInit(0)) != CUDA_SUCCESS)
-    return error("Error in cuInit", result);
-  else if ((result = cuDeviceGet(&device, configurations.at(0).deviceID)) != CUDA_SUCCESS)
-    return error("cuDeviceGet", result);
-  else if ((result = cuCtxCreate(&cudaCtx, CU_CTX_SCHED_AUTO, device)) != CUDA_SUCCESS)
-    return error("cuCtxCreate", result);
-  else if ((result = cuCtxPopCurrent(&curCtx)) != CUDA_SUCCESS)
-    return error("cuCtxPopCurrent", result);
-  else if ((result = cuvidCtxLockCreate(&lock, curCtx)) != CUDA_SUCCESS)
-    return error("cuvidCtxLockCreate", result);
-  else if ((fpsRatio = InitializeDecoder(decoder, frameQueue, lock, configurations.at(0))) < 0)
+  //if ((result = cuInit(0, __CUDA_API_VERSION, hHandleDriver)) != CUDA_SUCCESS)
+  //  return error("Error in cuInit", result);
+  //else if ((result = cuvidInit(0)) != CUDA_SUCCESS)
+  //  return error("Error in cuInit", result);
+  //else if ((result = cuDeviceGet(&device, configurations.at(0).deviceID)) != CUDA_SUCCESS)
+  //  return error("cuDeviceGet", result);
+  //else if ((result = cuCtxCreate(&cudaCtx, CU_CTX_SCHED_AUTO, device)) != CUDA_SUCCESS)
+  //  return error("cuCtxCreate", result);
+  //else if ((result = cuCtxPopCurrent(&curCtx)) != CUDA_SUCCESS)
+  //  return error("cuCtxPopCurrent", result);
+  //else if ((result = cuvidCtxLockCreate(&lock, curCtx)) != CUDA_SUCCESS)
+  //  return error("cuvidCtxLockCreate", result);
+  if ((fpsRatio = InitializeDecoder(decoder, frameQueue, lock, configurations.at(0))) < 0)
     return error("InitializeDecoder", -1);
   // else if (DisplayConfiguration(configurations.at(0), tileDimensions) != 0)
   //	return error("DisplayConfiguration", -1);
@@ -349,8 +346,8 @@ int ExecuteTiler(std::vector<EncodeConfig> &configurations, const TileDimensions
   auto index = 0;
   for (auto &configuration : configurations) {
     // TODO leaks
-    auto *encoder = new TileVideoEncoder(api, lock, configuration, tileDimensions.columns, tileDimensions.rows);
-    if (InitializeEncoder(cudaCtx, configuration, configuration.bitrate, index++, *encoder, tileDimensions))
+    auto *encoder = new TileVideoEncoder(api, lock.get(), configuration, tileDimensions.columns, tileDimensions.rows);
+    if (InitializeEncoder(context, configuration, configuration.bitrate, index++, *encoder, tileDimensions))
       return error("InitializeEncoder", -1);
     else
       encoders.push_back(encoder);
@@ -365,11 +362,11 @@ int ExecuteTiler(std::vector<EncodeConfig> &configurations, const TileDimensions
     delete encoder;
   }
 
-  if ((result = cuvidCtxLockDestroy(lock)) != CUDA_SUCCESS)
-    return error("cuvidCtxLockDestroy", result);
-  else if ((result = cuCtxDestroy(cudaCtx)) != CUDA_SUCCESS)
-    return error("cuCtxDestroy", result);
-  else
+  //if ((result = cuvidCtxLockDestroy(lock)) != CUDA_SUCCESS)
+  //  return error("cuvidCtxLockDestroy", result);
+  //else if ((result = cuCtxDestroy(cudaCtx)) != CUDA_SUCCESS)
+  //  return error("cuCtxDestroy", result);
+  //else
     return 0;
 }
 

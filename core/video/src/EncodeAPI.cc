@@ -476,6 +476,9 @@ NVENCSTATUS EncodeAPI::NvEncOpenEncodeSessionEx(void* device, NV_ENC_DEVICE_TYPE
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
     NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS openSessionExParams;
 
+    if(m_bEncoderInitialized)
+        throw "m_bEncoderInitialized"; //TODO
+
     memset(&openSessionExParams, 0, sizeof(openSessionExParams));
     SET_VER(openSessionExParams, NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS);
 
@@ -583,7 +586,7 @@ EncodeAPI::EncodeAPI(void* device, NV_ENC_DEVICE_TYPE deviceType)
     m_bEncoderInitialized = false;
     m_pEncodeAPI = NULL;
     m_hinstLib = NULL;
-    m_fOutput = NULL;
+    //m_fOutput = NULL;
     m_EncodeIdx = 0;
     m_uCurWidth = 0;
     m_uCurHeight = 0;
@@ -736,7 +739,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(EncodeConfig *pEncCfg)
         return NV_ENC_ERR_INVALID_PARAM;
     }
 
-    m_fOutput = pEncCfg->fOutput;
+    //m_fOutput = pEncCfg->fOutput;
 
     // TODO need to remove fOutput from configuration if (!pEncCfg->width || !pEncCfg->height || !m_fOutput)
     if (!pEncCfg->width || !pEncCfg->height)
@@ -1024,7 +1027,7 @@ GUID EncodeAPI::GetPresetGUID(char* encoderPreset, int codec)
     return presetGUID;
 }
 
-NVENCSTATUS EncodeAPI::ProcessOutput(const EncodeBuffer *pEncodeBuffer)
+NVENCSTATUS EncodeAPI::ProcessOutput(FILE* output, const EncodeBuffer *pEncodeBuffer)
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
@@ -1057,7 +1060,7 @@ NVENCSTATUS EncodeAPI::ProcessOutput(const EncodeBuffer *pEncodeBuffer)
     nvStatus = m_pEncodeAPI->nvEncLockBitstream(encodeSessionHandle, &lockBitstreamData);
     if (nvStatus == NV_ENC_SUCCESS)
     {
-        fwrite(lockBitstreamData.bitstreamBufferPtr, 1, lockBitstreamData.bitstreamSizeInBytes, m_fOutput);
+        fwrite(lockBitstreamData.bitstreamBufferPtr, 1, lockBitstreamData.bitstreamSizeInBytes, output);
         nvStatus = m_pEncodeAPI->nvEncUnlockBitstream(encodeSessionHandle, pEncodeBuffer->stOutputBfr.hBitstreamBuffer);
     }
     else
@@ -1068,7 +1071,7 @@ NVENCSTATUS EncodeAPI::ProcessOutput(const EncodeBuffer *pEncodeBuffer)
     return nvStatus;
 }
 
-NVENCSTATUS EncodeAPI::ProcessMVOutput(const MotionEstimationBuffer *pMEBuffer)
+NVENCSTATUS EncodeAPI::ProcessMVOutput(FILE* output, const MotionEstimationBuffer *pMEBuffer)
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
@@ -1104,25 +1107,25 @@ NVENCSTATUS EncodeAPI::ProcessMVOutput(const MotionEstimationBuffer *pMEBuffer)
         if (codecGUID == NV_ENC_CODEC_H264_GUID)
         {
             unsigned int numMBs = ((m_uMaxWidth + 15) >> 4) * ((m_uMaxHeight + 15) >> 4);
-            fprintf(m_fOutput, "Motion Vectors for input frame = %d, reference frame = %d\n", pMEBuffer->inputFrameIndex, pMEBuffer->referenceFrameIndex);
-            fprintf(m_fOutput, "block, mb_type, partitionType, "
+            fprintf(output, "Motion Vectors for input frame = %d, reference frame = %d\n", pMEBuffer->inputFrameIndex, pMEBuffer->referenceFrameIndex);
+            fprintf(output, "block, mb_type, partitionType, "
                 "MV[0].x, MV[0].y, MV[1].x, MV[1].y, MV[2].x, MV[2].y, MV[3].x, MV[3].y, cost\n");
             NV_ENC_H264_MV_DATA *outputMV = (NV_ENC_H264_MV_DATA *)lockBitstreamData.bitstreamBufferPtr;
             for (unsigned int i = 0; i < numMBs; i++)
             {
-                fprintf(m_fOutput, "%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", \
+                fprintf(output, "%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", \
                     i, outputMV[i].mbType, outputMV[i].partitionType, \
                     outputMV[i].mv[0].mvx, outputMV[i].mv[0].mvy, outputMV[i].mv[1].mvx, outputMV[i].mv[1].mvy, \
                     outputMV[i].mv[2].mvx, outputMV[i].mv[2].mvy, outputMV[i].mv[3].mvx, outputMV[i].mv[3].mvy, outputMV[i].mbCost);
             }
-            fprintf(m_fOutput, "\n");
+            fprintf(output, "\n");
         }
         else
         {
             unsigned int numCTBs = ((m_uMaxWidth + 31) >> 5) * ((m_uMaxHeight + 31) >> 5);
-            fprintf(m_fOutput, "Motion Vectors for input frame = %d, reference frame = %d\n", pMEBuffer->inputFrameIndex, pMEBuffer->referenceFrameIndex);
+            fprintf(output, "Motion Vectors for input frame = %d, reference frame = %d\n", pMEBuffer->inputFrameIndex, pMEBuffer->referenceFrameIndex);
             NV_ENC_HEVC_MV_DATA *outputMV = (NV_ENC_HEVC_MV_DATA *)lockBitstreamData.bitstreamBufferPtr;
-            fprintf(m_fOutput, "ctb, cuType, cuSize, partitionMode, "
+            fprintf(output, "ctb, cuType, cuSize, partitionMode, "
                 "MV[0].x, MV[0].y, MV[1].x, MV[1].y, MV[2].x, MV[2].y, MV[3].x, MV[3].y\n");
             bool lastCUInCTB = false;
             for (unsigned int i = 0; i < numCTBs; i++)
@@ -1130,14 +1133,14 @@ NVENCSTATUS EncodeAPI::ProcessMVOutput(const MotionEstimationBuffer *pMEBuffer)
                 do
                 {
                     lastCUInCTB = outputMV->lastCUInCTB ? true : false;
-                    fprintf(m_fOutput, "%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", \
+                    fprintf(output, "%d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d\n", \
                         i, outputMV->cuType, outputMV->cuSize, outputMV->partitionMode, \
                         outputMV->mv[0].mvx, outputMV->mv[0].mvy, outputMV->mv[1].mvx, outputMV->mv[1].mvy, \
                         outputMV->mv[2].mvx, outputMV->mv[2].mvy, outputMV->mv[3].mvx, outputMV->mv[3].mvy);
                     outputMV += 1;
                 } while (!lastCUInCTB);
             }
-            fprintf(m_fOutput, "\n");
+            fprintf(output, "\n");
         }
         nvStatus = m_pEncodeAPI->nvEncUnlockBitstream(encodeSessionHandle, pMEBuffer->stOutputBfr.hBitstreamBuffer);
     }
@@ -1153,6 +1156,8 @@ NVENCSTATUS EncodeAPI::Initialize(void* device, NV_ENC_DEVICE_TYPE deviceType)
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
     MYPROC nvEncodeAPICreateInstance; // function pointer to create instance in nvEncodeAPI
+
+    assert(!m_bEncoderInitialized);
 
 #if defined(NV_WINDOWS)
 #if defined (_WIN64)

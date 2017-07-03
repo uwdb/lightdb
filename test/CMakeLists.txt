@@ -27,7 +27,7 @@ add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -V DEPENDS visualcloud_te
 find_program(CUDAMEMCHECK "cuda-memcheck")
 if(CUDAMEMCHECK)
     add_custom_target(cuda-memcheck
-        COMMAND "${CUDAMEMCHECK}" --error-exitcode 1 --leak-check full $<TARGET_FILE:visualcloud_test>)
+        COMMAND "${CUDAMEMCHECK}" --error-exitcode 1 --flush-to-disk yes --leak-check full $<TARGET_FILE:visualcloud_test>)
 endif()
 
 find_program(VALGRIND "valgrind")

@@ -72,7 +72,7 @@ class EncodeAPI
 {
 public:
     uint32_t                                             m_EncodeIdx;
-    FILE                                                *m_fOutput;
+    //FILE                                                *m_fOutput;
     uint32_t                                             m_uMaxWidth;
     uint32_t                                             m_uMaxHeight;
     uint32_t                                             m_uCurWidth;
@@ -136,8 +136,8 @@ public:
                                                                           NV_ENC_PIC_STRUCT ePicStruct = NV_ENC_PIC_STRUCT_FRAME,
                                                                           int8_t *qpDeltaMapArray = NULL, uint32_t qpDeltaMapArraySize = 0);
     GUID                                                 GetPresetGUID(char* encoderPreset, int codec);
-    NVENCSTATUS                                          ProcessOutput(const EncodeBuffer *pEncodeBuffer);
-    NVENCSTATUS                                          ProcessMVOutput(const MotionEstimationBuffer *pEncodeBuffer);
+    NVENCSTATUS                                          ProcessOutput(FILE* output, const EncodeBuffer *pEncodeBuffer);
+    NVENCSTATUS                                          ProcessMVOutput(FILE* output, const MotionEstimationBuffer *pEncodeBuffer);
 
 protected:
     //TODO these two functions should just be removed entirely

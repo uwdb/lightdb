@@ -104,12 +104,12 @@ typedef struct _EncodeFrameConfig {
 
 class VideoEncoder {
 public:
-  VideoEncoder(EncodeAPI& api, EncodeConfig& configuration, CUvideoctxlock ctxLock);
+  VideoEncoder(GPUContext& context, EncodeConfig& configuration, CUvideoctxlock ctxLock);
   virtual ~VideoEncoder();
 
 protected:
-  EncodeAPI& api;
   EncodeConfig& configuration;
+  EncodeAPI api;
   CUvideoctxlock m_ctxLock;
   uint32_t m_uEncodeBufferCount;
   CNvQueue<EncodeBuffer> m_EncodeBufferQueue;
@@ -122,7 +122,7 @@ protected:
     //NVENCSTATUS Deinitialize();
 
 public:
-  EncodeAPI *GetHWEncoder() { return &api; } // TODO don't leak api (and if so leak reference)
+  //EncodeAPI *GetHWEncoder() { return &api; } // TODO don't leak api (and if so leak reference)
   NVENCSTATUS EncodeFrame(EncodeFrameConfig *pEncodeFrame, NV_ENC_PIC_STRUCT picType = NV_ENC_PIC_STRUCT_FRAME,
                           bool bFlush = false);
   int32_t GetEncodedFrames() { return m_iEncodedFrames; }
