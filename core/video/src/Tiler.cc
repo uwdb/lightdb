@@ -145,7 +145,7 @@ int DisplayConfiguration(const std::string &inputFilename, const std::string &ou
   return 0;
 }
 
-float InitializeDecoder(const std::string &inputFilename, CudaDecoder &decoder, CUVIDFrameQueue &queue, DecoderLock &lock,
+float InitializeDecoder(const std::string &inputFilename, CudaDecoder &decoder, CUVIDFrameQueue &queue, VideoLock &lock,
                         EncodeConfig &configuration) {
   int decodedW, decodedH, decodedFRN, decodedFRD, isProgressive;
 
@@ -317,7 +317,7 @@ int ExecuteTiler(std::string inputFilename, std::string outputFilenameFormat, st
   typedef void *CUDADRIVER;
   CUDADRIVER hHandleDriver = nullptr;
   GPUContext context(configurations.at(0).deviceID);
-  DecoderLock lock(context);
+  VideoLock lock(context);
   CUresult result;
   NVENCSTATUS status;
   CUVIDFrameQueue frameQueue(lock.get());

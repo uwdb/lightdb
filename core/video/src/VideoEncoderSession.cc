@@ -9,7 +9,7 @@ NVENCSTATUS VideoEncoderSession::Encode(EncodeFrameConfig &frame, NV_ENC_PIC_STR
     assert(frame.height == buffer->stInputBfr.dwHeight);
 
     // Copy frame from Host to Device Memory (CUDA)
-    if(cuvidCtxLock(encoder.m_ctxLock, 0) != CUDA_SUCCESS)
+    if(cuvidCtxLock(encoder.lock.get(), 0) != CUDA_SUCCESS)
         return NV_ENC_ERR_GENERIC;
 
     CUDA_MEMCPY2D copy = {};
@@ -24,7 +24,7 @@ NVENCSTATUS VideoEncoderSession::Encode(EncodeFrameConfig &frame, NV_ENC_PIC_STR
 
     if (cuMemcpy2D(&copy) != CUDA_SUCCESS)
       return NV_ENC_ERR_GENERIC;
-    else if(cuvidCtxUnlock(encoder.m_ctxLock, 0))
+    else if(cuvidCtxUnlock(encoder.lock.get(), 0))
         return NV_ENC_ERR_GENERIC;
     else if((status = encoder.api().NvEncMapInputResource(buffer->stInputBfr.nvRegisteredResource,
                                                         &buffer->stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
@@ -32,7 +32,7 @@ NVENCSTATUS VideoEncoderSession::Encode(EncodeFrameConfig &frame, NV_ENC_PIC_STR
     else if((status = encoder.api().NvEncEncodeFrame(buffer, NULL, type)) != NV_ENC_SUCCESS)
         return status;
 
-    encodedFrameCount++;
+    frameCount_++;
 
     return NV_ENC_SUCCESS;
 }
@@ -46,6 +46,7 @@ NVENCSTATUS VideoEncoderSession::Flush() {
 
     while(CompletePendingBuffer() != nullptr);
 
+    writer.Flush();
 
     return NV_ENC_SUCCESS;
 }

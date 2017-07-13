@@ -1,20 +1,21 @@
-#ifndef VISUALCLOUD_DECODERLOCK_H
-#define VISUALCLOUD_DECODERLOCK_H
+#ifndef VISUALCLOUD_VIDEOLOCK_H
+#define VISUALCLOUD_VIDEOLOCK_H
 
 #include <dynlink_cuda.h>
 #include <dynlink_cuviddec.h>
 #include <cstdio>
 #include "GPUContext.h"
 
-class DecoderLock {
+class VideoLock
+{
 public:
-    DecoderLock(GPUContext& context) : context(context) { // TODO shared pointer for context
+    VideoLock(GPUContext& context) : context(context) { // TODO shared pointer for context
         CUresult result;
 
         if ((result = cuvidCtxLockCreate(&lock, context.get())) != CUDA_SUCCESS)
-            printf("throw %d\n", result);
+            throw result; // TODO
     }
-    ~DecoderLock() {
+    ~VideoLock() {
         cuvidCtxLockDestroy(lock);
     }
 
@@ -25,4 +26,4 @@ private:
     CUvideoctxlock lock = nullptr;
 };
 
-#endif //VISUALCLOUD_DECODERLOCK_H
+#endif //VISUALCLOUD_VIDEOLOCK_H

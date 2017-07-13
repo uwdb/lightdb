@@ -27,8 +27,8 @@
 #include <vector>
 #include "FrameQueue.h"
 #include "EncodeBuffer.h"
-#include "EncodeWriter.h"
 #include "EncodeAPI.h"
+#include "VideoLock.h"
 #include "nvEncodeAPI.h"
 
 #include "dynlink_cuda.h"    // <cuda.h>
@@ -105,14 +105,15 @@ typedef struct _EncodeFrameConfig {
 
 class VideoEncoder {
 public:
-  VideoEncoder(GPUContext& context, EncodeConfig& configuration, CUvideoctxlock ctxLock);
+  VideoEncoder(GPUContext&, EncodeConfig&, VideoLock&);
   virtual ~VideoEncoder();
 
   EncodeAPI &api() { return api_; }
+
 protected:
   EncodeConfig& configuration;
   EncodeAPI api_;
-  CUvideoctxlock m_ctxLock;
+  VideoLock &lock;
   uint32_t m_uEncodeBufferCount;
   CNvQueue<EncodeBuffer> m_EncodeBufferQueue;
 
@@ -125,16 +126,14 @@ protected:
 
 public:
     NVENCSTATUS EncodeFrame(EncodeFrameConfig *pEncodeFrame, NV_ENC_PIC_STRUCT picType = NV_ENC_PIC_STRUCT_FRAME,
-                          bool bFlush = false);
-    int32_t GetEncodedFrames() { return m_iEncodedFrames; }
-
-    NVENCSTATUS AllocateIOBuffers();
-    NVENCSTATUS ReleaseIOBuffers();
-
+                          bool bFlush = false); //TODO deprecated for sessions
 
 protected:
+    NVENCSTATUS AllocateIOBuffers(); //TODO perform on construction
+    NVENCSTATUS ReleaseIOBuffers(); //TODO release on destruction
+
     bool isIOBufferAllocated = false; //TODO not needed
-  NVENCSTATUS FlushEncoder();
+  NVENCSTATUS FlushEncoder(); //TODO deprecated for sessions
 
 private:
     std::vector<EncodeBuffer> buffers;

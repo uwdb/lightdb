@@ -1,7 +1,7 @@
 #include "FrameQueue.h"
 #include <gtest/gtest.h>
 #include <GPUContext.h>
-#include <DecoderLock.h>
+#include <VideoLock.h>
 
 class FrameQueueTestFixture : public testing::Test {
 public:
@@ -13,7 +13,7 @@ public:
 
 protected:
     GPUContext context;
-    DecoderLock lock;
+    VideoLock lock;
     CUVIDFrameQueue queue;
 };
 

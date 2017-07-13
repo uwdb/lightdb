@@ -1,6 +1,9 @@
 #include "Transcoder.h"
 #include <gtest/gtest.h>
 
+#define FILENAME "resources/test-pattern.h265"
+#define FILENAME2 "resources/test-pattern-2.h265"
+
 class TranscoderTestFixture : public testing::Test {
 public:
     TranscoderTestFixture()
@@ -22,32 +25,44 @@ TEST_F(TranscoderTestFixture, testConstructor) {
 
 TEST_F(TranscoderTestFixture, testFileTranscoder) {
     ASSERT_EQ(transcoder.transcode("resources/test-pattern.h264",
-                                   "resources/test-pattern.h265"), NV_ENC_SUCCESS);
+                                   FILENAME), NV_ENC_SUCCESS);
 
-    EXPECT_EQ(system("ffprobe -hide_banner -loglevel quiet resources/test-pattern.h265"), 0);
-    EXPECT_EQ(remove("resources/test-pattern.h265"), 0);
+    EXPECT_EQ(system("ffprobe -hide_banner -loglevel quiet " FILENAME), 0);
+    EXPECT_EQ(system("resources/assert-frames.sh " FILENAME " 99"), 0);
+    EXPECT_EQ(remove(FILENAME), 0);
 }
+
+TEST_F(TranscoderTestFixture, testTranscoderWithWriter) {
+    FileEncodeWriter writer(transcoder.encoder().api(), "resources/test-pattern.h265");
+
+    ASSERT_EQ(transcoder.transcode("resources/test-pattern.h264", writer), NV_ENC_SUCCESS);
+
+    EXPECT_EQ(system("ffprobe -hide_banner -loglevel quiet " FILENAME), 0);
+    EXPECT_EQ(system("resources/assert-frames.sh " FILENAME " 99"), 0);
+    EXPECT_EQ(remove(FILENAME), 0);
+}
+
 
 TEST_F(TranscoderTestFixture, testTwoFileTranscoder) {
     ASSERT_EQ(transcoder.transcode("resources/test-pattern.h264",
-                                   "resources/test-pattern-1.h265"), NV_ENC_SUCCESS);
+                                   FILENAME), NV_ENC_SUCCESS);
 
-    EXPECT_EQ(system("ffprobe -hide_banner -loglevel quiet resources/test-pattern-1.h265"), 0);
-    EXPECT_EQ(remove("resources/test-pattern-1.h265"), 0);
+    EXPECT_EQ(system("ffprobe -hide_banner -loglevel quiet " FILENAME), 0);
+    EXPECT_EQ(remove(FILENAME), 0);
 
     ASSERT_EQ(transcoder.transcode("resources/test-pattern.h264",
-                                   "resources/test-pattern-2.h265"), NV_ENC_SUCCESS);
+                                   FILENAME2), NV_ENC_SUCCESS);
 
-    EXPECT_EQ(system("ffprobe -hide_banner -loglevel quiet resources/test-pattern-2.h265"), 0);
-    EXPECT_EQ(remove("resources/test-pattern-2.h265"), 0);
+    EXPECT_EQ(system("ffprobe -hide_banner -loglevel quiet " FILENAME2), 0);
+    EXPECT_EQ(remove(FILENAME2), 0);
 }
 
 TEST_F(TranscoderTestFixture, testMultipleFileTranscoder) {
     for(int i = 0; i < 10; i++) {
         ASSERT_EQ(transcoder.transcode("resources/test-pattern.h264",
-                                       "resources/test-pattern.h265"), NV_ENC_SUCCESS);
+                                       FILENAME), NV_ENC_SUCCESS);
 
-        EXPECT_EQ(system("ffprobe -hide_banner -loglevel quiet resources/test-pattern.h265"), 0);
-        EXPECT_EQ(remove("resources/test-pattern.h265"), 0);
+        EXPECT_EQ(system("ffprobe -hide_banner -loglevel quiet " FILENAME), 0);
+        EXPECT_EQ(remove(FILENAME), 0);
     }
 }

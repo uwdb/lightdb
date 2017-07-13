@@ -1,9 +1,5 @@
 #include <pthread.h>
-#include <time.h>
-
 #include "dynlink_cuda.h"
-#include <stdio.h>
-
 #include "VideoDecoder.h"
 #include "VideoEncoder.h"
 #include "VideoEncoderSession.h"
@@ -43,74 +39,10 @@ int MatchFPS(const float fpsRatio, int decodedFrames, int encodedFrames) {
 ///
 ///
 
-Transcoder::Transcoder(GPUContext& context, EncodeConfig& configuration)
-        : lock(context), encoder(context, configuration, lock.get()),
-          frameQueue(lock.get()), configuration(configuration),
-          decoder(configuration, frameQueue, lock),
-          fpsRatio(1) {
-    //outputFilename.reserve(1024);
-
-    //NVENCSTATUS nvStatus;
-
-    //assert(encoder.GetHWEncoder());
-
-    //if ((nvStatus = encoder.GetHWEncoder()->Initialize(context.get(), NV_ENC_DEVICE_TYPE_CUDA)) != NV_ENC_SUCCESS)
-    //    ;
-
-    //configuration.presetGUID = encoder.GetHWEncoder()->GetPresetGUID(configuration.encoderPreset, configuration.codec);
-
-    //`frameQueue.init(configuration.width, configuration.height);
-
-    //auto isProgressive = true;
-    //configuration.pictureStruct = (isProgressive ? NV_ENC_PIC_STRUCT_FRAME : 0);
-}
-
-/*
-void Transcoder::InitializeDecoder(const std::string &inputFilename) {
-    NVENCSTATUS nvStatus;
-
-    //this->inputFilename = inputFilename;
-    //configuration.inputFileName = inputFilename; //const_cast<char *>(inputFilename.c_str());
-
-
-    //assert(configuration.width > 0);
-    //assert(configuration.height > 0);
-    //auto isProgressive = true;
-
-    //configuration.pictureStruct = (isProgressive ? NV_ENC_PIC_STRUCT_FRAME : 0);
-}*/
-
-int Transcoder::InitializeEncoder(const std::string &outputFilename) {
-    NVENCSTATUS nvStatus;
-
-    //this->outputFilename = outputFilename;
-
-    //configuration.outputFileName = outputFilename;
-/////    configuration.fOutput = fopen(outputFilename.c_str(), "wb");
-    //encoder.GetHWEncoder()->m_fOutput = configuration.fOutput;
-
-//    if ((nvStatus = encoder.GetHWEncoder()->CreateEncoder(&configuration)) != NV_ENC_SUCCESS)
-  //      return 7;
-    //else if ((nvStatus = encoder.AllocateIOBuffers(&configuration)) != NV_ENC_SUCCESS)
-    //    return 8;
-    //else
-        return 0;
-}
-
-int Transcoder::transcode(const std::string &inputFilename, const std::string &outputFilename) {
-    int result;
-    NVENCSTATUS nvStatus;
-
+int Transcoder::transcode(const std::string &inputFilename, EncodeWriter &writer) {
     frameQueue.reset();
 
-    // Destroy previously-initialized encoder, if any exists
-    //encoder->GetHWEncoder()->NvEncDestroyEncoder();
-
-    //if ((result = InitializeEncoder(outputFilename)) != 0)
-    //    return result;
-
-    FileEncodeWriter writer(encoder.api(), outputFilename);
-    VideoEncoderSession session(encoder, writer);
+    VideoEncoderSession session(encoder(), writer);
 
     decoder.InitVideoDecoder(inputFilename);
 
@@ -146,7 +78,6 @@ int Transcoder::transcode(const std::string &inputFilename, const std::string &o
 
             auto dropOrDuplicate = MatchFPS(fpsRatio, frmProcessed, frmActual);
             for (auto i = 0; i <= dropOrDuplicate; i++) {
-                //encoder.EncodeFrame(&stEncodeConfig, picType);
                 session.Encode(stEncodeConfig, picType);
                 frmActual++;
             }
@@ -158,12 +89,8 @@ int Transcoder::transcode(const std::string &inputFilename, const std::string &o
     }
 
     session.Flush();
-    //encoder.EncodeFrame(nullptr, NV_ENC_PIC_STRUCT_FRAME, true);
 
     pthread_join(pid, nullptr);
-
-    if ((nvStatus = encoder.ReleaseIOBuffers()) != NV_ENC_SUCCESS)
-        return -1;
 
     decoder.Deinitialize();
 

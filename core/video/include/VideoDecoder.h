@@ -3,13 +3,13 @@
 
 #include "EncodeAPI.h"
 #include "FrameQueue.h"
-#include "DecoderLock.h"
+#include "VideoLock.h"
 #include "dynlink_cuda.h"    // <cuda.h>
 #include "dynlink_nvcuvid.h" // <nvcuvid.h>
 
 class CudaDecoder {
 public:
-  CudaDecoder(const EncodeConfig &configuration, FrameQueue& frameQueue, DecoderLock& lock);
+  CudaDecoder(const EncodeConfig &configuration, FrameQueue& frameQueue, VideoLock& lock);
   virtual ~CudaDecoder(void);
 
   bool IsFinished() { return m_bFinish; }
@@ -33,7 +33,7 @@ public:
 
 protected:
   bool m_bFinish;
-  DecoderLock& lock;
+  VideoLock& lock;
 };
 
 #endif

@@ -63,7 +63,7 @@ static int CUDAAPI HandlePictureDisplay(void *pUserData, CUVIDPARSERDISPINFO *pP
   return 1;
 }
 
-CudaDecoder::CudaDecoder(const EncodeConfig &configuration, FrameQueue& frameQueue, DecoderLock& lock)
+CudaDecoder::CudaDecoder(const EncodeConfig &configuration, FrameQueue& frameQueue, VideoLock& lock)
     : m_videoSource(NULL), m_videoParser(NULL), m_videoDecoder(NULL), lock(lock), m_decodedFrames(0),
       m_bFinish(false), frameQueue(frameQueue), configuration(configuration) {}
 

@@ -10,7 +10,7 @@ class VideoEncoder;
 class VideoEncoderSession {
 public:
     VideoEncoderSession(VideoEncoder &encoder, EncodeWriter &writer)
-            : encoder(encoder), writer(writer), encodedFrameCount(0) {
+            : encoder(encoder), writer(writer), frameCount_(0) {
         encoder.AllocateIOBuffers();
     }
     ~VideoEncoderSession() {
@@ -20,10 +20,10 @@ public:
     NVENCSTATUS Encode(EncodeFrameConfig&, NV_ENC_PIC_STRUCT type = NV_ENC_PIC_STRUCT_FRAME);
     NVENCSTATUS Flush();
 
-    size_t GetEncodedFrames() const { return encodedFrameCount; }
+    size_t frameCount() const { return frameCount_; }
 
 protected:
-    size_t encodedFrameCount;
+    size_t frameCount_;
 
     VideoEncoder &encoder;
     EncodeWriter &writer;

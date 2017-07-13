@@ -10,16 +10,16 @@
 
 typedef struct _EncodeConfig
 {
-    int              width;
-    int              height;
-    int              maxWidth;
-    int              maxHeight;
-    int              fps;
-    int              bitrate;
-    int              vbvMaxBitrate;
+    unsigned int              width;
+    unsigned int              height;
+    unsigned int              maxWidth;
+    unsigned int              maxHeight;
+    unsigned int              fps;
+    unsigned int              bitrate;
+    unsigned int              vbvMaxBitrate;
     int              vbvSize;
     int              rcMode;
-    int              qp;
+    unsigned int              qp;
     float            i_quant_factor;
     float            b_quant_factor;
     float            i_quant_offset;
@@ -27,26 +27,26 @@ typedef struct _EncodeConfig
     GUID             presetGUID;
     FILE            *fOutput;
     int              codec;
-    int              invalidateRefFramesEnableFlag;
-    int              intraRefreshEnableFlag;
-    int              intraRefreshPeriod;
-    int              intraRefreshDuration;
-    int              deviceType;
-    int              startFrameIdx;
-    int              endFrameIdx;
-    int              gopLength;
-    int              numB;
-    int              pictureStruct;
+    bool              invalidateRefFramesEnableFlag;
+    bool              intraRefreshEnableFlag;
+    unsigned int              intraRefreshPeriod;
+    unsigned int              intraRefreshDuration;
+    unsigned int              deviceType;
+    unsigned int              startFrameIdx;
+    unsigned int              endFrameIdx;
+    unsigned int              gopLength;
+    unsigned int              numB;
+    unsigned int              pictureStruct;
     const unsigned int              deviceID;
     NV_ENC_BUFFER_FORMAT inputFormat;
     char            *qpDeltaMapFile;
     //std::string inputFileName;
     //std::string outputFileName;
     std::string encoderPreset;
-    int  enableMEOnly;
-    int  enableAsyncMode;
-    int  preloadedFrameCount;
-    int  enableTemporalAQ;
+    bool enableMEOnly;
+    bool   enableAsyncMode;
+    unsigned int  preloadedFrameCount;
+    bool enableTemporalAQ;
 
     _EncodeConfig() :
         EncodeConfig(0, 0, 0, 0, 0, "hq", 0, 0, 0, 0, 0)

@@ -15,7 +15,7 @@ NVENCSTATUS EncodeWriter::WriteFrame(const EncodeBuffer &buffer) {
     else if (buffer.stOutputBfr.bEOSFlag)
         return NV_ENC_SUCCESS;
     else
-        return WriteFrame(bitstream);
+        return WriteFrame(bitstream) == 0 ? NV_ENC_SUCCESS : NV_ENC_ERR_GENERIC;
 }
 
 NVENCSTATUS EncodeWriter::WriteFrame(NV_ENC_LOCK_BITSTREAM &bitstream) {
@@ -24,8 +24,9 @@ NVENCSTATUS EncodeWriter::WriteFrame(NV_ENC_LOCK_BITSTREAM &bitstream) {
     if((status = api.NvEncLockBitstream(&bitstream)) != NV_ENC_SUCCESS)
         return status;
 
-    status = WriteFrame(bitstream.bitstreamBufferPtr, bitstream.bitstreamSizeInBytes);
-    //fwrite(lockBitstreamData.bitstreamBufferPtr, 1, lockBitstreamData.bitstreamSizeInBytes, output);
+    status = WriteFrame(bitstream.bitstreamBufferPtr, bitstream.bitstreamSizeInBytes) == 0
+             ? NV_ENC_SUCCESS : NV_ENC_ERR_GENERIC;
+
     auto unlockStatus = api.NvEncUnlockBitstream(bitstream.outputBitstream);
 
     return status != NV_ENC_SUCCESS ? status : unlockStatus;
