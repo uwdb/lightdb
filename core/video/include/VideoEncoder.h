@@ -27,6 +27,7 @@
 #include <vector>
 #include "FrameQueue.h"
 #include "EncodeBuffer.h"
+#include "EncodeWriter.h"
 #include "EncodeAPI.h"
 #include "nvEncodeAPI.h"
 
@@ -107,9 +108,10 @@ public:
   VideoEncoder(GPUContext& context, EncodeConfig& configuration, CUvideoctxlock ctxLock);
   virtual ~VideoEncoder();
 
+  EncodeAPI &api() { return api_; }
 protected:
   EncodeConfig& configuration;
-  EncodeAPI api;
+  EncodeAPI api_;
   CUvideoctxlock m_ctxLock;
   uint32_t m_uEncodeBufferCount;
   CNvQueue<EncodeBuffer> m_EncodeBufferQueue;
@@ -119,16 +121,16 @@ protected:
 
   int32_t m_iEncodedFrames;
 
-    //NVENCSTATUS Deinitialize();
+    friend class VideoEncoderSession; //TODO remove I think?
 
 public:
-  //EncodeAPI *GetHWEncoder() { return &api; } // TODO don't leak api (and if so leak reference)
-  NVENCSTATUS EncodeFrame(EncodeFrameConfig *pEncodeFrame, NV_ENC_PIC_STRUCT picType = NV_ENC_PIC_STRUCT_FRAME,
+    NVENCSTATUS EncodeFrame(EncodeFrameConfig *pEncodeFrame, NV_ENC_PIC_STRUCT picType = NV_ENC_PIC_STRUCT_FRAME,
                           bool bFlush = false);
-  int32_t GetEncodedFrames() { return m_iEncodedFrames; }
+    int32_t GetEncodedFrames() { return m_iEncodedFrames; }
 
     NVENCSTATUS AllocateIOBuffers();
-  NVENCSTATUS ReleaseIOBuffers();
+    NVENCSTATUS ReleaseIOBuffers();
+
 
 protected:
     bool isIOBufferAllocated = false; //TODO not needed

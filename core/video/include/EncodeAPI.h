@@ -2,6 +2,7 @@
 #define _ENCODE_API
 
 #include <assert.h>
+#include <functional>
 
 #include "dynlink_cuda.h"
 
@@ -67,6 +68,8 @@ struct MEOnlyConfig
 };
 
 typedef void EncodeSessionHandle;
+typedef std::function<NVENCSTATUS(const EncodeBuffer&) > FrameEncodedHandler;
+typedef std::function<NVENCSTATUS(const MotionEstimationBuffer&) > MotionEstimationEncodedHandler;
 
 class EncodeAPI
 {
@@ -88,6 +91,9 @@ protected:
     EncodeSessionHandle                                  *encodeSessionHandle;
     NV_ENC_INITIALIZE_PARAMS                             m_stCreateEncodeParams;
     NV_ENC_CONFIG                                        m_stEncodeConfig;
+
+    FrameEncodedHandler *frameEncodedHandler;
+    MotionEstimationEncodedHandler *motionEstimationEncodedHandler;
 
 public:
     NVENCSTATUS NvEncOpenEncodeSession(CUcontext context);
@@ -147,6 +153,6 @@ protected:
     NVENCSTATUS                                          ValidatePresetGUID(GUID presetCodecGuid, GUID inputCodecGuid);
 };
 
-typedef NVENCSTATUS (NVENCAPI *MYPROC)(NV_ENCODE_API_FUNCTION_LIST*); 
+typedef NVENCSTATUS (NVENCAPI *MYPROC)(NV_ENCODE_API_FUNCTION_LIST*);
 
 #endif

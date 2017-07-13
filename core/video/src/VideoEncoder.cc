@@ -4,10 +4,10 @@
 #define BITSTREAM_BUFFER_SIZE 2 * 1024 * 1024
 
 VideoEncoder::VideoEncoder(GPUContext& context, EncodeConfig& configuration, CUvideoctxlock ctxLock)
-        : configuration(configuration), api(context), m_ctxLock(ctxLock) {
+        : configuration(configuration), api_(context), m_ctxLock(ctxLock) {
   //m_pNvHWEncoder = new EncodeAPI(context.get());
   //m_ctxLock = ctxLock;
-  configuration.presetGUID = api.GetPresetGUID(configuration.encoderPreset.c_str(), configuration.codec);
+  configuration.presetGUID = api().GetPresetGUID(configuration.encoderPreset.c_str(), configuration.codec);
 
   m_uEncodeBufferCount = 0;
   m_iEncodedFrames = 0;
@@ -38,7 +38,7 @@ NVENCSTATUS VideoEncoder::AllocateIOBuffers() {
   m_uEncodeBufferCount = configuration.numB + 4;
 
     for(auto i = 0; i < m_uEncodeBufferCount; i++) {
-        buffers.emplace_back(api, configuration);
+        buffers.emplace_back(api(), configuration);
         //buffers.push_back(EncodeBuffer(api, *pEncodeConfig));
         //buffers[i].Initialize();
     }
@@ -87,7 +87,7 @@ NVENCSTATUS VideoEncoder::AllocateIOBuffers() {
 
   m_stEOSOutputBfr.bEOSFlag = TRUE;
   if (m_stEncoderInput.enableAsyncMode) {
-    nvStatus = api.NvEncRegisterAsyncEvent(&m_stEOSOutputBfr.hOutputEvent);
+    nvStatus = api().NvEncRegisterAsyncEvent(&m_stEOSOutputBfr.hOutputEvent);
     if (nvStatus != NV_ENC_SUCCESS)
       return nvStatus;
   } else
@@ -128,7 +128,7 @@ NVENCSTATUS VideoEncoder::ReleaseIOBuffers() {
 
   if (m_stEOSOutputBfr.hOutputEvent) {
     if (m_stEncoderInput.enableAsyncMode) {
-      api.NvEncUnregisterAsyncEvent(m_stEOSOutputBfr.hOutputEvent);
+      api().NvEncUnregisterAsyncEvent(m_stEOSOutputBfr.hOutputEvent);
       nvCloseFile(m_stEOSOutputBfr.hOutputEvent);
       m_stEOSOutputBfr.hOutputEvent = NULL;
     }
@@ -141,7 +141,7 @@ NVENCSTATUS VideoEncoder::FlushEncoder() {
     if(!isIOBufferAllocated)
         return NV_ENC_SUCCESS;
 
-  NVENCSTATUS nvStatus = api.NvEncFlushEncoderQueue(m_stEOSOutputBfr.hOutputEvent);
+  NVENCSTATUS nvStatus = api().NvEncFlushEncoderQueue(m_stEOSOutputBfr.hOutputEvent);
   if (nvStatus != NV_ENC_SUCCESS) {
     assert(0);
     return nvStatus;
@@ -149,11 +149,11 @@ NVENCSTATUS VideoEncoder::FlushEncoder() {
 
   EncodeBuffer *pEncodeBuffer = m_EncodeBufferQueue.GetPending();
   while (pEncodeBuffer) {
-    api.ProcessOutput(configuration.fOutput, pEncodeBuffer);
+    api().ProcessOutput(configuration.fOutput, pEncodeBuffer);
     pEncodeBuffer = m_EncodeBufferQueue.GetPending();
     // UnMap the input buffer after frame is done
     if (pEncodeBuffer && pEncodeBuffer->stInputBfr.hInputSurface) {
-      nvStatus = api.NvEncUnmapInputResource(pEncodeBuffer->stInputBfr.hInputSurface);
+      nvStatus = api().NvEncUnmapInputResource(pEncodeBuffer->stInputBfr.hInputSurface);
       pEncodeBuffer->stInputBfr.hInputSurface = NULL;
     }
   }
@@ -197,10 +197,10 @@ NVENCSTATUS VideoEncoder::EncodeFrame(EncodeFrameConfig *pEncodeFrame, NV_ENC_PI
   EncodeBuffer *pEncodeBuffer = m_EncodeBufferQueue.GetAvailable();
   if (!pEncodeBuffer) {
     pEncodeBuffer = m_EncodeBufferQueue.GetPending();
-    api.ProcessOutput(configuration.fOutput, pEncodeBuffer);
+    api().ProcessOutput(configuration.fOutput, pEncodeBuffer);
     // UnMap the input buffer after frame done
     if (pEncodeBuffer->stInputBfr.hInputSurface) {
-      nvStatus = api.NvEncUnmapInputResource(pEncodeBuffer->stInputBfr.hInputSurface);
+      nvStatus = api().NvEncUnmapInputResource(pEncodeBuffer->stInputBfr.hInputSurface);
       pEncodeBuffer->stInputBfr.hInputSurface = NULL;
     }
     pEncodeBuffer = m_EncodeBufferQueue.GetAvailable();
@@ -227,14 +227,14 @@ NVENCSTATUS VideoEncoder::EncodeFrame(EncodeFrameConfig *pEncodeFrame, NV_ENC_PI
 
   cuvidCtxUnlock(m_ctxLock, 0);
 
-  nvStatus = api.NvEncMapInputResource(pEncodeBuffer->stInputBfr.nvRegisteredResource,
+  nvStatus = api().NvEncMapInputResource(pEncodeBuffer->stInputBfr.nvRegisteredResource,
                                                    &pEncodeBuffer->stInputBfr.hInputSurface);
   if (nvStatus != NV_ENC_SUCCESS) {
     PRINTERR("Failed to Map input buffer %p\n", pEncodeBuffer->stInputBfr.hInputSurface);
     return nvStatus;
   }
 
-  api.NvEncEncodeFrame(pEncodeBuffer, NULL, picType);
+  api().NvEncEncodeFrame(pEncodeBuffer, NULL, picType);
   //api.NvEncEncodeFrame(pEncodeBuffer, NULL, pEncodeFrame->width, pEncodeFrame->height, picType);
   m_iEncodedFrames++;
 

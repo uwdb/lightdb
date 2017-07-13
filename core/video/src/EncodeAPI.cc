@@ -581,8 +581,8 @@ NVENCSTATUS EncodeAPI::NvEncReconfigureEncoder(const NvEncPictureCommand *pEncPi
 }
 
 EncodeAPI::EncodeAPI(void* device, NV_ENC_DEVICE_TYPE deviceType)
+    : frameEncodedHandler(nullptr), motionEstimationEncodedHandler(nullptr), encodeSessionHandle(nullptr)
 {
-    encodeSessionHandle = NULL;
     m_bEncoderInitialized = false;
     m_pEncodeAPI = NULL;
     m_hinstLib = NULL;

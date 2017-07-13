@@ -6,7 +6,7 @@
 
 #include "VideoDecoder.h"
 #include "VideoEncoder.h"
-#include <climits>
+#include "VideoEncoderSession.h"
 
 #include "Transcoder.h"
 
@@ -86,7 +86,7 @@ int Transcoder::InitializeEncoder(const std::string &outputFilename) {
     //this->outputFilename = outputFilename;
 
     //configuration.outputFileName = outputFilename;
-    configuration.fOutput = fopen(outputFilename.c_str(), "wb");
+/////    configuration.fOutput = fopen(outputFilename.c_str(), "wb");
     //encoder.GetHWEncoder()->m_fOutput = configuration.fOutput;
 
 //    if ((nvStatus = encoder.GetHWEncoder()->CreateEncoder(&configuration)) != NV_ENC_SUCCESS)
@@ -106,8 +106,11 @@ int Transcoder::transcode(const std::string &inputFilename, const std::string &o
     // Destroy previously-initialized encoder, if any exists
     //encoder->GetHWEncoder()->NvEncDestroyEncoder();
 
-    if ((result = InitializeEncoder(outputFilename)) != 0)
-        return result;
+    //if ((result = InitializeEncoder(outputFilename)) != 0)
+    //    return result;
+
+    FileEncodeWriter writer(encoder.api(), outputFilename);
+    VideoEncoderSession session(encoder, writer);
 
     decoder.InitVideoDecoder(inputFilename);
 
@@ -143,7 +146,8 @@ int Transcoder::transcode(const std::string &inputFilename, const std::string &o
 
             auto dropOrDuplicate = MatchFPS(fpsRatio, frmProcessed, frmActual);
             for (auto i = 0; i <= dropOrDuplicate; i++) {
-                encoder.EncodeFrame(&stEncodeConfig, picType);
+                //encoder.EncodeFrame(&stEncodeConfig, picType);
+                session.Encode(stEncodeConfig, picType);
                 frmActual++;
             }
             frmProcessed++;
@@ -153,7 +157,8 @@ int Transcoder::transcode(const std::string &inputFilename, const std::string &o
         }
     }
 
-    encoder.EncodeFrame(nullptr, NV_ENC_PIC_STRUCT_FRAME, true);
+    session.Flush();
+    //encoder.EncodeFrame(nullptr, NV_ENC_PIC_STRUCT_FRAME, true);
 
     pthread_join(pid, nullptr);
 
