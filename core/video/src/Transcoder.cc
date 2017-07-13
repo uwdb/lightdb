@@ -63,15 +63,15 @@ int Transcoder::transcode(const std::string &inputFilename, EncodeWriter &writer
             oVPP.top_field_first = pInfo.top_field_first;
             oVPP.unpaired_field = (pInfo.progressive_frame == 1 || pInfo.repeat_first_field <= 1);
 
-            cuvidMapVideoFrame(decoder.GetDecoder(), pInfo.picture_index, &dMappedFrame, &pitch, &oVPP);
+            cuvidMapVideoFrame(decoder.handle(), pInfo.picture_index, &dMappedFrame, &pitch, &oVPP);
 
-            EncodeFrameConfig stEncodeConfig = {0};
+            EncoderSessionInputFrame stEncodeConfig = {0};
             auto picType =
                     (pInfo.progressive_frame || pInfo.repeat_first_field >= 2
                      ? NV_ENC_PIC_STRUCT_FRAME
                      : (pInfo.top_field_first ? NV_ENC_PIC_STRUCT_FIELD_TOP_BOTTOM : NV_ENC_PIC_STRUCT_FIELD_BOTTOM_TOP));
 
-            stEncodeConfig.dptr = dMappedFrame;
+            stEncodeConfig.handle = dMappedFrame;
             stEncodeConfig.pitch = pitch;
             stEncodeConfig.width = configuration.width;
             stEncodeConfig.height = configuration.height;
@@ -83,7 +83,7 @@ int Transcoder::transcode(const std::string &inputFilename, EncodeWriter &writer
             }
             frmProcessed++;
 
-            cuvidUnmapVideoFrame(decoder.GetDecoder(), dMappedFrame);
+            cuvidUnmapVideoFrame(decoder.handle(), dMappedFrame);
             frameQueue.releaseFrame(&pInfo);
         }
     }

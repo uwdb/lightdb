@@ -1,14 +1,10 @@
 #ifndef TRANSCODER_H
 #define TRANSCODER_H
 
-#include <optional>
-#include <string>
-
 #include "VideoDecoder.h"
 #include "VideoEncoder.h"
 #include "EncodeWriter.h"
 #include "VideoLock.h"
-#include "dynlink_cuda.h"
 
 class Transcoder {
 public:

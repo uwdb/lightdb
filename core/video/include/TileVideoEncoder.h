@@ -5,9 +5,63 @@
 #include <vector>
 #include <algorithm>
 
-#include "VideoEncoder.h"
+#include "VideoEncoderSession.h"
 #include "dynlink_nvcuvid.h"
 #include <cassert>
+
+#define MAX_ENCODE_QUEUE 32
+
+//TODO see updated EncodeBufferQueue in VideoEncoderSession.h
+template <class T> class CNvQueue {
+    T **m_pBuffer;
+    size_t m_uSize;
+    size_t m_uPendingCount;
+    size_t m_uAvailableIdx;
+    size_t m_uPendingndex;
+
+public:
+    CNvQueue() : m_pBuffer(NULL), m_uSize(0), m_uPendingCount(0), m_uAvailableIdx(0), m_uPendingndex(0) {}
+
+    ~CNvQueue() { delete[] m_pBuffer; }
+
+    // TODO make RAII, should take vector of items
+    bool Initialize(T *pItems, size_t uSize) {
+      m_uSize = uSize;
+      m_uPendingCount = 0;
+      m_uAvailableIdx = 0;
+      m_uPendingndex = 0;
+      m_pBuffer = new T *[m_uSize];
+      for (size_t i = 0; i < m_uSize; i++) {
+        m_pBuffer[i] = &pItems[i];
+      }
+      return true;
+    }
+
+    T *GetAvailable() {
+      T *pItem = NULL;
+      if (m_uPendingCount == m_uSize) {
+        return NULL;
+      }
+      pItem = m_pBuffer[m_uAvailableIdx];
+      m_uAvailableIdx = (m_uAvailableIdx + 1) % m_uSize;
+      m_uPendingCount += 1;
+      return pItem;
+    }
+
+    T *GetPending() {
+      if (m_uPendingCount == 0) {
+        return NULL;
+      }
+
+      T *pItem = m_pBuffer[m_uPendingndex];
+      m_uPendingndex = (m_uPendingndex + 1) % m_uSize;
+      m_uPendingCount -= 1;
+      return pItem;
+    }
+};
+
+
+
 
 typedef struct TileEncodeContext {
   EncodeAPI& hardwareEncoder;
@@ -53,7 +107,7 @@ public:
   NVENCSTATUS CreateEncoders(const std::string &filenameTemplate, EncodeConfig &);
   //NVENCSTATUS Deinitialize();
   NVENCSTATUS
-  EncodeFrame(EncodeFrameConfig *, const NV_ENC_PIC_STRUCT type = NV_ENC_PIC_STRUCT_FRAME, const bool flush = false);
+  EncodeFrame(EncoderSessionInputFrame *, const NV_ENC_PIC_STRUCT type = NV_ENC_PIC_STRUCT_FRAME, const bool flush = false);
   NVENCSTATUS AllocateIOBuffers(const EncodeConfig *);
   size_t GetEncodedFrames() const { return framesEncoded; }
   GUID GetPresetGUID() const { return presetGUID; }

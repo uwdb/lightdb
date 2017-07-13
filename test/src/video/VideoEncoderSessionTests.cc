@@ -45,13 +45,13 @@ TEST_F(VideoEncoderSessionTestFixture, testEncodeSingleFrame) {
         configuration.height * (3/2) * 2,
         16), CUDA_SUCCESS);
 
-    EncodeFrameConfig frame{
-        .dptr = handle,
+    EncoderSessionInputFrame inputFrame{
+        .handle = handle,
         .pitch = static_cast<unsigned int>(pitch),
         .width = configuration.width,
         .height = configuration.height};
 
-    ASSERT_EQ(session.Encode(frame), NV_ENC_SUCCESS);
+    ASSERT_EQ(session.Encode(inputFrame), NV_ENC_SUCCESS);
 
     EXPECT_EQ(session.frameCount(), 1);
 
@@ -75,21 +75,21 @@ TEST_F(VideoEncoderSessionTestFixture, testEncodeMultipleFrames) {
             configuration.height * (3/2) * 2,
             16), CUDA_SUCCESS);
 
-    EncodeFrameConfig frame{
-            .dptr = handle,
+    EncoderSessionInputFrame inputFrame{
+            .handle = handle,
             .pitch = static_cast<unsigned int>(pitch),
             .width = configuration.width,
             .height = configuration.height};
 
     for(int i = 0; i < count; i++)
-        ASSERT_EQ(session.Encode(frame), NV_ENC_SUCCESS);
+        ASSERT_EQ(session.Encode(inputFrame), NV_ENC_SUCCESS);
 
     EXPECT_EQ(session.frameCount(), count);
 
     EXPECT_EQ(session.Flush(), NV_ENC_SUCCESS);
     EXPECT_EQ(system("ffprobe -hide_banner -loglevel quiet " FILENAME), 0);
     EXPECT_EQ(system("resources/assert-frames.sh " FILENAME " 60"), 0);
-    
+
     EXPECT_EQ(remove(FILENAME), 0);
     EXPECT_EQ(cuMemFree(handle), CUDA_SUCCESS);
 }

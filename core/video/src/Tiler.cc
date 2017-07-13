@@ -204,15 +204,15 @@ void EncodeWorker(EncodeContext &context)
       oVPP.top_field_first = frame.top_field_first;
       oVPP.unpaired_field = (frame.progressive_frame == 1 || frame.repeat_first_field <= 1);
 
-      cuvidMapVideoFrame(context.decoder.GetDecoder(), frame.picture_index, &mappedFrame, &pitch, &oVPP);
+      cuvidMapVideoFrame(context.decoder.handle(), frame.picture_index, &mappedFrame, &pitch, &oVPP);
 
-      EncodeFrameConfig stEncodeConfig = {0};
+      EncoderSessionInputFrame stEncodeConfig = {0};
       auto pictureType =
           (frame.progressive_frame || frame.repeat_first_field >= 2
                ? NV_ENC_PIC_STRUCT_FRAME
                : (frame.top_field_first ? NV_ENC_PIC_STRUCT_FIELD_TOP_BOTTOM : NV_ENC_PIC_STRUCT_FIELD_BOTTOM_TOP));
 
-      stEncodeConfig.dptr = mappedFrame;
+      stEncodeConfig.handle = mappedFrame;
       stEncodeConfig.pitch = pitch;
       stEncodeConfig.width = context.configuration.width;
       stEncodeConfig.height = context.configuration.height;
@@ -231,7 +231,7 @@ void EncodeWorker(EncodeContext &context)
       }
       frmProcessed++;
 
-      cuvidUnmapVideoFrame(context.decoder.GetDecoder(), mappedFrame);
+      cuvidUnmapVideoFrame(context.decoder.handle(), mappedFrame);
       context.frameQueue.releaseFrame(&frame);
     }
   }

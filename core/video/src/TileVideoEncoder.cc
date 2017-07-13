@@ -200,7 +200,7 @@ EncodeBuffer* GetEncodeBuffer(TileEncodeContext& context)
     return encodeBuffer;
 }
 
-NVENCSTATUS TileVideoEncoder::EncodeFrame(EncodeFrameConfig *inputFrame,
+NVENCSTATUS TileVideoEncoder::EncodeFrame(EncoderSessionInputFrame *inputFrame,
                                       const NV_ENC_PIC_STRUCT inputFrameType, const bool flush)
 {
     NVENCSTATUS status;
@@ -231,7 +231,7 @@ NVENCSTATUS TileVideoEncoder::EncodeFrame(EncodeFrameConfig *inputFrame,
             srcY:          offsetY,
             srcMemoryType: CU_MEMORYTYPE_DEVICE,
             srcHost:       NULL,
-            srcDevice:     inputFrame->dptr,
+            srcDevice:     inputFrame->handle,
             srcArray:      NULL,
             srcPitch:      inputFrame->pitch,
 
@@ -252,7 +252,7 @@ NVENCSTATUS TileVideoEncoder::EncodeFrame(EncodeFrameConfig *inputFrame,
             srcY:          screenHeight + offsetY/2,
             srcMemoryType: CU_MEMORYTYPE_DEVICE,
             srcHost:       NULL,
-            srcDevice:     inputFrame->dptr,
+            srcDevice:     inputFrame->handle,
             srcArray:      NULL,
             srcPitch:      inputFrame->pitch,
 

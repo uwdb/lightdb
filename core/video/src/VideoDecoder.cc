@@ -50,7 +50,7 @@ static int CUDAAPI HandlePictureDecode(void *pUserData, CUVIDPICPARAMS *pPicPara
   assert(pUserData);
   CudaDecoder *pDecoder = (CudaDecoder *)pUserData;
   pDecoder->frameQueue.waitUntilFrameAvailable(pPicParams->CurrPicIdx);
-  assert(CUDA_SUCCESS == cuvidDecodePicture(pDecoder->m_videoDecoder, pPicParams));
+  assert(CUDA_SUCCESS == cuvidDecodePicture(pDecoder->handle(), pPicParams));
   return 1;
 }
 
@@ -64,8 +64,8 @@ static int CUDAAPI HandlePictureDisplay(void *pUserData, CUVIDPARSERDISPINFO *pP
 }
 
 CudaDecoder::CudaDecoder(const EncodeConfig &configuration, FrameQueue& frameQueue, VideoLock& lock)
-    : m_videoSource(NULL), m_videoParser(NULL), m_videoDecoder(NULL), lock(lock), m_decodedFrames(0),
-      m_bFinish(false), frameQueue(frameQueue), configuration(configuration) {}
+    : m_videoSource(NULL), m_videoParser(NULL), handle_(NULL), lock(lock), m_decodedFrames(0),
+      complete_(false), frameQueue(frameQueue), configuration(configuration) {}
 
 CudaDecoder::~CudaDecoder(void) {
     Deinitialize();
@@ -155,7 +155,7 @@ void CudaDecoder::InitVideoDecoder(const std::string &inputFilename) {
   oVideoDecodeCreateInfo.ulCreationFlags = cudaVideoCreate_PreferCUVID;
   oVideoDecodeCreateInfo.vidLock = lock.get();
 
-  oResult = cuvidCreateDecoder(&m_videoDecoder, &oVideoDecodeCreateInfo);
+  oResult = cuvidCreateDecoder(&handle_, &oVideoDecodeCreateInfo);
   if (oResult != CUDA_SUCCESS) {
     fprintf(stderr, "cuvidCreateDecoder() failed, error code: %d\n", oResult);
     exit(-1);
@@ -182,14 +182,14 @@ void CudaDecoder::InitVideoDecoder(const std::string &inputFilename) {
 }
 
 void CudaDecoder::Deinitialize() {
-    if (m_videoDecoder)
-        cuvidDestroyDecoder(m_videoDecoder);
+    if (handle())
+        cuvidDestroyDecoder(handle());
     if (m_videoParser)
         cuvidDestroyVideoParser(m_videoParser);
     if (m_videoSource)
         cuvidDestroyVideoSource(m_videoSource);
 
-    m_videoDecoder = nullptr;
+    handle_ = nullptr;
     m_videoParser = nullptr;
     m_videoSource = nullptr;
 }
@@ -203,7 +203,7 @@ void CudaDecoder::Start() {
   while (cuvidGetVideoSourceState(m_videoSource) == cudaVideoState_Started)
     ;
 
-  m_bFinish = true;
+  complete_ = true;
 
   frameQueue.endDecode();
 }

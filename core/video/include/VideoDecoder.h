@@ -10,18 +10,19 @@
 class CudaDecoder {
 public:
   CudaDecoder(const EncodeConfig &configuration, FrameQueue& frameQueue, VideoLock& lock);
-  virtual ~CudaDecoder(void);
+  virtual ~CudaDecoder();
 
-  bool IsFinished() { return m_bFinish; }
   virtual void InitVideoDecoder(const std::string &inputFilename);
   virtual void Start();
   virtual void GetCodecParam(int *width, int *height, int *frame_rate_num, int *frame_rate_den, int *is_progressive);
-  virtual void *GetDecoder() { return m_videoDecoder; }
+
+  CUvideodecoder handle() { return handle_; }
+  bool complete() { return complete_; }
 
 public:
   CUvideosource m_videoSource;
   CUvideoparser m_videoParser;
-  CUvideodecoder m_videoDecoder;
+  CUvideodecoder handle_;
   CUVIDDECODECREATEINFO m_oVideoDecodeCreateInfo;
 
   FrameQueue& frameQueue;
@@ -32,7 +33,7 @@ public:
   void Deinitialize();
 
 protected:
-  bool m_bFinish;
+  bool complete_;
   VideoLock& lock;
 };
 

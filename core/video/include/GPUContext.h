@@ -2,8 +2,6 @@
 #define VISUALCLOUD_GPUCONTEXT_H
 
 #include <stdexcept>
-#include <dynlink_cuda.h>
-#include <cstdio>
 #include <dynlink_nvcuvid.h>
 
 class GPUContext {

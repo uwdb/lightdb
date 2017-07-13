@@ -11,7 +11,7 @@ public:
 protected:
     GPUContext context;
     EncodeAPI encodeAPI;
-    char* preset = "hq";
+    const char* preset = "hq";
 };
 
 TEST_F(EncodeAPITestFixture, testConstructor) {
