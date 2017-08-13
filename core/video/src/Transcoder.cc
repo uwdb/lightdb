@@ -3,6 +3,7 @@
 #include "VideoDecoder.h"
 #include "VideoEncoder.h"
 #include "VideoEncoderSession.h"
+#include "VideoDecoderSession.h"
 
 #include "Transcoder.h"
 
@@ -39,6 +40,65 @@ int MatchFPS(const float fpsRatio, int decodedFrames, int encodedFrames) {
 ///
 ///
 
+int Transcoder::transcode(const std::string &inputFilename, EncodeWriter &writer) {
+
+    VideoEncoderSession session(encoder(), writer);
+
+    //decoder.InitVideoDecoder(inputFilename);
+
+    FileDecodeReader reader(inputFilename);
+    //frameQueue.reset();
+    VideoDecoderSession decoderSession(decoder, reader);
+
+    // start encoding thread
+    auto frmProcessed = 0;
+    auto frmActual = 0;
+    while (!(frameQueue.isEndOfDecode() && frameQueue.isEmpty())) {
+        CUVIDPARSERDISPINFO pInfo;
+        if (frameQueue.dequeue(&pInfo)) {
+            CUdeviceptr dMappedFrame = 0;
+            unsigned int pitch;
+            CUVIDPROCPARAMS oVPP = {0};
+            oVPP.progressive_frame = pInfo.progressive_frame;
+            oVPP.second_field = 0;
+            oVPP.top_field_first = pInfo.top_field_first;
+            oVPP.unpaired_field = (pInfo.progressive_frame == 1 || pInfo.repeat_first_field <= 1);
+
+            cuvidMapVideoFrame(decoder.handle(), pInfo.picture_index, &dMappedFrame, &pitch, &oVPP);
+
+            EncoderSessionInputFrame stEncodeConfig = {0};
+            auto picType =
+                    (pInfo.progressive_frame || pInfo.repeat_first_field >= 2
+                     ? NV_ENC_PIC_STRUCT_FRAME
+                     : (pInfo.top_field_first ? NV_ENC_PIC_STRUCT_FIELD_TOP_BOTTOM : NV_ENC_PIC_STRUCT_FIELD_BOTTOM_TOP));
+
+            stEncodeConfig.handle = dMappedFrame;
+            stEncodeConfig.pitch = pitch;
+            stEncodeConfig.width = configuration.width;
+            stEncodeConfig.height = configuration.height;
+
+            auto dropOrDuplicate = MatchFPS(fpsRatio, frmProcessed, frmActual);
+            for (auto i = 0; i <= dropOrDuplicate; i++) {
+                session.Encode(stEncodeConfig, picType);
+                frmActual++;
+            }
+            frmProcessed++;
+
+            cuvidUnmapVideoFrame(decoder.handle(), dMappedFrame);
+            frameQueue.releaseFrame(&pInfo);
+        }
+    }
+
+    session.Flush();
+
+    //pthread_join(pid, nullptr);
+
+    //decoder.Deinitialize();
+
+    return 0;
+}
+
+/*
 int Transcoder::transcode(const std::string &inputFilename, EncodeWriter &writer) {
     frameQueue.reset();
 
@@ -96,3 +156,4 @@ int Transcoder::transcode(const std::string &inputFilename, EncodeWriter &writer
 
     return 0;
 }
+*/

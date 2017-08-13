@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_VIDEOENCODESESSION_H
-#define VISUALCLOUD_VIDEOENCODESESSION_H
+#ifndef VISUALCLOUD_VIDEOENCODERSESSION_H
+#define VISUALCLOUD_VIDEOENCODERSESSION_H
 
 #include "VideoEncoder.h"
 #include "EncodeWriter.h"
@@ -48,7 +48,7 @@ private:
             if (pendingCount == items.size())
                 return {};
 
-            T&  item = items[availableIndex];
+            T& item = items[availableIndex];
             availableIndex = (availableIndex + 1) % items.size();
             pendingCount += 1;
             return item;
@@ -58,7 +58,7 @@ private:
             if (pendingCount == 0)
                 return {};
 
-            T &item = items[pendingIndex];
+            T& item = items[pendingIndex];
             pendingIndex = (pendingIndex + 1) % items.size();
             pendingCount -= 1;
             return item;

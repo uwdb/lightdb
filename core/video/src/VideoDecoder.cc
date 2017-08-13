@@ -31,6 +31,7 @@ static int CUDAAPI HandleVideoData(void *pUserData, CUVIDSOURCEDATAPACKET *pPack
   return 1;
 }
 
+/*
 static int CUDAAPI HandleVideoSequence(void *pUserData, CUVIDEOFORMAT *pFormat) {
   assert(pUserData);
   CudaDecoder *pDecoder = (CudaDecoder *)pUserData;
@@ -58,24 +59,60 @@ static int CUDAAPI HandlePictureDisplay(void *pUserData, CUVIDPARSERDISPINFO *pP
   assert(pUserData);
   CudaDecoder *pDecoder = (CudaDecoder *)pUserData;
   pDecoder->frameQueue.enqueue(pPicParams);
-  pDecoder->m_decodedFrames++;
+  pDecoder->decodedFrameCount_++;
 
   return 1;
 }
+*/
 
 CudaDecoder::CudaDecoder(const EncodeConfig &configuration, FrameQueue& frameQueue, VideoLock& lock)
-    : m_videoSource(NULL), m_videoParser(NULL), handle_(NULL), lock(lock), m_decodedFrames(0),
-      complete_(false), frameQueue(frameQueue), configuration(configuration) {}
-
-CudaDecoder::~CudaDecoder(void) {
-    Deinitialize();
+    : m_videoSource(NULL), m_videoParser(NULL), handle_(NULL), lock(lock), decodedFrameCount_(0),
+      complete_(false), frameQueue(frameQueue), configuration(configuration) {
+    CUVIDEOFORMAT format;
+    format.codec = cudaVideoCodec_H264;
+    format.chroma_format = cudaVideoChromaFormat_420;
+    format.coded_width = configuration.width;
+    format.coded_height = configuration.height;
+    InitVideoDecoder(format);
 }
 
+CudaDecoder::~CudaDecoder(void) {
+    if (handle())
+        cuvidDestroyDecoder(handle());
+    //Deinitialize();
+}
+
+//TODO remove
 void CudaDecoder::InitVideoDecoder(const std::string &inputFilename) {
+    CUresult oResult;
+
+    CUVIDSOURCEPARAMS oVideoSourceParameters;
+    memset(&oVideoSourceParameters, 0, sizeof(CUVIDSOURCEPARAMS));
+    oVideoSourceParameters.pUserData = this;
+    oVideoSourceParameters.pfnVideoDataHandler = HandleVideoData;
+    oVideoSourceParameters.pfnAudioDataHandler = NULL;
+
+    oResult = cuvidCreateVideoSource(&m_videoSource, inputFilename.c_str(), &oVideoSourceParameters);
+    if (oResult != CUDA_SUCCESS) {
+        fprintf(stderr, "cuvidCreateVideoSource failed\n");
+        fprintf(stderr, "Please check if the path exists, or the video is a valid H264 file\n");
+        exit(-1);
+    }
+
+    CUVIDEOFORMAT oFormat;
+    cuvidGetSourceVideoFormat(m_videoSource, &oFormat, 0);
+
+    cuvidDestroyVideoSource(m_videoSource);
+
+    InitVideoDecoder(oFormat);
+}
+
+void CudaDecoder::InitVideoDecoder(CUVIDEOFORMAT &format) { //const std::string &inputFilename) {
   //assert(configuration.inputFileName);
 
   CUresult oResult;
 
+/*
   // init video source
   CUVIDSOURCEPARAMS oVideoSourceParameters;
   memset(&oVideoSourceParameters, 0, sizeof(CUVIDSOURCEPARAMS));
@@ -93,22 +130,22 @@ void CudaDecoder::InitVideoDecoder(const std::string &inputFilename) {
   // init video decoder
   CUVIDEOFORMAT oFormat;
   cuvidGetSourceVideoFormat(m_videoSource, &oFormat, 0);
-
-  if (oFormat.codec != cudaVideoCodec_H264 && oFormat.codec != cudaVideoCodec_HEVC) {
+*/
+  if (format.codec != cudaVideoCodec_H264 && format.codec != cudaVideoCodec_HEVC) {
     fprintf(stderr, "The sample only supports H264/HEVC input video!\n");
     exit(-1);
   }
 
-  if (oFormat.chroma_format != cudaVideoChromaFormat_420) {
+  if (format.chroma_format != cudaVideoChromaFormat_420) {
     fprintf(stderr, "The sample only supports 4:2:0 chroma!\n");
     exit(-1);
   }
 
   CUVIDDECODECREATEINFO oVideoDecodeCreateInfo;
   memset(&oVideoDecodeCreateInfo, 0, sizeof(CUVIDDECODECREATEINFO));
-  oVideoDecodeCreateInfo.CodecType = oFormat.codec;
-  oVideoDecodeCreateInfo.ulWidth = oFormat.coded_width;
-  oVideoDecodeCreateInfo.ulHeight = oFormat.coded_height;
+  oVideoDecodeCreateInfo.CodecType = format.codec;
+  oVideoDecodeCreateInfo.ulWidth = format.coded_width;
+  oVideoDecodeCreateInfo.ulHeight = format.coded_height;
   oVideoDecodeCreateInfo.ulNumDecodeSurfaces = 8;
   if ((oVideoDecodeCreateInfo.CodecType == cudaVideoCodec_H264) ||
       (oVideoDecodeCreateInfo.CodecType == cudaVideoCodec_H264_SVC) ||
@@ -135,13 +172,13 @@ void CudaDecoder::InitVideoDecoder(const std::string &inputFilename) {
     MaxDpbSize = MaxDpbSize < 16 ? MaxDpbSize : 16;
     oVideoDecodeCreateInfo.ulNumDecodeSurfaces = MaxDpbSize + 4;
   }
-  oVideoDecodeCreateInfo.ChromaFormat = oFormat.chroma_format;
+  oVideoDecodeCreateInfo.ChromaFormat = format.chroma_format;
   oVideoDecodeCreateInfo.OutputFormat = cudaVideoSurfaceFormat_NV12;
   oVideoDecodeCreateInfo.DeinterlaceMode = cudaVideoDeinterlaceMode_Weave;
 
   if (configuration.width <= 0 || configuration.height <= 0) {
-    oVideoDecodeCreateInfo.ulTargetWidth = oFormat.display_area.right - oFormat.display_area.left;
-    oVideoDecodeCreateInfo.ulTargetHeight = oFormat.display_area.bottom - oFormat.display_area.top;
+    oVideoDecodeCreateInfo.ulTargetWidth = format.display_area.right - format.display_area.left;
+    oVideoDecodeCreateInfo.ulTargetHeight = format.display_area.bottom - format.display_area.top;
   } else {
     oVideoDecodeCreateInfo.ulTargetWidth = configuration.width;
     oVideoDecodeCreateInfo.ulTargetHeight = configuration.height;
@@ -162,6 +199,7 @@ void CudaDecoder::InitVideoDecoder(const std::string &inputFilename) {
   }
 
   m_oVideoDecodeCreateInfo = oVideoDecodeCreateInfo;
+/*
 
   // init video parser
   CUVIDPARSERPARAMS oVideoParserParameters;
@@ -170,30 +208,31 @@ void CudaDecoder::InitVideoDecoder(const std::string &inputFilename) {
   oVideoParserParameters.ulMaxNumDecodeSurfaces = oVideoDecodeCreateInfo.ulNumDecodeSurfaces;
   oVideoParserParameters.ulMaxDisplayDelay = 1;
   oVideoParserParameters.pUserData = this;
-  oVideoParserParameters.pfnSequenceCallback = HandleVideoSequence;
-  oVideoParserParameters.pfnDecodePicture = HandlePictureDecode;
-  oVideoParserParameters.pfnDisplayPicture = HandlePictureDisplay;
+  oVideoParserParameters.pfnSequenceCallback = nullptr; //HandleVideoSequence;
+  oVideoParserParameters.pfnDecodePicture = nullptr; //HandlePictureDecode;
+  oVideoParserParameters.pfnDisplayPicture = nullptr; //HandlePictureDisplay;
 
   oResult = cuvidCreateVideoParser(&m_videoParser, &oVideoParserParameters);
   if (oResult != CUDA_SUCCESS) {
     fprintf(stderr, "cuvidCreateVideoParser failed, error code: %d\n", oResult);
     exit(-1);
-  }
-}
-
+  }*/
+ }
+/*
 void CudaDecoder::Deinitialize() {
     if (handle())
         cuvidDestroyDecoder(handle());
-    if (m_videoParser)
-        cuvidDestroyVideoParser(m_videoParser);
-    if (m_videoSource)
-        cuvidDestroyVideoSource(m_videoSource);
 
-    handle_ = nullptr;
-    m_videoParser = nullptr;
-    m_videoSource = nullptr;
+ //  if (m_videoParser)
+//      cuvidDestroyVideoParser(m_videoParser);
+//  if (m_videoSource)
+//      cuvidDestroyVideoSource(m_videoSource);
+
+  handle_ = nullptr;
+  //m_videoParser = nullptr;
+  //m_videoSource = nullptr;
 }
-
+*/
 void CudaDecoder::Start() {
   CUresult oResult;
 

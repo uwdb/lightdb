@@ -20,6 +20,8 @@ protected:
     virtual NVENCSTATUS WriteFrame(const void *buffer, const size_t size) = 0;
 };
 
+
+
 class DescriptorEncodeWriter: public EncodeWriter {
     DescriptorEncodeWriter(EncodeAPI &api, const int descriptor): EncodeWriter(api), descriptor(descriptor) { }
 
@@ -32,6 +34,8 @@ class DescriptorEncodeWriter: public EncodeWriter {
 private:
     const int descriptor;
 };
+
+
 
 class FileEncodeWriter: public EncodeWriter {
 public:

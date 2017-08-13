@@ -149,7 +149,7 @@ float InitializeDecoder(const std::string &inputFilename, CudaDecoder &decoder, 
                         EncodeConfig &configuration) {
   int decodedW, decodedH, decodedFRN, decodedFRD, isProgressive;
 
-  decoder.InitVideoDecoder(inputFilename);
+  //decoder.InitVideoDecoder(inputFilename);
 
   decoder.GetCodecParam(&decodedW, &decodedH, &decodedFRN, &decodedFRD, &isProgressive);
   if (decodedFRN <= 0 || decodedFRD <= 0) {
@@ -269,7 +269,7 @@ int DisplayStatistics(CudaDecoder &decoder, TileVideoEncoder &encoder, Statistic
     auto elapsedTime = static_cast<double>(statistics.end - statistics.start) / statistics.frequency;
     printf("Total time: %fms, Decoded Frames: %d, Encoded Frames: %ld, Average "
            "FPS: %f\n",
-           elapsedTime * 1000, decoder.m_decodedFrames, encoder.GetEncodedFrames(),
+           elapsedTime * 1000, decoder.decodedFrameCount(), encoder.GetEncodedFrames(),
            static_cast<float>(encoder.GetEncodedFrames()) / elapsedTime);
   }
 

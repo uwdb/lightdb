@@ -17,7 +17,7 @@ public:
     int transcode(const std::string &inputFilename, EncodeWriter &writer);
     int transcode(const std::string &inputFilename, const std::string outputFilename) {
         FileEncodeWriter writer(encoder().api(), outputFilename);
-        transcode(inputFilename, writer);
+        return transcode(inputFilename, writer);
     }
 
     VideoEncoder &encoder() { return encoder_; }
