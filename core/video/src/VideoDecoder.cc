@@ -67,12 +67,12 @@ static int CUDAAPI HandlePictureDisplay(void *pUserData, CUVIDPARSERDISPINFO *pP
 
 CudaDecoder::CudaDecoder(const EncodeConfig &configuration, FrameQueue& frameQueue, VideoLock& lock)
     : m_videoSource(NULL), m_videoParser(NULL), handle_(NULL), lock(lock), decodedFrameCount_(0),
-      complete_(false), frameQueue(frameQueue), configuration(configuration) {
+      complete_(false), frameQueue(frameQueue), configuration_(configuration) {
     CUVIDEOFORMAT format;
     format.codec = cudaVideoCodec_H264;
     format.chroma_format = cudaVideoChromaFormat_420;
-    format.coded_width = configuration.width;
-    format.coded_height = configuration.height;
+    format.coded_width = configuration_.width;
+    format.coded_height = configuration_.height;
     InitVideoDecoder(format);
 }
 
@@ -176,12 +176,12 @@ void CudaDecoder::InitVideoDecoder(CUVIDEOFORMAT &format) { //const std::string 
   oVideoDecodeCreateInfo.OutputFormat = cudaVideoSurfaceFormat_NV12;
   oVideoDecodeCreateInfo.DeinterlaceMode = cudaVideoDeinterlaceMode_Weave;
 
-  if (configuration.width <= 0 || configuration.height <= 0) {
+  if (configuration().width <= 0 || configuration().height <= 0) {
     oVideoDecodeCreateInfo.ulTargetWidth = format.display_area.right - format.display_area.left;
     oVideoDecodeCreateInfo.ulTargetHeight = format.display_area.bottom - format.display_area.top;
   } else {
-    oVideoDecodeCreateInfo.ulTargetWidth = configuration.width;
-    oVideoDecodeCreateInfo.ulTargetHeight = configuration.height;
+    oVideoDecodeCreateInfo.ulTargetWidth = configuration().width;
+    oVideoDecodeCreateInfo.ulTargetHeight = configuration().height;
   }
   oVideoDecodeCreateInfo.display_area.left = 0;
   oVideoDecodeCreateInfo.display_area.right = oVideoDecodeCreateInfo.ulTargetWidth;

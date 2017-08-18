@@ -13,18 +13,14 @@
 
 #include "dynlink_nvcuvid.h" // <nvcuvid.h>
 
-#ifdef _WIN32
-#include <windows.h>
-
-#else
+#include <optional>
+#include <memory>
 #include <pthread.h>
 #include <string.h>
 #include <unistd.h>
+
 typedef pthread_mutex_t CRITICAL_SECTION;
 typedef void *HANDLE;
-
-#define Sleep(x) usleep(1000 * x);
-#endif
 
 #define DIV_UP(a, b) (((a) + (b)-1) / (b))
 
@@ -82,6 +78,69 @@ public:
 
   bool isEmpty() { return nFramesInQueue_ == 0; }
 
+  bool isComplete() { return isEndOfDecode() && isEmpty(); }
+/*
+    template<typename T>
+    class MappedFrame {
+    public:
+        Frame(FrameQueue &frameQueue, std::shared_ptr<T> &data)
+                : frameQueue_(frameQueue), data_(data) { }
+        Frame(Frame&&) = delete;
+        Frame(const Frame&&) = delete;
+
+        ~Frame() {
+            //frameQueue_.releaseFrame(&data_);
+        }
+
+        const T& data() const { return data_; }
+
+    private:
+        FrameQueue &frameQueue_;
+        const std::shared_ptr<T> data_;
+    };*/
+
+    template<typename T>
+    const std::shared_ptr<T> dequeue_wait() {
+        std::shared_ptr<T> data(new T, [this](T *data) { this->releaseFrame(data); });
+
+        while(!dequeue(data.get()))
+            sleep(0);
+        return data;
+    }
+
+    template<typename T>
+    const std::shared_ptr<T> dequeue() {
+        std::shared_ptr<T> data(new T, [this](T *data) { this->releaseFrame(data); });
+        return dequeue(data.get())
+                ? data
+                : nullptr;
+    }
+
+//            return data;// std::optional<Frame<T>>(std::in_place, *this, data);
+  //      } else
+    //        return nullptr; //{};
+
+/*
+        T data;
+        if(dequeue(&data)) {
+            const std::optional<const Frame<T>> r(std::in_place, *this, data);
+            printf("foo\n");
+            return std::move(r);
+
+            //std::optional<Frame<T>> result;
+            //result.emplace(*this, data);
+            //return std::move(result);
+
+            //Frame<T> frame(*this, std::move(data));
+            //return {std::in_place, *this, data};
+        } else
+            return {};
+*/
+        //return dequeue(&data)
+        //       ? std::optional<Frame<T>>(Frame<T>(*this, std::move(data)))
+        //       : std::optional<Frame<T>>{};
+//    }
+
 protected:
   void signalStatusChange();
 
@@ -105,10 +164,15 @@ public:
   ~CUVIDFrameQueue();
 
   virtual void enqueue(const void *pData);
-  virtual bool dequeue(void *pData);
-  virtual void releaseFrame(const void *pPicParams);
+  //virtual bool dequeue(CUVIDPARSERDISPINFO *data) { return dequeue(static_cast<void*>(data)); }
+
+  const std::shared_ptr<CUVIDPARSERDISPINFO> dequeue() {
+      return static_cast<FrameQueue*>(this)->dequeue<CUVIDPARSERDISPINFO>();
+  }
 
 protected:
+  virtual bool dequeue(void *pData);
+  virtual void releaseFrame(const void *pPicParams);
   CUVIDPARSERDISPINFO aDisplayQueue_[cnMaximumSize];
 };
 

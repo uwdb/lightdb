@@ -200,7 +200,7 @@ EncodeBuffer* GetEncodeBuffer(TileEncodeContext& context)
     return encodeBuffer;
 }
 
-NVENCSTATUS TileVideoEncoder::EncodeFrame(EncoderSessionInputFrame *inputFrame,
+NVENCSTATUS TileVideoEncoder::EncodeFrame(Frame *inputFrame,
                                       const NV_ENC_PIC_STRUCT inputFrameType, const bool flush)
 {
     NVENCSTATUS status;
@@ -210,8 +210,8 @@ NVENCSTATUS TileVideoEncoder::EncodeFrame(EncoderSessionInputFrame *inputFrame,
         return FlushEncoder();
 
     assert(inputFrame);
-    auto screenWidth = inputFrame->width;
-    auto screenHeight = inputFrame->height;
+    auto screenWidth = inputFrame->width();
+    auto screenHeight = inputFrame->height();
     auto tileWidth = screenWidth / tileDimensions.columns;
     auto tileHeight = screenHeight / tileDimensions.rows;
 
@@ -231,9 +231,9 @@ NVENCSTATUS TileVideoEncoder::EncodeFrame(EncoderSessionInputFrame *inputFrame,
             srcY:          offsetY,
             srcMemoryType: CU_MEMORYTYPE_DEVICE,
             srcHost:       NULL,
-            srcDevice:     inputFrame->handle,
+            srcDevice:     inputFrame->handle(),
             srcArray:      NULL,
-            srcPitch:      inputFrame->pitch,
+            srcPitch:      inputFrame->pitch(),
 
             dstXInBytes:   0,
             dstY:          0,
@@ -252,9 +252,9 @@ NVENCSTATUS TileVideoEncoder::EncodeFrame(EncoderSessionInputFrame *inputFrame,
             srcY:          screenHeight + offsetY/2,
             srcMemoryType: CU_MEMORYTYPE_DEVICE,
             srcHost:       NULL,
-            srcDevice:     inputFrame->handle,
+            srcDevice:     inputFrame->handle(),
             srcArray:      NULL,
-            srcPitch:      inputFrame->pitch,
+            srcPitch:      inputFrame->pitch(),
 
             dstXInBytes:   0,
             dstY:          tileHeight,

@@ -1,35 +1,37 @@
 #include "VideoEncoderSession.h"
 
-NVENCSTATUS VideoEncoderSession::Encode(EncoderSessionInputFrame &frame, NV_ENC_PIC_STRUCT type) {
+NVENCSTATUS VideoEncoderSession::encode(Frame &frame) {
     EncodeBuffer &buffer = GetAvailableBuffer();
     NVENCSTATUS status;
 
-    assert(frame.width == buffer.stInputBfr.dwWidth);
-    assert(frame.height == buffer.stInputBfr.dwHeight);
+    assert(frame.width() == buffer.stInputBfr.dwWidth);
+    assert(frame.height() == buffer.stInputBfr.dwHeight);
 
     // CUDA copy of frame from host to device memory
-    if(cuvidCtxLock(encoder.lock.get(), 0) != CUDA_SUCCESS)
+    if(cuvidCtxLock(encoder.lock.get(), 0) != CUDA_SUCCESS) {
         return NV_ENC_ERR_GENERIC;
+    }
 
     CUDA_MEMCPY2D copy = {};
     copy.srcMemoryType = CU_MEMORYTYPE_DEVICE;
-    copy.srcDevice = frame.handle;
-    copy.srcPitch = frame.pitch;
+    copy.srcDevice = frame.handle();
+    copy.srcPitch = frame.pitch();
     copy.dstMemoryType = CU_MEMORYTYPE_DEVICE;
     copy.dstDevice = (CUdeviceptr)buffer.stInputBfr.pNV12devPtr;
     copy.dstPitch = buffer.stInputBfr.uNV12Stride;
     copy.WidthInBytes = buffer.stInputBfr.dwWidth;
     copy.Height = buffer.stInputBfr.dwHeight * 3 / 2;
 
-    if (cuMemcpy2D(&copy) != CUDA_SUCCESS)
-      return NV_ENC_ERR_GENERIC;
-    else if(cuvidCtxUnlock(encoder.lock.get(), 0))
+    if (cuMemcpy2D(&copy) != CUDA_SUCCESS) {
         return NV_ENC_ERR_GENERIC;
-    else if((status = encoder.api().NvEncMapInputResource(buffer.stInputBfr.nvRegisteredResource,
-                                                        &buffer.stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
+    } else if(cuvidCtxUnlock(encoder.lock.get(), 0)) {
+        return NV_ENC_ERR_GENERIC;
+    } else if((status = encoder.api().NvEncMapInputResource(buffer.stInputBfr.nvRegisteredResource,
+                                                        &buffer.stInputBfr.hInputSurface)) != NV_ENC_SUCCESS) {
         return status;
-    else if((status = encoder.api().NvEncEncodeFrame(&buffer, NULL, type)) != NV_ENC_SUCCESS)
+    } else if((status = encoder.api().NvEncEncodeFrame(&buffer, nullptr, frame.type())) != NV_ENC_SUCCESS) {
         return status;
+    }
 
     frameCount_++;
 

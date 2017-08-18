@@ -89,7 +89,7 @@ void FrameQueue::endDecode() {
 // available, the method returns false.
 bool FrameQueue::waitUntilFrameAvailable(int nPictureIndex) {
   while (isInUse(nPictureIndex)) {
-    Sleep(1); // Decoder is getting too far ahead from display
+    usleep(1000); // Decoder is getting too far ahead from display
     if (isEndOfDecode())
       return false;
   }
@@ -126,7 +126,7 @@ void CUVIDFrameQueue::enqueue(const void *pData) {
     leave_CS(&oCriticalSection_);
     if (bPlacedFrame) // Done
       break;
-    Sleep(1); // Wait a bit
+    usleep(1000); // Wait a bit
   } while (!bEndOfDecode_);
   signalStatusChange(); // Signal for the display thread
 }

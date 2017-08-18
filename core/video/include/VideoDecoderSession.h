@@ -18,6 +18,10 @@ public:
         cuvidDestroyVideoParser(parser);
     }
 
+    const DecodedFrame decode() {
+        return DecodedFrame(decoder, decoder.frameQueue.dequeue_wait<CUVIDPARSERDISPINFO>());
+    }
+
 protected:
     CudaDecoder &decoder;
     DecodeReader &reader;
@@ -28,7 +32,7 @@ protected:
     void DecodeAll() {
         CUresult status;
 
-        std::optional < CUVIDSOURCEDATAPACKET > packet;
+        std::optional <CUVIDSOURCEDATAPACKET> packet;
         do {
             packet = reader.DecodeFrame();
             if (packet.has_value())
@@ -45,7 +49,7 @@ private:
         CUvideoparser parser = nullptr;
         CUVIDPARSERPARAMS parameters = {
             .CodecType = decoder.m_oVideoDecodeCreateInfo.CodecType,
-            .ulMaxNumDecodeSurfaces = decoder.m_oVideoDecodeCreateInfo.ulNumDecodeSurfaces,
+            .ulMaxNumDecodeSurfaces = static_cast<unsigned int>(decoder.m_oVideoDecodeCreateInfo.ulNumDecodeSurfaces),
             .ulClockRate = 0,
             .ulErrorThreshold = 0,
             .ulMaxDisplayDelay = 1,

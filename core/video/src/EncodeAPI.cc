@@ -717,7 +717,7 @@ NVENCSTATUS EncodeAPI::ValidatePresetGUID(GUID inputPresetGuid, GUID inputCodecG
         return NV_ENC_ERR_INVALID_PARAM;
 }
 
-NVENCSTATUS EncodeAPI::CreateEncoder(EncodeConfig *pEncCfg)
+NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfig *pEncCfg)
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
@@ -917,7 +917,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(EncodeConfig *pEncCfg)
     m_pEncodeAPI->nvEncGetEncodeCaps(encodeSessionHandle, m_stCreateEncodeParams.encodeGUID, &stCapsParam, &asyncMode);
     m_stCreateEncodeParams.enableEncodeAsync = asyncMode;
 
-    pEncCfg->enableAsyncMode = asyncMode;
+    //pEncCfg->enableAsyncMode = asyncMode;
 
     if (pEncCfg->enableMEOnly == 1 || pEncCfg->enableMEOnly == 2)
     {

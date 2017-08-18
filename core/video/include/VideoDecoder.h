@@ -14,16 +14,19 @@ public:
   virtual ~CudaDecoder();
 
   virtual void Start();
+
+    //TODO this should move into a session
   virtual void GetCodecParam(int *width, int *height, int *frame_rate_num, int *frame_rate_den, int *is_progressive);
 
   const CUvideodecoder handle() const { return handle_; }
+  const EncodeConfig& configuration() const { return configuration_; }
   size_t decodedFrameCount() const { return decodedFrameCount_; }
   bool complete() { return complete_; }
 
 protected:
   CUvideosource m_videoSource;
 
-  const EncodeConfig& configuration;
+  const EncodeConfig& configuration_;
 
 public: //TODO these should be protected
     FrameQueue& frameQueue;
@@ -34,7 +37,6 @@ public: //TODO these should be protected
 protected:
   virtual void InitVideoDecoder(const std::string &inputFilename); //TODO remove deprecated overload
   virtual void InitVideoDecoder(CUVIDEOFORMAT&);
-  //void Deinitialize();
 
 protected:
   CUvideodecoder handle_;

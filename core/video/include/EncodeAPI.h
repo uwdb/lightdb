@@ -137,7 +137,7 @@ public:
     EncodeAPI(CUcontext context) : EncodeAPI(context, NV_ENC_DEVICE_TYPE_CUDA) { }
     EncodeAPI(void* device, NV_ENC_DEVICE_TYPE deviceType);
     virtual ~EncodeAPI();
-    NVENCSTATUS                                          CreateEncoder(EncodeConfig *pEncCfg);
+    NVENCSTATUS                                          CreateEncoder(const EncodeConfig *pEncCfg);
     NVENCSTATUS                                          NvEncEncodeFrame(EncodeBuffer *pEncodeBuffer, NvEncPictureCommand *encPicCommand,
                                                                           NV_ENC_PIC_STRUCT ePicStruct = NV_ENC_PIC_STRUCT_FRAME,
                                                                           int8_t *qpDeltaMapArray = NULL, uint32_t qpDeltaMapArraySize = 0);

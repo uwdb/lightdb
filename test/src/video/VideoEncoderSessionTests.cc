@@ -45,13 +45,9 @@ TEST_F(VideoEncoderSessionTestFixture, testEncodeSingleFrame) {
         configuration.height * (3/2) * 2,
         16), CUDA_SUCCESS);
 
-    EncoderSessionInputFrame inputFrame{
-        .handle = handle,
-        .pitch = static_cast<unsigned int>(pitch),
-        .width = configuration.width,
-        .height = configuration.height};
+    Frame inputFrame(handle, static_cast<unsigned int>(pitch), configuration, NV_ENC_PIC_STRUCT_FRAME);
 
-    ASSERT_EQ(session.Encode(inputFrame), NV_ENC_SUCCESS);
+    ASSERT_EQ(session.encode(inputFrame), NV_ENC_SUCCESS);
 
     EXPECT_EQ(session.frameCount(), 1);
 
@@ -75,14 +71,11 @@ TEST_F(VideoEncoderSessionTestFixture, testEncodeMultipleFrames) {
             configuration.height * (3/2) * 2,
             16), CUDA_SUCCESS);
 
-    EncoderSessionInputFrame inputFrame{
-            .handle = handle,
-            .pitch = static_cast<unsigned int>(pitch),
-            .width = configuration.width,
-            .height = configuration.height};
+    Frame inputFrame(handle, static_cast<unsigned int>(pitch), configuration, NV_ENC_PIC_STRUCT_FRAME);
 
-    for(int i = 0; i < count; i++)
-        ASSERT_EQ(session.Encode(inputFrame), NV_ENC_SUCCESS);
+    for(int i = 0; i < count; i++) {
+        ASSERT_EQ(session.encode(inputFrame), NV_ENC_SUCCESS);
+    }
 
     EXPECT_EQ(session.frameCount(), count);
 

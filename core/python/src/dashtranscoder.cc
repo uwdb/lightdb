@@ -52,7 +52,11 @@ public:
 
     printf("output filename: %s\n", outputFilename);
 
-    if (gpuTranscoder.transcode(std::string(inputFilename), std::string(outputFilename)) != 0)
+    FileDecodeReader reader(inputFilename);
+    FileEncodeWriter writer(gpuTranscoder.encoder().api(), outputFilename);
+
+    if (gpuTranscoder.transcode(reader, writer) != 0)
+    //if (gpuTranscoder.transcode(std::string(inputFilename), std::string(outputFilename)) != 0)
       throw std::runtime_error("transcode error");
     else if ((outputDataLength = lseek(outputDescriptor, 0, SEEK_END)) < 0)
       throw std::runtime_error("Output length seek to end");

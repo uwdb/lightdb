@@ -107,7 +107,7 @@ public:
   NVENCSTATUS CreateEncoders(const std::string &filenameTemplate, EncodeConfig &);
   //NVENCSTATUS Deinitialize();
   NVENCSTATUS
-  EncodeFrame(EncoderSessionInputFrame *, const NV_ENC_PIC_STRUCT type = NV_ENC_PIC_STRUCT_FRAME, const bool flush = false);
+  EncodeFrame(Frame *, const NV_ENC_PIC_STRUCT type = NV_ENC_PIC_STRUCT_FRAME, const bool flush = false);
   NVENCSTATUS AllocateIOBuffers(const EncodeConfig *);
   size_t GetEncodedFrames() const { return framesEncoded; }
   GUID GetPresetGUID() const { return presetGUID; }

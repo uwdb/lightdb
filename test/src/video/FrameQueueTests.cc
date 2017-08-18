@@ -23,13 +23,14 @@ TEST_F(FrameQueueTestFixture, testInit) {
 }
 
 TEST_F(FrameQueueTestFixture, testEmptyDequeue) {
-  char data2[1024] = {0};
-  ASSERT_FALSE(queue.dequeue(data2));
+  CUVIDPARSERDISPINFO data;
+  ASSERT_TRUE(queue.dequeue() == nullptr);
 }
 
 TEST_F(FrameQueueTestFixture, testEndOfDecode) {
   queue.endDecode();
   ASSERT_TRUE(queue.isEndOfDecode());
+  ASSERT_TRUE(queue.isComplete());
 }
 
 TEST_F(FrameQueueTestFixture, testEnqueue) {
@@ -38,6 +39,7 @@ TEST_F(FrameQueueTestFixture, testEnqueue) {
   ASSERT_TRUE(queue.isEmpty());
   queue.enqueue(&parameters);
   ASSERT_FALSE(queue.isEmpty());
+  ASSERT_FALSE(queue.isComplete());
 }
 
 TEST_F(FrameQueueTestFixture, testEnqueueDequeue) {
@@ -46,7 +48,7 @@ TEST_F(FrameQueueTestFixture, testEnqueueDequeue) {
   ASSERT_TRUE(queue.isEmpty());
   queue.enqueue(&parameters);
   ASSERT_FALSE(queue.isEmpty());
-  queue.dequeue(&parameters);
+  ASSERT_TRUE(queue.dequeue() != nullptr);
   ASSERT_TRUE(queue.isEmpty());
   ASSERT_EQ(parameters.picture_index, 1);
 }
@@ -61,8 +63,9 @@ TEST_F(FrameQueueTestFixture, testMultipleEnqueue) {
   ASSERT_FALSE(queue.isEmpty());
 
   for (unsigned int i = 0; i < queue.cnMaximumSize; i++) {
-    queue.dequeue(&parameters);
-    ASSERT_EQ(parameters.picture_index, i);
+    auto frame = queue.dequeue();
+    ASSERT_NE(nullptr, frame);
+    ASSERT_EQ(frame->picture_index, i);
   }
 
   ASSERT_TRUE(queue.isEmpty());

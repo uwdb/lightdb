@@ -177,7 +177,7 @@ float InitializeDecoder(const std::string &inputFilename, CudaDecoder &decoder, 
 struct EncodeContext {
   CudaDecoder &decoder;
   std::vector<TileVideoEncoder *> &encoders;
-  CUVIDFrameQueue &frameQueue;
+  FrameQueue &frameQueue;
   EncodeConfig &configuration;
   float fpsRatio;
   Statistics &statistics;
@@ -191,31 +191,35 @@ void EncodeWorker(EncodeContext &context)
   auto frmProcessed = 0;
   auto frmActual = 0;
 
-  while (!(context.frameQueue.isEndOfDecode() && context.frameQueue.isEmpty())) {
-    CUVIDPARSERDISPINFO frame;
+  while (!context.frameQueue.isComplete()) {
+  //while (!(context.frameQueue.isEndOfDecode() && context.frameQueue.isEmpty())) {
+    auto frame = context.frameQueue.dequeue_wait<CUVIDPARSERDISPINFO>();
+    //CUVIDPARSERDISPINFO frame;
 
-    if (context.frameQueue.dequeue(&frame)) {
+    //if(frame != nullptr) {
+    //if (context.frameQueue.dequeue(&frame)) {
       CUdeviceptr mappedFrame = 0;
       CUVIDPROCPARAMS oVPP = {0};
       unsigned int pitch;
 
-      oVPP.progressive_frame = frame.progressive_frame;
+      oVPP.progressive_frame = frame->progressive_frame;
       oVPP.second_field = 0;
-      oVPP.top_field_first = frame.top_field_first;
-      oVPP.unpaired_field = (frame.progressive_frame == 1 || frame.repeat_first_field <= 1);
+      oVPP.top_field_first = frame->top_field_first;
+      oVPP.unpaired_field = (frame->progressive_frame == 1 || frame->repeat_first_field <= 1);
 
-      cuvidMapVideoFrame(context.decoder.handle(), frame.picture_index, &mappedFrame, &pitch, &oVPP);
+      cuvidMapVideoFrame(context.decoder.handle(), frame->picture_index, &mappedFrame, &pitch, &oVPP);
 
-      EncoderSessionInputFrame stEncodeConfig = {0};
+      //EncoderSessionInputFrame stEncodeConfig = {0};
       auto pictureType =
-          (frame.progressive_frame || frame.repeat_first_field >= 2
+          (frame->progressive_frame || frame->repeat_first_field >= 2
                ? NV_ENC_PIC_STRUCT_FRAME
-               : (frame.top_field_first ? NV_ENC_PIC_STRUCT_FIELD_TOP_BOTTOM : NV_ENC_PIC_STRUCT_FIELD_BOTTOM_TOP));
+               : (frame->top_field_first ? NV_ENC_PIC_STRUCT_FIELD_TOP_BOTTOM : NV_ENC_PIC_STRUCT_FIELD_BOTTOM_TOP));
+      Frame stEncodeConfig(mappedFrame, pitch, context.configuration, pictureType);
 
-      stEncodeConfig.handle = mappedFrame;
+      /*stEncodeConfig.handle = mappedFrame;
       stEncodeConfig.pitch = pitch;
       stEncodeConfig.width = context.configuration.width;
-      stEncodeConfig.height = context.configuration.height;
+      stEncodeConfig.height = context.configuration.height;*/
 
       auto dropOrDuplicate = TilerMatchFPS(context.fpsRatio, frmProcessed, frmActual);
       if (dropOrDuplicate != 1)
@@ -233,7 +237,7 @@ void EncodeWorker(EncodeContext &context)
 
       cuvidUnmapVideoFrame(context.decoder.handle(), mappedFrame);
       context.frameQueue.releaseFrame(&frame);
-    }
+    //}
   }
 
   for (auto *encoder : context.encoders)

@@ -9,6 +9,7 @@ class DecodeReader {
 public:
     virtual std::optional<CUVIDSOURCEDATAPACKET> DecodeFrame() = 0;
     virtual CUVIDEOFORMAT format() const = 0;
+    virtual bool isComplete() const = 0;
 };
 
 class FileDecodeReader: public DecodeReader {
@@ -42,10 +43,11 @@ public:
                : std::optional<CUVIDSOURCEDATAPACKET>();
     }
 
-private:
-    void Initialize() {
+    bool isComplete() const override {
+        return !packets.read_available() && cuvidGetVideoSourceState(source) != cudaVideoState_Started;
     }
 
+private:
     static int CUDAAPI HandleVideoData(void *userData, CUVIDSOURCEDATAPACKET *packet) {
         FileDecodeReader *reader = static_cast<FileDecodeReader*>(userData);
 

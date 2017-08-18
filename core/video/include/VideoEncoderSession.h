@@ -1,27 +1,21 @@
 #ifndef VISUALCLOUD_VIDEOENCODERSESSION_H
 #define VISUALCLOUD_VIDEOENCODERSESSION_H
 
+#include "Frame.h"
 #include "VideoEncoder.h"
 #include "EncodeWriter.h"
-
-typedef struct _EncoderSessionInputFrame {
-    CUdeviceptr  handle;
-    unsigned int pitch;
-    unsigned int width;
-    unsigned int height;
-} EncoderSessionInputFrame;
-
 
 class VideoEncoderSession {
 public:
     VideoEncoderSession(VideoEncoder &encoder, EncodeWriter &writer)
-            : encoder(encoder), writer(writer), frameCount_(0), queue(encoder.buffers) { }
+            : frameCount_(0), encoder(encoder), writer(writer), queue(encoder.buffers) { }
 
     ~VideoEncoderSession() {
         Flush();
     }
 
-    NVENCSTATUS Encode(EncoderSessionInputFrame&, NV_ENC_PIC_STRUCT type = NV_ENC_PIC_STRUCT_FRAME);
+    //TODO case
+    NVENCSTATUS encode(Frame&);
     NVENCSTATUS Flush();
 
     size_t frameCount() const { return frameCount_; }

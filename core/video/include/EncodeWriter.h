@@ -7,7 +7,7 @@
 class EncodeWriter {
 public:
     virtual NVENCSTATUS WriteFrame(const EncodeBuffer &buffer);
-    virtual NVENCSTATUS WriteFrame(const MotionEstimationBuffer &buffer);
+    //virtual NVENCSTATUS WriteFrame(const MotionEstimationBuffer &buffer);
     virtual NVENCSTATUS Flush() = 0;
 
 protected:

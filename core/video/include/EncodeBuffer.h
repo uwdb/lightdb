@@ -59,39 +59,39 @@ typedef struct _EncodeConfig
                   const unsigned int codec, std::string preset, const unsigned int fps,
                   const unsigned int gop_length, const size_t bitrate, const unsigned int rcmode,
                   const unsigned int deviceId) :
-            height(height),
             width(width),
-            maxHeight(0),
+            height(height),
             maxWidth(0),
-            startFrameIdx(0),
-            endFrameIdx(INT_MAX),
-            bitrate(bitrate),
-            rcMode(rcmode),
-            gopLength(gop_length),
-            codec(codec),
+            maxHeight(0),
             fps(fps),
+            bitrate(bitrate),
+            vbvMaxBitrate(0),
+            vbvSize(0),
+            rcMode(rcmode),
             qp(28),
             i_quant_factor(DEFAULT_I_QFACTOR),
             b_quant_factor(DEFAULT_B_QFACTOR),
             i_quant_offset(DEFAULT_I_QOFFSET),
             b_quant_offset(DEFAULT_B_QOFFSET),
             presetGUID(NV_ENC_PRESET_DEFAULT_GUID),
-            pictureStruct(NV_ENC_PIC_STRUCT_FRAME),
-            encoderPreset(preset),
-            deviceID(deviceId),
-            //inputFileName(inputFilename),
-            //outputFileName(outputFilenameFormat),
             fOutput(nullptr),
-            vbvMaxBitrate(0),
-            vbvSize(0),
+            codec(codec),
             invalidateRefFramesEnableFlag(0),
             intraRefreshEnableFlag(0),
             intraRefreshPeriod(0),
             intraRefreshDuration(0),
             deviceType(NV_ENC_DEVICE_TYPE_CUDA),
+            startFrameIdx(0),
+            endFrameIdx(INT_MAX),
+            gopLength(gop_length),
             numB(0),
+            pictureStruct(NV_ENC_PIC_STRUCT_FRAME),
+            deviceID(deviceId),
             inputFormat(NV_ENC_BUFFER_FORMAT_NV12),
             qpDeltaMapFile(nullptr),
+            encoderPreset(preset),
+            //inputFileName(inputFilename),
+            //outputFileName(outputFilenameFormat),
             //inputFilePath(nullptr),
             enableMEOnly(0),
             enableAsyncMode(0),
@@ -132,7 +132,7 @@ typedef struct _EncodeBuffer
     EncodeOutputBuffer      stOutputBfr;
     EncodeInputBuffer       stInputBfr;
     EncodeAPI&              api;
-    EncodeConfig&           configuration; // TODO change this to const (possibly others)
+    const EncodeConfig&     configuration; // TODO change this to const (possibly others)
     const size_t            size;
 
     _EncodeBuffer(const _EncodeBuffer& other)
@@ -147,7 +147,7 @@ typedef struct _EncodeBuffer
     }
 
     // TODO is this size reasonable?
-    _EncodeBuffer(EncodeAPI &api, EncodeConfig& configuration, size_t size=2*1024*1024)
+    _EncodeBuffer(EncodeAPI &api, const EncodeConfig& configuration, size_t size=2*1024*1024)
             : stOutputBfr{0}, stInputBfr{0}, api(api), configuration(configuration), size(size), owner(true) {
         NVENCSTATUS status;
 
