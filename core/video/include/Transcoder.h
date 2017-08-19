@@ -31,7 +31,7 @@ public:
             auto dropOrDuplicate = alignFPS(fpsRatio, framesDecoded++, framesEncoded);
 
             for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++)
-                if((status = encodeSession.encode(frame)) != NV_ENC_SUCCESS)
+                if((status = encodeSession.Encode(frame)) != NV_ENC_SUCCESS)
                     return status;
         }
 

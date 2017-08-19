@@ -47,7 +47,7 @@ TEST_F(VideoEncoderSessionTestFixture, testEncodeSingleFrame) {
 
     Frame inputFrame(handle, static_cast<unsigned int>(pitch), configuration, NV_ENC_PIC_STRUCT_FRAME);
 
-    ASSERT_EQ(session.encode(inputFrame), NV_ENC_SUCCESS);
+    ASSERT_EQ(session.Encode(inputFrame), NV_ENC_SUCCESS);
 
     EXPECT_EQ(session.frameCount(), 1);
 
@@ -74,7 +74,7 @@ TEST_F(VideoEncoderSessionTestFixture, testEncodeMultipleFrames) {
     Frame inputFrame(handle, static_cast<unsigned int>(pitch), configuration, NV_ENC_PIC_STRUCT_FRAME);
 
     for(int i = 0; i < count; i++) {
-        ASSERT_EQ(session.encode(inputFrame), NV_ENC_SUCCESS);
+        ASSERT_EQ(session.Encode(inputFrame), NV_ENC_SUCCESS);
     }
 
     EXPECT_EQ(session.frameCount(), count);

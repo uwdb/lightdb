@@ -1,45 +1,55 @@
 #include "VideoEncoderSession.h"
 
-NVENCSTATUS VideoEncoderSession::encode(Frame &frame) {
-    EncodeBuffer &buffer = GetAvailableBuffer();
+NVENCSTATUS VideoEncoderSession::Encode(Frame &frame) {
+    auto &buffer = GetAvailableBuffer();
     NVENCSTATUS status;
+    CUDA_MEMCPY2D copy = {
+        .srcXInBytes = 0,
+        .srcY = 0,
+        .srcMemoryType = CU_MEMORYTYPE_DEVICE,
+        .srcHost = 0,
+        .srcDevice = frame.handle(),
+        .srcArray = 0,
+        .srcPitch = frame.pitch(),
 
-    assert(frame.width() == buffer.stInputBfr.dwWidth);
-    assert(frame.height() == buffer.stInputBfr.dwHeight);
+        .dstXInBytes = 0,
+        .dstY = 0,
 
-    // CUDA copy of frame from host to device memory
-    if(cuvidCtxLock(encoder.lock.get(), 0) != CUDA_SUCCESS) {
-        return NV_ENC_ERR_GENERIC;
+        .dstMemoryType = CU_MEMORYTYPE_DEVICE,
+        .dstHost = 0,
+        .dstDevice = static_cast<CUdeviceptr>(buffer.stInputBfr.pNV12devPtr),
+        .dstArray = 0,
+        .dstPitch = buffer.stInputBfr.uNV12Stride,
+
+        .WidthInBytes = buffer.stInputBfr.dwWidth,
+        .Height = buffer.stInputBfr.dwHeight * 3 / 2
+    };
+
+    if(frame.width() != buffer.stInputBfr.dwWidth ||
+            frame.height() != buffer.stInputBfr.dwHeight) {
+        status = NV_ENC_ERR_INVALID_PARAM;
+    } else if(cuvidCtxLock(encoder.lock.get(), 0) != CUDA_SUCCESS) {
+        status = NV_ENC_ERR_GENERIC;
+    } else if (cuMemcpy2D(&copy) != CUDA_SUCCESS) {
+        status = NV_ENC_ERR_GENERIC;
+    } else if (cuvidCtxUnlock(encoder.lock.get(), 0) != CUDA_SUCCESS) {
+        status = NV_ENC_ERR_GENERIC;
+    } else if ((status = encoder.api().NvEncMapInputResource(buffer.stInputBfr.nvRegisteredResource,
+                                                             &buffer.stInputBfr.hInputSurface)) != NV_ENC_SUCCESS) {
+        ;
+    } else if ((status = encoder.api().NvEncEncodeFrame(&buffer, nullptr, frame.type())) != NV_ENC_SUCCESS) {
+        ;
+    } else {
+        frameCount_++;
+        status = NV_ENC_SUCCESS;
     }
 
-    CUDA_MEMCPY2D copy = {};
-    copy.srcMemoryType = CU_MEMORYTYPE_DEVICE;
-    copy.srcDevice = frame.handle();
-    copy.srcPitch = frame.pitch();
-    copy.dstMemoryType = CU_MEMORYTYPE_DEVICE;
-    copy.dstDevice = (CUdeviceptr)buffer.stInputBfr.pNV12devPtr;
-    copy.dstPitch = buffer.stInputBfr.uNV12Stride;
-    copy.WidthInBytes = buffer.stInputBfr.dwWidth;
-    copy.Height = buffer.stInputBfr.dwHeight * 3 / 2;
-
-    if (cuMemcpy2D(&copy) != CUDA_SUCCESS) {
-        return NV_ENC_ERR_GENERIC;
-    } else if(cuvidCtxUnlock(encoder.lock.get(), 0)) {
-        return NV_ENC_ERR_GENERIC;
-    } else if((status = encoder.api().NvEncMapInputResource(buffer.stInputBfr.nvRegisteredResource,
-                                                        &buffer.stInputBfr.hInputSurface)) != NV_ENC_SUCCESS) {
-        return status;
-    } else if((status = encoder.api().NvEncEncodeFrame(&buffer, nullptr, frame.type())) != NV_ENC_SUCCESS) {
-        return status;
-    }
-
-    frameCount_++;
-
-    return NV_ENC_SUCCESS;
+    return status;
 }
 
 NVENCSTATUS VideoEncoderSession::Flush() {
-    while(CompletePendingBuffer().has_value());
+    while(CompletePendingBuffer().has_value())
+        sleep(0);
 
     writer.Flush();
 

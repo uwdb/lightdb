@@ -15,7 +15,7 @@ public:
     }
 
     //TODO case
-    NVENCSTATUS encode(Frame&);
+    NVENCSTATUS Encode(Frame&);
     NVENCSTATUS Flush();
 
     size_t frameCount() const { return frameCount_; }
