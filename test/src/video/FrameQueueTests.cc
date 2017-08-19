@@ -23,7 +23,6 @@ TEST_F(FrameQueueTestFixture, testInit) {
 }
 
 TEST_F(FrameQueueTestFixture, testEmptyDequeue) {
-  CUVIDPARSERDISPINFO data;
   ASSERT_TRUE(queue.dequeue() == nullptr);
 }
 

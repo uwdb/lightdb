@@ -1,6 +1,6 @@
-#include <gtest/gtest.h>
 #include "EncodeAPI.h"
 #include "VideoEncoder.h"
+#include <gtest/gtest.h>
 
 class EncodeBufferTestFixture : public testing::Test {
 public:
@@ -12,9 +12,9 @@ public:
 
 protected:
     const unsigned int deviceId = 0;
+    EncodeConfig configuration;
     GPUContext context;
     EncodeAPI encodeAPI;
-    EncodeConfig configuration;
 };
 
 TEST_F(EncodeBufferTestFixture, testBuffer) {

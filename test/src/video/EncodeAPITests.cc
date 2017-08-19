@@ -1,6 +1,6 @@
-#include <gtest/gtest.h>
 #include "EncodeAPI.h"
 #include "VideoEncoder.h"
+#include <gtest/gtest.h>
 
 class EncodeAPITestFixture : public testing::Test {
 public:

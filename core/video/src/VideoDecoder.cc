@@ -66,8 +66,9 @@ static int CUDAAPI HandlePictureDisplay(void *pUserData, CUVIDPARSERDISPINFO *pP
 */
 
 CudaDecoder::CudaDecoder(const EncodeConfig &configuration, FrameQueue& frameQueue, VideoLock& lock)
-    : m_videoSource(NULL), m_videoParser(NULL), handle_(NULL), lock(lock), decodedFrameCount_(0),
-      complete_(false), frameQueue(frameQueue), configuration_(configuration) {
+    : m_videoSource(NULL), configuration_(configuration), frameQueue(frameQueue), m_videoParser(NULL),
+      decodedFrameCount_(0), handle_(NULL), complete_(false), lock(lock)
+       {
     CUVIDEOFORMAT format;
     format.codec = cudaVideoCodec_H264;
     format.chroma_format = cudaVideoChromaFormat_420;
