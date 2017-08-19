@@ -19,7 +19,7 @@ public:
     }
 
     const DecodedFrame decode() {
-        return DecodedFrame(decoder, decoder.frameQueue.dequeue_wait<CUVIDPARSERDISPINFO>());
+        return DecodedFrame(decoder, decoder.frame_queue().dequeue_wait<CUVIDPARSERDISPINFO>());
     }
 
 protected:
@@ -40,7 +40,7 @@ protected:
                     throw status; //TODO
         } while (packet.has_value());
 
-        decoder.frameQueue.endDecode();
+        decoder.frame_queue().endDecode();
     }
 
 private:
@@ -60,7 +60,7 @@ private:
             .pfnDisplayPicture = HandlePictureDisplay
         };
 
-        decoder.frameQueue.reset();
+        decoder.frame_queue().reset();
 
         if ((status = cuvidCreateVideoParser(&parser, &parameters)) != CUDA_SUCCESS)
             throw status; // TODO
@@ -87,7 +87,7 @@ private:
 
         assert(session);
 
-        session->decoder.frameQueue.waitUntilFrameAvailable(parameters->CurrPicIdx);
+        session->decoder.frame_queue().waitUntilFrameAvailable(parameters->CurrPicIdx);
         assert(cuvidDecodePicture(session->decoder.handle(), parameters) == CUDA_SUCCESS);
 
         return 1;
@@ -98,7 +98,7 @@ private:
 
         assert(session);
 
-        session->decoder.frameQueue.enqueue(frame);
+        session->decoder.frame_queue().enqueue(frame);
         session->decodedFrameCount_++;
 
         return 1;

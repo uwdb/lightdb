@@ -26,7 +26,7 @@ public:
         auto fpsRatio = (float)encoder_.configuration().fps /
                         reader.format().frame_rate.numerator / reader.format().frame_rate.denominator;
 
-        while (!decoder_.frameQueue.isComplete()) {
+        while (!decoder_.frame_queue().isComplete()) {
             auto frame = decodeSession.decode();
             auto dropOrDuplicate = alignFPS(fpsRatio, framesDecoded++, framesEncoded);
 
