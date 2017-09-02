@@ -83,7 +83,7 @@ public:
 
 protected:
     bool                                                 m_bEncoderInitialized;
-    bool                                                 encoderCreated = false;
+    bool                                                 encoderCreated_ = false;
     GUID                                                 codecGUID;
 
     NV_ENCODE_API_FUNCTION_LIST*                         m_pEncodeAPI;
@@ -96,6 +96,8 @@ protected:
     MotionEstimationEncodedHandler *motionEstimationEncodedHandler;
 
 public:
+    bool encoderCreated() const { return encoderCreated_; }
+
     NVENCSTATUS NvEncOpenEncodeSession(CUcontext context);
     NVENCSTATUS NvEncOpenEncodeSession(void* device, uint32_t deviceType);
     NVENCSTATUS NvEncGetEncodeGUIDCount(uint32_t* encodeGUIDCount);
@@ -132,6 +134,7 @@ public:
     NVENCSTATUS NvEncUnregisterResource(NV_ENC_REGISTERED_PTR registeredRes);
     NVENCSTATUS NvEncReconfigureEncoder(const NvEncPictureCommand *pEncPicCommand);
     NVENCSTATUS NvEncFlushEncoderQueue(void *hEOSEvent);
+    NVENCSTATUS ResetEncoder();
 
     EncodeAPI(GPUContext& context) : EncodeAPI(context.get()) { }
     EncodeAPI(CUcontext context) : EncodeAPI(context, NV_ENC_DEVICE_TYPE_CUDA) { }
@@ -140,7 +143,7 @@ public:
     NVENCSTATUS                                          CreateEncoder(const EncodeConfig *pEncCfg);
     NVENCSTATUS                                          NvEncEncodeFrame(EncodeBuffer *pEncodeBuffer, NvEncPictureCommand *encPicCommand,
                                                                           NV_ENC_PIC_STRUCT ePicStruct = NV_ENC_PIC_STRUCT_FRAME,
-                                                                          int8_t *qpDeltaMapArray = NULL, uint32_t qpDeltaMapArraySize = 0);
+                                                                          bool isFirstFrame=false, int8_t *qpDeltaMapArray = NULL, uint32_t qpDeltaMapArraySize = 0);
     GUID                                                 GetPresetGUID(const char* encoderPreset, int codec);
     NVENCSTATUS                                          ProcessOutput(FILE* output, const EncodeBuffer *pEncodeBuffer);
     NVENCSTATUS                                          ProcessMVOutput(FILE* output, const MotionEstimationBuffer *pEncodeBuffer);

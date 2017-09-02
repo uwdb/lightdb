@@ -29,22 +29,22 @@ TEST_F(EncodeAPITestFixture, testCreateEncoder) {
   ASSERT_EQ(encodeAPI.CreateEncoder(&configuration), NV_ENC_SUCCESS);
 }
 
-TEST_F(EncodeAPITestFixture, testEncodeFrame) {
+TEST_F(EncodeAPITestFixture, testConstructWithoutEncoder) {
   EncodeConfig configuration(1080, 1920, 2, 2, NV_ENC_HEVC, preset, 30, 30, 1024*1024, 0, 0);
-  EncodeBuffer encodeBuffer(encodeAPI, configuration);
-
-  EXPECT_EQ(encodeAPI.NvEncEncodeFrame(&encodeBuffer, nullptr, NV_ENC_PIC_STRUCT_FRAME), NV_ENC_SUCCESS);
+  ASSERT_ANY_THROW(EncodeBuffer(encodeAPI, configuration));
 }
 
-TEST_F(EncodeAPITestFixture, testProcessOutput) {
-  EncodeConfig configuration(1080, 1920, 2, 2, NV_ENC_HEVC, preset, 30, 30, 1024*1024, 0, 0);
-  EncodeBuffer encodeBuffer(encodeAPI, configuration);
+TEST_F(EncodeAPITestFixture, testEncodeFrame) {
+    EncodeConfig configuration(1080, 1920, 2, 2, NV_ENC_HEVC, preset, 30, 30, 1024*1024, 0, 0);
 
-  configuration.fOutput = fopen("/dev/null", "wb");
+    ASSERT_EQ(encodeAPI.CreateEncoder(&configuration), NV_ENC_SUCCESS);
 
-  EXPECT_NE(configuration.fOutput, nullptr);
+    {
+        EncodeBuffer encodeBuffer(encodeAPI, configuration);
 
-  EXPECT_EQ(encodeAPI.NvEncEncodeFrame(&encodeBuffer, nullptr, NV_ENC_PIC_STRUCT_FRAME), NV_ENC_SUCCESS);
+        std::scoped_lock{encodeBuffer};
+        EXPECT_EQ(encodeAPI.NvEncEncodeFrame(&encodeBuffer, nullptr, NV_ENC_PIC_STRUCT_FRAME), NV_ENC_SUCCESS);
+    }
 
-  EXPECT_EQ(fclose(configuration.fOutput), 0);
+    EXPECT_EQ(encodeAPI.NvEncDestroyEncoder(), NV_ENC_SUCCESS);
 }

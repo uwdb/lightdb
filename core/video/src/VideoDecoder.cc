@@ -16,8 +16,8 @@ static int CUDAAPI HandleVideoData(void *pUserData, CUVIDSOURCEDATAPACKET *pPack
 }*/
 
 CudaDecoder::CudaDecoder(const EncodeConfig &configuration, FrameQueue& frame_queue, VideoLock& lock)
-    : VideoDecoder(configuration, frame_queue), m_videoSource(NULL), m_videoParser(NULL),
-      decodedFrameCount_(0), handle_(NULL), complete_(false), lock(lock)
+    : VideoDecoder(configuration, frame_queue)//, m_videoSource(NULL), m_videoParser(NULL),
+      //decodedFrameCount_(0), handle_(NULL), complete_(false), lock(lock)
        {
     CUVIDEOFORMAT format;
     format.codec = cudaVideoCodec_H264;
@@ -96,7 +96,7 @@ CudaDecoder::CudaDecoder(const EncodeConfig &configuration, FrameQueue& frame_qu
                exit(-1);
            }
 
-           m_oVideoDecodeCreateInfo = oVideoDecodeCreateInfo;
+           parameters_ = oVideoDecodeCreateInfo;
 }
 
 CudaDecoder::~CudaDecoder(void) {
@@ -133,7 +133,7 @@ void CudaDecoder::InitVideoDecoder(const std::string &inputFilename) {
 void CudaDecoder::InitVideoDecoder(CUVIDEOFORMAT &format) {
  }
 */
-
+/*
 void CudaDecoder::Start() {
   CUresult oResult;
 
@@ -146,8 +146,8 @@ void CudaDecoder::Start() {
   complete_ = true;
 
   frame_queue().endDecode();
-}
-
+}*/
+/*
 void CudaDecoder::GetCodecParam(int *width, int *height, int *frame_rate_num, int *frame_rate_den,
                                 int *is_progressive) {
   assert(width != NULL && height != NULL && frame_rate_num != NULL && frame_rate_den != NULL);
@@ -160,3 +160,4 @@ void CudaDecoder::GetCodecParam(int *width, int *height, int *frame_rate_num, in
   *frame_rate_den = oFormat.frame_rate.denominator;
   *is_progressive = oFormat.progressive_sequence;
 }
+*/

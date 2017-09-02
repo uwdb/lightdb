@@ -452,10 +452,28 @@ NVENCSTATUS EncodeAPI::NvEncDestroyEncoder()
 
         encodeSessionHandle = nullptr;
         m_bEncoderInitialized = false;
-        encoderCreated = false;
+        encoderCreated_ = false;
     }
 
     return nvStatus;
+}
+
+NVENCSTATUS EncodeAPI::ResetEncoder()
+{
+    NV_ENC_RECONFIGURE_PARAMS parameters = {0};
+    parameters.version = NV_ENC_RECONFIGURE_PARAMS_VER;
+    parameters.resetEncoder = 1;
+    //parameters.forceIDR = 1;
+    parameters.reInitEncodeParams = m_stCreateEncodeParams;
+    parameters.reInitEncodeParams.encodeConfig->encodeCodecConfig.hevcConfig.repeatSPSPPS = 1;
+    parameters.reInitEncodeParams.encodeConfig->encodeCodecConfig.hevcConfig.repeatSPSPPS = 1;
+
+    //parameters.reInitEncodeParams.frameRateNum *= 2;
+    //parameters.reInitEncodeParams.frameRateDen *= 2;
+    auto result = m_pEncodeAPI->nvEncReconfigureEncoder(encodeSessionHandle, &parameters);
+    if(result != NV_ENC_SUCCESS)
+        throw std::runtime_error("reconfigure");
+    return result;
 }
 
 NVENCSTATUS EncodeAPI::NvEncInvalidateRefFrames(const NvEncPictureCommand *pEncPicCommand)
@@ -477,7 +495,8 @@ NVENCSTATUS EncodeAPI::NvEncOpenEncodeSessionEx(void* device, NV_ENC_DEVICE_TYPE
     NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS openSessionExParams;
 
     if(m_bEncoderInitialized)
-        throw "m_bEncoderInitialized"; //TODO
+        return NV_ENC_SUCCESS;
+        //throw "m_bEncoderInitialized"; //TODO
 
     memset(&openSessionExParams, 0, sizeof(openSessionExParams));
     SET_VER(openSessionExParams, NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS);
@@ -721,7 +740,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfig *pEncCfg)
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    if(encoderCreated)
+    if(encoderCreated())
         return NV_ENC_SUCCESS;
 
     if (pEncCfg == NULL)
@@ -908,6 +927,15 @@ NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfig *pEncCfg)
         m_stEncodeConfig.encodeCodecConfig.hevcConfig.idrPeriod = pEncCfg->gopLength;
     }
 
+    if (pEncCfg->codec == NV_ENC_HEVC)
+    {
+        m_stEncodeConfig.encodeCodecConfig.hevcConfig.repeatSPSPPS = 1;
+    }
+    else
+    {
+        m_stEncodeConfig.encodeCodecConfig.h264Config.repeatSPSPPS = 1;
+    }
+
     NV_ENC_CAPS_PARAM stCapsParam;
     int asyncMode = 0;
     memset(&stCapsParam, 0, sizeof(NV_ENC_CAPS_PARAM));
@@ -979,7 +1007,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfig *pEncCfg)
         return nvStatus;
     }
     m_bEncoderInitialized = true;
-    encoderCreated = true;
+    encoderCreated_ = true;
 
     return nvStatus;
 }
@@ -1201,7 +1229,7 @@ NVENCSTATUS EncodeAPI::Initialize(void* device, NV_ENC_DEVICE_TYPE deviceType)
 
 NVENCSTATUS EncodeAPI::NvEncEncodeFrame(EncodeBuffer *pEncodeBuffer, NvEncPictureCommand *encPicCommand,
                                            NV_ENC_PIC_STRUCT ePicStruct,
-                                           int8_t *qpDeltaMapArray, uint32_t qpDeltaMapArraySize)
+                                           bool isFirstFrame, int8_t *qpDeltaMapArray, uint32_t qpDeltaMapArraySize)
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
     NV_ENC_PIC_PARAMS encPicParams;
@@ -1221,6 +1249,13 @@ NVENCSTATUS EncodeAPI::NvEncEncodeFrame(EncodeBuffer *pEncodeBuffer, NvEncPictur
     encPicParams.qpDeltaMap = qpDeltaMapArray;
     encPicParams.qpDeltaMapSize = qpDeltaMapArraySize;
 
+    if(isFirstFrame) {
+        //ResetEncoder();
+        encPicParams.encodePicFlags |= NV_ENC_PIC_FLAG_OUTPUT_SPSPPS | NV_ENC_PIC_FLAG_FORCEIDR;
+        //encPicParams.pictureType = NV_ENC_PIC_TYPE_IDR;
+        //encPicParams.codecPicParams.hevcPicParams.dis
+        //encPicParams.codecPicParams.hevcPicParams.forceIntraRefreshWithFrameCnt = 30;
+    }
 
     if (encPicCommand)
     {
@@ -1245,6 +1280,7 @@ NVENCSTATUS EncodeAPI::NvEncEncodeFrame(EncodeBuffer *pEncodeBuffer, NvEncPictur
     nvStatus = m_pEncodeAPI->nvEncEncodePicture(encodeSessionHandle, &encPicParams);
     if (nvStatus != NV_ENC_SUCCESS && nvStatus != NV_ENC_ERR_NEED_MORE_INPUT)
     {
+        printf("nvstatus: %d\n", nvStatus);
         assert(0);
         return nvStatus;
     }

@@ -1,12 +1,14 @@
 #ifndef VISUALCLOUD_ENCODEBUFFER_H
 #define VISUALCLOUD_ENCODEBUFFER_H
 
-#include <string>
-#include <stdint.h>
 #include "EncodeAPI.h"
 #include "nvEncodeAPI.h"
 #include "nvUtils.h"
 #include "GPUContext.h"
+#include "VideoLock.h"
+#include <mutex>
+#include <string>
+#include <stdint.h>
 
 typedef struct _EncodeConfig
 {
@@ -53,6 +55,13 @@ typedef struct _EncodeConfig
         { }
 
     _EncodeConfig(const struct _EncodeConfig& copy) = default;
+
+    _EncodeConfig(const struct _EncodeConfig& model, const size_t height, const size_t width)
+            : _EncodeConfig(model)
+        {
+            this->height = height;
+            this->width = width;
+        }
 
     _EncodeConfig(const unsigned int height,
                   const unsigned int width, const size_t tileRows, const size_t tileColumns,
@@ -139,20 +148,25 @@ typedef struct _EncodeBuffer
             : _EncodeBuffer(other.api, other.configuration, other.size)
     { }
 
-    _EncodeBuffer(_EncodeBuffer&& other)
-            : stOutputBfr(other.stOutputBfr), stInputBfr(other.stInputBfr),
+    _EncodeBuffer(const _EncodeBuffer&& other) = delete;
+/*            : stOutputBfr(other.stOutputBfr), stInputBfr(other.stInputBfr),
               api(other.api), configuration(other.configuration), size(other.size),
               owner(true) {
-        other.owner = false;
-    }
+        //TODO I removed this, did I mean to?
+        //other.owner = false;
+    }*/
 
     // TODO is this size reasonable?
     _EncodeBuffer(EncodeAPI &api, const EncodeConfig& configuration, size_t size=2*1024*1024)
-            : stOutputBfr{0}, stInputBfr{0}, api(api), configuration(configuration), size(size), owner(true) {
+            : stOutputBfr{0}, stInputBfr{0}, api(api), configuration(configuration), size(size) {
+    //owner(true) {
         NVENCSTATUS status;
 
-        if((status = api.CreateEncoder(&configuration)) != NV_ENC_SUCCESS)
-            throw status; //TODO
+        //if((status = api.CreateEncoder(&configuration)) != NV_ENC_SUCCESS)
+        //    throw status; //TODO
+        //TODO if a decoder is required, accept a VideoDecoder as parameter rathern than api
+        if(!api.encoderCreated())
+            throw std::runtime_error("encoder not created"); //TODO
         else if(cuMemAllocPitch(&stInputBfr.pNV12devPtr,
                            (size_t*)&stInputBfr.uNV12Stride,
                            configuration.width,
@@ -164,9 +178,9 @@ typedef struct _EncodeBuffer
                 configuration.width, configuration.height,
                 stInputBfr.uNV12Stride, &stInputBfr.nvRegisteredResource)) != NV_ENC_SUCCESS)
             throw status; //TODO
-        else if((status = api.NvEncMapInputResource(stInputBfr.nvRegisteredResource,
-                                                    &stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
-            throw "998"; //TODO
+//        else if((status = api.NvEncMapInputResource(stInputBfr.nvRegisteredResource,
+//                                                    &stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
+//            throw "998"; //TODO
         else if((status = api.NvEncCreateBitstreamBuffer(
                 size, &stOutputBfr.hBitstreamBuffer)) != NV_ENC_SUCCESS)
             throw "997"; //TODO
@@ -181,19 +195,52 @@ typedef struct _EncodeBuffer
     ~_EncodeBuffer() {
         NVENCSTATUS status;
 
-        if(!owner)
-            ;
-        else if((status = api.NvEncDestroyBitstreamBuffer(stOutputBfr.hBitstreamBuffer)) != NV_ENC_SUCCESS)
+//        if(!owner)
+  //          ;
+        if((status = api.NvEncDestroyBitstreamBuffer(stOutputBfr.hBitstreamBuffer)) != NV_ENC_SUCCESS)
             printf("log\n"); //TODO log
-        else if((status = api.NvEncUnmapInputResource(stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
-            printf("log\n"); //TODO log
+//        else if((status = api.NvEncUnmapInputResource(stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
+//            printf("log\n"); //TODO log
         else if((api.NvEncUnregisterResource(stInputBfr.nvRegisteredResource)) != NV_ENC_SUCCESS)
             printf("log\n"); //TODO log
         else if(cuMemFree(stInputBfr.pNV12devPtr) != CUDA_SUCCESS)
             printf("log\n"); //TODO log
     }
-private:
-    bool owner;
+
+    void copy(VideoLock &lock, const CUDA_MEMCPY2D &parameters) {
+        CUresult result;
+        std::scoped_lock{lock};
+
+        if ((result = cuMemcpy2D(&parameters)) != CUDA_SUCCESS) {
+            throw result; //TODO
+        }
+    }
+
+    void copy(VideoLock &lock, const std::vector<CUDA_MEMCPY2D> &parameters) {
+        std::scoped_lock{lock};
+        std::for_each(parameters.begin(), parameters.end(), [](const CUDA_MEMCPY2D &parameters) {
+            CUresult result;
+            if ((result = cuMemcpy2D(&parameters)) != CUDA_SUCCESS) {
+                throw result; //TODO
+            }
+        });
+    }
+
+    void lock() {
+        NVENCSTATUS status;
+        if((status = api.NvEncMapInputResource(stInputBfr.nvRegisteredResource,
+                                               &stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
+            throw status; //TODO
+    }
+
+    void unlock() {
+        NVENCSTATUS status;
+        if((status = api.NvEncUnmapInputResource(stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
+            throw status; //TODO
+    }
+
+//private:
+  //  bool owner;
 } EncodeBuffer;
 
 typedef struct _MotionEstimationBuffer

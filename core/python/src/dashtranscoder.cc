@@ -217,10 +217,10 @@ BOOST_PYTHON_MODULE(dashtranscoder) {
   //.def("tile2", &Tiler::tile2);
   //.def("tile_all", &Tiler::tile_all);
 
-  boost::python::class_<Transcoder>(
-      "Transcoder", boost::python::init<unsigned int, unsigned int, unsigned int, std::string, unsigned int,
-                                        unsigned int, unsigned long, unsigned int, unsigned int>())
-      .def("transcode", &Transcoder::transcode);
+//  boost::python::class_<Transcoder>(
+  //    "Transcoder", boost::python::init<unsigned int, unsigned int, unsigned int, std::string, unsigned int,
+    //                                    unsigned int, unsigned long, unsigned int, unsigned int>())
+      //.def("transcode", &Transcoder::transcode);
 
   boost::python::scope constants = boost::python::class_<Constants>("constants");
 

@@ -1,5 +1,5 @@
 #include "VideoEncoderSession.h"
-#include "EncodeWriter.h"
+#include "AssertVideo.h"
 #include <gtest/gtest.h>
 
 #define FILENAME "resources/result-VideoEncoderSessionTestFixture.h265"
@@ -52,8 +52,10 @@ TEST_F(VideoEncoderSessionTestFixture, testEncodeSingleFrame) {
     EXPECT_EQ(session.frameCount(), 1);
 
     EXPECT_EQ(session.Flush(), NV_ENC_SUCCESS);
-    EXPECT_EQ(system("ffprobe -hide_banner -loglevel quiet " FILENAME), 0);
-    EXPECT_EQ(system("resources/assert-frames.sh " FILENAME " 1"), 0);
+
+    EXPECT_VIDEO_VALID(FILENAME);
+    EXPECT_VIDEO_FRAMES(FILENAME, 1);
+    EXPECT_VIDEO_RESOLUTION(FILENAME, configuration.height, configuration.width);
 
     EXPECT_EQ(remove(FILENAME), 0);
     EXPECT_EQ(cuMemFree(handle), CUDA_SUCCESS);
@@ -80,8 +82,9 @@ TEST_F(VideoEncoderSessionTestFixture, testEncodeMultipleFrames) {
     EXPECT_EQ(session.frameCount(), count);
 
     EXPECT_EQ(session.Flush(), NV_ENC_SUCCESS);
-    EXPECT_EQ(system("ffprobe -hide_banner -loglevel quiet " FILENAME), 0);
-    EXPECT_EQ(system("resources/assert-frames.sh " FILENAME " 60"), 0);
+    EXPECT_VIDEO_VALID(FILENAME);
+    EXPECT_VIDEO_FRAMES(FILENAME, 60);
+    EXPECT_VIDEO_RESOLUTION(FILENAME, configuration.height, configuration.width);
 
     EXPECT_EQ(remove(FILENAME), 0);
     EXPECT_EQ(cuMemFree(handle), CUDA_SUCCESS);

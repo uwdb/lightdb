@@ -48,8 +48,8 @@ private:
         CUresult status;
         CUvideoparser parser = nullptr;
         CUVIDPARSERPARAMS parameters = {
-            .CodecType = decoder.m_oVideoDecodeCreateInfo.CodecType,
-            .ulMaxNumDecodeSurfaces = static_cast<unsigned int>(decoder.m_oVideoDecodeCreateInfo.ulNumDecodeSurfaces),
+            .CodecType = decoder.parameters().CodecType,
+            .ulMaxNumDecodeSurfaces = static_cast<unsigned int>(decoder.parameters().ulNumDecodeSurfaces),
             .ulClockRate = 0,
             .ulErrorThreshold = 0,
             .ulMaxDisplayDelay = 1,
@@ -73,10 +73,10 @@ private:
 
         assert(session);
 
-        if ((format->codec != session->decoder.m_oVideoDecodeCreateInfo.CodecType) || // codec-type
-            (format->coded_width != session->decoder.m_oVideoDecodeCreateInfo.ulWidth) ||
-            (format->coded_height != session->decoder.m_oVideoDecodeCreateInfo.ulHeight) ||
-            (format->chroma_format != session->decoder.m_oVideoDecodeCreateInfo.ChromaFormat))
+        if ((format->codec != session->decoder.parameters().CodecType) || // codec-type
+            (format->coded_width != session->decoder.parameters().ulWidth) ||
+            (format->coded_height != session->decoder.parameters().ulHeight) ||
+            (format->chroma_format != session->decoder.parameters().ChromaFormat))
                 throw "Video format changed but not currently supported"; //TODO
 
         return 1;

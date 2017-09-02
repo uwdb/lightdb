@@ -10,6 +10,14 @@ public:
             encodeAPI(context)
     { }
 
+    void SetUp() {
+        ASSERT_EQ(encodeAPI.CreateEncoder(&configuration), NV_ENC_SUCCESS);
+    }
+
+    void TearDown() {
+        EXPECT_EQ(encodeAPI.NvEncDestroyEncoder(), NV_ENC_SUCCESS);
+    }
+
 protected:
     const unsigned int deviceId = 0;
     EncodeConfig configuration;
@@ -20,5 +28,12 @@ protected:
 TEST_F(EncodeBufferTestFixture, testBuffer) {
   ASSERT_EQ(configuration.deviceID, deviceId);
 
-  EncodeBuffer encodeBuffer(encodeAPI, configuration);
+  ASSERT_NO_THROW(EncodeBuffer(encodeAPI, configuration));
+}
+
+TEST_F(EncodeBufferTestFixture, testLock) {
+    EncodeBuffer encodeBuffer(encodeAPI, configuration);
+
+    {  std::scoped_lock{encodeBuffer}; }
+    {  std::scoped_lock{encodeBuffer}; }
 }

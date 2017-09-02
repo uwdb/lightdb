@@ -74,9 +74,10 @@ typedef struct TileEncodeContext {
   TileEncodeContext(EncodeAPI& api, EncodeConfig& configuration)
     : hardwareEncoder(api), configuration(configuration), encodeBufferQueue(), offsetX(0), offsetY(0) {
 
-    std::generate_n(std::back_inserter(encodeBuffer),
-                    MAX_ENCODE_QUEUE,
-                    [&api, &configuration]() -> EncodeBuffer&& { return EncodeBuffer(api, configuration); });
+      //TODO remove this breaks TileVideoEncoder, needed to do so because move constructor removed on EncodeBuffer
+//    std::generate_n(std::back_inserter(encodeBuffer),
+  //                  MAX_ENCODE_QUEUE,
+    //                [&api, &configuration]() -> EncodeBuffer&& { return EncodeBuffer(api, configuration); });
     //encodeBuffer.reserve(MAX_ENCODE_QUEUE);
     //for(auto i = 0; i < MAX_ENCODE_QUEUE; i++)
     //    encodeBuffer.emplace_back(EncodeBuffer(api, configuration));

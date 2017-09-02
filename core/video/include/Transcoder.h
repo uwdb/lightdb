@@ -19,9 +19,10 @@ public:
 
     NVENCSTATUS transcode(DecodeReader &reader, EncodeWriter &writer) {
         NVENCSTATUS status;
-        size_t framesDecoded = 0, framesEncoded = 0;
         VideoDecoderSession decodeSession(decoder_, reader);
         VideoEncoderSession encodeSession(encoder_, writer);
+        size_t framesDecoded = 0, framesEncoded = 0;
+
         //TODO push this into a broad encode/decode configuration struct
         auto fpsRatio = (float)encoder_.configuration().fps /
                         reader.format().frame_rate.numerator / reader.format().frame_rate.denominator;
@@ -35,12 +36,14 @@ public:
                     return status;
         }
 
-        encodeSession.Flush();
+        //encodeSession.Flush();
+        //writer.Flush();
 
         return NV_ENC_SUCCESS;
     }
 
     VideoEncoder &encoder() { return encoder_; }
+    VideoDecoder &decoder() { return decoder_; }
 
 private:
     VideoLock lock_;
@@ -49,7 +52,7 @@ private:
     CudaDecoder decoder_;
 
     //TODO push this into a broad encode/decode configuration struct
-    int alignFPS(const float fpsRatio, const size_t decodedFrames, const size_t encodedFrames) {
+    static int alignFPS(const float fpsRatio, const size_t decodedFrames, const size_t encodedFrames) {
         if (fpsRatio < 1.f) {
             // need to drop frame
             return decodedFrames * fpsRatio < (encodedFrames + 1) ? -1 : 0;

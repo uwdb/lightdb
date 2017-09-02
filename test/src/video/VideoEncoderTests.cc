@@ -20,4 +20,6 @@ protected:
 
 
 TEST_F(VideoEncoderTestFixture, testConstructor) {
+    ASSERT_TRUE(encoder.api().encoderCreated());
+    ASSERT_EQ(encoder.configuration().width, configuration.width);
 }

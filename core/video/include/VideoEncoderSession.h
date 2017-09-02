@@ -8,7 +8,8 @@
 class VideoEncoderSession {
 public:
     VideoEncoderSession(VideoEncoder &encoder, EncodeWriter &writer)
-            : frameCount_(0), encoder(encoder), writer(writer), queue(encoder.buffers) { }
+        : frameCount_(0), encoder_(encoder), writer(writer), queue(encoder_.buffers)
+    { }
 
     ~VideoEncoderSession() {
         Flush();
@@ -16,14 +17,15 @@ public:
 
     //TODO case
     NVENCSTATUS Encode(Frame&);
+    NVENCSTATUS Encode(Frame&, size_t top, size_t left);
     NVENCSTATUS Flush();
 
+    const VideoEncoder &encoder() const { return encoder_; }
     size_t frameCount() const { return frameCount_; }
 
 protected:
     size_t frameCount_;
-
-    VideoEncoder &encoder;
+    VideoEncoder &encoder_;
     EncodeWriter &writer;
 
 private:
@@ -38,7 +40,7 @@ private:
             : items(items), pendingCount(0), availableIndex(0), pendingIndex(0)
         { }
 
-        std::optional<std::reference_wrapper<T>> GetAvailable() {
+        std::optional<T> GetAvailable() {
             if (pendingCount == items.size())
                 return {};
 
@@ -48,7 +50,7 @@ private:
             return item;
         }
 
-        std::optional<std::reference_wrapper<T>> GetPending() {
+        std::optional<T> GetPending() {
             if (pendingCount == 0)
                 return {};
 
@@ -60,8 +62,8 @@ private:
     };
 
     EncodeBuffer &GetAvailableBuffer();
-    std::optional<std::reference_wrapper<EncodeBuffer>> CompletePendingBuffer();
-    EncoderBufferQueue<EncodeBuffer> queue;
+    std::optional<std::shared_ptr<EncodeBuffer>> CompletePendingBuffer();
+    EncoderBufferQueue<std::shared_ptr<EncodeBuffer>> queue;
 };
 
 

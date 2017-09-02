@@ -72,7 +72,16 @@ public:
   // available, the method returns false.
   bool waitUntilFrameAvailable(int nPictureIndex);
 
-  void reset() { bEndOfDecode_ = false; }
+  void reset() {
+      hEvent_ = 0;
+      nReadPosition_ = 0;
+      nWritePosition_ = 0;
+      nFramesInQueue_ = 0;
+      bEndOfDecode_ = false;
+      for(auto i = 0; i < cnMaximumSize; i++)
+          aIsFrameInUse_[i] = 0;
+      //memset(reinterpret_cast<void*>(aIsFrameInUse_), 0, cnMaximumSize * sizeof(int));
+  }
 
   size_t getPitch() { return nPitch; }
 

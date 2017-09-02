@@ -27,7 +27,7 @@ int error(const char *message, const int exitCode) {
 
 void *DecodeWorker(void *arg) {
   auto *decoder = (CudaDecoder *)arg;
-  decoder->Start();
+  //decoder->Start(); //TODO temp break
 
   return NULL;
 }
@@ -49,6 +49,7 @@ int TilerMatchFPS(const float fpsRatio, const int decodedFrames, const int encod
   return 0;
 }
 
+/*
 int PrintHelp() {
   std::cout << "Usage : NvTranscoder \n"
                "-i <string>                  Specify input .h264 file\n"
@@ -144,14 +145,13 @@ int DisplayConfiguration(const std::string &inputFilename, const std::string &ou
 
   return 0;
 }
+*/
 
 float InitializeDecoder(const std::string &inputFilename, CudaDecoder &decoder, CUVIDFrameQueue &queue, VideoLock &lock,
                         EncodeConfig &configuration) {
   int decodedW, decodedH, decodedFRN, decodedFRD, isProgressive;
 
-  //decoder.InitVideoDecoder(inputFilename);
-
-  decoder.GetCodecParam(&decodedW, &decodedH, &decodedFRN, &decodedFRD, &isProgressive);
+  //todo temp broken decoder.GetCodecParam(&decodedW, &decodedH, &decodedFRN, &decodedFRD, &isProgressive);
   if (decodedFRN <= 0 || decodedFRD <= 0) {
     decodedFRN = 30;
     decodedFRD = 1;
@@ -169,7 +169,6 @@ float InitializeDecoder(const std::string &inputFilename, CudaDecoder &decoder, 
     fpsRatio = (float)configuration.fps * decodedFRD / decodedFRN;
 
   configuration.pictureStruct = isProgressive ? NV_ENC_PIC_STRUCT_FRAME : 0;
-  //queue.init(configuration.width, configuration.height);
 
   return fpsRatio;
 }
@@ -265,6 +264,7 @@ int ExecuteWorkers(CudaDecoder &decoder, std::vector<TileVideoEncoder *> &encode
   return 0;
 }
 
+/*
 int DisplayStatistics(CudaDecoder &decoder, TileVideoEncoder &encoder, Statistics &statistics) {
   if (encoder.GetEncodedFrames() > 0) {
     NvQueryPerformanceCounter(&statistics.end);
@@ -278,8 +278,8 @@ int DisplayStatistics(CudaDecoder &decoder, TileVideoEncoder &encoder, Statistic
   }
 
   return 0;
-}
-
+}*/
+/*
 int ParseTileParameters(std::string metadata, EncodeConfig &configuration, TileDimensions &tileDimensions, std::string &outputFilename) {
     //auto values = split(configuration.outputFileName, ',');
     auto values = split(metadata, ',');
@@ -296,19 +296,12 @@ int ParseTileParameters(std::string metadata, EncodeConfig &configuration, TileD
   }
 
   return 0;
-}
+}*/
 
 int InitializeEncoder(const std::string &outputFilenameFormat, GPUContext &cudaContext, EncodeConfig &configuration, unsigned long bitrate, int encoderIndex,
                       TileVideoEncoder &encoder, const TileDimensions &tileDimensions) {
   NVENCSTATUS status;
 
-  //    configuration.presetGUID = NV_ENC_PRESET_DEFAULT_GUID;
-  //    //encoder->GetPresetGUID();
-
-  // Initialize encoder
-  //if ((status = encoder.Initialize(cudaContext, NV_ENC_DEVICE_TYPE_CUDA)) != NV_ENC_SUCCESS)
-  //  return error("encoder.Initialize", -1);
- // else
   if ((status = encoder.CreateEncoders(outputFilenameFormat, configuration)) != NV_ENC_SUCCESS)
     return error("CreateEncoders", -1);
   else if ((status = encoder.AllocateIOBuffers(&configuration)) != NV_ENC_SUCCESS)
@@ -318,37 +311,17 @@ int InitializeEncoder(const std::string &outputFilenameFormat, GPUContext &cudaC
 }
 
 int ExecuteTiler(std::string inputFilename, std::string outputFilenameFormat, std::vector<EncodeConfig> &configurations, const TileDimensions tileDimensions) {
-  typedef void *CUDADRIVER;
-  CUDADRIVER hHandleDriver = nullptr;
   GPUContext context(configurations.at(0).deviceID);
   VideoLock lock(context);
-  CUresult result;
-  NVENCSTATUS status;
   CUVIDFrameQueue frameQueue(lock.get());
-  CudaDecoder decoder(configurations.at(0), frameQueue, lock); // TODO Don't we need n decoders?
+  CudaDecoder decoder(configurations.at(0), frameQueue, lock);
   Statistics statistics;
   auto fpsRatio = 1.f;
   std::vector<TileVideoEncoder *> encoders;
   EncodeAPI api(context);
 
-  //TODO this can all die
-  // Initialize CUDA
-  //if ((result = cuInit(0, __CUDA_API_VERSION, hHandleDriver)) != CUDA_SUCCESS)
-  //  return error("Error in cuInit", result);
-  //else if ((result = cuvidInit(0)) != CUDA_SUCCESS)
-  //  return error("Error in cuInit", result);
-  //else if ((result = cuDeviceGet(&device, configurations.at(0).deviceID)) != CUDA_SUCCESS)
-  //  return error("cuDeviceGet", result);
-  //else if ((result = cuCtxCreate(&cudaCtx, CU_CTX_SCHED_AUTO, device)) != CUDA_SUCCESS)
-  //  return error("cuCtxCreate", result);
-  //else if ((result = cuCtxPopCurrent(&curCtx)) != CUDA_SUCCESS)
-  //  return error("cuCtxPopCurrent", result);
-  //else if ((result = cuvidCtxLockCreate(&lock, curCtx)) != CUDA_SUCCESS)
-  //  return error("cuvidCtxLockCreate", result);
   if ((fpsRatio = InitializeDecoder(inputFilename, decoder, frameQueue, lock, configurations.at(0))) < 0)
     return error("InitializeDecoder", -1);
-  // else if (DisplayConfiguration(configurations.at(0), tileDimensions) != 0)
-  //	return error("DisplayConfiguration", -1);
 
   auto index = 0;
   for (auto &configuration : configurations) {
@@ -364,16 +337,9 @@ int ExecuteTiler(std::string inputFilename, std::string outputFilenameFormat, st
     return error("ExecuteWorkers", -1);
 
   for (auto &encoder : encoders) {
-    //if ((status = encoder->Deinitialize()) != NV_ENC_SUCCESS)
-    //  return error("encoder.Deinitialize", result);
     delete encoder;
   }
 
-  //if ((result = cuvidCtxLockDestroy(lock)) != CUDA_SUCCESS)
-  //  return error("cuvidCtxLockDestroy", result);
-  //else if ((result = cuCtxDestroy(cudaCtx)) != CUDA_SUCCESS)
-  //  return error("cuCtxDestroy", result);
-  //else
     return 0;
 }
 
@@ -411,6 +377,7 @@ EncodeConfig MakeTilerConfiguration(char *inputFilename, char *outputFilenameFor
 }
 */
 
+/*
 int ExecuteTiler(const std::string inputFilename, const std::string outputFilenameFormat, unsigned int height,
                  unsigned int width, size_t tileRows, size_t tileColumns, unsigned int codec, std::string preset,
                  unsigned int fps, unsigned int gop_length, size_t bitrate, unsigned int rcmode,
@@ -427,11 +394,13 @@ int ExecuteTiler(const std::string inputFilename, const std::string outputFilena
 
   return ExecuteTiler(inputFilename, outputFilenameFormat, configurations, tileDimensions);
 }
+*/
 
+/*
 int main(int argc, char *argv[]) {
   printf("main\n");
   return 0;
-}
+}*/
 
 /*
 int foo(int argc, char *argv[]) {

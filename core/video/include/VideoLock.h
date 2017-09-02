@@ -12,18 +12,30 @@ public:
     VideoLock(GPUContext& context) : context(context) { // TODO shared pointer for context
         CUresult result;
 
-        if ((result = cuvidCtxLockCreate(&lock, context.get())) != CUDA_SUCCESS)
+        if ((result = cuvidCtxLockCreate(&lock_, context.get())) != CUDA_SUCCESS)
             throw result; // TODO
     }
     ~VideoLock() {
-        cuvidCtxLockDestroy(lock);
+        cuvidCtxLockDestroy(lock_);
     }
 
-    CUvideoctxlock get() { return lock; }
+    CUvideoctxlock get() { return lock_; }
+
+    void lock() {
+        CUresult result;
+        if ((result = cuvidCtxLock(get(), 0)) != CUDA_SUCCESS)
+            throw result; //TODO
+    }
+
+    void unlock() {
+        CUresult result;
+        if ((result = cuvidCtxUnlock(get(), 0)) != CUDA_SUCCESS)
+            throw result; //TODO
+    }
 
 private:
     const GPUContext& context;
-    CUvideoctxlock lock = nullptr;
+    CUvideoctxlock lock_ = nullptr;
 };
 
 #endif //VISUALCLOUD_VIDEOLOCK_H
