@@ -1,6 +1,6 @@
 #include "Transcoder.h"
 #include "AssertTime.h"
-#include <AssertVideo.h>
+#include "AssertVideo.h"
 
 #define FILENAME(n) (std::string("resources/test-pattern-") + std::to_string(n) + ".h265")
 

@@ -1,4 +1,5 @@
 #include "Tiler.h"
+#include "AssertTime.h"
 #include "AssertVideo.h"
 
 #define FILENAME(n) (std::string("resources/test-pattern-") + std::to_string(n) + ".h265")
@@ -91,6 +92,111 @@ TEST_F(TilerVideoEncoderTestFixture, test2x2) {
         writers.emplace_back(std::make_shared<FileEncodeWriter>(tiler.api(), FILENAME(i)));
 
     ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS);
+
+    for(auto i = 0; i < rows * columns; i++) {
+        EXPECT_VIDEO_VALID(FILENAME(i));
+        EXPECT_VIDEO_FRAMES(FILENAME(i), 99);
+        EXPECT_VIDEO_RESOLUTION(FILENAME(i), configuration.height / rows, configuration.width / columns);
+        EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
+    }
+}
+
+TEST_F(TilerVideoEncoderTestFixture, test8x2) {
+    const auto rows = 8, columns = 2;
+    TileVideoEncoder2 tiler(context, configuration, rows, columns);
+    FileDecodeReader reader("resources/test-pattern.h264");
+    std::vector<std::shared_ptr<EncodeWriter>> writers;
+
+    for(auto i = 0; i < rows * columns; i++)
+        writers.emplace_back(std::make_shared<FileEncodeWriter>(tiler.api(), FILENAME(i)));
+
+    ASSERT_SECS(
+        ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS),
+        0.25);
+
+    for(auto i = 0; i < rows * columns; i++) {
+        EXPECT_VIDEO_VALID(FILENAME(i));
+        EXPECT_VIDEO_FRAMES(FILENAME(i), 99);
+        EXPECT_VIDEO_RESOLUTION(FILENAME(i), configuration.height / rows, configuration.width / columns);
+        EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
+    }
+}
+
+TEST_F(TilerVideoEncoderTestFixture, test2x8) {
+    const auto rows = 2, columns = 8;
+    TileVideoEncoder2 tiler(context, configuration, rows, columns);
+    FileDecodeReader reader("resources/test-pattern.h264");
+    std::vector<std::shared_ptr<EncodeWriter>> writers;
+
+    for(auto i = 0; i < rows * columns; i++)
+        writers.emplace_back(std::make_shared<FileEncodeWriter>(tiler.api(), FILENAME(i)));
+
+    ASSERT_SECS(
+            ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS),
+        0.25);
+
+    for(auto i = 0; i < rows * columns; i++) {
+        EXPECT_VIDEO_VALID(FILENAME(i));
+        EXPECT_VIDEO_FRAMES(FILENAME(i), 99);
+        EXPECT_VIDEO_RESOLUTION(FILENAME(i), configuration.height / rows, configuration.width / columns);
+        EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
+    }
+}
+
+TEST_F(TilerVideoEncoderTestFixture, test1x8) {
+    const auto rows = 1, columns = 8;
+    TileVideoEncoder2 tiler(context, configuration, rows, columns);
+    FileDecodeReader reader("resources/test-pattern.h264");
+    std::vector<std::shared_ptr<EncodeWriter>> writers;
+
+    for(auto i = 0; i < rows * columns; i++)
+        writers.emplace_back(std::make_shared<FileEncodeWriter>(tiler.api(), FILENAME(i)));
+
+    ASSERT_SECS(
+            ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS),
+            0.25);
+
+    for(auto i = 0; i < rows * columns; i++) {
+        EXPECT_VIDEO_VALID(FILENAME(i));
+        EXPECT_VIDEO_FRAMES(FILENAME(i), 99);
+        EXPECT_VIDEO_RESOLUTION(FILENAME(i), configuration.height / rows, configuration.width / columns);
+        EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
+    }
+}
+
+TEST_F(TilerVideoEncoderTestFixture, test8x1) {
+    const auto rows = 8, columns = 1;
+    TileVideoEncoder2 tiler(context, configuration, rows, columns);
+    FileDecodeReader reader("resources/test-pattern.h264");
+    std::vector<std::shared_ptr<EncodeWriter>> writers;
+
+    for(auto i = 0; i < rows * columns; i++)
+        writers.emplace_back(std::make_shared<FileEncodeWriter>(tiler.api(), FILENAME(i)));
+
+    ASSERT_SECS(
+            ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS),
+            0.25);
+
+    for(auto i = 0; i < rows * columns; i++) {
+        EXPECT_VIDEO_VALID(FILENAME(i));
+        EXPECT_VIDEO_FRAMES(FILENAME(i), 99);
+        EXPECT_VIDEO_RESOLUTION(FILENAME(i), configuration.height / rows, configuration.width / columns);
+        EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
+    }
+}
+
+TEST_F(TilerVideoEncoderTestFixture, test8x8) {
+    const auto rows = 8, columns = 8;
+    TileVideoEncoder2 tiler(context, configuration, rows, columns);
+    FileDecodeReader reader("resources/test-pattern.h264");
+    std::vector<std::shared_ptr<EncodeWriter>> writers;
+
+    for(auto i = 0; i < rows * columns; i++)
+        writers.emplace_back(std::make_shared<FileEncodeWriter>(tiler.api(), FILENAME(i)));
+
+    ASSERT_SECS(
+            ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS),
+            0.5);
 
     for(auto i = 0; i < rows * columns; i++) {
         EXPECT_VIDEO_VALID(FILENAME(i));

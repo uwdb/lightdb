@@ -14,6 +14,7 @@
 #include "dynlink_nvcuvid.h" // <nvcuvid.h>
 
 #include <optional>
+#include <thread>
 #include <memory>
 #include <pthread.h>
 #include <string.h>
@@ -113,7 +114,7 @@ public:
         std::shared_ptr<T> data(new T, [this](T *data) { this->releaseFrame(data); });
 
         while(!dequeue(data.get()))
-            sleep(0);
+            std::this_thread::yield();
         return data;
     }
 

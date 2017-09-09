@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "TileVideoEncoder.h" //todo rename this file TileVideoEncoder.h, delete other
+#include "ThreadPool.h"
 
 int ExecuteTiler(std::vector<EncodeConfig> &, const TileDimensions);
 
@@ -35,14 +36,11 @@ public:
               frameQueue_(lock_.get()),
               decoder_(decodeConfiguration, frameQueue_, lock_),
               encoders_(CreateEncoders(context, encoderConfiguration_, lock_, rows * columns)),
-              rows_(rows), columns_(columns)
+              rows_(rows), columns_(columns),
+              pool(context, rows * columns)
     {
         if(rows == 0 || columns == 0)
             throw "bad rows/col"; //TODO
-
-        //for(auto i = 0; i < rows * columns; i++) {
-        //    encoders_.emplace_back(context, encoderConfiguration_, lock_);
-       // }
     }
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers) {
@@ -64,17 +62,19 @@ public:
 
             for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++) {
                 for(auto j = 0; j < sessions.size(); j++) {
-                    auto session = sessions[j];
+                    auto &session = sessions[j];
                     auto row = j / columns(), column = j % columns();
-                    session.Encode(decodedFrame,
-                                   row * session.encoder().configuration().height,
-                                   column * session.encoder().configuration().width);
+
+                    pool.push([&session, &decodedFrame, row, column]() {
+                        session.Encode(decodedFrame,
+                                       row * session.encoder().configuration().height,
+                                       column * session.encoder().configuration().width);
+                    });
                 }
+
+                pool.waitAll();
             }
         }
-
-        for(auto &session: sessions)
-            session.Flush();
 
         return NV_ENC_SUCCESS;
     }
@@ -91,6 +91,7 @@ private:
     std::vector<std::shared_ptr<VideoEncoder>> encoders_;
     CudaDecoder decoder_;
     const size_t rows_, columns_;
+    GPUThreadPool pool;
 
     static const std::vector<std::shared_ptr<VideoEncoder>> CreateEncoders(
             GPUContext& context, EncodeConfig& configuration, VideoLock &lock, size_t count) {

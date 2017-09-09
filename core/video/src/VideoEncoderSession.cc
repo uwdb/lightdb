@@ -14,18 +14,18 @@ NVENCSTATUS VideoEncoderSession::Encode(Frame &frame) {
              .srcXInBytes = 0,
              .srcY = 0,
              .srcMemoryType = CU_MEMORYTYPE_DEVICE,
-             .srcHost = 0,
+             .srcHost = nullptr,
              .srcDevice = frame.handle(),
-             .srcArray = 0,
+             .srcArray = nullptr,
              .srcPitch = frame.pitch(),
 
              .dstXInBytes = 0,
              .dstY = 0,
 
              .dstMemoryType = CU_MEMORYTYPE_DEVICE,
-             .dstHost = 0,
+             .dstHost = nullptr,
              .dstDevice = static_cast<CUdeviceptr>(buffer.stInputBfr.pNV12devPtr),
-             .dstArray = 0,
+             .dstArray = nullptr,
              .dstPitch = buffer.stInputBfr.uNV12Stride,
 
              .WidthInBytes = buffer.stInputBfr.dwWidth,
@@ -59,17 +59,17 @@ NVENCSTATUS VideoEncoderSession::Encode(Frame& frame, size_t top, size_t left) {
                 srcXInBytes:   left,
                 srcY:          top,
                 srcMemoryType: CU_MEMORYTYPE_DEVICE,
-                srcHost:       NULL,
+                srcHost:       nullptr,
                 srcDevice:     frame.handle(),
-                srcArray:      NULL,
+                srcArray:      nullptr,
                 srcPitch:      frame.pitch(),
 
                 dstXInBytes:   0,
                 dstY:          0,
                 dstMemoryType: CU_MEMORYTYPE_DEVICE,
-                dstHost:       NULL,
+                dstHost:       nullptr,
                 dstDevice:     static_cast<CUdeviceptr>(buffer.stInputBfr.pNV12devPtr),
-                dstArray:      NULL,
+                dstArray:      nullptr,
                 dstPitch:      buffer.stInputBfr.uNV12Stride,
 
                 WidthInBytes:  buffer.stInputBfr.dwWidth,
@@ -80,17 +80,17 @@ NVENCSTATUS VideoEncoderSession::Encode(Frame& frame, size_t top, size_t left) {
                 srcXInBytes:   left,
                 srcY:          (frame.height() + top) / 2,
                 srcMemoryType: CU_MEMORYTYPE_DEVICE,
-                srcHost:       NULL,
+                srcHost:       nullptr,
                 srcDevice:     frame.handle(),
-                srcArray:      NULL,
+                srcArray:      nullptr,
                 srcPitch:      frame.pitch(),
 
                 dstXInBytes:   0,
                 dstY:          buffer.stInputBfr.dwHeight,
                 dstMemoryType: CU_MEMORYTYPE_DEVICE,
-                dstHost:       NULL,
+                dstHost:       nullptr,
                 dstDevice:     static_cast<CUdeviceptr>(buffer.stInputBfr.pNV12devPtr),
-                dstArray:      NULL,
+                dstArray:      nullptr,
                 dstPitch:      buffer.stInputBfr.uNV12Stride,
 
                 WidthInBytes:  buffer.stInputBfr.dwWidth,
@@ -116,7 +116,7 @@ NVENCSTATUS VideoEncoderSession::Flush() {
     NVENCSTATUS status;
 
     while(CompletePendingBuffer().has_value())
-        sleep(0);
+        std::this_thread::yield();
 
     if((status = encoder_.api().NvEncFlushEncoderQueue(nullptr)) != NV_ENC_SUCCESS)
         return status;
@@ -137,6 +137,7 @@ EncodeBuffer &VideoEncoderSession::GetAvailableBuffer() {
 
 std::optional<std::shared_ptr<EncodeBuffer>> VideoEncoderSession::CompletePendingBuffer() {
     auto buffer = queue.GetPending();
+
 
     if(buffer.has_value()) {
         writer.WriteFrame(*buffer.value());

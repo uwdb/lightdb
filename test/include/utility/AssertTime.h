@@ -9,7 +9,7 @@
     { f; }; \
     auto elapsed = std::chrono::high_resolution_clock::now() - start; \
     auto ticks = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count(); \
-    if(usecs < ticks) { \
+    if(ticks > usecs) { \
         FAIL() << "Performance violation (" << ticks << " > " << usecs << " microseconds) for "#f; \
     } }
 

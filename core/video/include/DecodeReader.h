@@ -36,7 +36,7 @@ public:
 
         while (cuvidGetVideoSourceState(source) == cudaVideoState_Started &&
                 !packets.read_available())
-            sleep(0);
+            std::this_thread::yield();
 
         return packets.pop(packet)
                ? packet
@@ -52,7 +52,7 @@ private:
         FileDecodeReader *reader = static_cast<FileDecodeReader*>(userData);
 
         while(!reader->packets.push(*packet))
-            sleep(0);
+            std::this_thread::yield();
 
         return 1;
     }

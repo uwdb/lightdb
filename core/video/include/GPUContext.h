@@ -32,6 +32,13 @@ public:
 
     CUcontext get() { return context; }
 
+    void AttachToThread() const {
+        CUresult result;
+
+        if((result = cuCtxSetCurrent(context)) != CUDA_SUCCESS)
+            throw result; //TODO
+    }
+
 private:
     static bool isInitialized;
     static bool ensureInitialized() {
