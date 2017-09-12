@@ -8,7 +8,7 @@ class VideoEncoderSessionTestFixture : public testing::Test {
 public:
     VideoEncoderSessionTestFixture()
         : context(0),
-          configuration(1080, 1920, 2, 2, NV_ENC_HEVC, "hq", 30, 30, 1024*1024, 0, 0),
+          configuration(1080, 1920, NV_ENC_HEVC, 30, 30, 1024*1024),
           lock(context),
           encoder(context, configuration, lock),
           writer(encoder, FILENAME),
@@ -17,7 +17,7 @@ public:
 
 protected:
     GPUContext context;
-    EncodeConfig configuration;
+    EncodeConfiguration configuration;
     VideoLock lock;
     VideoEncoder encoder;
     FileEncodeWriter writer;

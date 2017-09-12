@@ -8,13 +8,13 @@ class TranscoderTestFixture : public testing::Test {
 public:
     TranscoderTestFixture()
         : context(0),
-          configuration(1080, 1920, 2, 2, NV_ENC_HEVC, "hq", 24, 30, 1024*1024, 0, 0),
+          configuration(1080, 1920, NV_ENC_HEVC, 24, 30, 1024*1024),
           transcoder(context, configuration)
     {}
 
 protected:
     GPUContext context;
-    EncodeConfig configuration;
+    EncodeConfiguration configuration;
     Transcoder transcoder;
 
 };

@@ -22,9 +22,9 @@ namespace Python {
 class Transcoder {
 public:
   Transcoder(unsigned int height, unsigned int width, unsigned int codec, std::string preset, unsigned int fps,
-             unsigned int gop_length, unsigned long bitrate, unsigned int rcmode, unsigned int deviceId)
+             unsigned int gop_length, unsigned long bitrate, NV_ENC_PARAMS_RC_MODE rcmode, unsigned int deviceId)
       : context(deviceId),
-        configuration(height, width, 0, 0, codec, preset.data(), fps, gop_length, bitrate, rcmode, deviceId),
+        configuration(height, width, codec, preset.data(), fps, gop_length, bitrate, rcmode),
         gpuTranscoder(context, configuration) {
       //: gpuTranscoder(height, width, codec, preset, fps, gop_length, bitrate, rcmode, deviceId) {
     //if (gpuTranscoder.initialize() != 0)
@@ -81,7 +81,7 @@ public:
   }
 
 private:
-    EncodeConfig configuration;
+    EncodeConfiguration configuration;
     GPUContext context;
   ::Transcoder gpuTranscoder;
 };
@@ -102,13 +102,13 @@ public:
     //  delete configuration.outputFileName;
   }
 
-  static std::vector<EncodeConfig> getConfigurations(char *inputFilename, unsigned int height, unsigned int width,
+  static std::vector<EncodeConfiguration> getConfigurations(char *inputFilename, unsigned int height, unsigned int width,
                                                      unsigned int tileRows, unsigned int tileColumns,
                                                      PyObject *qualities, unsigned int codec, unsigned int fps,
                                                      unsigned int gop_length, unsigned int deviceId) {
     auto *sequence = PySequence_Fast(qualities, "expected a sequence");
     auto length = PySequence_Size(sequence);
-    std::vector<EncodeConfig> configurations;
+    std::vector<EncodeConfiguration> configurations;
 
     for (auto i = 0; i < length; i++) {
       auto quality = PySequence_Fast_GET_ITEM(sequence, i);
@@ -205,7 +205,7 @@ private:
   static constexpr const char *inputFilenameTemplate = "/tmp/tilerInputXXXXXX";
   char inputFilename[64]; // TODO these should all be static, fix this
   std::shared_future<bool> tileFuture;
-  std::vector<EncodeConfig> configurations;
+  std::vector<EncodeConfiguration> configurations;
     const size_t tileRows, tileColumns;
   //TileDimensions tileDimensions;
 };

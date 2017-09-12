@@ -1,16 +1,14 @@
 #ifndef _ENCODE_API
 #define _ENCODE_API
 
+#include "GPUContext.h"
+#include "nvEncodeAPI.h"
+#include "dynlink_cuda.h"
+#include "nvUtils.h"
 #include <assert.h>
 #include <functional>
 
-#include "dynlink_cuda.h"
-
-#include "GPUContext.h"
-#include "nvEncodeAPI.h"
-#include "nvUtils.h"
-
-typedef struct _EncodeConfig EncodeConfig;
+struct EncodeConfiguration;
 typedef struct _EncodeBuffer EncodeBuffer;
 typedef struct _MotionEstimationBuffer MotionEstimationBuffer;
 
@@ -30,6 +28,7 @@ typedef struct _MotionEstimationBuffer MotionEstimationBuffer;
 #define DEFAULT_B_QFACTOR 1.25f
 #define DEFAULT_I_QOFFSET 0.f
 #define DEFAULT_B_QOFFSET 1.25f
+
 
 typedef struct _NvEncPictureCommand
 {
@@ -140,13 +139,16 @@ public:
     EncodeAPI(CUcontext context) : EncodeAPI(context, NV_ENC_DEVICE_TYPE_CUDA) { }
     EncodeAPI(void* device, NV_ENC_DEVICE_TYPE deviceType);
     virtual ~EncodeAPI();
-    NVENCSTATUS                                          CreateEncoder(const EncodeConfig *pEncCfg);
+    NVENCSTATUS                                          CreateEncoder(const EncodeConfiguration *pEncCfg);
     NVENCSTATUS                                          NvEncEncodeFrame(EncodeBuffer *pEncodeBuffer, NvEncPictureCommand *encPicCommand,
                                                                           NV_ENC_PIC_STRUCT ePicStruct = NV_ENC_PIC_STRUCT_FRAME,
                                                                           bool isFirstFrame=false, int8_t *qpDeltaMapArray = NULL, uint32_t qpDeltaMapArraySize = 0);
-    GUID                                                 GetPresetGUID(const char* encoderPreset, int codec);
+    static GUID                                          GetPresetGUID(const char* encoderPreset, int codec);
     NVENCSTATUS                                          ProcessOutput(FILE* output, const EncodeBuffer *pEncodeBuffer);
     NVENCSTATUS                                          ProcessMVOutput(FILE* output, const MotionEstimationBuffer *pEncodeBuffer);
+
+    NVENCSTATUS                                          ValidatePresetGUID(const EncodeConfiguration&);
+    NVENCSTATUS                                          ValidatePresetGUID(GUID inputPresetGuid, int codec);
 
 protected:
     //TODO these two functions should just be removed entirely

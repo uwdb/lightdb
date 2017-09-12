@@ -5,7 +5,7 @@
 class EncodeBufferTestFixture : public testing::Test {
 public:
     EncodeBufferTestFixture () :
-            configuration(1080, 1920, 2, 2, NV_ENC_HEVC, "hq", 30, 30, 1024*1024, 0, deviceId),
+            configuration(1080, 1920, NV_ENC_HEVC, 30, 30, 1024*1024),
             context(deviceId),
             encodeAPI(context)
     { }
@@ -20,13 +20,13 @@ public:
 
 protected:
     const unsigned int deviceId = 0;
-    EncodeConfig configuration;
+    EncodeConfiguration configuration;
     GPUContext context;
     EncodeAPI encodeAPI;
 };
 
 TEST_F(EncodeBufferTestFixture, testBuffer) {
-  ASSERT_EQ(configuration.deviceID, deviceId);
+  //ASSERT_EQ(configuration.deviceID, deviceId);
 
   ASSERT_NO_THROW(EncodeBuffer(encodeAPI, configuration));
 }

@@ -12,10 +12,17 @@
 
 class TileVideoEncoder {
 public:
-    TileVideoEncoder(GPUContext& context, const EncodeConfig& decodeConfiguration,
+    TileVideoEncoder(GPUContext& context, const EncodeConfiguration& encodeConfiguration,
+                     const size_t rows, const size_t columns)
+        : TileVideoEncoder(context, encodeConfiguration, encodeConfiguration, rows, columns)
+    { }
+
+    TileVideoEncoder(GPUContext& context,
+                     const EncodeConfiguration& encodeModelConfiguration,
+                     const DecodeConfiguration &decodeConfiguration,
                      const size_t rows, const size_t columns)
             : lock_(context),
-              encoderConfiguration_(decodeConfiguration,
+              encoderConfiguration_(encodeModelConfiguration,
                                     decodeConfiguration.height / rows,
                                     decodeConfiguration.width / columns),
               frameQueue_(lock_.get()),
@@ -71,7 +78,7 @@ public:
 
 private:
     VideoLock lock_;
-    EncodeConfig encoderConfiguration_;
+    const EncodeConfiguration encoderConfiguration_;
     CUVIDFrameQueue frameQueue_;
     std::vector<std::shared_ptr<VideoEncoder>> encoders_;
     CudaDecoder decoder_; //TODO this should be a base VideoDecoder
@@ -79,7 +86,7 @@ private:
     GPUThreadPool pool;
 
     static const std::vector<std::shared_ptr<VideoEncoder>> CreateEncoders(
-            GPUContext& context, EncodeConfig& configuration, VideoLock &lock, size_t count) {
+            GPUContext& context, const EncodeConfiguration& configuration, VideoLock &lock, size_t count) {
       std::vector<std::shared_ptr<VideoEncoder>> encoders;
 
       encoders.reserve(count);

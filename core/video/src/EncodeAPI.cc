@@ -691,6 +691,17 @@ NVENCSTATUS EncodeAPI::ValidateEncodeGUID (GUID inputCodecGuid)
         return NV_ENC_ERR_INVALID_PARAM;
 }
 
+NVENCSTATUS EncodeAPI::ValidatePresetGUID(const EncodeConfiguration &configuration)
+{
+    return ValidatePresetGUID(configuration.preset, configuration.codec);
+}
+
+NVENCSTATUS EncodeAPI::ValidatePresetGUID(GUID inputPresetGuid, int codec)
+{
+    GUID inputCodecGUID = codec == NV_ENC_H264 ? NV_ENC_CODEC_H264_GUID : NV_ENC_CODEC_HEVC_GUID;
+    return ValidatePresetGUID(inputPresetGuid, inputCodecGUID);
+}
+
 NVENCSTATUS EncodeAPI::ValidatePresetGUID(GUID inputPresetGuid, GUID inputCodecGuid)
 {
     uint32_t i, presetFound, presetGUIDCount, presetGUIDArraySize;
@@ -736,7 +747,7 @@ NVENCSTATUS EncodeAPI::ValidatePresetGUID(GUID inputPresetGuid, GUID inputCodecG
         return NV_ENC_ERR_INVALID_PARAM;
 }
 
-NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfig *pEncCfg)
+NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfiguration *pEncCfg)
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
@@ -751,8 +762,8 @@ NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfig *pEncCfg)
     m_uCurWidth = pEncCfg->width;
     m_uCurHeight = pEncCfg->height;
 
-    m_uMaxWidth = (pEncCfg->maxWidth > 0 ? pEncCfg->maxWidth : pEncCfg->width);
-    m_uMaxHeight = (pEncCfg->maxHeight > 0 ? pEncCfg->maxHeight : pEncCfg->height);
+    m_uMaxWidth = (pEncCfg->max_width > 0 ? pEncCfg->max_width : pEncCfg->width);
+    m_uMaxHeight = (pEncCfg->max_height > 0 ? pEncCfg->max_height : pEncCfg->height);
 
     if ((m_uCurWidth > m_uMaxWidth) || (m_uCurHeight > m_uMaxHeight)) {
         return NV_ENC_ERR_INVALID_PARAM;
@@ -783,7 +794,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfig *pEncCfg)
     codecGUID = inputCodecGUID;
 
     m_stCreateEncodeParams.encodeGUID = inputCodecGUID;
-    m_stCreateEncodeParams.presetGUID = pEncCfg->presetGUID;
+    m_stCreateEncodeParams.presetGUID = pEncCfg->preset;
     m_stCreateEncodeParams.encodeWidth = pEncCfg->width;
     m_stCreateEncodeParams.encodeHeight = pEncCfg->height;
 
@@ -827,37 +838,37 @@ NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfig *pEncCfg)
 
     m_stEncodeConfig.mvPrecision = NV_ENC_MV_PRECISION_QUARTER_PEL;
 
-    if (pEncCfg->bitrate || pEncCfg->vbvMaxBitrate)
+    if (pEncCfg->bitrate || pEncCfg->videoBufferingVerifier.maxBitrate)
     {
-        m_stEncodeConfig.rcParams.rateControlMode = (NV_ENC_PARAMS_RC_MODE)pEncCfg->rcMode;
+        m_stEncodeConfig.rcParams.rateControlMode = (NV_ENC_PARAMS_RC_MODE)pEncCfg->quantization.rateControlMode;
         m_stEncodeConfig.rcParams.averageBitRate = pEncCfg->bitrate;
-        m_stEncodeConfig.rcParams.maxBitRate = pEncCfg->vbvMaxBitrate;
-        m_stEncodeConfig.rcParams.vbvBufferSize = pEncCfg->vbvSize;
-        m_stEncodeConfig.rcParams.vbvInitialDelay = pEncCfg->vbvSize * 9 / 10;
+        m_stEncodeConfig.rcParams.maxBitRate = pEncCfg->videoBufferingVerifier.maxBitrate;
+        m_stEncodeConfig.rcParams.vbvBufferSize = pEncCfg->videoBufferingVerifier.size;
+        m_stEncodeConfig.rcParams.vbvInitialDelay = pEncCfg->videoBufferingVerifier.size * 9 / 10;
     }
     else
     {
         m_stEncodeConfig.rcParams.rateControlMode = NV_ENC_PARAMS_RC_CONSTQP;
     }
 
-    if (pEncCfg->rcMode == 0)
+    if (pEncCfg->quantization.rateControlMode == 0)
     {
-        m_stEncodeConfig.rcParams.constQP.qpInterP = pEncCfg->presetGUID == NV_ENC_PRESET_LOSSLESS_HP_GUID? 0 : pEncCfg->qp;
-        m_stEncodeConfig.rcParams.constQP.qpInterB = pEncCfg->presetGUID == NV_ENC_PRESET_LOSSLESS_HP_GUID? 0 : pEncCfg->qp;
-        m_stEncodeConfig.rcParams.constQP.qpIntra = pEncCfg->presetGUID == NV_ENC_PRESET_LOSSLESS_HP_GUID? 0 : pEncCfg->qp;
+        m_stEncodeConfig.rcParams.constQP.qpInterP = pEncCfg->preset == NV_ENC_PRESET_LOSSLESS_HP_GUID? 0 : pEncCfg->quantization.quantizationParameter;
+        m_stEncodeConfig.rcParams.constQP.qpInterB = pEncCfg->preset == NV_ENC_PRESET_LOSSLESS_HP_GUID? 0 : pEncCfg->quantization.quantizationParameter;
+        m_stEncodeConfig.rcParams.constQP.qpIntra = pEncCfg->preset == NV_ENC_PRESET_LOSSLESS_HP_GUID? 0 : pEncCfg->quantization.quantizationParameter;
     }
 
     // set up initial QP value
-    if (pEncCfg->rcMode == NV_ENC_PARAMS_RC_VBR || pEncCfg->rcMode == NV_ENC_PARAMS_RC_VBR_MINQP ||
-        pEncCfg->rcMode == NV_ENC_PARAMS_RC_2_PASS_VBR) {
+    if (pEncCfg->quantization.rateControlMode == NV_ENC_PARAMS_RC_VBR || pEncCfg->quantization.rateControlMode == NV_ENC_PARAMS_RC_VBR_MINQP ||
+        pEncCfg->quantization.rateControlMode == NV_ENC_PARAMS_RC_2_PASS_VBR) {
         m_stEncodeConfig.rcParams.enableInitialRCQP = 1;
-        m_stEncodeConfig.rcParams.initialRCQP.qpInterP  = pEncCfg->qp;
-        if(pEncCfg->i_quant_factor != 0.0 && pEncCfg->b_quant_factor != 0.0) {               
-            m_stEncodeConfig.rcParams.initialRCQP.qpIntra = (int)(pEncCfg->qp * FABS(pEncCfg->i_quant_factor) + pEncCfg->i_quant_offset);
-            m_stEncodeConfig.rcParams.initialRCQP.qpInterB = (int)(pEncCfg->qp * FABS(pEncCfg->b_quant_factor) + pEncCfg->b_quant_offset);
+        m_stEncodeConfig.rcParams.initialRCQP.qpInterP  = pEncCfg->quantization.quantizationParameter;
+        if(pEncCfg->quantization.i_quant_factor != 0.0 && pEncCfg->quantization.b_quant_factor != 0.0) {
+            m_stEncodeConfig.rcParams.initialRCQP.qpIntra = (int)(pEncCfg->quantization.quantizationParameter * FABS(pEncCfg->quantization.i_quant_factor) + pEncCfg->quantization.i_quant_offset);
+            m_stEncodeConfig.rcParams.initialRCQP.qpInterB = (int)(pEncCfg->quantization.quantizationParameter * FABS(pEncCfg->quantization.b_quant_factor) + pEncCfg->quantization.b_quant_offset);
         } else {
-            m_stEncodeConfig.rcParams.initialRCQP.qpIntra = pEncCfg->qp;
-            m_stEncodeConfig.rcParams.initialRCQP.qpInterB = pEncCfg->qp;
+            m_stEncodeConfig.rcParams.initialRCQP.qpIntra = pEncCfg->quantization.quantizationParameter;
+            m_stEncodeConfig.rcParams.initialRCQP.qpInterB = pEncCfg->quantization.quantizationParameter;
         }
 
     }
@@ -886,23 +897,23 @@ NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfig *pEncCfg)
         }
     }
 
-    if (pEncCfg->intraRefreshEnableFlag)
+    if (pEncCfg->intraRefresh.enabled)
     {
         if (pEncCfg->codec == NV_ENC_HEVC)
         {
             m_stEncodeConfig.encodeCodecConfig.hevcConfig.enableIntraRefresh = 1;
-            m_stEncodeConfig.encodeCodecConfig.hevcConfig.intraRefreshPeriod = pEncCfg->intraRefreshPeriod;
-            m_stEncodeConfig.encodeCodecConfig.hevcConfig.intraRefreshCnt = pEncCfg->intraRefreshDuration;
+            m_stEncodeConfig.encodeCodecConfig.hevcConfig.intraRefreshPeriod = pEncCfg->intraRefresh.period;
+            m_stEncodeConfig.encodeCodecConfig.hevcConfig.intraRefreshCnt = pEncCfg->intraRefresh.duration;
         }
         else
         {
             m_stEncodeConfig.encodeCodecConfig.h264Config.enableIntraRefresh = 1;
-            m_stEncodeConfig.encodeCodecConfig.h264Config.intraRefreshPeriod = pEncCfg->intraRefreshPeriod;
-            m_stEncodeConfig.encodeCodecConfig.h264Config.intraRefreshCnt = pEncCfg->intraRefreshDuration;
+            m_stEncodeConfig.encodeCodecConfig.h264Config.intraRefreshPeriod = pEncCfg->intraRefresh.period;
+            m_stEncodeConfig.encodeCodecConfig.h264Config.intraRefreshCnt = pEncCfg->intraRefresh.duration;
         }
     }
 
-    if (pEncCfg->invalidateRefFramesEnableFlag)
+    if (pEncCfg->flags.enableReferenceFrameInvalidation)
     {
         if (pEncCfg->codec == NV_ENC_HEVC)
         {
@@ -914,7 +925,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfig *pEncCfg)
         }
     }
 
-    if (pEncCfg->qpDeltaMapFile)
+    if (!pEncCfg->quantization.deltaMapFilename.empty())
     {
         m_stEncodeConfig.rcParams.enableExtQPDeltaMap = 1;
     }
@@ -945,9 +956,9 @@ NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfig *pEncCfg)
     m_pEncodeAPI->nvEncGetEncodeCaps(encodeSessionHandle, m_stCreateEncodeParams.encodeGUID, &stCapsParam, &asyncMode);
     m_stCreateEncodeParams.enableEncodeAsync = asyncMode;
 
-    //pEncCfg->enableAsyncMode = asyncMode;
+    //pEncCfg->flags.enableAsyncMode = asyncMode;
 
-    if (pEncCfg->enableMEOnly == 1 || pEncCfg->enableMEOnly == 2)
+    if (pEncCfg->flags.enableMEOnly == 1 || pEncCfg->flags.enableMEOnly == 2)
     {
 
         stCapsParam.capsToQuery = NV_ENC_CAPS_SUPPORT_MEONLY_MODE;
@@ -973,7 +984,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfig *pEncCfg)
         } 
     }
 
-    if (pEncCfg->enableTemporalAQ == 1)
+    if (pEncCfg->flags.enableTemporalAQ == 1)
     {
         NV_ENC_CAPS_PARAM stCapsParam;
         memset(&stCapsParam, 0, sizeof(NV_ENC_CAPS_PARAM));
@@ -1039,18 +1050,20 @@ GUID EncodeAPI::GetPresetGUID(const char* encoderPreset, int codec)
     }
     else
     {
-        if (encoderPreset)
+        if (encoderPreset) {
             PRINTERR("Unsupported preset guid %s\n", encoderPreset);
+            assert(0);
+        }
         presetGUID = NV_ENC_PRESET_DEFAULT_GUID;
     }
 
-    GUID inputCodecGUID = codec == NV_ENC_H264 ? NV_ENC_CODEC_H264_GUID : NV_ENC_CODEC_HEVC_GUID;
-    nvStatus = ValidatePresetGUID(presetGUID, inputCodecGUID);
-    if (nvStatus != NV_ENC_SUCCESS)
-    {
-        presetGUID = NV_ENC_PRESET_DEFAULT_GUID;
-        PRINTERR("Unsupported preset guid %s\n", encoderPreset);
-    }
+//    GUID inputCodecGUID = codec == NV_ENC_H264 ? NV_ENC_CODEC_H264_GUID : NV_ENC_CODEC_HEVC_GUID;
+//    nvStatus = ValidatePresetGUID(presetGUID, inputCodecGUID);
+//    if (nvStatus != NV_ENC_SUCCESS)
+//    {
+//        presetGUID = NV_ENC_PRESET_DEFAULT_GUID;
+//        PRINTERR("Unsupported preset guid %s\n", encoderPreset);
+//    }
 
     return presetGUID;
 }
@@ -1249,6 +1262,7 @@ NVENCSTATUS EncodeAPI::NvEncEncodeFrame(EncodeBuffer *pEncodeBuffer, NvEncPictur
     encPicParams.qpDeltaMap = qpDeltaMapArray;
     encPicParams.qpDeltaMapSize = qpDeltaMapArraySize;
 
+    // Can we substitute setting intraRefreshEnableFlag to true for this?
     if(isFirstFrame) {
         //ResetEncoder();
         encPicParams.encodePicFlags |= NV_ENC_PIC_FLAG_OUTPUT_SPSPPS | NV_ENC_PIC_FLAG_FORCEIDR;

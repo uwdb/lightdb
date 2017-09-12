@@ -11,10 +11,14 @@
 
 class Transcoder {
 public:
-    Transcoder(GPUContext& context, EncodeConfig& configuration)
+    Transcoder(GPUContext& context, EncodeConfiguration& configuration)
+            : Transcoder(context, configuration, configuration)
+    { }
+
+    Transcoder(GPUContext& context, EncodeConfiguration &encodeConfiguration, DecodeConfiguration &decodeConfiguration)
             : lock_(context), frameQueue_(lock_.get()),
-              encoder_(context, configuration, lock_),
-              decoder_(configuration, frameQueue_, lock_)
+              encoder_(context, encodeConfiguration, lock_),
+              decoder_(decodeConfiguration, frameQueue_, lock_)
     { }
 
     NVENCSTATUS transcode(DecodeReader &reader, EncodeWriter &writer) {

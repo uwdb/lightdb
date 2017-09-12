@@ -11,31 +11,33 @@ public:
 protected:
     GPUContext context;
     EncodeAPI encodeAPI;
-    const char* preset = "hq";
 };
 
 TEST_F(EncodeAPITestFixture, testConstructor) {
 }
 
 TEST_F(EncodeAPITestFixture, testPresetGUIDs) {
-  auto preset_guid = encodeAPI.GetPresetGUID(preset, NV_ENC_HEVC);
+    const auto* preset = "hq";
+    auto preset_guid = encodeAPI.GetPresetGUID(preset, NV_ENC_HEVC);
 
-  ASSERT_EQ(preset_guid, NV_ENC_PRESET_HQ_GUID);
+    ASSERT_EQ(preset_guid, NV_ENC_PRESET_HQ_GUID);
+
+    ASSERT_EQ(encodeAPI.ValidatePresetGUID(preset_guid, NV_ENC_HEVC), NV_ENC_SUCCESS);
 }
 
 TEST_F(EncodeAPITestFixture, testCreateEncoder) {
-  EncodeConfig configuration(1080, 1920, 2, 2, NV_ENC_HEVC, preset, 30, 30, 1024*1024, 0, 0);
+    EncodeConfiguration configuration(1080, 1920, NV_ENC_HEVC, 30, 30, 1024*1024);
 
-  ASSERT_EQ(encodeAPI.CreateEncoder(&configuration), NV_ENC_SUCCESS);
+    ASSERT_EQ(encodeAPI.CreateEncoder(&configuration), NV_ENC_SUCCESS);
 }
 
 TEST_F(EncodeAPITestFixture, testConstructWithoutEncoder) {
-  EncodeConfig configuration(1080, 1920, 2, 2, NV_ENC_HEVC, preset, 30, 30, 1024*1024, 0, 0);
-  ASSERT_ANY_THROW(EncodeBuffer(encodeAPI, configuration));
+    EncodeConfiguration configuration(1080, 1920, NV_ENC_HEVC, 30, 30, 1024*1024);
+    ASSERT_ANY_THROW(EncodeBuffer(encodeAPI, configuration));
 }
 
 TEST_F(EncodeAPITestFixture, testEncodeFrame) {
-    EncodeConfig configuration(1080, 1920, 2, 2, NV_ENC_HEVC, preset, 30, 30, 1024*1024, 0, 0);
+    EncodeConfiguration configuration(1080, 1920, NV_ENC_HEVC, 30, 30, 1024*1024);
 
     ASSERT_EQ(encodeAPI.CreateEncoder(&configuration), NV_ENC_SUCCESS);
 

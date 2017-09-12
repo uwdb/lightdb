@@ -12,17 +12,19 @@ class VideoEncoder {
 public:
   VideoEncoder(VideoEncoder &&other) = delete;
 
-  VideoEncoder(GPUContext& context, EncodeConfig& configuration, VideoLock& lock)
-          : configuration_(configuration), context_(context), api_(context), lock(lock), encoderHandle_(VideoEncoderHandle(context, api_, configuration)), buffers(CreateBuffers(minimumBufferCount())) {
-      //TODO not the right place to set this.
-      configuration.presetGUID = api().GetPresetGUID(configuration.encoderPreset.c_str(), configuration.codec);
+  VideoEncoder(GPUContext& context, const EncodeConfiguration& configuration, VideoLock& lock)
+          : configuration_(configuration), context_(context), api_(context), lock(lock),
+            encoderHandle_(VideoEncoderHandle(context, api_, configuration)),
+            buffers(CreateBuffers(minimumBufferCount())) {
+      if(api().ValidatePresetGUID(configuration) != NV_ENC_SUCCESS)
+          throw std::runtime_error("invalid preset guid");
   }
 
   EncodeAPI &api() { return api_; }
-  const EncodeConfig &configuration() const { return configuration_; }
+  const EncodeConfiguration &configuration() const { return configuration_; }
 
 protected:
-    EncodeConfig& configuration_; //TODO const?
+    const EncodeConfiguration& configuration_;
     GPUContext &context_;
     EncodeAPI api_;
     VideoLock &lock;
@@ -30,7 +32,7 @@ protected:
 private:
     class VideoEncoderHandle {
     public:
-        VideoEncoderHandle(GPUContext &context, EncodeAPI &api, EncodeConfig &configuration)
+        VideoEncoderHandle(GPUContext &context, EncodeAPI &api, const EncodeConfiguration &configuration)
                 : context_(context), api_(api), configuration_(configuration) {
             NVENCSTATUS status;
 
@@ -43,7 +45,7 @@ private:
         }
 
     private:
-        EncodeConfig &configuration_;
+        const EncodeConfiguration &configuration_;
         GPUContext &context_;
         EncodeAPI &api_;
     } encoderHandle_;

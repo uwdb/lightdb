@@ -15,11 +15,11 @@ public:
         : Frame(0, 0, height, width, type)
     { }
 
-    Frame(const EncodeConfig &configuration, NV_ENC_PIC_STRUCT type)
+    Frame(const Configuration &configuration, NV_ENC_PIC_STRUCT type)
         : Frame(0, 0, configuration, type)
     { }
 
-    Frame(CUdeviceptr handle, unsigned int pitch, const EncodeConfig &configuration, NV_ENC_PIC_STRUCT type)
+    Frame(CUdeviceptr handle, unsigned int pitch, const Configuration &configuration, NV_ENC_PIC_STRUCT type)
         : Frame(handle, pitch, configuration.height, configuration.width, type)
     { }
 

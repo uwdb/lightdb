@@ -15,7 +15,7 @@ static int CUDAAPI HandleVideoData(void *pUserData, CUVIDSOURCEDATAPACKET *pPack
   return 1;
 }*/
 
-CudaDecoder::CudaDecoder(const EncodeConfig &configuration, FrameQueue& frame_queue, VideoLock& lock)
+CudaDecoder::CudaDecoder(const Configuration &configuration, FrameQueue& frame_queue, VideoLock& lock)
     : VideoDecoder(configuration, frame_queue)//, m_videoSource(NULL), m_videoParser(NULL),
       //decodedFrameCount_(0), handle_(NULL), complete_(false), lock(lock)
        {
