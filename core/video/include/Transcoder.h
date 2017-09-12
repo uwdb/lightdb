@@ -36,9 +36,6 @@ public:
                     return status;
         }
 
-        //encodeSession.Flush();
-        //writer.Flush();
-
         return NV_ENC_SUCCESS;
     }
 

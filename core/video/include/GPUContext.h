@@ -20,14 +20,12 @@ public:
                                                 " generated error " + std::to_string(result));
         else if((result = cuCtxCreate(&context, CU_CTX_SCHED_AUTO, device)) != CUDA_SUCCESS)
             throw std::runtime_error("throw\n"); //TODO
-        //else if((result = cuCtxPopCurrent(&context)) != CUDA_SUCCESS)
-        //    throw "throw\n"; //TODO
     }
     ~GPUContext() {
         CUresult result;
 
         if((result = cuCtxDestroy(context)) != CUDA_SUCCESS)
-            printf("log error");
+            throw std::runtime_error("log error");
     }
 
     CUcontext get() { return context; }

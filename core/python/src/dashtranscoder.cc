@@ -1,4 +1,4 @@
-#include "Tiler.h"
+//#include "Tiler.h"
 #include "Transcoder.h"
 #include <Python.h>
 #include <boost/python/class.hpp>
@@ -93,7 +93,9 @@ public:
       : configurations(getConfigurations(inputFilename, height, width, tileRows,
                                          tileColumns, // TODO change parameter to TileDimensions&
                                          qualities, codec, fps, gop_length, deviceId)),
-        tileDimensions{tileRows, tileColumns, tileRows * tileColumns} {}
+        tileRows(tileRows), tileColumns(tileColumns)
+        //tileDimensions{tileRows, tileColumns, tileRows * tileColumns}
+  { }
 
   ~Tiler() {
     //for (auto &configuration : configurations)
@@ -118,9 +120,9 @@ public:
       outputFilenameFormat.reserve(65);
       snprintf(outputFilenameFormat.data(), 64, outputFilenameFormatTemplate, i);
 
-      configurations.push_back(MakeTilerConfiguration(inputFilename, outputFilenameFormat, height, width, tileRows,
-                                                      tileColumns, codec, preset, fps, gop_length, bitrate,
-                                                      rate_control_mode, deviceId));
+//      configurations.push_back(MakeTilerConfiguration(inputFilename, outputFilenameFormat, height, width, tileRows,
+  //                                                    tileColumns, codec, preset, fps, gop_length, bitrate,
+    //                                                  rate_control_mode, deviceId));
     }
 
     Py_DECREF(sequence);
@@ -146,8 +148,8 @@ public:
                        throw std::runtime_error("Input write");
                      else if (close(inputDescriptor) != 0)
                        throw std::runtime_error("Input close");
-                     else if (ExecuteTiler(configurations, tileDimensions) != 0)
-                       throw std::runtime_error("tiler");
+                     //else if (ExecuteTiler(configurations, tileDimensions) != 0)
+                     //  throw std::runtime_error("tiler");
                      else
                        return true;
                    }).share();
@@ -157,7 +159,7 @@ public:
 
   bool complete() { return tileFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready; }
 
-  PyObject *tiles() { return make_list(tileDimensions.count, configurations.size()); }
+  //PyObject *tiles() { return make_list(tileDimensions.count, configurations.size()); }
 
   static PyObject *make_list(const size_t tile_count, const size_t quality_count) {
     Py_buffer *buffer;
@@ -204,7 +206,8 @@ private:
   char inputFilename[64]; // TODO these should all be static, fix this
   std::shared_future<bool> tileFuture;
   std::vector<EncodeConfig> configurations;
-  TileDimensions tileDimensions;
+    const size_t tileRows, tileColumns;
+  //TileDimensions tileDimensions;
 };
 
 BOOST_PYTHON_MODULE(dashtranscoder) {
@@ -212,8 +215,8 @@ BOOST_PYTHON_MODULE(dashtranscoder) {
                                boost::python::init<unsigned int, unsigned int, unsigned int, unsigned int, PyObject *,
                                                    unsigned int, unsigned int, unsigned int, unsigned int>())
       .def("start", &Tiler::start)
-      .def("complete", &Tiler::complete)
-      .def("tiles", &Tiler::tiles);
+      .def("complete", &Tiler::complete);
+      //.def("tiles", &Tiler::tiles);
   //.def("tile2", &Tiler::tile2);
   //.def("tile_all", &Tiler::tile_all);
 

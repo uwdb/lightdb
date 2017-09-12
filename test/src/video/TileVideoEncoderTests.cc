@@ -1,4 +1,4 @@
-#include "Tiler.h"
+#include "TileVideoEncoder.h"
 #include "AssertTime.h"
 #include "AssertVideo.h"
 
@@ -22,7 +22,7 @@ TEST_F(TilerVideoEncoderTestFixture, testConstructor) {
 
 
 TEST_F(TilerVideoEncoderTestFixture, testSingleTile) {
-    TileVideoEncoder2 tiler(context, configuration, 1, 1);
+    TileVideoEncoder tiler(context, configuration, 1, 1);
     FileDecodeReader reader("resources/test-pattern.h264");
     std::vector<std::shared_ptr<EncodeWriter>> writers;
 
@@ -37,7 +37,7 @@ TEST_F(TilerVideoEncoderTestFixture, testSingleTile) {
 }
 
 TEST_F(TilerVideoEncoderTestFixture, testTwoRows) {
-    TileVideoEncoder2 tiler(context, configuration, 2, 1);
+    TileVideoEncoder tiler(context, configuration, 2, 1);
     FileDecodeReader reader("resources/test-pattern.h264");
     std::vector<std::shared_ptr<EncodeWriter>> writers{
         std::make_shared<FileEncodeWriter>(tiler.api(), FILENAME(0)),
@@ -60,7 +60,7 @@ TEST_F(TilerVideoEncoderTestFixture, testTwoRows) {
 }
 
 TEST_F(TilerVideoEncoderTestFixture, testTwoColumns) {
-    TileVideoEncoder2 tiler(context, configuration, 1, 2);
+    TileVideoEncoder tiler(context, configuration, 1, 2);
     FileDecodeReader reader("resources/test-pattern.h264");
     std::vector<std::shared_ptr<EncodeWriter>> writers {
         std::make_shared<FileEncodeWriter>(tiler.api(), FILENAME(0)),
@@ -84,7 +84,7 @@ TEST_F(TilerVideoEncoderTestFixture, testTwoColumns) {
 
 TEST_F(TilerVideoEncoderTestFixture, test2x2) {
     const auto rows = 2, columns = 2;
-    TileVideoEncoder2 tiler(context, configuration, rows, columns);
+    TileVideoEncoder tiler(context, configuration, rows, columns);
     FileDecodeReader reader("resources/test-pattern.h264");
     std::vector<std::shared_ptr<EncodeWriter>> writers;
 
@@ -103,7 +103,7 @@ TEST_F(TilerVideoEncoderTestFixture, test2x2) {
 
 TEST_F(TilerVideoEncoderTestFixture, test6x2) {
     const auto rows = 6, columns = 2;
-    TileVideoEncoder2 tiler(context, configuration, rows, columns);
+    TileVideoEncoder tiler(context, configuration, rows, columns);
     FileDecodeReader reader("resources/test-pattern.h264");
     std::vector<std::shared_ptr<EncodeWriter>> writers;
 
@@ -124,7 +124,7 @@ TEST_F(TilerVideoEncoderTestFixture, test6x2) {
 
 TEST_F(TilerVideoEncoderTestFixture, test2x8) {
     const auto rows = 2, columns = 8;
-    TileVideoEncoder2 tiler(context, configuration, rows, columns);
+    TileVideoEncoder tiler(context, configuration, rows, columns);
     FileDecodeReader reader("resources/test-pattern.h264");
     std::vector<std::shared_ptr<EncodeWriter>> writers;
 
@@ -145,7 +145,7 @@ TEST_F(TilerVideoEncoderTestFixture, test2x8) {
 
 TEST_F(TilerVideoEncoderTestFixture, test1x8) {
     const auto rows = 1, columns = 8;
-    TileVideoEncoder2 tiler(context, configuration, rows, columns);
+    TileVideoEncoder tiler(context, configuration, rows, columns);
     FileDecodeReader reader("resources/test-pattern.h264");
     std::vector<std::shared_ptr<EncodeWriter>> writers;
 
@@ -166,7 +166,7 @@ TEST_F(TilerVideoEncoderTestFixture, test1x8) {
 
 TEST_F(TilerVideoEncoderTestFixture, test6x1) {
     const auto rows = 6, columns = 1;
-    TileVideoEncoder2 tiler(context, configuration, rows, columns);
+    TileVideoEncoder tiler(context, configuration, rows, columns);
     FileDecodeReader reader("resources/test-pattern.h264");
     std::vector<std::shared_ptr<EncodeWriter>> writers;
 
@@ -187,7 +187,7 @@ TEST_F(TilerVideoEncoderTestFixture, test6x1) {
 
 TEST_F(TilerVideoEncoderTestFixture, test6x8) {
     const auto rows = 6, columns = 8;
-    TileVideoEncoder2 tiler(context, configuration, rows, columns);
+    TileVideoEncoder tiler(context, configuration, rows, columns);
     FileDecodeReader reader("resources/test-pattern.h264");
     std::vector<std::shared_ptr<EncodeWriter>> writers;
 
@@ -208,5 +208,5 @@ TEST_F(TilerVideoEncoderTestFixture, test6x8) {
 
 TEST_F(TilerVideoEncoderTestFixture, testOddTileSize) {
     const auto rows = 8, columns = 1;
-    EXPECT_ANY_THROW(TileVideoEncoder2(context, configuration, rows, columns));
+    EXPECT_ANY_THROW(TileVideoEncoder(context, configuration, rows, columns));
 }

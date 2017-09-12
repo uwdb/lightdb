@@ -33,64 +33,6 @@ public:
     unsigned int height() const { return height_; }
     unsigned int width() const { return width_; }
     NV_ENC_PIC_STRUCT type() const { return type_; }
-/*
-    Frame&& crop(VideoLock &lock, size_t top, size_t left, size_t height, size_t width) {
-        CUDA_MEMCPY2D lumaPlaneParameters = {
-                srcXInBytes:   left,
-                srcY:          top,
-                srcMemoryType: CU_MEMORYTYPE_DEVICE,
-                srcHost:       NULL,
-                srcDevice:     handle(),
-                srcArray:      NULL,
-                srcPitch:      pitch(),
-
-                dstXInBytes:   0,
-                dstY:          0,
-                dstMemoryType: CU_MEMORYTYPE_DEVICE,
-                dstHost:       NULL,
-                dstDevice:     (CUdeviceptr)encodeBuffer->stInputBfr.pNV12devPtr,
-                dstArray:      NULL,
-                dstPitch:      encodeBuffer->stInputBfr.uNV12Stride,
-
-                WidthInBytes:  width,
-                Height:        height,
-        };
-
-        CUDA_MEMCPY2D chromaPlaneParameters = {
-                srcXInBytes:   left,
-                srcY:          this->height() + top/2,
-                srcMemoryType: CU_MEMORYTYPE_DEVICE,
-                srcHost:       NULL,
-                srcDevice:     handle(),
-                srcArray:      NULL,
-                srcPitch:      pitch(),
-
-                dstXInBytes:   0,
-                dstY:          height,
-                dstMemoryType: CU_MEMORYTYPE_DEVICE,
-                dstHost:       NULL,
-                dstDevice:     (CUdeviceptr)encodeBuffer->stInputBfr.pNV12devPtr,
-                dstArray:      NULL,
-                dstPitch:      encodeBuffer->stInputBfr.uNV12Stride,
-
-                WidthInBytes:  width,
-                Height:        height / 2
-        };
-
-        std::lock_guard(lock);
-
-        if((result = cuMemcpy2D(&lumaPlaneParameters)) != CUDA_SUCCESS)
-            return error("cuMemcpy2D", result, NV_ENC_ERR_GENERIC);
-        else if((result = cuMemcpy2D(&chromaPlaneParameters)) != CUDA_SUCCESS)
-            return error("cuMemcpy2D", result, NV_ENC_ERR_GENERIC);
-        else if((status = context.hardwareEncoder.NvEncMapInputResource(
-                encodeBuffer->stInputBfr.nvRegisteredResource,
-                &encodeBuffer->stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
-            return status;
-        else
-            context.hardwareEncoder.NvEncEncodeFrame(encodeBuffer, NULL, inputFrameType);
-    }
-*/
 
 protected:
     CUdeviceptr handle_;
@@ -138,27 +80,5 @@ private:
     const CudaDecoder &decoder_;
     const std::shared_ptr<CUVIDPARSERDISPINFO> parameters_;
 };
-/*
-class CroppedFrame : public Frame {
-public:
-    CroppedFrame(GPUContext &context, VideoLock &lock, const Frame& sourceFrame,
-                 size_t top, size_t left, size_t height, size_t width)
-        : context(context)
-    {
-
-    }
-
-    ~CroppedFrame() {
-        if((status = context.hardwareEncoder.NvEncUnmapInputResource(
-                encodeBuffer->stInputBfr.nvRegisteredResource,
-                &encodeBuffer->stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
-            return status;
-
-    }
-
-private:
-    GPUContext &context;
-};
-*/
 
 #endif //VISUALCLOUD_FRAME_H

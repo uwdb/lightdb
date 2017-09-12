@@ -24,38 +24,18 @@ private:
 };
 
 
-//TODO VideoDecoder base class, CudaDecoder concrete implementation
 class CudaDecoder: public VideoDecoder {
 public:
   CudaDecoder(const EncodeConfig &configuration, FrameQueue& frameQueue, VideoLock& lock);
   virtual ~CudaDecoder();
 
-  //virtual void Start();
-
-    //TODO this should move into a session
-  //virtual void GetCodecParam(int *width, int *height, int *frame_rate_num, int *frame_rate_den, int *is_progressive);
-
   const CUvideodecoder handle() const { return handle_; }
-  //size_t decodedFrameCount() const { return decodedFrameCount_; }
-  //bool complete() { return complete_; }
 
   const CUVIDDECODECREATEINFO &parameters() const { return parameters_; }
 
 protected:
-  //CUvideosource m_videoSource;
-
-public: //TODO these should be protected
-    //CUvideoparser m_videoParser;
-    void TempDeleteMe(void);
-
-private:
-    //size_t decodedFrameCount_;
-
-protected:
   CUvideodecoder handle_;
   CUVIDDECODECREATEINFO parameters_;
-  //bool complete_;
-  //VideoLock& lock;
 };
 
 #endif

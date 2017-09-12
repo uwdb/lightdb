@@ -6,8 +6,29 @@
 
 class EncodeWriter {
 public:
-    virtual NVENCSTATUS WriteFrame(const EncodeBuffer &buffer);
-    //virtual NVENCSTATUS WriteFrame(const MotionEstimationBuffer &buffer);
+    virtual NVENCSTATUS WriteFrame(const EncodeBuffer &buffer) {
+        NVENCSTATUS result;
+        NV_ENC_LOCK_BITSTREAM bitstream{
+                .version = NV_ENC_LOCK_BITSTREAM_VER,
+                .doNotWait = 0,
+                .ltrFrame = 0,
+                .reservedBitFields = 0,
+                .outputBitstream = buffer.stOutputBfr.hBitstreamBuffer
+        };
+
+        if (buffer.stOutputBfr.hBitstreamBuffer == nullptr && !buffer.stOutputBfr.bEOSFlag) {
+            result = NV_ENC_ERR_INVALID_PARAM;
+        } else if (buffer.stOutputBfr.bWaitOnEvent && buffer.stOutputBfr.hOutputEvent != nullptr) {
+            result = NV_ENC_ERR_INVALID_PARAM;
+        } else if (buffer.stOutputBfr.bEOSFlag) {
+            result = NV_ENC_SUCCESS;
+        } else {
+            result = WriteFrame(bitstream) == 0 ? NV_ENC_SUCCESS : NV_ENC_ERR_GENERIC;
+        }
+
+        return result;
+    }
+
     virtual NVENCSTATUS Flush() = 0;
 
 protected:
@@ -16,8 +37,21 @@ protected:
     EncodeWriter(EncodeAPI &api): api(api) {}
     EncodeWriter(VideoEncoder &encoder): EncodeWriter(encoder.api()) {}
 
-    virtual NVENCSTATUS WriteFrame(NV_ENC_LOCK_BITSTREAM &bitstream);
     virtual NVENCSTATUS WriteFrame(const void *buffer, const size_t size) = 0;
+    virtual NVENCSTATUS WriteFrame(NV_ENC_LOCK_BITSTREAM &bitstream) {
+        NVENCSTATUS status;
+
+        if((status = api.NvEncLockBitstream(&bitstream)) != NV_ENC_SUCCESS) {
+            return status;
+        }
+
+        status = WriteFrame(bitstream.bitstreamBufferPtr, bitstream.bitstreamSizeInBytes) == 0
+                 ? NV_ENC_SUCCESS : NV_ENC_ERR_GENERIC;
+
+        auto unlockStatus = api.NvEncUnlockBitstream(bitstream.outputBitstream);
+
+        return status != NV_ENC_SUCCESS ? status : unlockStatus;
+    }
 };
 
 
