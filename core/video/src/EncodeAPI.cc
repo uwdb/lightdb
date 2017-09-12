@@ -619,7 +619,7 @@ EncodeAPI::EncodeAPI(void* device, NV_ENC_DEVICE_TYPE deviceType)
     SET_VER(m_stEncodeConfig, NV_ENC_CONFIG);
 
     if(Initialize(device, deviceType) != NV_ENC_SUCCESS)
-        throw "TODO throw\n"; //TODO throw
+        throw std::runtime_error("TODO throw\n"); //TODO throw
 }
 
 EncodeAPI::~EncodeAPI()

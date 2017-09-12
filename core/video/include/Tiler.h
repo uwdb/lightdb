@@ -7,11 +7,11 @@
 #include "VideoDecoderSession.h"
 #include "DecodeReader.h"
 #include "EncodeWriter.h"
+#include "ThreadPool.h"
 #include <string>
 #include <vector>
 
 #include "TileVideoEncoder.h" //todo rename this file TileVideoEncoder.h, delete other
-#include "ThreadPool.h"
 
 int ExecuteTiler(std::vector<EncodeConfig> &, const TileDimensions);
 
@@ -40,7 +40,7 @@ public:
               pool(context, rows * columns)
     {
         if(rows == 0 || columns == 0)
-            throw "bad rows/col"; //TODO
+            throw std::runtime_error("bad rows/col"); //TODO
     }
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers) {
@@ -50,7 +50,7 @@ public:
         auto sessions = CreateEncoderSessions(writers);
 
         if(writers.size() != encoders().size())
-            throw "bad size"; //TODO
+            throw std::runtime_error("bad size"); //TODO
 
         //TODO push this into a broad encode/decode configuration struct
         auto fpsRatio = (float)encoders()[0]->configuration().fps /

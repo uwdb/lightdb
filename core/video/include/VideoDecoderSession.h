@@ -37,7 +37,7 @@ protected:
             packet = reader.DecodeFrame();
             if (packet.has_value())
                 if ((status = cuvidParseVideoData(parser, &*packet)) != CUDA_SUCCESS)
-                    throw status; //TODO
+                    throw std::runtime_error(std::to_string(status)); //TODO
         } while (packet.has_value());
 
         decoder.frame_queue().endDecode();
@@ -63,7 +63,7 @@ private:
         decoder.frame_queue().reset();
 
         if ((status = cuvidCreateVideoParser(&parser, &parameters)) != CUDA_SUCCESS)
-            throw status; // TODO
+            throw std::runtime_error(std::to_string(status)); // TODO
 
         return parser;
     }
@@ -74,10 +74,12 @@ private:
         assert(session);
 
         if ((format->codec != session->decoder.parameters().CodecType) || // codec-type
-            (format->coded_width != session->decoder.parameters().ulWidth) ||
-            (format->coded_height != session->decoder.parameters().ulHeight) ||
+            ((format->display_area.right - format->display_area.left) != session->decoder.parameters().ulWidth) ||
+            ((format->display_area.bottom - format->display_area.top) != session->decoder.parameters().ulHeight) ||
+            (format->coded_width < session->decoder.parameters().ulWidth) ||
+            (format->coded_height < session->decoder.parameters().ulHeight) ||
             (format->chroma_format != session->decoder.parameters().ChromaFormat))
-                throw "Video format changed but not currently supported"; //TODO
+                throw std::runtime_error("Video format changed but not currently supported"); //TODO
 
         return 1;
     }

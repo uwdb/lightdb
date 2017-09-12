@@ -10,16 +10,16 @@ public:
         CUresult result;
 
         if(!ensureInitialized())
-            throw "throw\n"; //TODO
+            throw std::runtime_error("throw\n"); //TODO
         else if((result = cuCtxGetCurrent(&context)) != CUDA_SUCCESS)
-            throw "throw\n"; //TODO
+            throw std::runtime_error("throw\n"); //TODO
         else if(context != nullptr)
             ;
         else if((result = cuDeviceGet(&device, deviceId)) != CUDA_SUCCESS)
             throw std::invalid_argument("Getting CUDA device " + std::to_string(deviceId) +
                                                 " generated error " + std::to_string(result));
         else if((result = cuCtxCreate(&context, CU_CTX_SCHED_AUTO, device)) != CUDA_SUCCESS)
-            throw "throw\n"; //TODO
+            throw std::runtime_error("throw\n"); //TODO
         //else if((result = cuCtxPopCurrent(&context)) != CUDA_SUCCESS)
         //    throw "throw\n"; //TODO
     }
@@ -36,7 +36,7 @@ public:
         CUresult result;
 
         if((result = cuCtxSetCurrent(context)) != CUDA_SUCCESS)
-            throw result; //TODO
+            throw std::runtime_error(std::to_string(result)); //TODO
     }
 
 private:
@@ -47,9 +47,9 @@ private:
             if(isInitialized)
                 return true;
             else if((result = cuInit(0, __CUDA_API_VERSION, nullptr)) != CUDA_SUCCESS)
-                throw "throw\n"; //TODO
+                throw std::runtime_error("throw\n"); //TODO
             else if(cuvidInit(0) != CUDA_SUCCESS)
-                throw "throw\n"; //TODO
+                throw std::runtime_error("throw\n"); //TODO
             else
                 return (isInitialized = true);
         }

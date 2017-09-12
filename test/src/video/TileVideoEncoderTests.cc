@@ -8,7 +8,7 @@ class TilerVideoEncoderTestFixture : public testing::Test {
 public:
     TilerVideoEncoderTestFixture()
         : context(0),
-          configuration(1088, 1920, 2, 2, NV_ENC_HEVC, "hq", 24, 30, 1024*1024, 0, 0)
+          configuration(1080, 1920, 2, 2, NV_ENC_HEVC, "hq", 24, 30, 1024*1024, 0, 0)
     { }
 
 protected:
@@ -101,8 +101,8 @@ TEST_F(TilerVideoEncoderTestFixture, test2x2) {
     }
 }
 
-TEST_F(TilerVideoEncoderTestFixture, test8x2) {
-    const auto rows = 8, columns = 2;
+TEST_F(TilerVideoEncoderTestFixture, test6x2) {
+    const auto rows = 6, columns = 2;
     TileVideoEncoder2 tiler(context, configuration, rows, columns);
     FileDecodeReader reader("resources/test-pattern.h264");
     std::vector<std::shared_ptr<EncodeWriter>> writers;
@@ -164,8 +164,8 @@ TEST_F(TilerVideoEncoderTestFixture, test1x8) {
     }
 }
 
-TEST_F(TilerVideoEncoderTestFixture, test8x1) {
-    const auto rows = 8, columns = 1;
+TEST_F(TilerVideoEncoderTestFixture, test6x1) {
+    const auto rows = 6, columns = 1;
     TileVideoEncoder2 tiler(context, configuration, rows, columns);
     FileDecodeReader reader("resources/test-pattern.h264");
     std::vector<std::shared_ptr<EncodeWriter>> writers;
@@ -185,8 +185,8 @@ TEST_F(TilerVideoEncoderTestFixture, test8x1) {
     }
 }
 
-TEST_F(TilerVideoEncoderTestFixture, test8x8) {
-    const auto rows = 8, columns = 8;
+TEST_F(TilerVideoEncoderTestFixture, test6x8) {
+    const auto rows = 6, columns = 8;
     TileVideoEncoder2 tiler(context, configuration, rows, columns);
     FileDecodeReader reader("resources/test-pattern.h264");
     std::vector<std::shared_ptr<EncodeWriter>> writers;
@@ -196,7 +196,7 @@ TEST_F(TilerVideoEncoderTestFixture, test8x8) {
 
     ASSERT_SECS(
             ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS),
-            0.5);
+            0.75);
 
     for(auto i = 0; i < rows * columns; i++) {
         EXPECT_VIDEO_VALID(FILENAME(i));
@@ -204,4 +204,9 @@ TEST_F(TilerVideoEncoderTestFixture, test8x8) {
         EXPECT_VIDEO_RESOLUTION(FILENAME(i), configuration.height / rows, configuration.width / columns);
         EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
     }
+}
+
+TEST_F(TilerVideoEncoderTestFixture, testOddTileSize) {
+    const auto rows = 8, columns = 1;
+    EXPECT_ANY_THROW(TileVideoEncoder2(context, configuration, rows, columns));
 }

@@ -13,7 +13,7 @@ public:
         CUresult result;
 
         if ((result = cuvidCtxLockCreate(&lock_, context.get())) != CUDA_SUCCESS)
-            throw result; // TODO
+            throw std::runtime_error(std::to_string(result)); // TODO
     }
     ~VideoLock() {
         cuvidCtxLockDestroy(lock_);
@@ -24,13 +24,13 @@ public:
     void lock() {
         CUresult result;
         if ((result = cuvidCtxLock(get(), 0)) != CUDA_SUCCESS)
-            throw result; //TODO
+            throw std::runtime_error(std::to_string(result)); //TODO
     }
 
     void unlock() {
         CUresult result;
         if ((result = cuvidCtxUnlock(get(), 0)) != CUDA_SUCCESS)
-            throw result; //TODO
+            throw std::runtime_error(std::to_string(result)); //TODO
     }
 
 private:

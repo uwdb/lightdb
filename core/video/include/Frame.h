@@ -114,7 +114,7 @@ public:
 
         if((result = cuvidMapVideoFrame(decoder_.handle(), parameters->picture_index,
                                         &handle_, &pitch_, &mapParameters)) != CUDA_SUCCESS)
-            throw result; //TODO
+            throw std::runtime_error(std::to_string(result)); //TODO
     }
 
     ~DecodedFrame() {
