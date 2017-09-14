@@ -8,18 +8,14 @@
 #include "DecodeReader.h"
 #include "EncodeWriter.h"
 #include "ThreadPool.h"
+#include "FrameRateAlignment.h"
 #include <vector>
 
 class TileVideoEncoder {
 public:
-    TileVideoEncoder(GPUContext& context, const EncodeConfiguration& encodeConfiguration,
-                     const size_t rows, const size_t columns)
-        : TileVideoEncoder(context, encodeConfiguration, encodeConfiguration, rows, columns)
-    { }
-
     TileVideoEncoder(GPUContext& context,
-                     const EncodeConfiguration& encodeModelConfiguration,
                      const DecodeConfiguration &decodeConfiguration,
+                     const EncodeConfiguration &encodeModelConfiguration,
                      const size_t rows, const size_t columns)
             : lock_(context),
               encoderConfiguration_(encodeModelConfiguration,
@@ -37,20 +33,17 @@ public:
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers) {
       NVENCSTATUS status;
-      size_t framesDecoded = 0, framesEncoded = 0;
       VideoDecoderSession decodeSession(decoder_, reader);
       auto sessions = CreateEncoderSessions(writers);
+      size_t framesDecoded = 0, framesEncoded = 0;
+      FrameRateAlignment alignment(encoders()[0]->configuration().framerate, decoder_.configuration().framerate);
 
       if(writers.size() != encoders().size())
         throw std::runtime_error("bad size"); //TODO
 
-      //TODO push this into a broad encode/decode configuration struct
-      auto fpsRatio = (float)encoders()[0]->configuration().fps /
-                      reader.format().frame_rate.numerator / reader.format().frame_rate.denominator;
-
       while (!decoder_.frame_queue().isComplete()) {
+        auto dropOrDuplicate = alignment.dropOrDuplicate(framesDecoded++, framesEncoded);
         auto decodedFrame = decodeSession.decode();
-        auto dropOrDuplicate = alignFPS(fpsRatio, framesDecoded++, framesEncoded);
 
         for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++) {
           for(auto j = 0; j < sessions.size(); j++) {
@@ -107,24 +100,6 @@ private:
                          return std::move(VideoEncoderSession(*encoder, *writer)); });
 
       return std::move(sessions);
-    }
-
-    //TODO push this into a broad encode/decode configuration struct
-    static int alignFPS(const float fpsRatio, const size_t decodedFrames, const size_t encodedFrames) {
-      if (fpsRatio < 1.f) {
-        // need to drop frame
-        return decodedFrames * fpsRatio < (encodedFrames + 1) ? -1 : 0;
-      } else if (fpsRatio > 1.f) {
-        // need to duplicate frame
-        auto duplicate = 0;
-        while (decodedFrames * fpsRatio > encodedFrames + duplicate + 1) {
-          duplicate++;
-        }
-
-        return duplicate;
-      } else {
-        return 0;
-      }
     }
 };
 

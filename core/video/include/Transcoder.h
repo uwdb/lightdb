@@ -7,15 +7,14 @@
 #include "VideoDecoderSession.h"
 #include "DecodeReader.h"
 #include "EncodeWriter.h"
+#include "FrameRateAlignment.h"
 
 
 class Transcoder {
 public:
-    Transcoder(GPUContext& context, EncodeConfiguration& configuration)
-            : Transcoder(context, configuration, configuration)
-    { }
-
-    Transcoder(GPUContext& context, EncodeConfiguration &encodeConfiguration, DecodeConfiguration &decodeConfiguration)
+    Transcoder(GPUContext& context,
+               DecodeConfiguration &decodeConfiguration,
+               EncodeConfiguration &encodeConfiguration)
             : lock_(context), frameQueue_(lock_.get()),
               encoder_(context, encodeConfiguration, lock_),
               decoder_(decodeConfiguration, frameQueue_, lock_)
@@ -25,15 +24,12 @@ public:
         NVENCSTATUS status;
         VideoDecoderSession decodeSession(decoder_, reader);
         VideoEncoderSession encodeSession(encoder_, writer);
+        FrameRateAlignment alignment(encoder_.configuration().framerate, decoder_.configuration().framerate);
         size_t framesDecoded = 0, framesEncoded = 0;
 
-        //TODO push this into a broad encode/decode configuration struct
-        auto fpsRatio = (float)encoder_.configuration().fps /
-                        reader.format().frame_rate.numerator / reader.format().frame_rate.denominator;
-
         while (!decoder_.frame_queue().isComplete()) {
+            auto dropOrDuplicate = alignment.dropOrDuplicate(framesDecoded++, framesEncoded);
             auto frame = decodeSession.decode();
-            auto dropOrDuplicate = alignFPS(fpsRatio, framesDecoded++, framesEncoded);
 
             for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++)
                 if((status = encodeSession.Encode(frame)) != NV_ENC_SUCCESS)
@@ -51,24 +47,6 @@ private:
     CUVIDFrameQueue frameQueue_;
     VideoEncoder encoder_;
     CudaDecoder decoder_;
-
-    //TODO push this into a broad encode/decode configuration struct
-    static int alignFPS(const float fpsRatio, const size_t decodedFrames, const size_t encodedFrames) {
-        if (fpsRatio < 1.f) {
-            // need to drop frame
-            return decodedFrames * fpsRatio < (encodedFrames + 1) ? -1 : 0;
-        } else if (fpsRatio > 1.f) {
-            // need to duplicate frame
-            auto duplicate = 0;
-            while (decodedFrames * fpsRatio > encodedFrames + duplicate + 1) {
-                duplicate++;
-            }
-
-            return duplicate;
-        } else {
-            return 0;
-        }
-    }
 };
 
 

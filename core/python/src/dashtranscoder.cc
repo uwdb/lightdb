@@ -1,4 +1,5 @@
 //#include "Tiler.h"
+#include "EncodeAPI.h"
 #include "Transcoder.h"
 #include <Python.h>
 #include <boost/python/class.hpp>
@@ -21,11 +22,12 @@ class Constants {};
 namespace Python {
 class Transcoder {
 public:
-  Transcoder(unsigned int height, unsigned int width, unsigned int codec, std::string preset, unsigned int fps,
+  Transcoder(unsigned int height, unsigned int width, EncodeCodec codec, cudaVideoCodec decodeCodec, std::string preset, unsigned int fps,
              unsigned int gop_length, unsigned long bitrate, NV_ENC_PARAMS_RC_MODE rcmode, unsigned int deviceId)
       : context(deviceId),
-        configuration(height, width, codec, preset.data(), fps, gop_length, bitrate, rcmode),
-        gpuTranscoder(context, configuration) {
+        encodeConfiguration(height, width, codec, preset.data(), fps, gop_length, bitrate, rcmode),
+        decodeConfiguration(encodeConfiguration, decodeCodec),
+        gpuTranscoder(context, decodeConfiguration, encodeConfiguration) {
       //: gpuTranscoder(height, width, codec, preset, fps, gop_length, bitrate, rcmode, deviceId) {
     //if (gpuTranscoder.initialize() != 0)
       //throw std::runtime_error("Transcoder initialization error");
@@ -81,7 +83,8 @@ public:
   }
 
 private:
-    EncodeConfiguration configuration;
+    EncodeConfiguration encodeConfiguration;
+    DecodeConfiguration decodeConfiguration;
     GPUContext context;
   ::Transcoder gpuTranscoder;
 };

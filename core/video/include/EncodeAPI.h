@@ -50,7 +50,7 @@ typedef struct _NvEncPictureCommand
     uint32_t  refFrameNumbers[16];
 }NvEncPictureCommand;
 
-enum
+enum EncodeCodec
 {
     NV_ENC_H264 = 0,
     NV_ENC_HEVC = 1,

@@ -793,6 +793,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfiguration *pEncCfg)
 
     codecGUID = inputCodecGUID;
 
+    // TODO explicit cast from EncodeConfiguration to NV_ENC_INITIALIZE_PARAMS
     m_stCreateEncodeParams.encodeGUID = inputCodecGUID;
     m_stCreateEncodeParams.presetGUID = pEncCfg->preset;
     m_stCreateEncodeParams.encodeWidth = pEncCfg->width;
@@ -800,7 +801,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfiguration *pEncCfg)
 
     m_stCreateEncodeParams.darWidth = pEncCfg->width;
     m_stCreateEncodeParams.darHeight = pEncCfg->height;
-    m_stCreateEncodeParams.frameRateNum = pEncCfg->fps;
+    m_stCreateEncodeParams.frameRateNum = static_cast<uint32_t>(pEncCfg->framerate.fps());
     m_stCreateEncodeParams.frameRateDen = 1;
     m_stCreateEncodeParams.enableEncodeAsync = 0;
 

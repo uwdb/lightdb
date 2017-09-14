@@ -27,7 +27,11 @@ private:
 class CudaDecoder: public VideoDecoder {
 public:
   CudaDecoder(const DecodeConfiguration &configuration, FrameQueue& frameQueue, VideoLock& lock);
-  virtual ~CudaDecoder();
+
+  virtual ~CudaDecoder() {
+        if (handle())
+            cuvidDestroyDecoder(handle());
+  }
 
   const CUvideodecoder handle() const { return handle_; }
 

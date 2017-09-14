@@ -8,13 +8,15 @@ class TranscoderTestFixture : public testing::Test {
 public:
     TranscoderTestFixture()
         : context(0),
-          configuration(1080, 1920, NV_ENC_HEVC, 24, 30, 1024*1024),
-          transcoder(context, configuration)
+          encodeConfiguration(1080, 1920, NV_ENC_HEVC, 24, 30, 1024*1024),
+          decodeConfiguration(encodeConfiguration, cudaVideoCodec_H264),
+          transcoder(context, decodeConfiguration, encodeConfiguration)
     {}
 
 protected:
     GPUContext context;
-    EncodeConfiguration configuration;
+    EncodeConfiguration encodeConfiguration;
+    DecodeConfiguration decodeConfiguration;
     Transcoder transcoder;
 
 };
@@ -33,7 +35,7 @@ TEST_F(TranscoderTestFixture, testFileTranscoder) {
 
     EXPECT_VIDEO_VALID(FILENAME(0));
     EXPECT_VIDEO_FRAMES(FILENAME(0), 99);
-    EXPECT_VIDEO_RESOLUTION(FILENAME(0), configuration.height, configuration.width);
+    EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
 }
 
@@ -49,7 +51,7 @@ TEST_F(TranscoderTestFixture, testTwoFileTranscoder) {
 
     EXPECT_VIDEO_VALID(FILENAME(0));
     EXPECT_VIDEO_FRAMES(FILENAME(0), 99);
-    EXPECT_VIDEO_RESOLUTION(FILENAME(0), configuration.height, configuration.width);
+    EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
 
     ASSERT_SECS(
@@ -58,7 +60,7 @@ TEST_F(TranscoderTestFixture, testTwoFileTranscoder) {
 
     EXPECT_VIDEO_VALID(FILENAME(1));
     EXPECT_VIDEO_FRAMES(FILENAME(1), 99);
-    EXPECT_VIDEO_RESOLUTION(FILENAME(1), configuration.height, configuration.width);
+    EXPECT_VIDEO_RESOLUTION(FILENAME(1), encodeConfiguration.height, encodeConfiguration.width);
     EXPECT_EQ(remove(FILENAME(1).c_str()), 0);
 }
 
@@ -74,7 +76,7 @@ TEST_F(TranscoderTestFixture, testMultipleFileTranscoder) {
     for(int i = 0; i < 10; i++) {
         EXPECT_VIDEO_VALID(FILENAME(i));
         EXPECT_VIDEO_FRAMES(FILENAME(i), 99);
-        EXPECT_VIDEO_RESOLUTION(FILENAME(i), configuration.height, configuration.width);
+        EXPECT_VIDEO_RESOLUTION(FILENAME(i), encodeConfiguration.height, encodeConfiguration.width);
         EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
     }
 }
