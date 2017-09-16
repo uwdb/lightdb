@@ -2,6 +2,7 @@
 #define VISUALCLOUD_CONFIGURATION_H
 
 #include "EncodeAPI.h"
+#include "VideoLock.h"
 #include <string>
 
 struct Configuration {
@@ -140,6 +141,7 @@ struct DecodeConfiguration: public Configuration {
     cudaVideoChromaFormat chroma_format;
     cudaVideoSurfaceFormat output_format;
     unsigned long output_surfaces;
+    unsigned int decode_surfaces;
     unsigned long creation_flags;
     cudaVideoDeinterlaceMode deinterlace_mode;
 
@@ -150,10 +152,11 @@ struct DecodeConfiguration: public Configuration {
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
                         const unsigned long output_surfaces = 2,
+                        const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
             : DecodeConfiguration({height, width, height, width, fps, bitrate},
-                                  codec, chroma_format, output_format, output_surfaces,
+                                  codec, chroma_format, output_format, output_surfaces, decode_surfaces,
                                   creation_flags, deinterlace_mode)
     { }
 
@@ -163,6 +166,7 @@ struct DecodeConfiguration: public Configuration {
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
                         const unsigned long output_surfaces = 2,
+                        const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
             : DecodeConfiguration(height, width, height, width, fps, bitrate, codec,
@@ -179,7 +183,8 @@ struct DecodeConfiguration: public Configuration {
                                    {video_format.frame_rate.numerator, video_format.frame_rate.denominator} },
                                   video_format.codec,
                                   video_format.chroma_format,
-                                  output_format, output_surfaces, creation_flags, deinterlace_mode)
+                                  output_format, output_surfaces, decode_surfaces,
+                                  creation_flags, deinterlace_mode)
     { }
 
     DecodeConfiguration(const Configuration &configuration,
@@ -187,14 +192,82 @@ struct DecodeConfiguration: public Configuration {
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
                         const unsigned long output_surfaces = 2,
+                        const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
             : Configuration{configuration},
               codec(codec), chroma_format(chroma_format),
               output_format(output_format),
-              output_surfaces(output_surfaces), creation_flags(creation_flags),
+              output_surfaces(output_surfaces),
+              decode_surfaces(decode_surfaces != 0 ? decode_surfaces : DefaultDecodeSurfaces()),
+              creation_flags(creation_flags),
               deinterlace_mode(deinterlace_mode)
     { }
+
+    CUVIDDECODECREATEINFO AsCuvidCreateInfo(VideoLock &lock, const unsigned int left = 0, const unsigned int top = 0) const {
+        return AsCuvidCreateInfo(lock.get());
+    }
+
+    CUVIDDECODECREATEINFO AsCuvidCreateInfo(CUvideoctxlock lock, const unsigned int left = 0, const unsigned int top = 0) const {
+        return {
+                .ulWidth = width,
+                .ulHeight = height,
+                .ulNumDecodeSurfaces = decode_surfaces,
+                .CodecType = codec,
+                .ChromaFormat = chroma_format,
+                .ulCreationFlags = creation_flags,
+                .bitDepthMinus8 = 0,
+                .Reserved1 = {0},
+                .display_area = {
+                        .left = left,
+                        .top = top,
+                        .right = static_cast<short>(width) - left,
+                        .bottom = static_cast<const short>(height) - top,
+                },
+                .OutputFormat = output_format,
+                .DeinterlaceMode = deinterlace_mode,
+                .ulTargetWidth = width,
+                .ulTargetHeight = height,
+                .ulNumOutputSurfaces = output_surfaces,
+                .vidLock = lock,
+                .target_rect = {0},
+                .Reserved2 = {0}
+        };
+    }
+
+private:
+    unsigned int DefaultDecodeSurfaces() const {
+        unsigned long decode_surfaces;
+
+        if ((codec == cudaVideoCodec_H264) ||
+            (codec == cudaVideoCodec_H264_SVC) ||
+            (codec == cudaVideoCodec_H264_MVC)) {
+            // Assume worst-case of 20 decode surfaces for H264
+            decode_surfaces = 20;
+        } else if (codec == cudaVideoCodec_VP9) {
+            decode_surfaces = 12;
+        } else if (codec == cudaVideoCodec_HEVC) {
+            // ref HEVC spec: A.4.1 General tier and level limits
+            auto MaxLumaPS = 35651584; // currently assuming level 6.2, 8Kx4K
+            auto MaxDpbPicBuf = 6;
+            auto PicSizeInSamplesY = width * height;
+            unsigned int MaxDpbSize;
+            if (PicSizeInSamplesY <= (MaxLumaPS >> 2))
+                MaxDpbSize = MaxDpbPicBuf * 4;
+            else if (PicSizeInSamplesY <= (MaxLumaPS >> 1))
+                MaxDpbSize = MaxDpbPicBuf * 2;
+            else if (PicSizeInSamplesY <= ((3 * MaxLumaPS) >> 2))
+                MaxDpbSize = (MaxDpbPicBuf * 4) / 3;
+            else
+                MaxDpbSize = MaxDpbPicBuf;
+            MaxDpbSize = MaxDpbSize < 16 ? MaxDpbSize : 16;
+            decode_surfaces = MaxDpbSize + 4;
+        } else {
+            decode_surfaces = 8;
+        }
+
+        return decode_surfaces;
+    }
 };
 
 #endif //VISUALCLOUD_CONFIGURATION_H

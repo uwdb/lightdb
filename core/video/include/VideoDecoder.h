@@ -26,20 +26,24 @@ private:
 
 class CudaDecoder: public VideoDecoder {
 public:
-  CudaDecoder(const DecodeConfiguration &configuration, FrameQueue& frameQueue, VideoLock& lock);
+  CudaDecoder(const DecodeConfiguration &configuration, FrameQueue& frame_queue, VideoLock& lock)
+          : VideoDecoder(configuration, frame_queue)
+  {
+      CUresult result;
+      auto decoderCreateInfo = configuration.AsCuvidCreateInfo(lock);
+
+      if((result = cuvidCreateDecoder(&handle_, &decoderCreateInfo)) != CUDA_SUCCESS)
+          throw std::runtime_error(std::to_string(result));
+  }
 
   virtual ~CudaDecoder() {
-        if (handle())
-            cuvidDestroyDecoder(handle());
+      cuvidDestroyDecoder(handle());
   }
 
   const CUvideodecoder handle() const { return handle_; }
 
-  const CUVIDDECODECREATEINFO &parameters() const { return parameters_; }
-
 protected:
   CUvideodecoder handle_;
-  CUVIDDECODECREATEINFO parameters_;
 };
 
 #endif

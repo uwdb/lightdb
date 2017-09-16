@@ -48,8 +48,8 @@ private:
         CUresult status;
         CUvideoparser parser = nullptr;
         CUVIDPARSERPARAMS parameters = {
-            .CodecType = decoder.parameters().CodecType,
-            .ulMaxNumDecodeSurfaces = static_cast<unsigned int>(decoder.parameters().ulNumDecodeSurfaces),
+            .CodecType = decoder.configuration().codec,
+            .ulMaxNumDecodeSurfaces = decoder.configuration().decode_surfaces,
             .ulClockRate = 0,
             .ulErrorThreshold = 0,
             .ulMaxDisplayDelay = 1,
@@ -73,12 +73,12 @@ private:
 
         assert(session);
 
-        if ((format->codec != session->decoder.parameters().CodecType) || // codec-type
-            ((format->display_area.right - format->display_area.left) != session->decoder.parameters().ulWidth) ||
-            ((format->display_area.bottom - format->display_area.top) != session->decoder.parameters().ulHeight) ||
-            (format->coded_width < session->decoder.parameters().ulWidth) ||
-            (format->coded_height < session->decoder.parameters().ulHeight) ||
-            (format->chroma_format != session->decoder.parameters().ChromaFormat))
+        if ((format->codec != session->decoder.configuration().codec) ||
+            ((format->display_area.right - format->display_area.left) != session->decoder.configuration().width) ||
+            ((format->display_area.bottom - format->display_area.top) != session->decoder.configuration().height) ||
+            (format->coded_width < session->decoder.configuration().width) ||
+            (format->coded_height < session->decoder.configuration().height) ||
+            (format->chroma_format != session->decoder.configuration().chroma_format))
                 throw std::runtime_error("Video format changed but not currently supported"); //TODO
 
         return 1;
