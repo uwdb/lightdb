@@ -25,7 +25,7 @@ public:
     void Encode(Frame &frame, size_t top, size_t left) {
         auto &buffer = GetAvailableBuffer();
 
-        assert(buffer.stInputBfr.bufferFmt == NV_ENC_BUFFER_FORMAT_NV12_PL);
+        assert(buffer.input_buffer.buffer_format == NV_ENC_BUFFER_FORMAT_NV12_PL);
 
         buffer.copy(encoder().lock, frame, top, left);
         return Encode(frame, buffer);
@@ -98,7 +98,7 @@ private:
 
         if(buffer.has_value()) {
             writer.WriteFrame(*buffer.value());
-            buffer->get()->stInputBfr.hInputSurface = nullptr;
+            buffer->get()->input_buffer.input_surface = nullptr;
         }
 
         return buffer;

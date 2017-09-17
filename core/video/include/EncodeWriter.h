@@ -14,14 +14,14 @@ public:
                 .doNotWait = 0,
                 .ltrFrame = 0,
                 .reservedBitFields = 0,
-                .outputBitstream = buffer.stOutputBfr.hBitstreamBuffer
+                .outputBitstream = buffer.output_buffer.bitstreamBuffer
         };
 
-        if (buffer.stOutputBfr.hBitstreamBuffer == nullptr && !buffer.stOutputBfr.bEOSFlag) {
+        if (buffer.output_buffer.bitstreamBuffer == nullptr && !buffer.output_buffer.EOSFlag) {
             result = NV_ENC_ERR_INVALID_PARAM;
-        } else if (buffer.stOutputBfr.bWaitOnEvent && buffer.stOutputBfr.hOutputEvent != nullptr) {
+        } else if (buffer.output_buffer.waitOnEvent && buffer.output_buffer.outputEvent != nullptr) {
             result = NV_ENC_ERR_INVALID_PARAM;
-        } else if (buffer.stOutputBfr.bEOSFlag) {
+        } else if (buffer.output_buffer.EOSFlag) {
             result = NV_ENC_SUCCESS;
         } else {
             result = WriteFrame(bitstream) == 0 ? NV_ENC_SUCCESS : NV_ENC_ERR_GENERIC;

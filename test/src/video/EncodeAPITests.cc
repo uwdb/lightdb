@@ -6,12 +6,17 @@
 class EncodeAPITestFixture : public testing::Test {
 public:
     EncodeAPITestFixture()
-      : context(0), encodeAPI(context)
+      : context(0),
+        configuration(1080, 1920, NV_ENC_HEVC, 30, 30, 1024*1024),
+        lock(context),
+        encoder(context, configuration, lock)
     { }
 
 protected:
     GPUContext context;
-    EncodeAPI encodeAPI;
+    EncodeConfiguration configuration;
+    VideoLock lock;
+    VideoEncoder encoder;
 };
 
 TEST_F(EncodeAPITestFixture, testConstructor) {
@@ -19,35 +24,18 @@ TEST_F(EncodeAPITestFixture, testConstructor) {
 
 TEST_F(EncodeAPITestFixture, testPresetGUIDs) {
     const auto* preset = "hq";
-    auto preset_guid = encodeAPI.GetPresetGUID(preset, NV_ENC_HEVC);
+    auto preset_guid = encoder.api().GetPresetGUID(preset, NV_ENC_HEVC);
 
     ASSERT_EQ(preset_guid, NV_ENC_PRESET_HQ_GUID);
 
-    ASSERT_EQ(encodeAPI.ValidatePresetGUID(preset_guid, NV_ENC_HEVC), NV_ENC_SUCCESS);
-}
-
-TEST_F(EncodeAPITestFixture, testCreateEncoder) {
-    EncodeConfiguration configuration(1080, 1920, NV_ENC_HEVC, 30, 30, 1024*1024);
-
-    ASSERT_EQ(encodeAPI.CreateEncoder(&configuration), NV_ENC_SUCCESS);
-}
-
-TEST_F(EncodeAPITestFixture, testConstructWithoutEncoder) {
-    EncodeConfiguration configuration(1080, 1920, NV_ENC_HEVC, 30, 30, 1024*1024);
-    ASSERT_ANY_THROW(EncodeBuffer(encodeAPI, configuration));
+    ASSERT_EQ(encoder.api().ValidatePresetGUID(preset_guid, NV_ENC_HEVC), NV_ENC_SUCCESS);
 }
 
 TEST_F(EncodeAPITestFixture, testEncodeFrame) {
-    EncodeConfiguration configuration(1080, 1920, NV_ENC_HEVC, 30, 30, 1024*1024);
-
-    ASSERT_EQ(encodeAPI.CreateEncoder(&configuration), NV_ENC_SUCCESS);
-
     {
-        EncodeBuffer encodeBuffer(encodeAPI, configuration);
+        EncodeBuffer encodeBuffer(encoder);
 
         std::scoped_lock{encodeBuffer};
-        EXPECT_EQ(encodeAPI.NvEncEncodeFrame(&encodeBuffer, nullptr, NV_ENC_PIC_STRUCT_FRAME), NV_ENC_SUCCESS);
+        EXPECT_EQ(encoder.api().NvEncEncodeFrame(&encodeBuffer, nullptr, NV_ENC_PIC_STRUCT_FRAME), NV_ENC_SUCCESS);
     }
-
-    EXPECT_EQ(encodeAPI.NvEncDestroyEncoder(), NV_ENC_SUCCESS);
 }

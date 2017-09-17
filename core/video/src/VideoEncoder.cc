@@ -6,6 +6,6 @@ std::vector<std::shared_ptr<EncodeBuffer>> VideoEncoder::CreateBuffers(const siz
 
     buffers.reserve(size);
     std::generate_n(std::back_inserter(buffers), size,
-                    [this]() { return std::make_shared<EncodeBuffer>(this->api(), this->configuration()); });
+                    [this]() { return std::make_shared<EncodeBuffer>(*this); });
     return buffers;
 }

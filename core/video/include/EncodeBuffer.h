@@ -7,99 +7,92 @@
 #include "VideoLock.h"
 #include "VideoEncoder.h"
 #include <mutex>
-#include <stdint.h>
 
-typedef struct _EncodeInputBuffer
+struct EncodeInputBuffer
 {
-    unsigned int      dwWidth;
-    unsigned int      dwHeight;
+    unsigned int      width;
+    unsigned int      height;
 #if defined (NV_WINDOWS)
-    IDirect3DSurface9 *pNV12Surface;
+    IDirect3DSurface9 *NV12Surface;
 #endif
-    CUdeviceptr       pNV12devPtr;
-    uint32_t          uNV12Stride;
-    CUdeviceptr       pNV12TempdevPtr;
-    uint32_t          uNV12TempStride;
-    void*             nvRegisteredResource;
-    NV_ENC_INPUT_PTR  hInputSurface;
-    NV_ENC_BUFFER_FORMAT bufferFmt;
-} EncodeInputBuffer;
+    CUdeviceptr       NV12devPtr;
+    uint32_t          NV12Stride;
+    CUdeviceptr       NV12TempdevPtr;
+    uint32_t          NV12TempStride;
+    void*             registered_resource;
+    NV_ENC_INPUT_PTR  input_surface;
+    NV_ENC_BUFFER_FORMAT buffer_format;
+};
 
-typedef struct _EncodeOutputBuffer
+struct EncodeOutputBuffer
 {
-    unsigned int          dwBitstreamBufferSize;
-    NV_ENC_OUTPUT_PTR     hBitstreamBuffer;
-    HANDLE                hOutputEvent;
-    bool                  bWaitOnEvent;
-    bool                  bEOSFlag;
-} EncodeOutputBuffer;
+    unsigned int          bitstreamBufferSize;
+    NV_ENC_OUTPUT_PTR     bitstreamBuffer;
+    HANDLE                outputEvent;
+    bool                  waitOnEvent;
+    bool                  EOSFlag;
+};
 
 struct EncodeBuffer
 {
-    EncodeOutputBuffer      stOutputBfr;
-    EncodeInputBuffer       stInputBfr;
-    EncodeAPI&              api;
-    const Configuration&     configuration; // TODO change this to const (possibly others)
+    EncodeOutputBuffer      output_buffer;
+    EncodeInputBuffer       input_buffer;
+    VideoEncoder&           encoder;
     const size_t            size;
 
     EncodeBuffer(const EncodeBuffer&& other) = delete;
 
     EncodeBuffer(const EncodeBuffer& other)
-            : EncodeBuffer(other.api, other.configuration, other.size)
-    { }
-
-    EncodeBuffer(VideoEncoder &encoder, const Configuration& configuration, size_t size=2*1024*1024)
-            : EncodeBuffer(encoder.api(), configuration, size)
+            : EncodeBuffer(other.encoder, other.size)
     { }
 
     // TODO is this size reasonable?
-    EncodeBuffer(EncodeAPI &api, const Configuration& configuration, const size_t size=2*1024*1024)
-            : stOutputBfr{0}, stInputBfr{0}, api(api), configuration(configuration), size(size) {
+    EncodeBuffer(VideoEncoder &encoder, size_t size=2*1024*1024)
+            : output_buffer{0}, input_buffer{0}, encoder(encoder), size(size) {
         NVENCSTATUS status;
 
-        if(configuration.height % 2 != 0)
+        if(encoder.configuration().height % 2 != 0)
             throw std::runtime_error("Buffer height must be even"); //TODO
-        else if(configuration.width % 2 != 0)
+        else if(encoder.configuration().width % 2 != 0)
             throw std::runtime_error("Buffer width must be even"); //TODO
-        //TODO if a decoder is required, accept a VideoDecoder as parameter rathern than api
-        else if(!api.encoderCreated())
+        else if(!encoder.api().encoderCreated())
             throw std::runtime_error("encoder not created"); //TODO
-        else if(cuMemAllocPitch(&stInputBfr.pNV12devPtr,
-                           (size_t*)&stInputBfr.uNV12Stride,
-                           configuration.width,
-                           configuration.height * 3 / 2,
+        else if(cuMemAllocPitch(&input_buffer.NV12devPtr,
+                           (size_t*)&input_buffer.NV12Stride,
+                           encoder.configuration().width,
+                           encoder.configuration().height * 3 / 2,
                            16) != CUDA_SUCCESS)
             throw std::runtime_error("NV_ENC_ERR_OUT_OF_MEMORY"); //tODO
-        else if((status = api.NvEncRegisterResource(
-                NV_ENC_INPUT_RESOURCE_TYPE_CUDADEVICEPTR, (void *)stInputBfr.pNV12devPtr,
-                configuration.width, configuration.height,
-                stInputBfr.uNV12Stride, &stInputBfr.nvRegisteredResource)) != NV_ENC_SUCCESS)
+        else if((status = encoder.api().NvEncRegisterResource(
+                NV_ENC_INPUT_RESOURCE_TYPE_CUDADEVICEPTR, (void *)input_buffer.NV12devPtr,
+                encoder.configuration().width, encoder.configuration().height,
+                input_buffer.NV12Stride, &input_buffer.registered_resource)) != NV_ENC_SUCCESS)
             throw std::runtime_error(std::to_string(status)); //TODO
-        else if((status = api.NvEncCreateBitstreamBuffer(
-                size, &stOutputBfr.hBitstreamBuffer)) != NV_ENC_SUCCESS)
+        else if((status = encoder.api().NvEncCreateBitstreamBuffer(
+                size, &output_buffer.bitstreamBuffer)) != NV_ENC_SUCCESS)
             throw std::runtime_error("997"); //TODO
 
-        stInputBfr.bufferFmt = NV_ENC_BUFFER_FORMAT_NV12_PL;
-        stInputBfr.dwWidth = configuration.width;
-        stInputBfr.dwHeight = configuration.height;
-        stOutputBfr.dwBitstreamBufferSize = size;
-        stOutputBfr.hOutputEvent = nullptr;
+        input_buffer.buffer_format = NV_ENC_BUFFER_FORMAT_NV12_PL;
+        input_buffer.width = encoder.configuration().width;
+        input_buffer.height = encoder.configuration().height;
+        output_buffer.bitstreamBufferSize = size;
+        output_buffer.outputEvent = nullptr;
     }
 
     ~EncodeBuffer() {
         NVENCSTATUS status;
 
-        if((status = api.NvEncDestroyBitstreamBuffer(stOutputBfr.hBitstreamBuffer)) != NV_ENC_SUCCESS)
+        if((status = encoder.api().NvEncDestroyBitstreamBuffer(output_buffer.bitstreamBuffer)) != NV_ENC_SUCCESS)
             printf("log\n"); //TODO log
-        else if((api.NvEncUnregisterResource(stInputBfr.nvRegisteredResource)) != NV_ENC_SUCCESS)
+        else if((encoder.api().NvEncUnregisterResource(input_buffer.registered_resource)) != NV_ENC_SUCCESS)
             printf("log\n"); //TODO log
-        else if(cuMemFree(stInputBfr.pNV12devPtr) != CUDA_SUCCESS)
+        else if(cuMemFree(input_buffer.NV12devPtr) != CUDA_SUCCESS)
             printf("log\n"); //TODO log
     }
 
     void copy(VideoLock &lock, const Frame &frame) {
-        if(frame.width() != stInputBfr.dwWidth ||
-           frame.height() != stInputBfr.dwHeight) {
+        if(frame.width() != input_buffer.width ||
+           frame.height() != input_buffer.height) {
             throw std::runtime_error("frame size does not match buffer size"); //TODO
         }
 
@@ -117,18 +110,18 @@ struct EncodeBuffer
 
             .dstMemoryType = CU_MEMORYTYPE_DEVICE,
             .dstHost = nullptr,
-            .dstDevice = static_cast<CUdeviceptr>(stInputBfr.pNV12devPtr),
+            .dstDevice = static_cast<CUdeviceptr>(input_buffer.NV12devPtr),
             .dstArray = nullptr,
-            .dstPitch = stInputBfr.uNV12Stride,
+            .dstPitch = input_buffer.NV12Stride,
 
-            .WidthInBytes = stInputBfr.dwWidth,
-            .Height = stInputBfr.dwHeight * 3 / 2
+            .WidthInBytes = input_buffer.width,
+            .Height = input_buffer.height * 3 / 2
         });
     }
 
     void copy(VideoLock &lock, const Frame &frame, size_t top, size_t left) {
-        if (frame.width() - left < stInputBfr.dwWidth ||
-            frame.height() - top < stInputBfr.dwHeight) {
+        if (frame.width() - left < input_buffer.width ||
+            frame.height() - top < input_buffer.height) {
             throw std::runtime_error("buffer size too small for frame copy"); //TODO
         }
 
@@ -145,12 +138,12 @@ struct EncodeBuffer
                 dstY:          0,
                 dstMemoryType: CU_MEMORYTYPE_DEVICE,
                 dstHost:       nullptr,
-                dstDevice:     static_cast<CUdeviceptr>(stInputBfr.pNV12devPtr),
+                dstDevice:     static_cast<CUdeviceptr>(input_buffer.NV12devPtr),
                 dstArray:      nullptr,
-                dstPitch:      stInputBfr.uNV12Stride,
+                dstPitch:      input_buffer.NV12Stride,
 
-                WidthInBytes:  stInputBfr.dwWidth,
-                Height:        stInputBfr.dwHeight,
+                WidthInBytes:  input_buffer.width,
+                Height:        input_buffer.height,
         };
 
         CUDA_MEMCPY2D chromaPlaneParameters = {
@@ -163,15 +156,15 @@ struct EncodeBuffer
                 srcPitch:      frame.pitch(),
 
                 dstXInBytes:   0,
-                dstY:          stInputBfr.dwHeight,
+                dstY:          input_buffer.height,
                 dstMemoryType: CU_MEMORYTYPE_DEVICE,
                 dstHost:       nullptr,
-                dstDevice:     static_cast<CUdeviceptr>(stInputBfr.pNV12devPtr),
+                dstDevice:     static_cast<CUdeviceptr>(input_buffer.NV12devPtr),
                 dstArray:      nullptr,
-                dstPitch:      stInputBfr.uNV12Stride,
+                dstPitch:      input_buffer.NV12Stride,
 
-                WidthInBytes:  stInputBfr.dwWidth,
-                Height:        stInputBfr.dwHeight / 2
+                WidthInBytes:  input_buffer.width,
+                Height:        input_buffer.height / 2
         };
 
         copy(lock, {lumaPlaneParameters, chromaPlaneParameters});
@@ -198,22 +191,22 @@ struct EncodeBuffer
 
     void lock() {
         NVENCSTATUS status;
-        if((status = api.NvEncMapInputResource(stInputBfr.nvRegisteredResource,
-                                               &stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
+        if((status = encoder.api().NvEncMapInputResource(input_buffer.registered_resource,
+                                                         &input_buffer.input_surface)) != NV_ENC_SUCCESS)
             throw std::runtime_error(std::to_string(status)); //TODO
     }
 
     void unlock() {
         NVENCSTATUS status;
-        if((status = api.NvEncUnmapInputResource(stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
+        if((status = encoder.api().NvEncUnmapInputResource(input_buffer.input_surface)) != NV_ENC_SUCCESS)
             throw std::runtime_error(std::to_string(status)); //TODO
     }
 };
 
 struct MotionEstimationBuffer
 {
-    EncodeOutputBuffer      stOutputBfr;
-    EncodeInputBuffer       stInputBfr[2];
+    EncodeOutputBuffer      output_buffer;
+    EncodeInputBuffer       input_buffer[2];
     unsigned int            inputFrameIndex;
     unsigned int            referenceFrameIndex;
 };

@@ -224,13 +224,13 @@ NVENCSTATUS EncodeAPI::NvRunMotionEstimationOnly(MotionEstimationBuffer *pMEBuff
     NVENCSTATUS nvStatus;
     NV_ENC_MEONLY_PARAMS stMEOnlyParams;
     SET_VER(stMEOnlyParams,NV_ENC_MEONLY_PARAMS);
-    stMEOnlyParams.referenceFrame = pMEBuffer->stInputBfr[0].hInputSurface;
-    stMEOnlyParams.inputBuffer = pMEBuffer->stInputBfr[1].hInputSurface;
-    stMEOnlyParams.bufferFmt = pMEBuffer->stInputBfr[1].bufferFmt;
-    stMEOnlyParams.inputWidth = pMEBuffer->stInputBfr[1].dwWidth;
-    stMEOnlyParams.inputHeight = pMEBuffer->stInputBfr[1].dwHeight;
-    stMEOnlyParams.mvBuffer = pMEBuffer->stOutputBfr.hBitstreamBuffer;
-    stMEOnlyParams.completionEvent = pMEBuffer->stOutputBfr.hOutputEvent;
+    stMEOnlyParams.referenceFrame = pMEBuffer->input_buffer[0].input_surface;
+    stMEOnlyParams.inputBuffer = pMEBuffer->input_buffer[1].input_surface;
+    stMEOnlyParams.bufferFmt = pMEBuffer->input_buffer[1].buffer_format;
+    stMEOnlyParams.inputWidth = pMEBuffer->input_buffer[1].width;
+    stMEOnlyParams.inputHeight = pMEBuffer->input_buffer[1].height;
+    stMEOnlyParams.mvBuffer = pMEBuffer->output_buffer.bitstreamBuffer;
+    stMEOnlyParams.completionEvent = pMEBuffer->output_buffer.outputEvent;
     nvStatus = m_pEncodeAPI->nvEncRunMotionEstimationOnly(encodeSessionHandle, &stMEOnlyParams);
     return nvStatus;
 }
@@ -1073,37 +1073,37 @@ NVENCSTATUS EncodeAPI::ProcessOutput(FILE* output, const EncodeBuffer *pEncodeBu
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    if (pEncodeBuffer->stOutputBfr.hBitstreamBuffer == NULL && pEncodeBuffer->stOutputBfr.bEOSFlag == FALSE)
+    if (pEncodeBuffer->output_buffer.bitstreamBuffer == NULL && pEncodeBuffer->output_buffer.EOSFlag == FALSE)
     {
         return NV_ENC_ERR_INVALID_PARAM;
     }
 
-    if (pEncodeBuffer->stOutputBfr.bWaitOnEvent == TRUE)
+    if (pEncodeBuffer->output_buffer.waitOnEvent == TRUE)
     {
-        if (!pEncodeBuffer->stOutputBfr.hOutputEvent)
+        if (!pEncodeBuffer->output_buffer.outputEvent)
         {
             return NV_ENC_ERR_INVALID_PARAM;
         }
 #if defined(NV_WINDOWS)
-        WaitForSingleObject(pEncodeBuffer->stOutputBfr.hOutputEvent, INFINITE);
+        WaitForSingleObject(pEncodeBuffer->output_buffer.outputEvent, INFINITE);
 #endif
     }
 
-    if (pEncodeBuffer->stOutputBfr.bEOSFlag)
+    if (pEncodeBuffer->output_buffer.EOSFlag)
         return NV_ENC_SUCCESS;
 
     nvStatus = NV_ENC_SUCCESS;
     NV_ENC_LOCK_BITSTREAM lockBitstreamData;
     memset(&lockBitstreamData, 0, sizeof(lockBitstreamData));
     SET_VER(lockBitstreamData, NV_ENC_LOCK_BITSTREAM);
-    lockBitstreamData.outputBitstream = pEncodeBuffer->stOutputBfr.hBitstreamBuffer;
+    lockBitstreamData.outputBitstream = pEncodeBuffer->output_buffer.bitstreamBuffer;
     lockBitstreamData.doNotWait = false;
 
     nvStatus = m_pEncodeAPI->nvEncLockBitstream(encodeSessionHandle, &lockBitstreamData);
     if (nvStatus == NV_ENC_SUCCESS)
     {
         fwrite(lockBitstreamData.bitstreamBufferPtr, 1, lockBitstreamData.bitstreamSizeInBytes, output);
-        nvStatus = m_pEncodeAPI->nvEncUnlockBitstream(encodeSessionHandle, pEncodeBuffer->stOutputBfr.hBitstreamBuffer);
+        nvStatus = m_pEncodeAPI->nvEncUnlockBitstream(encodeSessionHandle, pEncodeBuffer->output_buffer.bitstreamBuffer);
     }
     else
     {
@@ -1117,31 +1117,31 @@ NVENCSTATUS EncodeAPI::ProcessMVOutput(FILE* output, const MotionEstimationBuffe
 {
     NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
 
-    if (pMEBuffer->stOutputBfr.hBitstreamBuffer == NULL && pMEBuffer->stOutputBfr.bEOSFlag == FALSE)
+    if (pMEBuffer->output_buffer.bitstreamBuffer == NULL && pMEBuffer->output_buffer.EOSFlag == FALSE)
     {
         return NV_ENC_ERR_INVALID_PARAM;
     }
 
-    if (pMEBuffer->stOutputBfr.bWaitOnEvent == TRUE)
+    if (pMEBuffer->output_buffer.waitOnEvent == TRUE)
     {
-        if (!pMEBuffer->stOutputBfr.hOutputEvent)
+        if (!pMEBuffer->output_buffer.outputEvent)
         {
             return NV_ENC_ERR_INVALID_PARAM;
         }
 #if defined(NV_WINDOWS)
-        WaitForSingleObject(pMEBuffer->stOutputBfr.hOutputEvent, INFINITE);
+        WaitForSingleObject(pMEBuffer->output_buffer.outputEvent, INFINITE);
 #endif
     }
 
-    if (pMEBuffer->stOutputBfr.bEOSFlag)
+    if (pMEBuffer->output_buffer.EOSFlag)
         return NV_ENC_SUCCESS;
 
     nvStatus = NV_ENC_SUCCESS;
     NV_ENC_LOCK_BITSTREAM lockBitstreamData;
     memset(&lockBitstreamData, 0, sizeof(lockBitstreamData));
     SET_VER(lockBitstreamData, NV_ENC_LOCK_BITSTREAM);
-    lockBitstreamData.outputBitstream = pMEBuffer->stOutputBfr.hBitstreamBuffer;
-    lockBitstreamData.doNotWait = false;
+    lockBitstreamData.outputBitstream = pMEBuffer->output_buffer.bitstreamBuffer;
+    lockBitstreamData.doNotWait = 0;
 
     nvStatus = m_pEncodeAPI->nvEncLockBitstream(encodeSessionHandle, &lockBitstreamData);
     if (nvStatus == NV_ENC_SUCCESS)
@@ -1184,7 +1184,7 @@ NVENCSTATUS EncodeAPI::ProcessMVOutput(FILE* output, const MotionEstimationBuffe
             }
             fprintf(output, "\n");
         }
-        nvStatus = m_pEncodeAPI->nvEncUnlockBitstream(encodeSessionHandle, pMEBuffer->stOutputBfr.hBitstreamBuffer);
+        nvStatus = m_pEncodeAPI->nvEncUnlockBitstream(encodeSessionHandle, pMEBuffer->output_buffer.bitstreamBuffer);
     }
     else
     {
@@ -1252,12 +1252,12 @@ NVENCSTATUS EncodeAPI::NvEncEncodeFrame(EncodeBuffer *pEncodeBuffer, NvEncPictur
     SET_VER(encPicParams, NV_ENC_PIC_PARAMS);
 
 
-    encPicParams.inputBuffer = pEncodeBuffer->stInputBfr.hInputSurface;
-    encPicParams.bufferFmt = pEncodeBuffer->stInputBfr.bufferFmt;
-    encPicParams.inputWidth = pEncodeBuffer->configuration.width;
-    encPicParams.inputHeight = pEncodeBuffer->configuration.height;
-    encPicParams.outputBitstream = pEncodeBuffer->stOutputBfr.hBitstreamBuffer;
-    encPicParams.completionEvent = pEncodeBuffer->stOutputBfr.hOutputEvent;
+    encPicParams.inputBuffer = pEncodeBuffer->input_buffer.input_surface;
+    encPicParams.bufferFmt = pEncodeBuffer->input_buffer.buffer_format;
+    encPicParams.inputWidth = pEncodeBuffer->encoder.configuration().width;
+    encPicParams.inputHeight = pEncodeBuffer->encoder.configuration().height;
+    encPicParams.outputBitstream = pEncodeBuffer->output_buffer.bitstreamBuffer;
+    encPicParams.completionEvent = pEncodeBuffer->output_buffer.outputEvent;
     encPicParams.inputTimeStamp = m_EncodeIdx;
     encPicParams.pictureStruct = ePicStruct;
     encPicParams.qpDeltaMap = qpDeltaMapArray;
