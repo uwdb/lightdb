@@ -1,10 +1,11 @@
 #ifndef VISUALCLOUD_ENCODEBUFFER_H
 #define VISUALCLOUD_ENCODEBUFFER_H
 
+#include "Frame.h"
 #include "Configuration.h"
-#include "nvEncodeAPI.h"
 #include "GPUContext.h"
 #include "VideoLock.h"
+#include "VideoEncoder.h"
 #include <mutex>
 #include <stdint.h>
 
@@ -33,7 +34,7 @@ typedef struct _EncodeOutputBuffer
     bool                  bEOSFlag;
 } EncodeOutputBuffer;
 
-typedef struct _EncodeBuffer
+struct EncodeBuffer
 {
     EncodeOutputBuffer      stOutputBfr;
     EncodeInputBuffer       stInputBfr;
@@ -41,26 +42,21 @@ typedef struct _EncodeBuffer
     const Configuration&     configuration; // TODO change this to const (possibly others)
     const size_t            size;
 
-    _EncodeBuffer(const _EncodeBuffer& other)
-            : _EncodeBuffer(other.api, other.configuration, other.size)
+    EncodeBuffer(const EncodeBuffer&& other) = delete;
+
+    EncodeBuffer(const EncodeBuffer& other)
+            : EncodeBuffer(other.api, other.configuration, other.size)
     { }
 
-    _EncodeBuffer(const _EncodeBuffer&& other) = delete;
-/*            : stOutputBfr(other.stOutputBfr), stInputBfr(other.stInputBfr),
-              api(other.api), configuration(other.configuration), size(other.size),
-              owner(true) {
-        //TODO I removed this, did I mean to?
-        //other.owner = false;
-    }*/
+    EncodeBuffer(VideoEncoder &encoder, const Configuration& configuration, size_t size=2*1024*1024)
+            : EncodeBuffer(encoder.api(), configuration, size)
+    { }
 
     // TODO is this size reasonable?
-    _EncodeBuffer(EncodeAPI &api, const Configuration& configuration, size_t size=2*1024*1024)
+    EncodeBuffer(EncodeAPI &api, const Configuration& configuration, const size_t size=2*1024*1024)
             : stOutputBfr{0}, stInputBfr{0}, api(api), configuration(configuration), size(size) {
-    //owner(true) {
         NVENCSTATUS status;
 
-        //if((status = api.CreateEncoder(&configuration)) != NV_ENC_SUCCESS)
-        //    throw status; //TODO
         if(configuration.height % 2 != 0)
             throw std::runtime_error("Buffer height must be even"); //TODO
         else if(configuration.width % 2 != 0)
@@ -79,9 +75,6 @@ typedef struct _EncodeBuffer
                 configuration.width, configuration.height,
                 stInputBfr.uNV12Stride, &stInputBfr.nvRegisteredResource)) != NV_ENC_SUCCESS)
             throw std::runtime_error(std::to_string(status)); //TODO
-//        else if((status = api.NvEncMapInputResource(stInputBfr.nvRegisteredResource,
-//                                                    &stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
-//            throw "998"; //TODO
         else if((status = api.NvEncCreateBitstreamBuffer(
                 size, &stOutputBfr.hBitstreamBuffer)) != NV_ENC_SUCCESS)
             throw std::runtime_error("997"); //TODO
@@ -93,19 +86,95 @@ typedef struct _EncodeBuffer
         stOutputBfr.hOutputEvent = nullptr;
     }
 
-    ~_EncodeBuffer() {
+    ~EncodeBuffer() {
         NVENCSTATUS status;
 
-//        if(!owner)
-  //          ;
         if((status = api.NvEncDestroyBitstreamBuffer(stOutputBfr.hBitstreamBuffer)) != NV_ENC_SUCCESS)
             printf("log\n"); //TODO log
-//        else if((status = api.NvEncUnmapInputResource(stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
-//            printf("log\n"); //TODO log
         else if((api.NvEncUnregisterResource(stInputBfr.nvRegisteredResource)) != NV_ENC_SUCCESS)
             printf("log\n"); //TODO log
         else if(cuMemFree(stInputBfr.pNV12devPtr) != CUDA_SUCCESS)
             printf("log\n"); //TODO log
+    }
+
+    void copy(VideoLock &lock, const Frame &frame) {
+        if(frame.width() != stInputBfr.dwWidth ||
+           frame.height() != stInputBfr.dwHeight) {
+            throw std::runtime_error("frame size does not match buffer size"); //TODO
+        }
+
+        copy(lock, {
+            .srcXInBytes = 0,
+            .srcY = 0,
+            .srcMemoryType = CU_MEMORYTYPE_DEVICE,
+            .srcHost = nullptr,
+            .srcDevice = frame.handle(),
+            .srcArray = nullptr,
+            .srcPitch = frame.pitch(),
+
+            .dstXInBytes = 0,
+            .dstY = 0,
+
+            .dstMemoryType = CU_MEMORYTYPE_DEVICE,
+            .dstHost = nullptr,
+            .dstDevice = static_cast<CUdeviceptr>(stInputBfr.pNV12devPtr),
+            .dstArray = nullptr,
+            .dstPitch = stInputBfr.uNV12Stride,
+
+            .WidthInBytes = stInputBfr.dwWidth,
+            .Height = stInputBfr.dwHeight * 3 / 2
+        });
+    }
+
+    void copy(VideoLock &lock, const Frame &frame, size_t top, size_t left) {
+        if (frame.width() - left < stInputBfr.dwWidth ||
+            frame.height() - top < stInputBfr.dwHeight) {
+            throw std::runtime_error("buffer size too small for frame copy"); //TODO
+        }
+
+        CUDA_MEMCPY2D lumaPlaneParameters = {
+                srcXInBytes:   left,
+                srcY:          top,
+                srcMemoryType: CU_MEMORYTYPE_DEVICE,
+                srcHost:       nullptr,
+                srcDevice:     frame.handle(),
+                srcArray:      nullptr,
+                srcPitch:      frame.pitch(),
+
+                dstXInBytes:   0,
+                dstY:          0,
+                dstMemoryType: CU_MEMORYTYPE_DEVICE,
+                dstHost:       nullptr,
+                dstDevice:     static_cast<CUdeviceptr>(stInputBfr.pNV12devPtr),
+                dstArray:      nullptr,
+                dstPitch:      stInputBfr.uNV12Stride,
+
+                WidthInBytes:  stInputBfr.dwWidth,
+                Height:        stInputBfr.dwHeight,
+        };
+
+        CUDA_MEMCPY2D chromaPlaneParameters = {
+                srcXInBytes:   left,
+                srcY:          (frame.height() + top) / 2,
+                srcMemoryType: CU_MEMORYTYPE_DEVICE,
+                srcHost:       nullptr,
+                srcDevice:     frame.handle(),
+                srcArray:      nullptr,
+                srcPitch:      frame.pitch(),
+
+                dstXInBytes:   0,
+                dstY:          stInputBfr.dwHeight,
+                dstMemoryType: CU_MEMORYTYPE_DEVICE,
+                dstHost:       nullptr,
+                dstDevice:     static_cast<CUdeviceptr>(stInputBfr.pNV12devPtr),
+                dstArray:      nullptr,
+                dstPitch:      stInputBfr.uNV12Stride,
+
+                WidthInBytes:  stInputBfr.dwWidth,
+                Height:        stInputBfr.dwHeight / 2
+        };
+
+        copy(lock, {lumaPlaneParameters, chromaPlaneParameters});
     }
 
     void copy(VideoLock &lock, const CUDA_MEMCPY2D &parameters) {
@@ -139,17 +208,14 @@ typedef struct _EncodeBuffer
         if((status = api.NvEncUnmapInputResource(stInputBfr.hInputSurface)) != NV_ENC_SUCCESS)
             throw std::runtime_error(std::to_string(status)); //TODO
     }
+};
 
-//private:
-  //  bool owner;
-} EncodeBuffer;
-
-typedef struct _MotionEstimationBuffer
+struct MotionEstimationBuffer
 {
     EncodeOutputBuffer      stOutputBfr;
     EncodeInputBuffer       stInputBfr[2];
     unsigned int            inputFrameIndex;
     unsigned int            referenceFrameIndex;
-} MotionEstimationBuffer;
+};
 
 #endif //VISUALCLOUD_ENCODEBUFFER_H

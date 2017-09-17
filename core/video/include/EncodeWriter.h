@@ -1,8 +1,9 @@
 #ifndef VISUALCLOUD_ENCODEWRITER_H
 #define VISUALCLOUD_ENCODEWRITER_H
 
-#include <system_error>
 #include "VideoEncoder.h"
+#include "EncodeBuffer.h"
+#include <system_error>
 
 class EncodeWriter {
 public:

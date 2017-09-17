@@ -20,7 +20,7 @@ public:
               decoder_(decodeConfiguration, frameQueue_, lock_)
     { }
 
-    NVENCSTATUS transcode(DecodeReader &reader, EncodeWriter &writer) {
+    void transcode(DecodeReader &reader, EncodeWriter &writer) {
         NVENCSTATUS status;
         VideoDecoderSession decodeSession(decoder_, reader);
         VideoEncoderSession encodeSession(encoder_, writer);
@@ -32,11 +32,8 @@ public:
             auto frame = decodeSession.decode();
 
             for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++)
-                if((status = encodeSession.Encode(frame)) != NV_ENC_SUCCESS)
-                    return status;
+                encodeSession.Encode(frame);
         }
-
-        return NV_ENC_SUCCESS;
     }
 
     VideoEncoder &encoder() { return encoder_; }

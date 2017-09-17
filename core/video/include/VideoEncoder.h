@@ -1,12 +1,14 @@
 #ifndef _VIDEO_ENCODER
 #define _VIDEO_ENCODER
 
-#include "EncodeBuffer.h"
 #include "EncodeAPI.h"
+#include "Configuration.h"
 #include "VideoLock.h"
 #include <memory>
 #include <mutex>
 #include <vector>
+
+struct EncodeBuffer;
 
 class VideoEncoder {
 public:
@@ -57,14 +59,7 @@ private:
   size_t minimumBufferCount() const { return configuration().numB + 4; }
 
 private:
-  std::vector<std::shared_ptr<EncodeBuffer>> CreateBuffers(const size_t size) {
-      std::vector<std::shared_ptr<EncodeBuffer>> buffers;
-
-      buffers.reserve(size);
-      std::generate_n(std::back_inserter(buffers), size,
-                      [this]() { return std::make_shared<EncodeBuffer>(this->api(), this->configuration()); });
-      return buffers;
-  }
+  std::vector<std::shared_ptr<EncodeBuffer>> CreateBuffers(const size_t size);
 };
 
 #endif

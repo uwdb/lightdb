@@ -30,7 +30,7 @@ TEST_F(VideoEncoderSessionTestFixture, testConstructor) {
 }
 
 TEST_F(VideoEncoderSessionTestFixture, testFlush) {
-    ASSERT_EQ(session.Flush(), NV_ENC_SUCCESS);
+    ASSERT_NO_THROW(session.Flush());
     EXPECT_EQ(session.frameCount(), 0);
 }
 
@@ -47,11 +47,11 @@ TEST_F(VideoEncoderSessionTestFixture, testEncodeSingleFrame) {
 
     Frame inputFrame(handle, static_cast<unsigned int>(pitch), configuration, NV_ENC_PIC_STRUCT_FRAME);
 
-    ASSERT_EQ(session.Encode(inputFrame), NV_ENC_SUCCESS);
+    ASSERT_NO_THROW(session.Encode(inputFrame));
 
     EXPECT_EQ(session.frameCount(), 1);
 
-    EXPECT_EQ(session.Flush(), NV_ENC_SUCCESS);
+    EXPECT_NO_THROW(session.Flush());
 
     EXPECT_VIDEO_VALID(FILENAME);
     EXPECT_VIDEO_FRAMES(FILENAME, 1);
@@ -76,12 +76,12 @@ TEST_F(VideoEncoderSessionTestFixture, testEncodeMultipleFrames) {
     Frame inputFrame(handle, static_cast<unsigned int>(pitch), configuration, NV_ENC_PIC_STRUCT_FRAME);
 
     for(int i = 0; i < count; i++) {
-        ASSERT_EQ(session.Encode(inputFrame), NV_ENC_SUCCESS);
+        ASSERT_NO_THROW(session.Encode(inputFrame));
     }
 
     EXPECT_EQ(session.frameCount(), count);
 
-    EXPECT_EQ(session.Flush(), NV_ENC_SUCCESS);
+    EXPECT_NO_THROW(session.Flush());
     EXPECT_VIDEO_VALID(FILENAME);
     EXPECT_VIDEO_FRAMES(FILENAME, 60);
     EXPECT_VIDEO_RESOLUTION(FILENAME, configuration.height, configuration.width);

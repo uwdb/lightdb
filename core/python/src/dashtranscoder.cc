@@ -57,10 +57,10 @@ public:
     FileDecodeReader reader(inputFilename);
     FileEncodeWriter writer(gpuTranscoder.encoder().api(), outputFilename);
 
-    if (gpuTranscoder.transcode(reader, writer) != 0)
+    gpuTranscoder.transcode(reader, writer);
     //if (gpuTranscoder.transcode(std::string(inputFilename), std::string(outputFilename)) != 0)
-      throw std::runtime_error("transcode error");
-    else if ((outputDataLength = lseek(outputDescriptor, 0, SEEK_END)) < 0)
+      //throw std::runtime_error("transcode error");
+    if ((outputDataLength = lseek(outputDescriptor, 0, SEEK_END)) < 0)
       throw std::runtime_error("Output length seek to end");
     else if (lseek(outputDescriptor, 0, SEEK_SET) != 0)
       throw std::runtime_error("Output length seek to start");

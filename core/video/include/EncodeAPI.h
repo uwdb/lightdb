@@ -9,8 +9,8 @@
 #include <functional>
 
 struct EncodeConfiguration;
-typedef struct _EncodeBuffer EncodeBuffer;
-typedef struct _MotionEstimationBuffer MotionEstimationBuffer;
+struct EncodeBuffer;
+struct MotionEstimationBuffer;
 
 #define SET_VER(configStruct, type) {configStruct.version = type##_VER;}
 

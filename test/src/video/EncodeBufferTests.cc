@@ -1,5 +1,6 @@
 #include "EncodeAPI.h"
 #include "VideoEncoder.h"
+#include "EncodeBuffer.h"
 #include <gtest/gtest.h>
 
 class EncodeBufferTestFixture : public testing::Test {

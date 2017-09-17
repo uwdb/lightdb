@@ -30,7 +30,7 @@ TEST_F(TranscoderTestFixture, testFileTranscoder) {
     FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
 
     ASSERT_SECS(
-        ASSERT_EQ(transcoder.transcode(reader, writer), NV_ENC_SUCCESS),
+            ASSERT_NO_THROW(transcoder.transcode(reader, writer)),
         1.5);
 
     EXPECT_VIDEO_VALID(FILENAME(0));
@@ -46,7 +46,7 @@ TEST_F(TranscoderTestFixture, testTwoFileTranscoder) {
     FileEncodeWriter writer2(transcoder.encoder().api(), FILENAME(1));
 
     ASSERT_SECS(
-        ASSERT_EQ(transcoder.transcode(reader1, writer1), NV_ENC_SUCCESS),
+        ASSERT_NO_THROW(transcoder.transcode(reader1, writer1)),
         1.5);
 
     EXPECT_VIDEO_VALID(FILENAME(0));
@@ -55,7 +55,7 @@ TEST_F(TranscoderTestFixture, testTwoFileTranscoder) {
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
 
     ASSERT_SECS(
-        ASSERT_EQ(transcoder.transcode(reader2, writer2), NV_ENC_SUCCESS),
+        ASSERT_NO_THROW(transcoder.transcode(reader2, writer2)),
         1.5);
 
     EXPECT_VIDEO_VALID(FILENAME(1));
@@ -70,7 +70,7 @@ TEST_F(TranscoderTestFixture, testMultipleFileTranscoder) {
             FileDecodeReader reader("resources/test-pattern.h264");
             FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(i));
 
-            EXPECT_EQ(transcoder.transcode(reader, writer), NV_ENC_SUCCESS);
+            EXPECT_NO_THROW(transcoder.transcode(reader, writer));
         }, 3.5);
 
     for(int i = 0; i < 10; i++) {

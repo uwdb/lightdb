@@ -3,7 +3,6 @@
 
 #include "dynlink_nvcuvid.h"
 #include "VideoDecoder.h"
-#include "VideoEncoder.h"
 
 class Frame {
 public:
