@@ -38,6 +38,9 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 find_package(Boost COMPONENTS python REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
+find_package(FFmpeg REQUIRED)
+include_directories(${FFMPEG_INCLUDE_DIRS})
+
 find_package(GTest)
 find_package (Glog REQUIRED)
 find_package(ClangTidy)
