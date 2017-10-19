@@ -8,6 +8,7 @@
 #include "DecodeReader.h"
 #include "EncodeWriter.h"
 #include "FrameRateAlignment.h"
+#include <numeric>
 
 
 class Transcoder {
@@ -21,6 +22,19 @@ public:
     { }
 
     void transcode(DecodeReader &reader, EncodeWriter &writer) {
+        transcode(reader, writer, [](Frame& frame) -> Frame& { return frame; });
+    }
+
+    void transcode(DecodeReader &reader, EncodeWriter &writer, std::vector<FrameTransform> transforms) {
+        transcode(reader, writer, [transforms](Frame& frame) -> Frame& {
+            return std::accumulate(
+                    transforms.begin(), transforms.end(),
+                    std::ref(frame),
+                    [](auto& frame, auto& f) -> Frame& { return f(frame); });
+        });
+    }
+
+    void transcode(DecodeReader &reader, EncodeWriter &writer, FrameTransform transform) {
         NVENCSTATUS status;
         VideoDecoderSession decodeSession(decoder_, reader);
         VideoEncoderSession encodeSession(encoder_, writer);
@@ -29,10 +43,11 @@ public:
 
         while (!decoder_.frame_queue().isComplete()) {
             auto dropOrDuplicate = alignment.dropOrDuplicate(framesDecoded++, framesEncoded);
-            auto frame = decodeSession.decode();
+            auto decodedFrame = decodeSession.decode();
+            auto processedFrame = transform(decodedFrame);
 
             for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++)
-                encodeSession.Encode(frame);
+                encodeSession.Encode(processedFrame);
         }
     }
 

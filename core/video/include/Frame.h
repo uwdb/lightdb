@@ -6,7 +6,7 @@
 
 class Frame {
 public:
-    Frame(Frame &frame)
+    Frame(const Frame &frame)
         : Frame(frame.handle(), frame.pitch(), frame.height(), frame.width(), frame.type())
     { }
 
@@ -79,5 +79,7 @@ private:
     const CudaDecoder &decoder_;
     const std::shared_ptr<CUVIDPARSERDISPINFO> parameters_;
 };
+
+typedef std::function<Frame&(Frame&)> FrameTransform;
 
 #endif //VISUALCLOUD_FRAME_H

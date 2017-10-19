@@ -10,6 +10,7 @@
 #include "ThreadPool.h"
 #include "FrameRateAlignment.h"
 #include <vector>
+#include <numeric>
 
 class TileVideoEncoder {
 public:
@@ -32,6 +33,21 @@ public:
     }
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers) {
+      tile(reader, writers, [](Frame& frame) -> Frame& { return frame; });
+    }
+
+    NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers,
+                     std::vector<FrameTransform> transforms) {
+      tile(reader, writers, [transforms](Frame& frame) -> Frame& {
+          return std::accumulate(
+                  transforms.begin(), transforms.end(),
+                  std::ref(frame),
+                  [](auto& frame, auto& f) -> Frame& { return f(frame); });
+      });
+    }
+
+    NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers,
+                     FrameTransform transform) {
       NVENCSTATUS status;
       VideoDecoderSession decodeSession(decoder_, reader);
       auto sessions = CreateEncoderSessions(writers);
@@ -44,14 +60,15 @@ public:
       while (!decoder_.frame_queue().isComplete()) {
         auto dropOrDuplicate = alignment.dropOrDuplicate(framesDecoded++, framesEncoded);
         auto decodedFrame = decodeSession.decode();
+        auto processedFrame = transform(decodedFrame);
 
         for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++) {
           for(auto j = 0; j < sessions.size(); j++) {
             auto &session = sessions[j];
             auto row = j / columns(), column = j % columns();
 
-            pool.push([&session, &decodedFrame, row, column]() {
-                session.Encode(decodedFrame,
+            pool.push([&session, &processedFrame, row, column]() {
+                session.Encode(processedFrame,
                                row * session.encoder().configuration().height,
                                column * session.encoder().configuration().width);
             });
