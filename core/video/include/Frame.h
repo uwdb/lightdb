@@ -27,6 +27,8 @@ public:
             : handle_(handle), pitch_(pitch), height_(height), width_(width), type_(type)
     { }
 
+    virtual ~Frame() { }
+
     CUdeviceptr handle() const { return handle_; }
     unsigned int pitch() const { return pitch_; }
     unsigned int height() const { return height_; }

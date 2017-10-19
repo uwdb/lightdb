@@ -80,3 +80,65 @@ TEST_F(TranscoderTestFixture, testMultipleFileTranscoder) {
         EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
     }
 }
+
+TEST_F(TranscoderTestFixture, testTranscoderWithIdentityTransform) {
+    FileDecodeReader reader("resources/test-pattern.h264");
+    FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
+    FrameTransform identityTransform = [](Frame& frame) -> Frame& { return frame; };
+
+    ASSERT_SECS(
+            ASSERT_NO_THROW(transcoder.transcode(reader, writer, identityTransform)),
+            1.5);
+
+    EXPECT_VIDEO_VALID(FILENAME(0));
+    EXPECT_VIDEO_FRAMES(FILENAME(0), 99);
+    EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
+    EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
+}
+
+TEST_F(TranscoderTestFixture, testTranscoderWithComplexTransform) {
+    FileDecodeReader reader("resources/test-pattern.h264");
+    FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
+    FrameTransform halfBlackTransform = [](Frame& frame) -> Frame& {
+        DecodedFrame* decodedFrame = dynamic_cast<DecodedFrame*>(&frame);
+        assert(decodedFrame != nullptr);
+        assert(cuMemsetD2D8(decodedFrame->handle(), decodedFrame->pitch(), 0,
+                             decodedFrame->width() / 2, decodedFrame->height()) == CUDA_SUCCESS);
+        return *decodedFrame;
+    };
+
+    ASSERT_SECS(
+            ASSERT_NO_THROW(transcoder.transcode(reader, writer, halfBlackTransform)),
+            1.5);
+
+    EXPECT_VIDEO_VALID(FILENAME(0));
+    EXPECT_VIDEO_FRAMES(FILENAME(0), 99);
+    EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
+}
+
+TEST_F(TranscoderTestFixture, testTranscoderWithMultipleTransform) {
+    FileDecodeReader reader("resources/test-pattern.h264");
+    FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
+    FrameTransform leftHalfBlackTransform = [](Frame& frame) -> Frame& {
+        DecodedFrame* decodedFrame = dynamic_cast<DecodedFrame*>(&frame);
+        assert(decodedFrame != nullptr);
+        assert(cuMemsetD2D8(decodedFrame->handle(), decodedFrame->pitch(), 0,
+                            decodedFrame->width() / 2, decodedFrame->height()) == CUDA_SUCCESS);
+        return *decodedFrame;
+    };
+    FrameTransform topHalfBlackTransform = [](Frame& frame) -> Frame& {
+        DecodedFrame* decodedFrame = dynamic_cast<DecodedFrame*>(&frame);
+        assert(decodedFrame != nullptr);
+        assert(cuMemsetD2D8(decodedFrame->handle(), decodedFrame->pitch(), 0,
+                            decodedFrame->width(), decodedFrame->height() / 2) == CUDA_SUCCESS);
+        return *decodedFrame;
+    };
+
+    ASSERT_SECS(
+            ASSERT_NO_THROW(transcoder.transcode(reader, writer, {leftHalfBlackTransform, topHalfBlackTransform})),
+            1.5);
+
+    EXPECT_VIDEO_VALID(FILENAME(0));
+    EXPECT_VIDEO_FRAMES(FILENAME(0), 99);
+    EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
+}

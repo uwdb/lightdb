@@ -33,12 +33,12 @@ public:
     }
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers) {
-      tile(reader, writers, [](Frame& frame) -> Frame& { return frame; });
+      return tile(reader, writers, [](Frame& frame) -> Frame& { return frame; });
     }
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers,
                      std::vector<FrameTransform> transforms) {
-      tile(reader, writers, [transforms](Frame& frame) -> Frame& {
+      return tile(reader, writers, [transforms](Frame& frame) -> Frame& {
           return std::accumulate(
                   transforms.begin(), transforms.end(),
                   std::ref(frame),
@@ -48,7 +48,6 @@ public:
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers,
                      FrameTransform transform) {
-      NVENCSTATUS status;
       VideoDecoderSession decodeSession(decoder_, reader);
       auto sessions = CreateEncoderSessions(writers);
       size_t framesDecoded = 0, framesEncoded = 0;
@@ -62,8 +61,8 @@ public:
         auto decodedFrame = decodeSession.decode();
         auto processedFrame = transform(decodedFrame);
 
-        for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++) {
-          for(auto j = 0; j < sessions.size(); j++) {
+        for (auto i = 0u; i <= dropOrDuplicate; i++, framesEncoded++) {
+          for(auto j = 0u; j < sessions.size(); j++) {
             auto &session = sessions[j];
             auto row = j / columns(), column = j % columns();
 

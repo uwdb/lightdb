@@ -35,7 +35,6 @@ public:
     }
 
     void transcode(DecodeReader &reader, EncodeWriter &writer, FrameTransform transform) {
-        NVENCSTATUS status;
         VideoDecoderSession decodeSession(decoder_, reader);
         VideoEncoderSession encodeSession(encoder_, writer);
         FrameRateAlignment alignment(encoder_.configuration().framerate, decoder_.configuration().framerate);
@@ -46,7 +45,7 @@ public:
             auto decodedFrame = decodeSession.decode();
             auto processedFrame = transform(decodedFrame);
 
-            for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++)
+            for (auto i = 0u; i <= dropOrDuplicate; i++, framesEncoded++)
                 encodeSession.Encode(processedFrame);
         }
     }
