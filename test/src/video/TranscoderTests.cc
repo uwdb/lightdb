@@ -100,11 +100,9 @@ TEST_F(TranscoderTestFixture, testTranscoderWithComplexTransform) {
     FileDecodeReader reader("resources/test-pattern.h264");
     FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
     FrameTransform halfBlackTransform = [](Frame& frame) -> Frame& {
-        DecodedFrame* decodedFrame = dynamic_cast<DecodedFrame*>(&frame);
-        assert(decodedFrame != nullptr);
-        assert(cuMemsetD2D8(decodedFrame->handle(), decodedFrame->pitch(), 0,
-                             decodedFrame->width() / 2, decodedFrame->height()) == CUDA_SUCCESS);
-        return *decodedFrame;
+        assert(cuMemsetD2D8(frame.handle(), frame.pitch(), 0,
+                            frame.width() / 2, frame.height()) == CUDA_SUCCESS);
+        return frame;
     };
 
     ASSERT_SECS(
@@ -120,18 +118,14 @@ TEST_F(TranscoderTestFixture, testTranscoderWithMultipleTransform) {
     FileDecodeReader reader("resources/test-pattern.h264");
     FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
     FrameTransform leftHalfBlackTransform = [](Frame& frame) -> Frame& {
-        DecodedFrame* decodedFrame = dynamic_cast<DecodedFrame*>(&frame);
-        assert(decodedFrame != nullptr);
-        assert(cuMemsetD2D8(decodedFrame->handle(), decodedFrame->pitch(), 0,
-                            decodedFrame->width() / 2, decodedFrame->height()) == CUDA_SUCCESS);
-        return *decodedFrame;
+        assert(cuMemsetD2D8(frame.handle(), frame.pitch(), 0,
+                            frame.width() / 2, frame.height()) == CUDA_SUCCESS);
+        return frame;
     };
     FrameTransform topHalfBlackTransform = [](Frame& frame) -> Frame& {
-        DecodedFrame* decodedFrame = dynamic_cast<DecodedFrame*>(&frame);
-        assert(decodedFrame != nullptr);
-        assert(cuMemsetD2D8(decodedFrame->handle(), decodedFrame->pitch(), 0,
-                            decodedFrame->width(), decodedFrame->height() / 2) == CUDA_SUCCESS);
-        return *decodedFrame;
+        assert(cuMemsetD2D8(frame.handle(), frame.pitch(), 0,
+                            frame.width(), frame.height() / 2) == CUDA_SUCCESS);
+        return frame;
     };
 
     ASSERT_SECS(
