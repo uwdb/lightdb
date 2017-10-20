@@ -20,7 +20,7 @@ def stitch_command(rows, columns, height, width, fps, duration, output_format, o
 
     for i in xrange(rows*columns):
       for s in xrange(duration):
-        command += " -vcodec hevc_nvenc  -i pipe-{}-{}.mp4 \\\n".format(i, s)
+        command += "\\\n -i pipe-{}-{}.mp4 \\\n".format(i, s)
 
     command += "  -filter_complex \"\\\n"
 
@@ -46,10 +46,12 @@ def stitch_command(rows, columns, height, width, fps, duration, output_format, o
     command += """  -map "[out]" \\
     -f segment \\
       -vcodec hevc_nvenc \\
-      -b:v 500k \\
-      -segment_format {} \\
+      -b:v 5000k \\
+      -r 30 -g 30 \\
+      -segment_format mp4 \\
+      -segment_time_delta 0.05 \\
       -segment_time {} \\
-    output-%d.{}""".format(output_format, output_segment_duration, output_format)
+    output-%d.mp4""".format(output_segment_duration)
 
     return command
 
