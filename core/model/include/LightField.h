@@ -183,25 +183,35 @@ private:
 
 template<typename ColorSpace>
 class DiscreteLightField: public LightField<ColorSpace> {
+public:
+    DiscreteLightField(const Geometry &geometry)
+        : DiscreteLightField(std::bind(&Geometry::defined_at, &geometry, std::placeholders::_1))
+    { }
+
+    DiscreteLightField(const std::function<bool(const Point6D&)> &predicate)
+            : predicate_(predicate)
+    { }
+
 protected:
-    virtual bool defined_at(const Point6D &point) const = 0;
+    virtual bool defined_at(const Point6D &point) const {
+        return predicate_(point);
+    }
+
+private:
+    const std::function<bool(const Point6D&)> predicate_;
 };
 
 //TODO add a Geometry template and just make an IntervalGeometry
 template<typename ColorSpace>
-class DiscretizedIntervalLightField: public DiscreteLightField<ColorSpace> {
+class DiscretizedLightField: public DiscreteLightField<ColorSpace> {
 public:
-    DiscretizedIntervalLightField(const LightFieldReference<ColorSpace> source,
-                                  const Dimension dimension, const visualcloud::rational interval)
-        : source_(source), dimension_(dimension), interval_(interval)
+    DiscretizedLightField(const LightFieldReference<ColorSpace> &source, const Geometry &geometry)
+        : DiscreteLightField<ColorSpace>(geometry), source_(source)
     { }
-    virtual ~DiscretizedIntervalLightField() { }
-
-    Dimension dimension() const { return dimension_; }
-    visualcloud::rational interval() const { return interval_; }
+    virtual ~DiscretizedLightField() { }
 
     const typename ColorSpace::Color value(const Point6D &point) const override {
-        return defined_at(point)
+        return this->defined_at(point)
                ? source_->value(point)
                : ColorSpace::Color::Null;
     }
@@ -210,19 +220,8 @@ public:
     const std::vector<Volume> volumes() const override { return source_->volumes(); }
     const ColorSpace colorSpace() const override { return ColorSpace::Instance; }
 
-protected:
-    bool defined_at(const Point6D &point) const override {
-        //TODO holy cow this is like the worst thing ever
-        //TODO add rational overloads for value() and Volume::contains()
-        return std::remainder(
-                point.get(dimension()),
-                this->interval().numerator() / (double)this->interval().denominator()) <= 0.000000000001l;
-    }
-
 private:
     const LightFieldReference<ColorSpace> source_;
-    const Dimension dimension_;
-    const visualcloud::rational interval_;
 };
 
 template<typename ColorSpace>
@@ -253,11 +252,13 @@ template<typename Geometry, typename ColorSpace>
 class PanoramicLightField: public DiscreteLightField<ColorSpace> {
 public:
     PanoramicLightField(const Point3D &point, const TemporalRange &range)
-        : point_(point), volume_{point.ToVolume(range, AngularRange::ThetaMax, AngularRange::PhiMax)}
+        : DiscreteLightField<ColorSpace>(Geometry::Instance),
+          point_(point), volume_{point.ToVolume(range, AngularRange::ThetaMax, AngularRange::PhiMax)}
     { }
 
     PanoramicLightField(const Point3D &&point, const TemporalRange &&range)
-        : point_(point), volume_{point.ToVolume(range, AngularRange::ThetaMax, AngularRange::PhiMax)}
+        : DiscreteLightField<ColorSpace>(Geometry::Instance),
+          point_(point), volume_{point.ToVolume(range, AngularRange::ThetaMax, AngularRange::PhiMax)}
     { }
 
     PanoramicLightField(const TemporalRange &range)

@@ -181,8 +181,8 @@ public:
     { }
 
     LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace>& field) const override {
-        return LightFieldReference<YUVColorSpace>::make<DiscretizedIntervalLightField<YUVColorSpace>>(
-                field, dimension_, interval_);
+        return LightFieldReference<YUVColorSpace>::make<DiscretizedLightField<YUVColorSpace>>(
+                field, IntervalGeometry(dimension_, interval_));
     }
 
 private:
