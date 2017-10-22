@@ -133,7 +133,7 @@ public:
 
 class Geometry {
 public:
-    virtual bool defined_at(const Point3D &point) const = 0;
+    virtual bool defined_at(const Point6D &point) const = 0;
 };
 
 class MeshGeometry: public Geometry {
@@ -141,7 +141,7 @@ public:
     virtual double u(const double theta, const double phi) const = 0;
     virtual double v(const double theta, const double phi) const = 0;
 
-    bool defined_at(const Point3D &point) const override {
+    bool defined_at(const Point6D &point) const override {
         return true; //TODO
     }
 };
@@ -151,7 +151,7 @@ public:
     double u(const double theta, const double phi) const override { return 0; }
     double v(const double theta, const double phi) const override { return 0; }
 
-    bool defined_at(const Point3D &point) const override {
+    bool defined_at(const Point6D &point) const override {
         return true; //TODO
     }
 
@@ -164,7 +164,7 @@ public:
         : dimension_(dimension), interval_(interval)
     { }
 
-    bool defined_at(const Point3D &point) const override {
+    bool defined_at(const Point6D &point) const override {
         //TODO holy cow this is like the worst thing ever
         //TODO add rational overloads for value() and Volume::contains()
         return std::remainder(
