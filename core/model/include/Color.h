@@ -28,6 +28,8 @@ public:
 
     static const YUVColor Null;
     static const YUVColor Green;
+    static const YUVColor Red;
+    static const YUVColor Purple;
 
 private:
     unsigned char y_, u_, v_;

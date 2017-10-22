@@ -40,6 +40,7 @@ include_directories(${Boost_INCLUDE_DIR})
 
 find_package(FFmpeg REQUIRED)
 include_directories(${FFMPEG_INCLUDE_DIRS})
+set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} ${FFMPEG_LIBRARIES})
 
 find_package(GTest)
 find_package (Glog REQUIRED)
