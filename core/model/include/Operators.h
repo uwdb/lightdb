@@ -172,22 +172,24 @@ private:
 
 class Discretize: public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
 public:
-    explicit Discretize(const Dimension &dimension, visualcloud::rational &&interval)
-        : dimension_(dimension), interval_(interval)
+    Discretize(const Dimension &dimension, visualcloud::rational &&interval)
+        : Discretize(IntervalGeometry(dimension, interval))
     { }
 
-    explicit Discretize(const Dimension &dimension, visualcloud::rational &interval)
-        : dimension_(dimension), interval_(interval)
+    Discretize(const Dimension &dimension, visualcloud::rational &interval)
+        : Discretize(IntervalGeometry(dimension, interval))
+    { }
+
+    Discretize(const Geometry &&geometry)
+            : geometry_(geometry)
     { }
 
     LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace>& field) const override {
-        return LightFieldReference<YUVColorSpace>::make<DiscretizedLightField<YUVColorSpace>>(
-                field, IntervalGeometry(dimension_, interval_));
+        return LightFieldReference<YUVColorSpace>::make<DiscretizedLightField<YUVColorSpace>>(field, geometry_);
     }
 
 private:
-    const Dimension dimension_;
-    const visualcloud::rational interval_;
+    const Geometry &geometry_;
 };
 
 template<typename InColorSpace, typename OutColorSpace>

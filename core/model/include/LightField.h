@@ -313,16 +313,13 @@ protected:
     PanoramicVideoLightField(const Point3D &point,
                              std::unique_ptr<visualcloud::utility::ffmpeg::FrameIterator> frames)
             : PanoramicLightField<Geometry, ColorSpace>(point, {0, frames_->duration()}),
-              frames_(std::move(frames))
+              frames_(std::move(frames)),
+              geometry_(Dimension::Time, frames_->framerate())
     { }
 
     bool defined_at(const Point6D &point) const override {
-        //TODO holy cow this is like the worst thing ever :-\
-        //TODO add rational overloads for value() and Volume::contains()
-        return PanoramicLightField<Geometry, ColorSpace>::defined_at(point) &&
-                std::remainder(
-                    point.t,
-                    framerate().numerator() / (double) framerate().denominator()) <= 0.000000000001l;
+        return geometry_.defined_at(point) &&
+               PanoramicLightField<Geometry, ColorSpace>::defined_at(point);
     }
 
     const typename ColorSpace::Color texture(const double u, const double v, const double t) const override {
@@ -332,6 +329,7 @@ protected:
 
 private:
     const std::unique_ptr<visualcloud::utility::ffmpeg::FrameIterator> frames_;
+    const IntervalGeometry geometry_;
 };
 
 #endif //VISUALCLOUD_LIGHTFIELD_H
