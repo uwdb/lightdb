@@ -2,6 +2,7 @@
 #define VISUALCLOUD_GEOMETRY_H
 
 #include "rational.h"
+#include <vector>
 #include <stdexcept>
 #include <cmath>
 
@@ -18,6 +19,8 @@ struct SpatiotemporalRange {
     double start;
     double end;
 
+    //TODO guard against end < start
+
     bool Contains(double value) const {
         return start <= value && value <= end;
     }
@@ -33,6 +36,8 @@ struct AngularRange {
 public:
     double start;
     double end;
+
+    //TODO guard against end < start
 
     bool Contains(const double angle) const {
         return start <= angle && angle <= end;
@@ -55,8 +60,43 @@ public:
 
     static const Volume VolumeMax;
 
+
     bool Contains(const Point6D &point) const;
+    std::vector<Volume> partition(const Dimension, const visualcloud::rational&) const;
+    inline bool is_point() const {
+        return x.start == x.end &&
+               y.start == y.end &&
+               z.start == z.end &&
+               t.start == t.end &&
+               theta.start == theta.end &&
+               phi.start == phi.end;
+    }
 };
+
+inline Volume operator|(const Volume& left, const Volume &right) {
+    double start;
+
+    //TODO add some helpers to clean this nonsense up
+    start = std::max(left.x.start, right.x.start);
+    SpatialRange x{start, std::max(start, std::min(left.x.end, right.x.end))};
+
+    start = std::max(left.y.start, right.y.start);
+    SpatialRange y{start, std::max(start, std::min(left.y.end, right.y.end))};
+
+    start = std::max(left.z.start, right.z.start);
+    SpatialRange z{start, std::max(start, std::min(left.z.end, right.z.end))};
+
+    start = std::max(left.t.start, right.t.start);
+    TemporalRange t{start, std::max(start, std::min(left.t.end, right.t.end))};
+
+    start = std::max(left.theta.start, right.theta.start);
+    AngularRange theta{start, std::max(start, std::min(left.theta.end, right.theta.end))};
+
+    start = std::max(left.phi.start, right.phi.start);
+    AngularRange phi{start, std::max(start, std::min(left.phi.end, right.phi.end))};
+
+    return {x, y, z, t, theta, phi};
+}
 
 struct Point3D {
 public:

@@ -56,15 +56,36 @@ protected:
 };
 
 
+class MemoryEncodeWriter: public EncodeWriter {
+public:
+    MemoryEncodeWriter(EncodeAPI &api, size_t initial_buffer_size=10*1024*1024)
+        : EncodeWriter(api), buffer_(initial_buffer_size)
+    { }
+
+    NVENCSTATUS Flush() override { return NV_ENC_SUCCESS; }
+
+protected:
+    NVENCSTATUS WriteFrame(const void *buffer, const size_t size) override {
+        printf("Appending\n");
+        buffer_.insert(buffer_.end(), static_cast<const char*>(buffer), static_cast<const char*>(buffer) + size);
+    }
+
+private:
+    std::vector<char> buffer_;
+};
+
 
 class DescriptorEncodeWriter: public EncodeWriter {
+public:
     DescriptorEncodeWriter(EncodeAPI &api, const int descriptor): EncodeWriter(api), descriptor(descriptor) { }
 
+    NVENCSTATUS Flush() override { return NV_ENC_SUCCESS; }
+
+protected:
     NVENCSTATUS WriteFrame(const void *buffer, const size_t size) override {
         return write(descriptor, buffer, size) != -1 ? NV_ENC_SUCCESS : NV_ENC_ERR_GENERIC;
     }
 
-    NVENCSTATUS Flush() override { return NV_ENC_SUCCESS; }
 
 private:
     const int descriptor;
@@ -96,16 +117,16 @@ public:
             fclose(file);
     }
 
-    NVENCSTATUS WriteFrame(const void *buffer, const size_t size) override {
-        return fwrite(buffer, size, 1, file) == size
-            ? NV_ENC_SUCCESS
-            : NV_ENC_ERR_GENERIC;
-    }
-
     NVENCSTATUS Flush() override {
         return fflush(file) == 0 ? NV_ENC_SUCCESS : NV_ENC_ERR_GENERIC;
     }
 
+protected:
+    NVENCSTATUS WriteFrame(const void *buffer, const size_t size) override {
+        return fwrite(buffer, size, 1, file) == size
+               ? NV_ENC_SUCCESS
+               : NV_ENC_ERR_GENERIC;
+    }
 
 private:
     FILE* file;

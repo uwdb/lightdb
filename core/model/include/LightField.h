@@ -7,8 +7,8 @@
 #include "Ffmpeg.h"
 #include <memory>
 #include <vector>
+#include <numeric>
 #include <stdexcept>
-#include <math.h>
 
 template<typename ColorSpace>
 class LightFieldReference;
@@ -24,6 +24,10 @@ public:
     virtual const typename ColorSpace::Color value(const Point6D &point) const = 0;
     virtual const ColorSpace colorSpace() const { return ColorSpace::Instance; }
     virtual const std::vector<Volume> volumes() const = 0;
+
+    inline std::string type() const {
+        return typeid(*this).name();
+    }
 };
 
 template<typename ColorSpace>
@@ -37,6 +41,10 @@ public:
             : pointer_(nullptr)
     { }
 
+    LightFieldReference(const LightFieldReference &reference)
+            : pointer_(reference.pointer_)
+    { }
+
     inline operator LightField<ColorSpace>&() const {
         return *pointer_;
     }
@@ -47,6 +55,10 @@ public:
 
     inline LightField<ColorSpace>& operator*() const {
         return *pointer_;
+    }
+
+    inline std::string type() const {
+        return this->name();
     }
 
     template<typename T, typename... _Args>
@@ -105,8 +117,17 @@ public:
     }
 
     const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return lightfields_; }
-    const std::vector<Volume> volumes() const override { return {}; } //TODO
     const ColorSpace colorSpace() const override { return ColorSpace::Instance; } //TODO
+    const std::vector<Volume> volumes() const override {
+        return std::accumulate(lightfields_.begin(),
+                               lightfields_.end(),
+                               std::vector<Volume>(lightfields_.size() * 4),
+                               [](auto &result, auto &field) {
+                                   auto volumes = field->volumes();
+                                   result.insert(result.end(), volumes.begin(), volumes.end());
+                                   return result;
+                               });
+    }
 
 private:
     const std::vector<LightFieldReference<ColorSpace>> lightfields_;
@@ -125,8 +146,21 @@ public:
     }
 
     const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {source_}; }
-    const std::vector<Volume> volumes() const override { return {}; } //TODO
-    const ColorSpace colorSpace() const override { return ColorSpace::Instance; } //TODO
+    const ColorSpace colorSpace() const override { return ColorSpace::Instance; }
+    const std::vector<Volume> volumes() const override {
+        //TODO switch to iterator
+        std::vector<Volume> result;
+        for(auto &volume: source_->volumes()) {
+            auto partitions = volume.partition(dimension_, interval_);
+            result.insert(result.end(), partitions.begin(), partitions.end());
+        }
+        return result;
+    }
+
+    Dimension dimension() const { return dimension_; }
+    visualcloud::rational interval() const { return interval_; }
+    //const std::vector<LightFieldReference<ColorSpace>> partitions() const {
+    //}
 
 private:
     const LightFieldReference<ColorSpace> source_;
@@ -138,7 +172,7 @@ template<typename ColorSpace>
 class SubsetLightField: public LightField<ColorSpace> {
 public:
     SubsetLightField(const LightFieldReference<ColorSpace> &lightfield, const Volume &volume)
-            : lightfield_(lightfield), volume_(volume)
+        : lightfield_(lightfield), volume_(volume) //TODO don't we need to intersect volume with lightvield.volumes()?
     { }
 
     const typename ColorSpace::Color value(const Point6D &point) const override {
@@ -148,38 +182,22 @@ public:
     }
 
     const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {lightfield_}; }
-    const std::vector<Volume> volumes() const override { return {volume_}; }
     const ColorSpace colorSpace() const override { return lightfield_->colorSpace(); }
+    const std::vector<Volume> volumes() const override {
+        //TODO clean this up
+        std::vector<Volume> result;
+        for(auto &volume: lightfield_->volumes()) {
+            auto intersection = volume | volume_;
+            if(!intersection.is_point())
+                result.push_back(intersection);
+        }
+        return result;
+    }
 
 private:
     const LightFieldReference<ColorSpace> lightfield_;
     const Volume volume_;
 };
-
-/*template<typename Geometry, typename ColorSpace>
-class OldDiscreteLightField: public LightField<ColorSpace> {
-public:
-    Dimension dimension() const { return dimension_; }
-    visualcloud::rational interval() const { return interval_; }
-
-protected:
-    OldDiscreteLightField(const Dimension dimension, const visualcloud::rational interval)
-            : dimension_(dimension), interval_(interval)
-    { }
-    virtual ~OldDiscreteLightField() { }
-
-    bool IsDefinedAt(const Point6D &point) const {
-        //TODO holy cow this is like the worst thing ever
-        //TODO add rational overloads for value() and Volume::contains()
-        return std::remainder(
-                point.get(dimension()),
-                this->interval().numerator() / (double)this->interval().denominator()) <= 0.000000000001l;
-    }
-
-private:
-    const Dimension dimension_;
-    const visualcloud::rational interval_;
-};*/
 
 template<typename ColorSpace>
 class DiscreteLightField: public LightField<ColorSpace> {
@@ -201,7 +219,6 @@ private:
     const std::function<bool(const Point6D&)> predicate_;
 };
 
-//TODO add a Geometry template and just make an IntervalGeometry
 template<typename ColorSpace>
 class DiscretizedLightField: public DiscreteLightField<ColorSpace> {
 public:
@@ -228,11 +245,13 @@ template<typename ColorSpace>
 class InterpolatedLightField: public LightField<ColorSpace> {
 public:
     InterpolatedLightField(const LightFieldReference<ColorSpace> &source,
+                           const Dimension dimension,
                            const visualcloud::interpolator<ColorSpace> interpolator)
             : source_(source), interpolator_(interpolator)
     { }
 
     inline const typename ColorSpace::Color value(const Point6D &point) const override {
+        // TODO this ignores interpolation dimension
         auto value = source_->value(point);
         return value != ColorSpace::Color::Null
             ? value
@@ -298,23 +317,32 @@ private:
 template<typename Geometry, typename ColorSpace>
 class PanoramicVideoLightField: public PanoramicLightField<Geometry, ColorSpace> {
 public:
-    PanoramicVideoLightField(std::istream &&stream)
-        : PanoramicVideoLightField(Point3D::Zero, std::move(stream))
+    PanoramicVideoLightField(const std::string &filename)  //TODO drop filename; see below
+        : PanoramicVideoLightField(Point3D::Zero, std::ifstream{filename}, filename)
     { }
 
-    PanoramicVideoLightField(const Point3D &point, std::istream &&stream)
-          : PanoramicVideoLightField(point, visualcloud::utility::ffmpeg::decode(stream))
+    PanoramicVideoLightField(std::istream &&stream, const std::string &filename="")  //TODO drop filename; see below
+        : PanoramicVideoLightField(Point3D::Zero, std::move(stream), filename)
+    { }
+
+    PanoramicVideoLightField(const Point3D &point, std::istream &&stream, const std::string &filename="")  //TODO drop filename; see below
+          : PanoramicVideoLightField(point, visualcloud::utility::ffmpeg::decode(stream), filename)
     { }
 
     const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {}; }
+    inline visualcloud::utility::ffmpeg::FrameIterator& frames() const { return *frames_;}
     inline visualcloud::rational framerate() const { return frames_->framerate(); }
+
+    inline std::string filename() const { return filename_; } //TODO drop filename; see below
 
 protected:
     PanoramicVideoLightField(const Point3D &point,
-                             std::unique_ptr<visualcloud::utility::ffmpeg::FrameIterator> frames)
+                             std::unique_ptr<visualcloud::utility::ffmpeg::FrameIterator> frames,
+                             const std::string &filename)
             : PanoramicLightField<Geometry, ColorSpace>(point, {0, frames_->duration()}),
               frames_(std::move(frames)),
-              geometry_(Dimension::Time, frames_->framerate())
+              geometry_(Dimension::Time, frames_->framerate()),
+              filename_(filename)
     { }
 
     bool defined_at(const Point6D &point) const override {
@@ -328,6 +356,7 @@ protected:
     };
 
 private:
+    const std::string filename_; //TODO drop filename after adding StreamDecodeReader in Physical.cc
     const std::unique_ptr<visualcloud::utility::ffmpeg::FrameIterator> frames_;
     const IntervalGeometry geometry_;
 };

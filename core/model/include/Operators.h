@@ -38,7 +38,9 @@ public:
     //TODO constructors should accept EncodedLightFields, not string/streams
 
     Decode(const std::string &filename)
-        : Decode(std::ifstream{filename})
+        //: Decode(std::ifstream{filename})
+            : field_(std::shared_ptr<LightField<ColorSpace>>(new PanoramicVideoLightField<Geometry, ColorSpace>(filename)))
+
     { }
 
     Decode(std::istream &&stream)
@@ -66,9 +68,21 @@ private:
 template<typename ColorSpace>
 class Encode: public Operator {
 public:
+    //TODO string as a format is horrible, fix
+    Encode()
+            : format_("hevc")
+    { }
+
+    Encode(std::string &&format)
+        : format_(format)
+    { }
+
     visualcloud::EncodedLightField apply(const LightFieldReference<ColorSpace> &lightField) const { //TODO ostream
-        return visualcloud::pipeline::execute(lightField);
+        return visualcloud::pipeline::execute(lightField, format_);
     }
+
+private:
+    const std::string format_;
 };
 
 template<typename ColorSpace>
@@ -76,6 +90,23 @@ class Scan: public Operator {
     LightField<ColorSpace>&& scan(std::string name) {
         return ConstantLightField<YUVColorSpace>(YUVColor::Green); //TODO
     }
+};
+
+class Store: public Operator {
+public:
+    Store(const std::string &name)
+        : name_(name)
+    { }
+
+    visualcloud::EncodedLightField apply(visualcloud::EncodedLightField &encoded) const {
+        encoded->write(name_);
+        return encoded;
+    }
+
+    //TODO can also store an unencoded query by just default-encoding it; add new >> and apply overloads
+
+private:
+    const std::string name_;
 };
 
 //template<typename LeftColorSpace, typename RightColorSpace, typename OutColorSpace>
@@ -141,6 +172,7 @@ private:
 
 
 using bitrate = unsigned int;
+
 class Transcode: public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
 public:
     explicit Transcode(const std::function<bitrate(Volume&)> &bitrater)
@@ -148,8 +180,23 @@ public:
     { }
 
     LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace>& field) const override {
-        printf("Transcode.apply");
-        return ConstantLightField<YUVColorSpace>::create(YUVColor::Green);
+        //TODO clean this up
+        auto encoded = Encode<YUVColorSpace>("hevc").apply(field);
+        //auto singleton = dynamic_cast<visualcloud::SingletonEncodedLightField*>(&*encoded);
+        //assert(singleton != nullptr); //TODO may be a composite...
+
+        std::vector<LightFieldReference<YUVColorSpace>> decodes;
+        for(auto i = 0u; i < encoded->encodings().size(); i++) {
+            auto filename = std::string("out") + std::to_string(i) + ".hevc";
+            std::ofstream fout{filename, std::ofstream::out | std::ofstream::binary};
+            fout.write(encoded->encodings().at(i).data(), encoded->encodings().at(i).size());
+            fout.close();
+
+            decodes.emplace_back(Decode<EquirectangularGeometry>(filename).apply());
+        }
+
+        return LightFieldReference<YUVColorSpace>::make<CompositeLightField<YUVColorSpace>>(decodes);
+        //return Decode<EquirectangularGeometry>("/tmp/out.h264").apply(); //encoded);
     }
 
 private:
@@ -158,15 +205,17 @@ private:
 
 class Interpolate: public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
 public:
-    explicit Interpolate(const visualcloud::interpolator<YUVColorSpace> &interpolator)
-            : interpolator_(interpolator)
+    explicit Interpolate(const Dimension dimension, const visualcloud::interpolator<YUVColorSpace> &interpolator)
+            : dimension_(dimension), interpolator_(interpolator)
     { }
 
     LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace>& field) const override {
-        return LightFieldReference<YUVColorSpace>::make<InterpolatedLightField<YUVColorSpace>>(field, interpolator_);
+        return LightFieldReference<YUVColorSpace>::make<InterpolatedLightField<YUVColorSpace>>(
+                field, dimension_, interpolator_);
     }
 
 private:
+    const Dimension dimension_;
     const visualcloud::interpolator<YUVColorSpace> &interpolator_;
 };
 
@@ -225,6 +274,16 @@ inline LightFieldReference<ColorSpace> operator|(const LightFieldReference<Color
                                                  const LightFieldReference<ColorSpace>& right)
 {
     return Union().apply(left, right);
+}
+
+inline visualcloud::EncodedLightField operator>>(visualcloud::EncodedLightField& input, const Store& store)
+{
+    return store.apply(input);
+}
+
+inline visualcloud::EncodedLightField operator>>(visualcloud::EncodedLightField&& input, const Store& store)
+{
+    return store.apply(input);
 }
 
 #endif //VISUALCLOUD_OPERATORS_H

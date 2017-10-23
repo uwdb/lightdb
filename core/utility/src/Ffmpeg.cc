@@ -41,7 +41,8 @@ namespace visualcloud::utility::ffmpeg {
                   end_(buffer_.end())
         {
             CHECK_GE(avcodec_open2(context_, &codec_, nullptr), 0) << "Could not open codec";
-            ++*this;
+            LOG(WARNING) << "Packet iterator not advanced by default; fix this before relying on it";
+            //++*this;
         }
 
     FrameIterator::PacketIterator::~PacketIterator() {
@@ -90,7 +91,10 @@ namespace visualcloud::utility::ffmpeg {
     : packets_{input, buffer_size},
       frame_(CHECK_NOTNULL(av_frame_alloc())),
       result_(AVERROR(EAGAIN))
-    { ++*this; }
+    {
+        LOG(WARNING) << "Ffmpeg iterator not advanced by default; fix this before relying on it";
+        //++*this;
+    }
 /*
     FrameIterator::FrameIterator(std::istream &input, size_t buffer_size)
         : FrameIterator(FrameIterator::PacketIterator{input, buffer_size})
