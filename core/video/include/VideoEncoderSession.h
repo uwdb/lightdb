@@ -25,6 +25,8 @@ public:
     void Encode(Frame &frame, size_t top, size_t left) {
         auto &buffer = GetAvailableBuffer();
 
+        if(buffer.input_buffer.buffer_format != NV_ENC_BUFFER_FORMAT_NV12_PL)
+            LOG(ERROR) << "buffer.input_buffer.buffer_format != NV_ENC_BUFFER_FORMAT_NV12_PL";
         assert(buffer.input_buffer.buffer_format == NV_ENC_BUFFER_FORMAT_NV12_PL);
 
         buffer.copy(encoder().lock, frame, top, left);
@@ -38,7 +40,7 @@ public:
             std::this_thread::yield();
 
         if((status = encoder_.api().NvEncFlushEncoderQueue(nullptr)) != NV_ENC_SUCCESS)
-            throw std::runtime_error(std::to_string(status)); //TODO
+            throw std::runtime_error(std::to_string(status) + "flush"); //TODO
 
         writer.Flush();
     }
@@ -109,7 +111,7 @@ private:
 
         std::scoped_lock{buffer};
         if ((status = encoder_.api().NvEncEncodeFrame(&buffer, nullptr, frame.type(), frameCount() == 0)) != NV_ENC_SUCCESS)
-            throw std::runtime_error(std::to_string(status)); //TODO
+            throw std::runtime_error(std::to_string(status) + "encode"); //TODO
 
         frameCount_++;
     }

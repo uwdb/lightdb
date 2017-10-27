@@ -48,6 +48,8 @@ public:
             for (auto i = 0u; i <= dropOrDuplicate; i++, framesEncoded++)
                 encodeSession.Encode(processedFrame);
         }
+
+        LOG(INFO) << "Transcode complete (decoded " << framesDecoded << ", encoded " << framesEncoded << ")";
     }
 
     VideoEncoder &encoder() { return encoder_; }

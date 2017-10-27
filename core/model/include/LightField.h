@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 #include <numeric>
+#include <optional>
 #include <stdexcept>
 
 template<typename ColorSpace>
@@ -334,7 +335,9 @@ public:
     inline visualcloud::rational framerate() const { return frames_->framerate(); }
 
     inline std::string filename() const { return filename_; } //TODO drop filename; see below
-
+    inline visualcloud::utility::StreamMetadata metadata() const { return (metadata_.has_value()
+                                                                          ? metadata_
+                                                                          : (metadata_ = visualcloud::utility::StreamMetadata(filename_, 0, true))).value(); }
 protected:
     PanoramicVideoLightField(const Point3D &point,
                              std::unique_ptr<visualcloud::utility::ffmpeg::FrameIterator> frames,
@@ -359,6 +362,7 @@ private:
     const std::string filename_; //TODO drop filename after adding StreamDecodeReader in Physical.cc
     const std::unique_ptr<visualcloud::utility::ffmpeg::FrameIterator> frames_;
     const IntervalGeometry geometry_;
+    mutable std::optional<visualcloud::utility::StreamMetadata> metadata_;
 };
 
 #endif //VISUALCLOUD_LIGHTFIELD_H

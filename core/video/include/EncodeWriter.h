@@ -63,10 +63,10 @@ public:
     { }
 
     NVENCSTATUS Flush() override { return NV_ENC_SUCCESS; }
+    const std::vector<char> buffer() const { return buffer_; }
 
 protected:
     NVENCSTATUS WriteFrame(const void *buffer, const size_t size) override {
-        printf("Appending\n");
         buffer_.insert(buffer_.end(), static_cast<const char*>(buffer), static_cast<const char*>(buffer) + size);
     }
 

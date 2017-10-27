@@ -47,7 +47,7 @@ struct EncodeBuffer
     { }
 
     // TODO is this size reasonable?
-    EncodeBuffer(VideoEncoder &encoder, size_t size=2*1024*1024)
+    EncodeBuffer(VideoEncoder &encoder, size_t size=4*1024*1024)
             : output_buffer{0}, input_buffer{0}, encoder(encoder), size(size) {
         NVENCSTATUS status;
 
@@ -67,10 +67,10 @@ struct EncodeBuffer
                 NV_ENC_INPUT_RESOURCE_TYPE_CUDADEVICEPTR, (void *)input_buffer.NV12devPtr,
                 encoder.configuration().width, encoder.configuration().height,
                 input_buffer.NV12Stride, &input_buffer.registered_resource)) != NV_ENC_SUCCESS)
-            throw std::runtime_error(std::to_string(status)); //TODO
+            throw std::runtime_error(std::to_string(status) + "EncodeBuffer.NvEncRegisterResource"); //TODO
         else if((status = encoder.api().NvEncCreateBitstreamBuffer(
                 size, &output_buffer.bitstreamBuffer)) != NV_ENC_SUCCESS)
-            throw std::runtime_error("997"); //TODO
+            throw std::runtime_error("EncodeBuffer.997"); //TODO
 
         input_buffer.buffer_format = NV_ENC_BUFFER_FORMAT_NV12_PL;
         input_buffer.width = encoder.configuration().width;
@@ -83,11 +83,11 @@ struct EncodeBuffer
         NVENCSTATUS status;
 
         if((status = encoder.api().NvEncDestroyBitstreamBuffer(output_buffer.bitstreamBuffer)) != NV_ENC_SUCCESS)
-            printf("log\n"); //TODO log
+            printf("log NvEncDestroyBitstreamBuffer\n"); //TODO log
         else if((encoder.api().NvEncUnregisterResource(input_buffer.registered_resource)) != NV_ENC_SUCCESS)
-            printf("log\n"); //TODO log
+            printf("log NvEncUnregisterResource\n"); //TODO log
         else if(cuMemFree(input_buffer.NV12devPtr) != CUDA_SUCCESS)
-            printf("log\n"); //TODO log
+            printf("log cuMemFree\n"); //TODO log
     }
 
     void copy(VideoLock &lock, const Frame &frame) {
@@ -148,7 +148,7 @@ struct EncodeBuffer
 
         CUDA_MEMCPY2D chromaPlaneParameters = {
                 srcXInBytes:   left,
-                srcY:          (frame.height() + top) / 2,
+                srcY:          frame.height() + top / 2, //(frame.height() + top) / 2,
                 srcMemoryType: CU_MEMORYTYPE_DEVICE,
                 srcHost:       nullptr,
                 srcDevice:     frame.handle(),
@@ -175,7 +175,7 @@ struct EncodeBuffer
         std::scoped_lock{lock};
 
         if ((result = cuMemcpy2D(&parameters)) != CUDA_SUCCESS) {
-            throw std::runtime_error(std::to_string(result)); //TODO
+            throw std::runtime_error(std::to_string(result) + "EncodeBuffer.copy"); //TODO
         }
     }
 
@@ -184,7 +184,7 @@ struct EncodeBuffer
         std::for_each(parameters.begin(), parameters.end(), [](const CUDA_MEMCPY2D &parameters) {
             CUresult result;
             if ((result = cuMemcpy2D(&parameters)) != CUDA_SUCCESS) {
-                throw std::runtime_error(std::to_string(result)); //TODO
+                throw std::runtime_error(std::to_string(result) + "EncodeBuffer.copy"); //TODO
             }
         });
     }
@@ -193,13 +193,13 @@ struct EncodeBuffer
         NVENCSTATUS status;
         if((status = encoder.api().NvEncMapInputResource(input_buffer.registered_resource,
                                                          &input_buffer.input_surface)) != NV_ENC_SUCCESS)
-            throw std::runtime_error(std::to_string(status)); //TODO
+            throw std::runtime_error(std::to_string(status) + "EncodeBuffer.lock"); //TODO
     }
 
     void unlock() {
         NVENCSTATUS status;
         if((status = encoder.api().NvEncUnmapInputResource(input_buffer.input_surface)) != NV_ENC_SUCCESS)
-            throw std::runtime_error(std::to_string(status)); //TODO
+            throw std::runtime_error(std::to_string(status) + "EncodeBuffer.unlock"); //TODO
     }
 };
 

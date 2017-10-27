@@ -20,6 +20,9 @@ target_link_libraries(
 )
 add_test(visualcloud_test visualcloud_test)
 
+# Copy test files to output directory
+file(COPY resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
 # Add custom target 'check'
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -V DEPENDS visualcloud_test)
 

@@ -47,6 +47,8 @@ def stitch_command(rows, columns, height, width, fps, duration, output_format, o
     -f segment \\
       -vcodec hevc_nvenc \\
       -b:v 5000k \\
+      -minrate 5000k \\
+      -maxrate 5000k \\
       -r 30 -g 30 \\
       -segment_format mp4 \\
       -segment_time_delta 0.05 \\
@@ -59,6 +61,9 @@ def stitch_command(rows, columns, height, width, fps, duration, output_format, o
 def create_filter(height, width, rows, columns):
   filter = ""
   tile_height, tile_width = height / rows, width / columns
+
+  print "#tile width: {}, tile height: {}".format(tile_width, tile_height)
+
   for row in xrange(rows):
     for column in xrange(columns):
       i = column + columns*row
@@ -73,6 +78,8 @@ def create_maps(rows, columns, bitrates):
     maps += """  -map "[tile{index}]" \\
     -vcodec h264_nvenc \\
     -b:v {bitrate}k \\
+    -minrate {bitrate}k \\
+    -maxrate {bitrate}k \\
     -r 30 -g 30 \\
     -f segment \\
     -segment_format mp4 \\
@@ -89,8 +96,12 @@ if __name__ == "__main__":
     input_filename = argv[1]
     height, width, rows, columns, duration, fps = map(int, argv[2:])
 
-    bitrates = [50, 50, 50, 50, 50, 50, 1000, 5000, 1000, 50, 50, 50, 50, 50, 50]
+    bitrates = [1000, 5000, 1000] + [50] * (rows * columns - 3)
+    #bitrates = [50, 50, 50, 50, 50, 50, 1000, 5000, 1000, 50, 50, 50, 50, 50, 50]
     output_format, output_segment_duration = 'hevc', 1
+
+    print "# height: {}, width: {}".format(height, width)
+    print "# rows: {}, columns: {}".format(rows, columns)
 
     print split_command(height, width, rows, columns, bitrates)
     print

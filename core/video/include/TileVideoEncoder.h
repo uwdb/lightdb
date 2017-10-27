@@ -18,18 +18,29 @@ public:
                      const DecodeConfiguration &decodeConfiguration,
                      const EncodeConfiguration &encodeModelConfiguration,
                      const size_t rows, const size_t columns)
+            : TileVideoEncoder(context, decodeConfiguration,
+                               {rows * columns, EncodeConfiguration(encodeModelConfiguration,
+                                                                    decodeConfiguration.height / rows,
+                                                                    decodeConfiguration.width / columns)},
+                               rows, columns)
+    { }
+
+    TileVideoEncoder(GPUContext& context,
+                     const DecodeConfiguration &decodeConfiguration,
+                     const std::vector<EncodeConfiguration> &encodeConfigurations,
+                     const size_t rows, const size_t columns)
             : lock_(context),
-              encoderConfiguration_(encodeModelConfiguration,
-                                    decodeConfiguration.height / rows,
-                                    decodeConfiguration.width / columns),
               frameQueue_(lock_.get()),
+              encodeConfigurations_(encodeConfigurations.begin(), encodeConfigurations.end()),
               decoder_(decodeConfiguration, frameQueue_, lock_),
-              encoders_(CreateEncoders(context, encoderConfiguration_, lock_, rows * columns)),
+              encoders_(CreateEncoders(context, encodeConfigurations_, lock_, rows * columns)),
               rows_(rows), columns_(columns),
               pool(context, rows * columns)
     {
       if(rows == 0 || columns == 0)
         throw std::runtime_error("bad rows/col"); //TODO
+      else if(rows * columns != encodeConfigurations_.size())
+            throw std::runtime_error("bad #encode configurations"); //TODO
     }
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers) {
@@ -56,6 +67,8 @@ public:
       if(writers.size() != encoders().size())
         throw std::runtime_error("bad size"); //TODO
 
+      LOG(INFO) << "Tiling starting (" << rows() << 'x' << columns() << ')';
+
       while (!decoder_.frame_queue().isComplete()) {
         auto dropOrDuplicate = alignment.dropOrDuplicate(framesDecoded++, framesEncoded);
         auto decodedFrame = decodeSession.decode();
@@ -77,6 +90,8 @@ public:
         }
       }
 
+      LOG(INFO) << "Tiling complete (decoded " << framesDecoded << ", encoded " << framesEncoded << ")";
+
       return NV_ENC_SUCCESS;
     }
 
@@ -87,21 +102,22 @@ public:
 
 private:
     VideoLock lock_;
-    const EncodeConfiguration encoderConfiguration_;
     CUVIDFrameQueue frameQueue_;
+    const std::vector<EncodeConfiguration> encodeConfigurations_;
     std::vector<std::shared_ptr<VideoEncoder>> encoders_;
     CudaDecoder decoder_; //TODO this should be a base VideoDecoder
     const size_t rows_, columns_;
     GPUThreadPool pool;
 
     static const std::vector<std::shared_ptr<VideoEncoder>> CreateEncoders(
-            GPUContext& context, const EncodeConfiguration& configuration, VideoLock &lock, size_t count) {
+            GPUContext& context, const std::vector<EncodeConfiguration>& configurations, VideoLock &lock, size_t count) {
       std::vector<std::shared_ptr<VideoEncoder>> encoders;
+      size_t i = 0u;
 
       encoders.reserve(count);
       std::generate_n(std::back_inserter(encoders), count,
-                      [&context, &configuration, &lock]() {
-                          return std::make_shared<VideoEncoder>(context, configuration, lock); });
+                      [&context, &configurations, &lock, i]() mutable {
+                          return std::make_shared<VideoEncoder>(context, configurations.at(i++), lock); });
 
       return encoders;
     }

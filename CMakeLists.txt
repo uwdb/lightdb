@@ -23,6 +23,15 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+# Set C++ standards
+set (CMAKE_CXX_STANDARD 17)
+#set (CLANG_TIDY_CXX_STANDARD 14)
+
+# Set compiler flags
+set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -g3 -rdynamic -Wall")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -fvisibility=hidden -Wall")
+set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG --coverage -g3 -Wall")
+
 # Find required library dependencies
 set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} cuda nvcuvid dl pthread glog gflags)
 
@@ -31,6 +40,7 @@ set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} ${NVENC_LIBRARI
 
 find_package(NvidiaSDK REQUIRED)
 include_directories(${NVIDIASDK_INCLUDE_DIR})
+set(CLANG_TIDY_EXCLUDED_SOURCES ${NVIDIASDK_SOURCES})
 
 find_package(PythonLibs 2.7 REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
@@ -45,14 +55,6 @@ set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} ${FFMPEG_LIBRAR
 find_package(GTest)
 find_package (Glog REQUIRED)
 find_package(ClangTidy)
-
-# Set compiler flags
-set (CMAKE_CXX_STANDARD 17)
-
-# Set compiler flags
-set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -g3 -rdynamic -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -fvisibility=hidden -Wall")
-set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG --coverage -g3 -Wall")
 
 # Enable testing
 enable_testing()

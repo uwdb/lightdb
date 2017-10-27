@@ -25,25 +25,28 @@ namespace visualcloud {
             EncodedLightField apply(const std::string&);
 
             static void hardcode_hack(const unsigned int framerate, const unsigned int gop, const unsigned int height, const unsigned int width, const unsigned int rows, const unsigned int columns, const unsigned int max_bitrate, const std::string &intermediate_format, const std::string &output_format);
+            //TODO hacks...
+            static double hack_divide(const double left, const visualcloud::rational &right) {
+                //TODO oh noes...
+                return left / ((double)right.numerator() / (double)right.denominator()) + 0.5;
+            }
+            static unsigned int framerate, gop, height, width, max_bitrate, rows, columns;
+            static std::shared_ptr<EncodeConfiguration> encodeConfiguration;
+            static std::shared_ptr<DecodeConfiguration> decodeConfiguration;
+            static std::shared_ptr<GPUContext> context;
+            static std::shared_ptr<TileVideoEncoder> tiler;
+            static std::string decode_format, encode_format;
+            static bool executed;
+            //GPUContext context_; //TODO
+
 
         private:
             using metadata = std::tuple<size_t, size_t, PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>&>;
 
             EquirectangularTiledLightField(LightFieldReference<ColorSpace> &field, const metadata data)
                 : field_(field), rows_(std::get<0>(data)), columns_(std::get<1>(data)), video_((std::get<2>(data)))
+                  //context_(0) //TODO context
             { }
-
-            //TODO hacks...
-            static double hack_divide(const double left, const visualcloud::rational &right) {
-                //TODO oh noes...
-                return left / ((double)right.numerator() / (double)right.denominator()) + 0.5;
-            }
-            static unsigned int framerate, gop, height, width;
-            static EncodeConfiguration *encodeConfiguration;
-            static DecodeConfiguration *decodeConfiguration;
-            static GPUContext *context;
-            static TileVideoEncoder *tiler;
-
 
             static metadata get_dimensions(LightField<ColorSpace>* field, size_t rows=1, size_t columns=1) {
                 auto *partitioner = dynamic_cast<const PartitionedLightField<ColorSpace>*>(field);
@@ -72,7 +75,7 @@ namespace visualcloud {
                     throw std::invalid_argument("Query not backed by logical PanoramicVideoLightField");
                 }
             }
-
+ 
             LightFieldReference<ColorSpace> field_;
             const size_t rows_, columns_;
             const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>& video_;
@@ -121,10 +124,16 @@ namespace visualcloud {
         template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::gop = 0;
         template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::height = 0;
         template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::width = 0;
-        template<typename ColorSpace> EncodeConfiguration* EquirectangularTiledLightField<ColorSpace>::encodeConfiguration = nullptr;
-        template<typename ColorSpace> DecodeConfiguration* EquirectangularTiledLightField<ColorSpace>::decodeConfiguration = nullptr;
-        template<typename ColorSpace> GPUContext* EquirectangularTiledLightField<ColorSpace>::context = nullptr;
-        template<typename ColorSpace> TileVideoEncoder* EquirectangularTiledLightField<ColorSpace>::tiler = nullptr;
+        template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::max_bitrate = 0;
+        template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::rows = 0;
+        template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::columns = 0;
+        template<typename ColorSpace> bool EquirectangularTiledLightField<ColorSpace>::executed = false;
+        template<typename ColorSpace> std::shared_ptr<EncodeConfiguration> EquirectangularTiledLightField<ColorSpace>::encodeConfiguration = nullptr;
+        template<typename ColorSpace> std::shared_ptr<DecodeConfiguration> EquirectangularTiledLightField<ColorSpace>::decodeConfiguration = nullptr;
+        template<typename ColorSpace> std::shared_ptr<GPUContext> EquirectangularTiledLightField<ColorSpace>::context = nullptr;
+        template<typename ColorSpace> std::shared_ptr<TileVideoEncoder> EquirectangularTiledLightField<ColorSpace>::tiler = nullptr;
+        template<typename ColorSpace> std::string EquirectangularTiledLightField<ColorSpace>::encode_format = "";
+        template<typename ColorSpace> std::string EquirectangularTiledLightField<ColorSpace>::decode_format = "";
     } // namespace physical
 } // namespace visualcloud
 

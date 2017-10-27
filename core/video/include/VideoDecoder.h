@@ -32,8 +32,10 @@ public:
       CUresult result;
       auto decoderCreateInfo = configuration.AsCuvidCreateInfo(lock);
 
-      if((result = cuvidCreateDecoder(&handle_, &decoderCreateInfo)) != CUDA_SUCCESS)
-          throw std::runtime_error(std::to_string(result));
+      if((result = cuvidCreateDecoder(&handle_, &decoderCreateInfo)) != CUDA_SUCCESS) {
+          LOG(ERROR) << "cuvidCreateDecoder";
+          throw std::runtime_error(std::to_string(result) + "CudaDecoder.cuvidCreateDecoder");
+      }
   }
 
   virtual ~CudaDecoder() {

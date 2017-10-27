@@ -18,6 +18,10 @@ public:
         return std::shared_ptr<EncodedLightFieldData>(new EncodedLightFieldData(std::move(streams)));
     }
 
+    static EncodedLightField create(std::vector<bytestring> &&encodings) {
+        return std::shared_ptr<EncodedLightFieldData>(new EncodedLightFieldData(std::move(encodings)));
+    }
+
     virtual ~EncodedLightFieldData() { }
 
     EncodedLightFieldData(const EncodedLightFieldData&) = delete;
@@ -62,6 +66,10 @@ public:
 protected:
     EncodedLightFieldData(std::vector<std::unique_ptr<std::istream>> &&streams)
         : streams_(std::move(streams))
+    { }
+
+    EncodedLightFieldData(std::vector<bytestring> &&encodings)
+            : streams_{}, data_(std::move(encodings))
     { }
 
 private:

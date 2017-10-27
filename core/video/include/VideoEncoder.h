@@ -39,11 +39,13 @@ private:
             NVENCSTATUS status;
 
             if((status = api_.CreateEncoder(&configuration_)) != NV_ENC_SUCCESS)
-                throw std::runtime_error(std::to_string(status)); //TODO
+                throw std::runtime_error(std::to_string(status) + "VideoEncoderHandle.CreateEncoder"); //TODO
         }
 
         ~VideoEncoderHandle() {
-            api_.NvEncDestroyEncoder();
+            NVENCSTATUS result;
+            if((result = api_.NvEncDestroyEncoder()) != NV_ENC_SUCCESS)
+                LOG(ERROR) << "Swallowed failure to destroy encoder (NVENCSTATUS " << result << ") in destructor";
         }
 
     private:

@@ -10,8 +10,23 @@ find_program(
 if(NOT CLANGTIDY_PATH)
   set(CLANGTIDY_FOUND FALSE)
 else()
-  message(STATUS "Found clang-tidy: ${CLANGTIDY_PATH}")
-  set(EXECUTE_CLANGTIDY "${CLANGTIDY_PATH}" "-checks=*,-clang-analyzer-alpha.*")
+  string(REPLACE ";" ";-extra-arg-before;-I" CLANG_TIDY_INCLUDE_DIRS "${CMAKE_EXTRA_GENERATOR_CXX_SYSTEM_INCLUDE_DIRS}")
+
+  if(NOT DEFINED CLANG_TIDY_CXX_STANDARD)
+    set(CLANG_TIDY_CXX_STANDARD ${CMAKE_CXX_STANDARD})
+  endif()
+
+  foreach (source ${CLANG_TIDY_EXCLUDED_SOURCES})
+    set(CLANG_TIDY_LINE_FILTERS ",{\"name\":\"${source}\",\"lines\":[[1,1]]}${CLANG_TIDY_LINE_FILTERS}")
+  endforeach()
+  string(SUBSTRING "${CLANG_TIDY_LINE_FILTERS}" 1 -1 CLANG_TIDY_LINE_FILTERS)
+
+  set(EXECUTE_CLANGTIDY "${CLANGTIDY_PATH}" "-checks=*,-clang-analyzer-alpha.*;"
+                                            "-extra-arg;-std=c++${CLANG_TIDY_CXX_STANDARD};"
+                                            "-extra-arg-before;-I${NVIDIASDK_INCLUDE_DIR};"
+                                            "-extra-arg-before;-I${CLANG_TIDY_INCLUDE_DIRS};"
+                                            "-line-filter;[${CLANG_TIDY_LINE_FILTERS}]")
+
   set(CMAKE_CXX_CLANG_TIDY ${EXECUTE_CLANGTIDY})
   set(CLANGTIDY_FOUND TRUE)
 endif()

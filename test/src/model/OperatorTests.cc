@@ -151,21 +151,24 @@ TEST_F(OperatorTestFixture, test360Tiling) {
 
 TEST_F(OperatorTestFixture, test360TilingBenchmark) {
     auto name = "result";
+    auto source = "/home/bhaynes/projects/visualcloud/benchmarks/comparison/opencv/input.h264";
     auto theta = rational(102928, 2*32763);
     auto phi = rational(102928, 4*32763);
     std::vector bitrates{50, 50, 50, 50, 50, 1000, 5000, 50, 50, 50, 50, 50};
     auto i = 0u;
 
-    visualcloud::physical::EquirectangularTiledLightField<YUVColorSpace>::hardcode_hack(30, 30, 1920, 3840, 4, 4, 50, "h264", "hevc");
+    visualcloud::physical::EquirectangularTiledLightField<YUVColorSpace>::hardcode_hack(30, 30, 1920, 3840, 6, 8, 1, "h264", "hevc");
+    //visualcloud::physical::EquirectangularTiledLightField<YUVColorSpace>::hardcode_hack(30, 30, 1920, 3840, 4, 4, 50, "h264", "hevc");
+    //::google::InitGoogleLogging("visualcloud");
 
     auto start = std::chrono::steady_clock::now();
 
-    Decode<EquirectangularGeometry>("../benchmarks/comparison/opencv/input.h264")
+    Decode<EquirectangularGeometry>(source)
             >> Select(Point3D::Zero)
             >> Partition(Dimension::Time, 1)
             >> Partition(Dimension::Phi, phi)
             >> Partition(Dimension::Theta, theta)
-            >> Transcode([i, bitrates](auto& volume) mutable { return bitrates[i++]; })
+            >> Transcode([i, bitrates](auto&) mutable { return bitrates[i++]; })
             >> Interpolate(Dimension::Time, interpolation::NearestNeighbor)
             >> Discretize(Dimension::Time, rational(1, 60))
             >> Partition(Dimension::Time, 1)
@@ -174,6 +177,12 @@ TEST_F(OperatorTestFixture, test360TilingBenchmark) {
 
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
     std::cout << elapsed.count() << "ms" << std::endl;
+
+    EXPECT_VIDEO_VALID(name);
+    //EXPECT_VIDEO_FRAMES(name, 600);
+    //EXPECT_VIDEO_RESOLUTION(name, 2160, 3840);
+    //EXPECT_VIDEO_QUALITY(name, source, 30);
+    //EXPECT_EQ(remove(name.c_str()), 0);
 
     //EXPECT_VIDEO_VALID(name);
     //EXPECT_VIDEO_RESOLUTION(name, 942, 1904); // TODO

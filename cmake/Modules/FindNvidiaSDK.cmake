@@ -21,7 +21,7 @@ endif()
 
 if(NVIDIASDK_INCLUDE_DIR)
   message(STATUS "Found nvidia-sdk: ${NVIDIASDK_INCLUDE_DIR}")
-  set(NVIDIASDK_SOURCES "${NVIDIASDK_SOURCE_DIR}/dynlink_cuda.cpp;${NVIDIASDK_SOURCE_DIR}/dynlink_nvcuvid.cpp;${NVIDIASDK_SOURCE_DIR}/NvHWEncoder.cpp")
+  set(NVIDIASDK_SOURCES "${NVIDIASDK_SOURCE_DIR}/dynlink_cuda.cpp;${NVIDIASDK_SOURCE_DIR}/dynlink_nvcuvid.cpp")
   set(NVIDIASDK_FOUND TRUE)
 else()
   set(NVIDIASDK_FOUND FALSE)
