@@ -20,6 +20,8 @@ namespace visualcloud {
             const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {field_}; }
             const ColorSpace colorSpace() const override { return ColorSpace::Instance; }
             const std::vector<Volume> volumes() const override { return field_->volumes(); }
+            const unsigned int rows() const { return rows_; }
+            const unsigned int columns() const { return columns_; }
             inline const typename ColorSpace::Color value(const Point6D &point) const override { return field_->value(point); }
 
             EncodedLightField apply(const std::string&);
@@ -30,7 +32,7 @@ namespace visualcloud {
                 //TODO oh noes...
                 return left / ((double)right.numerator() / (double)right.denominator()) + 0.5;
             }
-            static unsigned int framerate, gop, height, width, max_bitrate, rows, columns;
+            static unsigned int gop, max_bitrate; //framerate, height, width; //, rows, columns;
             static std::shared_ptr<EncodeConfiguration> encodeConfiguration;
             static std::shared_ptr<DecodeConfiguration> decodeConfiguration;
             static std::shared_ptr<GPUContext> context;
@@ -41,14 +43,14 @@ namespace visualcloud {
 
 
         private:
-            using metadata = std::tuple<size_t, size_t, PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>&>;
+            using metadata = std::tuple<size_t, size_t, size_t, PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>&>;
 
             EquirectangularTiledLightField(LightFieldReference<ColorSpace> &field, const metadata data)
-                : field_(field), rows_(std::get<0>(data)), columns_(std::get<1>(data)), video_((std::get<2>(data)))
+                : field_(field), rows_(std::get<0>(data)), columns_(std::get<1>(data)), time_(std::get<2>(data)), video_((std::get<3>(data)))
                   //context_(0) //TODO context
             { }
 
-            static metadata get_dimensions(LightField<ColorSpace>* field, size_t rows=1, size_t columns=1) {
+            static metadata get_dimensions(LightField<ColorSpace>* field, size_t rows=1, size_t columns=1, size_t time=0) {
                 auto *partitioner = dynamic_cast<const PartitionedLightField<ColorSpace>*>(field);
                 auto *video = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(field);
                 auto *child = field->provenance().size() == 1 ? &*field->provenance().at(0) : nullptr;
@@ -57,19 +59,21 @@ namespace visualcloud {
 
                 if(video != nullptr) {
                     if(rows > 1 || columns > 1)
-                        return {rows, columns, *video};
+                        return {rows, columns, time, *video};
                     else {
                         LOG(WARNING) << "Attempt to perform 1x1 tiling; use transcode instead";
                         throw std::invalid_argument("Attempt to perform 1x1 tiling; ignore (or use transcode if format changed) instead");
                     }
                 } else if(partitioner != nullptr && partitioner->dimension() == Dimension::Theta)
-                    return get_dimensions(child, rows, hack_divide(AngularRange::ThetaMax.end, partitioner->interval()));
+                    return get_dimensions(child, rows, hack_divide(AngularRange::ThetaMax.end, partitioner->interval()), time);
                 else if(partitioner != nullptr && partitioner->dimension() == Dimension::Phi)
-                    return get_dimensions(child, hack_divide(AngularRange::PhiMax.end, partitioner->interval()), columns);
+                    return get_dimensions(child, hack_divide(AngularRange::PhiMax.end, partitioner->interval()), columns, time);
+                else if(partitioner != nullptr && partitioner->dimension() == Dimension::Time)
+                    return get_dimensions(child, rows, columns, (double)partitioner->interval().numerator() / partitioner->interval().denominator());
                 // TODO prohibit other intermediating field types...
                 // TODO volume may not be pointwise spatial...
                 else if(child != nullptr && discrete == nullptr)
-                    return get_dimensions(child, rows, columns);
+                    return get_dimensions(child, rows, columns, time);
                 else {
                     LOG(WARNING) << "Attempt to tile field not backed by logical PanoramicVideoLightField";
                     throw std::invalid_argument("Query not backed by logical PanoramicVideoLightField");
@@ -77,7 +81,8 @@ namespace visualcloud {
             }
  
             LightFieldReference<ColorSpace> field_;
-            const size_t rows_, columns_;
+            const unsigned int rows_, columns_;
+            const double time_;
             const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>& video_;
         };
 
@@ -120,13 +125,13 @@ namespace visualcloud {
         };
 
         //TODO hacks
-        template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::framerate = 0;
+        //template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::framerate = 0;
         template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::gop = 0;
-        template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::height = 0;
-        template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::width = 0;
+        //template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::height = 0;
+        //template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::width = 0;
         template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::max_bitrate = 0;
-        template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::rows = 0;
-        template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::columns = 0;
+        //template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::rows = 0;
+        //template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::columns = 0;
         template<typename ColorSpace> bool EquirectangularTiledLightField<ColorSpace>::executed = false;
         template<typename ColorSpace> std::shared_ptr<EncodeConfiguration> EquirectangularTiledLightField<ColorSpace>::encodeConfiguration = nullptr;
         template<typename ColorSpace> std::shared_ptr<DecodeConfiguration> EquirectangularTiledLightField<ColorSpace>::decodeConfiguration = nullptr;

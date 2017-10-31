@@ -34,6 +34,22 @@ namespace visualcloud {
         }
 
         template<typename ColorSpace>
+        static std::optional<EncodedLightField> applyIdentityTranscode(LightFieldReference<ColorSpace> lightfield, const std::string &format) {
+            auto *video = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*lightfield);
+            if(video != nullptr && video->metadata().codec == format) {
+                auto sp = static_cast<const std::shared_ptr<LightField<ColorSpace>>>(lightfield);
+                auto vlf = std::static_pointer_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>>(sp);
+                auto elf = std::static_pointer_cast<EncodedLightFieldData>(vlf);
+                //auto vlf = dynamic_cast<const std::shared_ptr<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>>*>(&sp);
+                //auto *elf = reinterpret_cast<const std::shared_ptr<EncodedLightFieldData>*>(vlf);
+
+                return elf;
+            }
+            else
+                return {};
+        }
+
+        template<typename ColorSpace>
         EncodedLightField execute(LightFieldReference <ColorSpace> lightfield, const std::string &format) {
             //print_plan(lightfield);
 
@@ -41,7 +57,9 @@ namespace visualcloud {
             //auto vl = volumes.size();
 
             std::optional<EncodedLightField> result;
-            if((result = applyTiling(lightfield, format)).has_value())
+            if((result = applyIdentityTranscode(lightfield, format)).has_value())
+                return result.value();
+            else if((result = applyTiling(lightfield, format)).has_value())
                 return result.value();
             else if((result = applyStitching(lightfield)).has_value())
                 return result.value();

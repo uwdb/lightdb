@@ -105,8 +105,8 @@ int main(int argc, char** argv) {
     if(argc != 2)
         printf("Usage: %s [input filename]\n", argv[0]);
     else {
-        auto rows = 3u, columns = 5u;
-        tile(argv[1], rows, columns, {50, 50, 50, 50, 50, 50, 1000, 5000, 1000, 50, 50, 50, 50, 50, 50});
+        auto rows = 4u, columns = 4u;
+        tile(argv[1], rows, columns, {50, 50, 50, 50, 50, 50, 1000, 5000, 1000, 50, 50, 50, 50, 50, 50, 50});
         join(rows, columns, 5000);
     }
 }

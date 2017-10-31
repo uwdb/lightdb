@@ -250,11 +250,18 @@ namespace visualcloud::utility {
     StreamMetadata::StreamMetadata(const std::string &filename, const size_t index, const bool probe) {
         int result;
         char buffer[AV_ERROR_MAX_STRING_SIZE];
+
+        ffmpeg::initialize(); //TODO do this statically rather than over and over
+
         AVFormatContext* context = avformat_alloc_context();
 
-        if((result = avformat_open_input(&context, filename.c_str(), nullptr, nullptr) < 0) ||
-           (probe && (result = avformat_find_stream_info(context, nullptr)) < 0)) {
+        if((result = avformat_open_input(&context, filename.c_str(), nullptr, nullptr)) < 0) {
             LOG(ERROR) << av_make_error_string (buffer, AV_ERROR_MAX_STRING_SIZE, result);
+            //TODO leaks context
+            throw std::runtime_error(buffer); //TODO
+        } else if((probe && (result = avformat_find_stream_info(context, nullptr)) < 0)) {
+            LOG(ERROR) << av_make_error_string (buffer, AV_ERROR_MAX_STRING_SIZE, result);
+            //TODO leaks context
             throw std::runtime_error(buffer); //TODO
         }
 
@@ -271,10 +278,9 @@ namespace visualcloud::utility {
                 context->streams[index]->codecpar->codec_id != AV_CODEC_ID_HEVC)
             throw std::runtime_error("Hardcoded support only for H264 and HEVC"); //TODO
 
-
         codec =  context->streams[index]->codecpar->codec_id == AV_CODEC_ID_H264 ? "h264" : "hevc";
-        height = static_cast<size_t>(context->streams[index]->codecpar->height);
-        width = static_cast<size_t>(context->streams[index]->codecpar->width);
+        height = static_cast<unsigned int>(context->streams[index]->codecpar->height);
+        width = static_cast<unsigned int>(context->streams[index]->codecpar->width);
         framerate = rational(context->streams[index]->r_frame_rate.num, context->streams[index]->r_frame_rate.den);
         frames = static_cast<size_t>(context->streams[index]->nb_frames);
         duration = rational(context->duration != AV_NOPTS_VALUE ? context->duration : 0, AV_TIME_BASE);

@@ -187,9 +187,9 @@ public:
 
         std::vector<LightFieldReference<YUVColorSpace>> decodes;
         for(auto i = 0u; i < encoded->encodings().size(); i++) {
-            auto filename = std::string("out") + std::to_string(i) + ".hevc";
+            auto filename = std::string("out") + std::to_string(i); //+ ".hevc";
             std::ofstream fout{filename, std::ofstream::out | std::ofstream::binary};
-            fout.write(encoded->encodings().at(i).data(), encoded->encodings().at(i).size());
+            fout.write(encoded->encodings()[i]->data(), encoded->encodings()[i]->size());
             fout.close();
 
             decodes.emplace_back(Decode<EquirectangularGeometry>(filename).apply());

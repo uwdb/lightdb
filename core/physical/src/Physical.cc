@@ -10,12 +10,12 @@ namespace visualcloud {
     namespace physical {
         template<typename ColorSpace>
         void EquirectangularTiledLightField<ColorSpace>::hardcode_hack(const unsigned int framerate, const unsigned int gop, const unsigned int height, const unsigned int width, const unsigned int rows, const unsigned int columns, const unsigned int max_bitrate, const std::string &decode_format, const std::string &encode_format) {
-            EquirectangularTiledLightField<ColorSpace>::framerate = framerate;
+            //EquirectangularTiledLightField<ColorSpace>::framerate = framerate;
             EquirectangularTiledLightField<ColorSpace>::gop = gop;
-            EquirectangularTiledLightField<ColorSpace>::height = height;
-            EquirectangularTiledLightField<ColorSpace>::width = width;
-            EquirectangularTiledLightField<ColorSpace>::rows = rows;
-            EquirectangularTiledLightField<ColorSpace>::columns = columns;
+            //EquirectangularTiledLightField<ColorSpace>::height = height;
+            //EquirectangularTiledLightField<ColorSpace>::width = width;
+            //EquirectangularTiledLightField<ColorSpace>::rows = rows;
+            //EquirectangularTiledLightField<ColorSpace>::columns = columns;
             EquirectangularTiledLightField<ColorSpace>::decode_format = decode_format;
             EquirectangularTiledLightField<ColorSpace>::encode_format = encode_format;
             EquirectangularTiledLightField<ColorSpace>::max_bitrate = max_bitrate;
@@ -33,67 +33,46 @@ namespace visualcloud {
 
         template<typename ColorSpace>
         EncodedLightField EquirectangularTiledLightField<ColorSpace>::apply(const std::string &format) {
-            //GPUContext context(0);
             LOG(INFO) << "Executing tiling physical operator with " << rows_ << " rows and " << columns_ << " columns";
 
+            //auto framerate = 30u;
+            size_t gop = video_.metadata().framerate.numerator() * time_ / video_.metadata().framerate.denominator();
+            auto low_bitrate = 50u, high_bitrate = 5000u*1024;
+
             auto start = std::chrono::steady_clock::now();
-
-            const auto rows = 4, columns = 4;
-            const auto height = 2160, width = 3840;
-            EquirectangularTiledLightField<ColorSpace>::columns = columns;
-            EquirectangularTiledLightField<ColorSpace>::rows = rows;
-            //const auto height = 2160, width = 3840;
             GPUContext context(0);
+
             //context.AttachToThread();
-            std::vector<EncodeConfiguration> encodeConfigurations;
-            for(auto r = 0; r < rows; r++) {
-                for(auto c = 0; c < columns; c++) {
-                    encodeConfigurations.emplace_back(EncodeConfiguration{height/rows, width/columns, NV_ENC_HEVC, 30, 30, 1024*1024});
-                    encodeConfigurations.at(encodeConfigurations.size() - 1).bitrate = r == 0 && c == 1 ? 5000u*1024 : 50;
-                    encodeConfigurations.at(encodeConfigurations.size() - 1).videoBufferingVerifier.maxBitrate = r == 0 && c == 1 ? 5000u*1024 : 50;
-                    //encodeConfigurations.at(encodeConfigurations.size() - 1).videoBufferingVerifier.size = 500000;
-                    encodeConfigurations.at(encodeConfigurations.size() - 1).quantization.rateControlMode = NV_ENC_PARAMS_RC_CBR2;
-                    //encodeConfigurations.at(encodeConfigurations.size() - 1).quantization.rateControlMode = NV_ENC_PARAMS_RC_CBR;
-                    //encodeConfigurations.at(encodeConfigurations.size() - 1).quantization.quantizationParameter = 50;
-                    //encodeConfigurations.at(encodeConfigurations.size() - 1).bitrate = r == 1 && c == 1 ? 5000u : 50;
-                    //encodeConfigurations.at(encodeConfigurations.size() - 1).bitrate = r == 1 && c == 1 ? 5000*1024u : 50000u;
-                }
-            }
+            DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
+            std::vector<EncodeConfiguration> encodeConfigurations(
+                    rows() * columns(),
+                    EncodeConfiguration{video_.metadata().height/rows(), video_.metadata().width/columns(),
+                                        NV_ENC_HEVC, video_.metadata().framerate, gop, low_bitrate, NV_ENC_PARAMS_RC_CBR});
+            encodeConfigurations[1].bitrate = high_bitrate;
 
-            //EncodeConfiguration encodeConfiguration(1920, 3840, NV_ENC_HEVC, 30, 30, 1024*1024);
-            DecodeConfiguration decodeConfiguration(encodeConfigurations.at(0), cudaVideoCodec_H264);
-            decodeConfiguration.width = width;
-            decodeConfiguration.height = height;
-
-            TileVideoEncoder tiler(context, decodeConfiguration, encodeConfigurations, rows, columns);
-                //[](auto row, auto column) -> std::optional<size_t> { return row == 1 && column == 1 ? 5000*1024u : 50000u; });
+            TileVideoEncoder tiler(context, decodeConfiguration, encodeConfigurations, rows(), columns());
 
             auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
             LOG(INFO) << "Tile operator initialization took " << elapsed.count() << "ms";
 
 
-            //FileDecodeReader reader("resources/test-pattern.h264");
-            FileDecodeReader reader("/home/bhaynes/projects/visualcloud/test/resources/test-pattern-4K.h264");
-            //FileDecodeReader reader("/home/bhaynes/projects/visualcloud/test/resources/test-pattern-4K.h264");
+            FileDecodeReader reader(video_.filename());
             std::vector<std::shared_ptr<EncodeWriter>> writers;
 
-            for(auto i = 0; i < rows * columns; i++)
-                //writers.emplace_back(std::make_shared<MemoryEncodeWriter>(tiler.api()));
-                writers.emplace_back(std::make_shared<FileEncodeWriter>(tiler.api(), std::string("out") + std::to_string(i)));
+            for(auto i = 0; i < rows() * columns(); i++)
+                writers.emplace_back(std::make_shared<SegmentedMemoryEncodeWriter>(tiler.api(), encodeConfigurations[0]));
+                //writers.emplace_back(std::make_shared<FileEncodeWriter>(tiler.api(), std::string("out") + std::to_string(i)));
 
             tiler.tile(reader, writers);
 
-            std::vector<bytestring> decodes{};
+            std::vector<std::shared_ptr<bytestring>> decodes{};
             //std::vector<std::unique_ptr<std::istream>> decodes{};
             for(auto i = 0; i < rows_ * columns_; i++)
-                decodes.emplace_back(bytestring{});
-                //decodes.emplace_back(dynamic_cast<MemoryEncodeWriter*>(writers.at(i).get())->buffer());
+                //decodes.emplace_back(bytestring{});
+                decodes.emplace_back(std::make_shared<bytestring>(dynamic_cast<SegmentedMemoryEncodeWriter*>(writers[i].get())->buffer()));
                 //decodes.emplace_back(std::make_unique<std::ifstream>(std::string("out") + std::to_string(i)));
 
-            return CompositeEncodedLightField::create(std::move(decodes));
-
-
-
+            return CompositeMemoryEncodedLightField::create(decodes);
 /*
 
 
@@ -173,7 +152,7 @@ namespace visualcloud {
 
         template<typename ColorSpace>
         EncodedLightField StitchedLightField<ColorSpace>::apply(const visualcloud::rational &interval) {
-            auto height = 0u, width = 0u;
+            //auto height = 0u, width = 0u;
 
             //TODO broken; this doesn't take tile coordinates into account
             /*for(auto &video: videos_) {
@@ -182,18 +161,20 @@ namespace visualcloud {
                 width += resolution.first;
             }*/
 
-            LOG(INFO) << "Hardcoded video resolution; this will break for other videos.";
             LOG(INFO) << "Hardcoded tile resolution; this will break for other tilings.";
             LOG(INFO) << "Wonky GOP/time interval splitting";
-            auto columns = EquirectangularTiledLightField<ColorSpace>::columns, rows = EquirectangularTiledLightField<ColorSpace>::rows;
-            height = EquirectangularTiledLightField<ColorSpace>::height, width = EquirectangularTiledLightField<ColorSpace>::width;
+            //auto columns = EquirectangularTiledLightField<ColorSpace>::columns, rows = EquirectangularTiledLightField<ColorSpace>::rows;
+            auto columns = 4, rows = 4;
+            //auto height = 1920, width = 3840;
+            auto height = videos_[0]->metadata().height * rows, width = videos_[0]->metadata().width * columns;
+            //height = EquirectangularTiledLightField<ColorSpace>::height, width = EquirectangularTiledLightField<ColorSpace>::width;
             auto dinterval = (double)interval.numerator() / interval.denominator();
 
             std::string cwd = getcwd(nullptr, 0);
             std::string command{std::string("/home/bhaynes/projects/visualcloud/stitch.sh '") + cwd + "' " + std::to_string(height) + " " + std::to_string(width) + " " + std::to_string(rows) + " " + std::to_string(columns) + " " + std::to_string(dinterval)};
             system(command.c_str());
 
-            return SingletonEncodedLightField::create("stitched.hevc");
+            return SingletonFileEncodedLightField::create("stitched.hevc");
         }
 
         template class EquirectangularTiledLightField<YUVColorSpace>;

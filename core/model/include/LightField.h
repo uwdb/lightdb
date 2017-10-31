@@ -4,6 +4,7 @@
 #include "Geometry.h"
 #include "Color.h"
 #include "Interpolation.h"
+#include "Encoding.h"
 #include "Ffmpeg.h"
 #include <memory>
 #include <vector>
@@ -60,6 +61,10 @@ public:
 
     inline std::string type() const {
         return this->name();
+    }
+
+    explicit operator const std::shared_ptr<LightField<ColorSpace>>() const {
+        return pointer_;
     }
 
     template<typename T, typename... _Args>
@@ -316,38 +321,53 @@ private:
 };
 
 template<typename Geometry, typename ColorSpace>
-class PanoramicVideoLightField: public PanoramicLightField<Geometry, ColorSpace> {
+class PanoramicVideoLightField: public PanoramicLightField<Geometry, ColorSpace>, public visualcloud::SingletonFileEncodedLightField {
 public:
     PanoramicVideoLightField(const std::string &filename)  //TODO drop filename; see below
-        : PanoramicVideoLightField(Point3D::Zero, std::ifstream{filename}, filename)
+        : PanoramicVideoLightField(Point3D::Zero, filename)
+        //: PanoramicVideoLightField(Point3D::Zero, std::ifstream{filename}, filename)
     { }
 
-    PanoramicVideoLightField(std::istream &&stream, const std::string &filename="")  //TODO drop filename; see below
-        : PanoramicVideoLightField(Point3D::Zero, std::move(stream), filename)
+    //PanoramicVideoLightField(std::istream &&stream, const std::string &filename="")  //TODO drop filename; see below
+    //    : PanoramicVideoLightField(Point3D::Zero, std::move(stream), filename)
+    //{ }
+
+    PanoramicVideoLightField(const Point3D &point, const std::string &filename="")  //TODO drop filename; see below
+          //: PanoramicVideoLightField(point, filename)
+            : PanoramicLightField<Geometry, ColorSpace>(point, {0, duration()}),
+              SingletonFileEncodedLightField(filename), //TODO no need to duplicate filename here and in singleton
+            //frames_(std::move(frames)),
+              geometry_(Dimension::Time, framerate())
+              //filename_(filename)
     { }
 
-    PanoramicVideoLightField(const Point3D &point, std::istream &&stream, const std::string &filename="")  //TODO drop filename; see below
-          : PanoramicVideoLightField(point, visualcloud::utility::ffmpeg::decode(stream), filename)
-    { }
+    //PanoramicVideoLightField(const Point3D &point, std::istream &&stream, const std::string &filename="")  //TODO drop filename; see below
+    //        : PanoramicVideoLightField(point, visualcloud::utility::ffmpeg::decode(stream), filename)
+    //{ }
+
+    virtual ~PanoramicVideoLightField() { }
 
     const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {}; }
-    inline visualcloud::utility::ffmpeg::FrameIterator& frames() const { return *frames_;}
-    inline visualcloud::rational framerate() const { return frames_->framerate(); }
+    //TODO remove both of these
+    //inline visualcloud::utility::ffmpeg::FrameIterator& frames() const { return *frames_;}
+    inline visualcloud::rational framerate() const { return visualcloud::rational(30, 1); } //TODO hardcoded...
 
-    inline std::string filename() const { return filename_; } //TODO drop filename; see below
+    //inline std::string filename() const { return filename_; } //TODO drop filename; see below
+    inline size_t duration() const { return 20; } //TODO remove hardcoded value
     inline visualcloud::utility::StreamMetadata metadata() const { return (metadata_.has_value()
                                                                           ? metadata_
-                                                                          : (metadata_ = visualcloud::utility::StreamMetadata(filename_, 0, true))).value(); }
+                                                                          : (metadata_ = visualcloud::utility::StreamMetadata(filename(), 0, true))).value(); }
 protected:
-    PanoramicVideoLightField(const Point3D &point,
-                             std::unique_ptr<visualcloud::utility::ffmpeg::FrameIterator> frames,
+  /*  PanoramicVideoLightField(const Point3D &point,
+                             //std::unique_ptr<visualcloud::utility::ffmpeg::FrameIterator> frames,
                              const std::string &filename)
-            : PanoramicLightField<Geometry, ColorSpace>(point, {0, frames_->duration()}),
-              frames_(std::move(frames)),
-              geometry_(Dimension::Time, frames_->framerate()),
+            : PanoramicLightField<Geometry, ColorSpace>(point, {0, duration()}),
+              SingletonEncodedLightField(filename), //TODO no need to duplicate filename here and in singleton
+              //frames_(std::move(frames)),
+              geometry_(Dimension::Time, framerate()),
               filename_(filename)
     { }
-
+*/
     bool defined_at(const Point6D &point) const override {
         return geometry_.defined_at(point) &&
                PanoramicLightField<Geometry, ColorSpace>::defined_at(point);
@@ -359,8 +379,10 @@ protected:
     };
 
 private:
-    const std::string filename_; //TODO drop filename after adding StreamDecodeReader in Physical.cc
-    const std::unique_ptr<visualcloud::utility::ffmpeg::FrameIterator> frames_;
+    //TODO drop filename after adding StreamDecodeReader in Physical.cc
+    // Can make SingletonEncodedLightField be a replacement for this class; one for in-memory, one for on-disk
+    //const std::string filename_;
+    //const std::unique_ptr<visualcloud::utility::ffmpeg::FrameIterator> frames_;
     const IntervalGeometry geometry_;
     mutable std::optional<visualcloud::utility::StreamMetadata> metadata_;
 };

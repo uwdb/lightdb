@@ -106,3 +106,6 @@ if __name__ == "__main__":
     print split_command(height, width, rows, columns, bitrates)
     print
     print stitch_command(rows, columns, height, width, fps, duration, output_format, output_segment_duration)
+    print 'rm pipe*'
+    print 'du -ch output-* | tail -n 1'
+    print 'rm output-*'

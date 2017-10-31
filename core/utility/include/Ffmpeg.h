@@ -13,7 +13,7 @@ extern "C" {
 namespace visualcloud::utility {
     struct StreamMetadata {
         std::string codec;
-        size_t height, width;
+        unsigned int height, width;
         rational framerate;
         size_t frames;
         rational duration;

@@ -3,6 +3,7 @@
 
 #include "EncodeAPI.h"
 #include "VideoLock.h"
+#include "rational.h"
 #include <string>
 
 struct Configuration {
@@ -11,7 +12,7 @@ struct Configuration {
     unsigned int max_width;
     unsigned int max_height;
     unsigned int bitrate;
-    struct FrameRate {
+    struct FrameRate { //TODO change to type rational
         unsigned int numerator;
         unsigned int denominator;
 
@@ -78,11 +79,19 @@ struct EncodeConfiguration: public Configuration
     }
 
     EncodeConfiguration(const unsigned int height, const unsigned int width,
+                        const EncodeCodec codec, const visualcloud::rational fps,
+                        const unsigned int gop_length, const size_t bitrate,
+                        const NV_ENC_PARAMS_RC_MODE rateControlMode=NV_ENC_PARAMS_RC_CONSTQP) :
+            EncodeConfiguration(height, width, 0, 0, codec, NV_ENC_PRESET_DEFAULT_GUID,
+                                {fps.numerator(), fps.denominator()}, gop_length, bitrate, rateControlMode)
+    { }
+
+    EncodeConfiguration(const unsigned int height, const unsigned int width,
                         const EncodeCodec codec, const unsigned int fps,
                         const unsigned int gop_length, const size_t bitrate,
                         const NV_ENC_PARAMS_RC_MODE rateControlMode=NV_ENC_PARAMS_RC_CONSTQP) :
             EncodeConfiguration(height, width, 0, 0, codec, NV_ENC_PRESET_DEFAULT_GUID,
-                                fps, gop_length, bitrate, rateControlMode)
+                                {fps, 1}, gop_length, bitrate, rateControlMode)
     { }
 
     EncodeConfiguration(const unsigned int height, const unsigned int width,
@@ -90,14 +99,14 @@ struct EncodeConfiguration: public Configuration
                         const unsigned int gop_length, const size_t bitrate,
                         const NV_ENC_PARAMS_RC_MODE rateControlMode=NV_ENC_PARAMS_RC_CONSTQP) :
             EncodeConfiguration(height, width, 0, 0, codec, EncodeAPI::GetPresetGUID(preset.c_str(), codec),
-                                fps, gop_length, bitrate, rateControlMode)
+                                {fps, 1}, gop_length, bitrate, rateControlMode)
     { }
 
     EncodeConfiguration(const unsigned int height, const unsigned int width,
                         const EncodeCodec codec, GUID preset, const unsigned int fps,
                         const unsigned int gop_length, const size_t bitrate,
                         const NV_ENC_PARAMS_RC_MODE rateControlMode=NV_ENC_PARAMS_RC_CONSTQP) :
-            EncodeConfiguration(height, width, 0, 0, codec, preset, fps, gop_length, bitrate, rateControlMode)
+            EncodeConfiguration(height, width, 0, 0, codec, preset, {fps, 1}, gop_length, bitrate, rateControlMode)
     { }
 
     EncodeConfiguration(const unsigned int height, const unsigned int width,
@@ -107,22 +116,22 @@ struct EncodeConfiguration: public Configuration
                         const NV_ENC_PARAMS_RC_MODE rateControlMode=NV_ENC_PARAMS_RC_CONSTQP) :
             EncodeConfiguration(height, width, max_height, max_width, codec,
                                 EncodeAPI::GetPresetGUID(preset.c_str(), codec),
-                                fps, gop_length, bitrate, rateControlMode)
+                                {fps, 1}, gop_length, bitrate, rateControlMode)
     { }
 
     EncodeConfiguration(const unsigned int height, const unsigned int width,
                         const unsigned int max_height, const unsigned int max_width,
-                        const EncodeCodec codec, GUID preset, const unsigned int fps,
+                        const EncodeCodec codec, GUID preset, const Configuration::FrameRate fps,
                         const unsigned int gop_length, const size_t bitrate,
-                        const unsigned int b_frames=0,
                         const NV_ENC_PARAMS_RC_MODE rateControlMode=NV_ENC_PARAMS_RC_CONSTQP,
+                        const unsigned int b_frames=0,
                         const NV_ENC_BUFFER_FORMAT input_format=NV_ENC_BUFFER_FORMAT_NV12,
                         const NV_ENC_PIC_STRUCT picture_struct=NV_ENC_PIC_STRUCT_FRAME,
                         const unsigned int i_qfactor=DEFAULT_I_QFACTOR,
                         const unsigned int b_qfactor=DEFAULT_B_QFACTOR,
                         const unsigned int i_qoffset=DEFAULT_I_QOFFSET,
                         const unsigned int b_qoffset=DEFAULT_B_QOFFSET) :
-            Configuration{width, height, max_width, max_height, bitrate, {fps, 1}},
+            Configuration{width, height, max_width, max_height, bitrate, fps},
             codec(codec),
             inputFormat(input_format),
             preset(preset),
@@ -147,7 +156,7 @@ struct DecodeConfiguration: public Configuration {
 
     DecodeConfiguration(const unsigned int height, const unsigned int width,
                         const unsigned int max_height, const unsigned int max_width,
-                        const unsigned int fps, const unsigned int bitrate,
+                        const visualcloud::rational fps,
                         const cudaVideoCodec codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
@@ -155,7 +164,22 @@ struct DecodeConfiguration: public Configuration {
                         const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
-            : DecodeConfiguration({height, width, height, width, fps, bitrate},
+            : DecodeConfiguration({height, width, max_height, max_width, 0, {fps.numerator(), fps.denominator()}},
+                                  codec, chroma_format, output_format, output_surfaces, decode_surfaces,
+                                  creation_flags, deinterlace_mode)
+    { }
+
+    DecodeConfiguration(const unsigned int height, const unsigned int width,
+                        const unsigned int max_height, const unsigned int max_width,
+                        const visualcloud::rational fps, const unsigned int bitrate,
+                        const cudaVideoCodec codec,
+                        const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
+                        const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
+                        const unsigned long output_surfaces = 2,
+                        const unsigned int decode_surfaces = 0,
+                        const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
+                        const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
+            : DecodeConfiguration({height, width, max_height, max_width, 0, {fps.numerator(), fps.denominator()}},
                                   codec, chroma_format, output_format, output_surfaces, decode_surfaces,
                                   creation_flags, deinterlace_mode)
     { }
@@ -169,8 +193,34 @@ struct DecodeConfiguration: public Configuration {
                         const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
-            : DecodeConfiguration(height, width, height, width, fps, bitrate, codec,
+            : DecodeConfiguration(height, width, {fps, 1}, bitrate, codec,
                                    chroma_format, output_format, output_surfaces, creation_flags, deinterlace_mode)
+    { }
+
+    DecodeConfiguration(const unsigned int height, const unsigned int width,
+                        const visualcloud::rational fps, const unsigned int bitrate,
+                        const cudaVideoCodec codec,
+                        const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
+                        const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
+                        const unsigned long output_surfaces = 2,
+                        const unsigned int decode_surfaces = 0,
+                        const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
+                        const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
+            : DecodeConfiguration(height, width, height, width, fps, bitrate, codec,
+                                  chroma_format, output_format, output_surfaces, creation_flags, deinterlace_mode)
+    { }
+
+    DecodeConfiguration(const unsigned int height, const unsigned int width,
+                        const visualcloud::rational fps,
+                        const cudaVideoCodec codec,
+                        const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
+                        const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
+                        const unsigned long output_surfaces = 2,
+                        const unsigned int decode_surfaces = 0,
+                        const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
+                        const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
+            : DecodeConfiguration(height, width, height, width, fps, 0, codec,
+                                  chroma_format, output_format, output_surfaces, creation_flags, deinterlace_mode)
     { }
 
     DecodeConfiguration(const CUVIDEOFORMAT &video_format,
