@@ -243,6 +243,24 @@ private:
     const Geometry &geometry_;
 };
 
+class Map: public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
+public:
+    Map(visualcloud::functor<YUVColorSpace> &functor)
+        : functor_(functor)
+    { }
+
+    Map(visualcloud::functor<YUVColorSpace> &&functor)
+            : functor_(functor)
+    { }
+
+    LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace>& field) const override {
+        return LightFieldReference<YUVColorSpace>::make<TransformedLightField<YUVColorSpace>>(field, functor_);
+    }
+
+private:
+    const visualcloud::functor<YUVColorSpace> &functor_;
+};
+
 template<typename InColorSpace, typename OutColorSpace>
 inline LightFieldReference<OutColorSpace> operator>>(const LightFieldReference<InColorSpace>& input,
                                                      const UnaryOperator<InColorSpace, OutColorSpace>& op)

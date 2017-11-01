@@ -54,7 +54,7 @@ set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} ${FFMPEG_LIBRAR
 
 find_package(GTest)
 find_package (Glog REQUIRED)
-find_package(ClangTidy)
+#find_package(ClangTidy)
 
 # Enable testing
 enable_testing()

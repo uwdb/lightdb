@@ -23,7 +23,9 @@ public:
         return (double)value.numerator() / value.denominator();
     }
 
-    void testSelect(size_t size, size_t duration, size_t frames, size_t height, size_t width, AngularRange phi, AngularRange theta) {
+    void testSelect(size_t size, size_t duration, size_t frames,
+                    size_t height, size_t width,
+                    AngularRange phi, AngularRange theta) {
         auto source = std::string("resources/test-") + std::to_string(size) + "K-" + std::to_string(duration) + "s.h264";
         auto left = std::lround((theta.start / AngularRange::ThetaMax.end) * width),
              top = std::lround((phi.start / AngularRange::PhiMax.end) * height),

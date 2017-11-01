@@ -1,29 +1,37 @@
 #ifndef CROPPER_H
 #define CROPPER_H
 
-#include "Transcoder.h"
+#include "VideoDecoder.h"
+#include "VideoEncoder.h"
+#include "VideoEncoderSession.h"
+#include "VideoDecoderSession.h"
+#include "DecodeReader.h"
+#include "EncodeWriter.h"
+#include "FrameRateAlignment.h"
 #include <numeric>
 
 
-class CropTranscoder: public Transcoder {
+class CropTranscoder {
 public:
     CropTranscoder(GPUContext& context,
                DecodeConfiguration &decodeConfiguration,
                EncodeConfiguration &encodeConfiguration)
-            : Transcoder(context, decodeConfiguration, encodeConfiguration)
+            : lock_(context), frameQueue_(lock_.get()),
+              encoder_(context, encodeConfiguration, lock_),
+              decoder_(decodeConfiguration, frameQueue_, lock_)
     { }
 
     void crop(DecodeReader &reader, EncodeWriter &writer, const size_t top, const size_t left) {
-        crop(reader, writer, [](Frame& frame) -> Frame& { return frame; }, top, left);
+        crop(reader, writer, [](VideoLock&, Frame& frame) -> Frame& { return frame; }, top, left);
     }
 
     void crop(DecodeReader &reader, EncodeWriter &writer, std::vector<FrameTransform> transforms,
               const size_t top, const size_t left) {
-        crop(reader, writer, [transforms](Frame& frame) -> Frame& {
+        crop(reader, writer, [this, transforms](VideoLock&, Frame& frame) -> Frame& {
             return std::accumulate(
                 transforms.begin(), transforms.end(),
                 std::ref(frame),
-                [](auto& frame, auto& f) -> Frame& { return f(frame); });
+                [this](auto& frame, auto& f) -> Frame& { return f(lock_, frame); });
         }, top, left);
     }
 
@@ -37,14 +45,26 @@ public:
         while (!decoder().frame_queue().isComplete()) {
             auto dropOrDuplicate = alignment.dropOrDuplicate(framesDecoded++, framesEncoded);
             auto decodedFrame = decodeSession.decode();
-            auto processedFrame = transform(decodedFrame);
+            auto processedFrame = transform(lock_, decodedFrame);
 
             for (auto i = 0u; i <= dropOrDuplicate; i++, framesEncoded++)
-                encodeSession.Encode(processedFrame, top, left);
+                if(top == 0 && left == 0)
+                    encodeSession.Encode(processedFrame);
+                else
+                    encodeSession.Encode(processedFrame, top, left);
         }
 
-        LOG(INFO) << "Crop complete (decoded " << framesDecoded << ", encoded " << framesEncoded << ")";
+        LOG(INFO) << "Transcode complete (decoded " << framesDecoded << ", encoded " << framesEncoded << ")";
     }
+
+    VideoEncoder &encoder() { return encoder_; }
+    VideoDecoder &decoder() { return decoder_; }
+
+private:
+    VideoLock lock_;
+    CUVIDFrameQueue frameQueue_;
+    VideoEncoder encoder_;
+    CudaDecoder decoder_;
 };
 
 

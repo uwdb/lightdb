@@ -48,6 +48,20 @@ namespace visualcloud {
         }
 
         template<typename ColorSpace>
+        static std::optional<EncodedLightField> applyTransformTranscode(LightFieldReference<ColorSpace> lightfield, const std::string &format) {
+            if(lightfield->provenance().size() != 1)
+                return {};
+
+            auto *transform = dynamic_cast<TransformedLightField<ColorSpace>*>(&*lightfield);
+            auto *video = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*lightfield->provenance()[0]);
+            if(transform != nullptr && video != nullptr &&
+               transform->functor().hasFrameTransform())
+                return visualcloud::physical::EquirectangularTranscodedLightField<ColorSpace>(*video, transform->functor()).apply(format);
+            else
+                return {};
+        }
+
+        template<typename ColorSpace>
         static std::optional<EncodedLightField> applySelection(LightFieldReference<ColorSpace> lightfield, const std::string &format) {
             if(lightfield->provenance().size() != 1)
                 return {};
@@ -81,6 +95,8 @@ namespace visualcloud {
             else if((result = applyStitching(lightfield)).has_value())
                 return result.value();
             else if((result = applySelection(lightfield, format)).has_value())
+                return result.value();
+            else if((result = applyTransformTranscode(lightfield, format)).has_value())
                 return result.value();
             else
                 throw std::runtime_error("Unable to execute query");

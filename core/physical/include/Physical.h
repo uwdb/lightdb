@@ -143,6 +143,28 @@ namespace visualcloud {
             const AngularRange theta_, phi_;
         };
 
+        template<typename ColorSpace>
+        class EquirectangularTranscodedLightField: public LightField<ColorSpace> {
+        public:
+            EquirectangularTranscodedLightField(const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace> &video,
+                                                const visualcloud::functor<ColorSpace> &functor)
+                    : video_(video), functor_(functor)
+            { }
+
+            const std::vector<LightFieldReference<ColorSpace>> provenance() const override { video_.provenance(); } //TODO incorrect
+            const ColorSpace colorSpace() const override { return ColorSpace::Instance; }
+            const std::vector<Volume> volumes() const override { return video_.volumes(); }
+            inline const typename ColorSpace::Color value(const Point6D &point) const override {
+                return functor_(video_, point);
+            }
+
+            EncodedLightField apply(const std::string &format);
+
+        private:
+            const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>& video_;
+            const visualcloud::functor<ColorSpace> &functor_;
+        };
+
         //TODO hacks
         //template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::framerate = 0;
         template<typename ColorSpace> unsigned int EquirectangularTiledLightField<ColorSpace>::gop = 0;

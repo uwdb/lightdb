@@ -88,7 +88,7 @@ TEST_F(TranscoderTestFixture, testMultipleFileTranscoder) {
 TEST_F(TranscoderTestFixture, testTranscoderWithIdentityTransform) {
     FileDecodeReader reader("resources/test-pattern.h264");
     FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
-    FrameTransform identityTransform = [](Frame& frame) -> Frame& { return frame; };
+    FrameTransform identityTransform = [](VideoLock&, Frame& frame) -> Frame& { return frame; };
 
     ASSERT_SECS(
             ASSERT_NO_THROW(transcoder.transcode(reader, writer, identityTransform)),
@@ -104,7 +104,8 @@ TEST_F(TranscoderTestFixture, testTranscoderWithIdentityTransform) {
 TEST_F(TranscoderTestFixture, testTranscoderWithComplexTransform) {
     FileDecodeReader reader("resources/test-pattern.h264");
     FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
-    FrameTransform halfBlackTransform = [](Frame& frame) -> Frame& {
+    FrameTransform halfBlackTransform = [](VideoLock& lock, Frame& frame) -> Frame& {
+        std::scoped_lock{lock};
         assert(cuMemsetD2D8(frame.handle(), frame.pitch(), 0,
                             frame.width() / 2, frame.height()) == CUDA_SUCCESS);
         return frame;
@@ -123,12 +124,14 @@ TEST_F(TranscoderTestFixture, testTranscoderWithComplexTransform) {
 TEST_F(TranscoderTestFixture, testTranscoderWithMultipleTransform) {
     FileDecodeReader reader("resources/test-pattern.h264");
     FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
-    FrameTransform leftHalfBlackTransform = [](Frame& frame) -> Frame& {
+    FrameTransform leftHalfBlackTransform = [](VideoLock& lock, Frame& frame) -> Frame& {
+        std::scoped_lock{lock};
         assert(cuMemsetD2D8(frame.handle(), frame.pitch(), 0,
                             frame.width() / 2, frame.height()) == CUDA_SUCCESS);
         return frame;
     };
-    FrameTransform topHalfBlackTransform = [](Frame& frame) -> Frame& {
+    FrameTransform topHalfBlackTransform = [](VideoLock& lock, Frame& frame) -> Frame& {
+        std::scoped_lock{lock};
         assert(cuMemsetD2D8(frame.handle(), frame.pitch(), 0,
                             frame.width(), frame.height() / 2) == CUDA_SUCCESS);
         return frame;

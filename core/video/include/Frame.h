@@ -65,6 +65,7 @@ public:
             cuvidUnmapVideoFrame(decoder_.handle(), handle());
     }
 
+    const CudaDecoder &decoder() const { return decoder_; }
     const std::shared_ptr<CUVIDPARSERDISPINFO> parameters() const { return parameters_; }
     virtual unsigned int height() const { return decoder_.configuration().height; }
     virtual unsigned int width() const { return decoder_.configuration().width; }
@@ -82,6 +83,6 @@ private:
     const std::shared_ptr<CUVIDPARSERDISPINFO> parameters_;
 };
 
-typedef std::function<Frame&(Frame&)> FrameTransform;
+typedef std::function<Frame&(VideoLock&, Frame&)> FrameTransform;
 
 #endif //VISUALCLOUD_FRAME_H

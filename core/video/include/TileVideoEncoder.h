@@ -44,16 +44,16 @@ public:
     }
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers) {
-      return tile(reader, writers, [](Frame& frame) -> Frame& { return frame; });
+      return tile(reader, writers, [](VideoLock&, Frame& frame) -> Frame& { return frame; });
     }
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers,
                      std::vector<FrameTransform> transforms) {
-      return tile(reader, writers, [transforms](Frame& frame) -> Frame& {
+      return tile(reader, writers, [this, transforms](VideoLock&, Frame& frame) -> Frame& {
           return std::accumulate(
                   transforms.begin(), transforms.end(),
                   std::ref(frame),
-                  [](auto& frame, auto& f) -> Frame& { return f(frame); });
+                  [this](auto& frame, auto& f) -> Frame& { return f(lock_, frame); });
       });
     }
 
@@ -72,7 +72,7 @@ public:
       while (!decoder_.frame_queue().isComplete()) {
         auto dropOrDuplicate = alignment.dropOrDuplicate(framesDecoded++, framesEncoded);
         auto decodedFrame = decodeSession.decode();
-        auto processedFrame = transform(decodedFrame);
+        auto processedFrame = transform(lock_, decodedFrame);
 
         for (auto i = 0u; i <= dropOrDuplicate; i++, framesEncoded++) {
           for(auto j = 0u; j < sessions.size(); j++) {

@@ -1,6 +1,7 @@
 #include "Physical.h"
 #include "Operators.h"
 #include "TileVideoEncoder.h"
+#include "Transcoder.h"
 #include "CropTranscoder.h"
 #include "Configuration.h"
 #include <glog/logging.h>
@@ -38,7 +39,7 @@ namespace visualcloud {
             LOG(INFO) << "Executing tiling physical operator with " << rows_ << " rows and " << columns_ << " columns";
 
             //auto framerate = 30u;
-            size_t gop = video_.metadata().framerate.numerator() * time_ / video_.metadata().framerate.denominator();
+            auto gop = std::lround(video_.metadata().framerate.numerator() * time_ / video_.metadata().framerate.denominator());
             auto low_bitrate = 50u, high_bitrate = 5000u*1024;
 
             auto start = std::chrono::steady_clock::now();
@@ -217,7 +218,39 @@ namespace visualcloud {
             return SingletonMemoryEncodedLightField::create(decode);
         }
 
+        template<typename ColorSpace>
+        EncodedLightField EquirectangularTranscodedLightField<ColorSpace>::apply(const std::string &format) {
+            LOG(INFO) << "Executing ER transcode physical operator";
+
+            auto gop = video_.metadata().framerate.numerator() / video_.metadata().framerate.denominator();
+            auto bitrate = 500u*1024;
+            auto encodeCodec = format == "h264" ? NV_ENC_H264 : NV_ENC_HEVC; //TODO what about others?
+
+            auto start = std::chrono::steady_clock::now();
+            GPUContext context(0);
+
+            DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
+            //TODO why CBR?
+            EncodeConfiguration encodeConfiguration{video_.metadata().height, video_.metadata().width,
+                                                    NV_ENC_HEVC, video_.metadata().framerate, gop, bitrate, NV_ENC_PARAMS_RC_CBR};
+
+            Transcoder transcoder(context, decodeConfiguration, encodeConfiguration);
+
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
+            LOG(INFO) << "ER transcode initialization took " << elapsed.count() << "ms";
+
+            FileDecodeReader reader(video_.filename());
+            SegmentedMemoryEncodeWriter writer{transcoder.encoder().api(), encodeConfiguration};
+
+            transcoder.transcode(reader, writer, static_cast<const FrameTransform&>(functor_));
+
+            auto decode = std::make_shared<bytestring>(writer.buffer());
+
+            return SingletonMemoryEncodedLightField::create(decode);
+        }
+
         template class EquirectangularTiledLightField<YUVColorSpace>;
+        template class EquirectangularTranscodedLightField<YUVColorSpace>;
         template class StitchedLightField<YUVColorSpace>;
         template class EquirectangularCroppedLightField<YUVColorSpace>;
     } // namespace physical
