@@ -40,9 +40,26 @@ namespace visualcloud {
                 auto sp = static_cast<const std::shared_ptr<LightField<ColorSpace>>>(lightfield);
                 auto vlf = std::static_pointer_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>>(sp);
                 auto elf = std::static_pointer_cast<EncodedLightFieldData>(vlf);
-                //auto vlf = dynamic_cast<const std::shared_ptr<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>>*>(&sp);
-                //auto *elf = reinterpret_cast<const std::shared_ptr<EncodedLightFieldData>*>(vlf);
 
+                return elf;
+            }
+            else
+                return {};
+        }
+
+        template<typename ColorSpace>
+        static std::optional<EncodedLightField> applySelection(LightFieldReference<ColorSpace> lightfield, const std::string &format) {
+            if(lightfield->provenance().size() != 1)
+                return {};
+
+            auto *subset = dynamic_cast<SubsetLightField<ColorSpace>*>(&*lightfield);
+            auto *video = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*lightfield->provenance()[0]);
+            if(subset != nullptr && video != nullptr &&
+                    subset->volumes().size() == 1 &&
+                    subset->volumes()[0].x.Empty() &&
+                    subset->volumes()[0].y.Empty() &&
+                    subset->volumes()[0].z.Empty()) {
+                auto elf = visualcloud::physical::EquirectangularCroppedLightField<ColorSpace>(*video, subset->volumes()[0].theta, subset->volumes()[0].phi).apply(format);
                 return elf;
             }
             else
@@ -62,6 +79,8 @@ namespace visualcloud {
             else if((result = applyTiling(lightfield, format)).has_value())
                 return result.value();
             else if((result = applyStitching(lightfield)).has_value())
+                return result.value();
+            else if((result = applySelection(lightfield, format)).has_value())
                 return result.value();
             else
                 throw std::runtime_error("Unable to execute query");

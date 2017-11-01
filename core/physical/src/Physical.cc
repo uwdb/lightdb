@@ -1,7 +1,8 @@
 #include "Physical.h"
-#include "TileVideoEncoder.h"
 #include "Operators.h"
-#include <Configuration.h>
+#include "TileVideoEncoder.h"
+#include "CropTranscoder.h"
+#include "Configuration.h"
 #include <glog/logging.h>
 #include <optional>
 #include <unistd.h>
@@ -33,6 +34,7 @@ namespace visualcloud {
 
         template<typename ColorSpace>
         EncodedLightField EquirectangularTiledLightField<ColorSpace>::apply(const std::string &format) {
+            //TODO ignoring format parameter...
             LOG(INFO) << "Executing tiling physical operator with " << rows_ << " rows and " << columns_ << " columns";
 
             //auto framerate = 30u;
@@ -177,8 +179,47 @@ namespace visualcloud {
             return SingletonFileEncodedLightField::create("stitched.hevc");
         }
 
+        template<typename ColorSpace>
+        EncodedLightField EquirectangularCroppedLightField<ColorSpace>::apply(const std::string &format) {
+            LOG(INFO) << "Executing ER cropping physical operator";
+
+            size_t gop = video_.metadata().framerate.numerator() / video_.metadata().framerate.denominator();
+            auto bitrate = 500*1024;
+            auto encodeCodec = format == "h264" ? NV_ENC_H264 : NV_ENC_HEVC; //TODO what about others?
+            auto phiratio = phi_.end / AngularRange::PhiMax.end;
+            auto thetaratio = theta_.end / AngularRange::ThetaMax.end;
+            auto top = std::lround((phi_.start / AngularRange::PhiMax.end) * video_.metadata().height),
+                 bottom = std::lround((phi_.end / AngularRange::PhiMax.end) * video_.metadata().height),
+                 left = std::lround((theta_.start / AngularRange::ThetaMax.end) * video_.metadata().width),
+                 right = std::lround((theta_.end / AngularRange::ThetaMax.end) * video_.metadata().width);
+
+            auto start = std::chrono::steady_clock::now();
+            GPUContext context(0);
+
+            //context.AttachToThread();
+            DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
+            //TODO why CBR?
+            EncodeConfiguration encodeConfiguration{bottom - top, right - left,
+                                                    NV_ENC_HEVC, video_.metadata().framerate, gop, bitrate, NV_ENC_PARAMS_RC_CBR};
+
+            CropTranscoder cropper(context, decodeConfiguration, encodeConfiguration);
+
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
+            LOG(INFO) << "Crop initialization took " << elapsed.count() << "ms";
+
+            FileDecodeReader reader(video_.filename());
+            SegmentedMemoryEncodeWriter writer{cropper.encoder().api(), encodeConfiguration};
+
+            cropper.crop(reader, writer, top, left);
+
+            auto decode = std::make_shared<bytestring>(writer.buffer());
+
+            return SingletonMemoryEncodedLightField::create(decode);
+        }
+
         template class EquirectangularTiledLightField<YUVColorSpace>;
         template class StitchedLightField<YUVColorSpace>;
+        template class EquirectangularCroppedLightField<YUVColorSpace>;
     } // namespace physical
 } // namespace visualcloud
 

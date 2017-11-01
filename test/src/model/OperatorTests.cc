@@ -61,30 +61,8 @@ TEST_F(OperatorTestFixture, testIdentityEncode) {
 
     auto result = video >> Encode<YUVColorSpace>("h264");
 
-    //try {
-        //visualcloud::SingletonFileEncodedLightField slf = dynamic_cast<visualcloud::SingletonFileEncodedLightField>(*result);
-        /*EncodedLightFieldData &v = *result;
-        auto v2 = v.bytes();
-        auto v3 = v2->size();
-        auto e = result->bytes();
-        auto e2 = e.size();
-        result->bytes()->size();
-        auto c = result->bytes()->size();*/
-    //} catch(...) {
-    //    printf("sigh\n");
-    //}
-    //ASSERT_GT(result->encodings().size(), 0);
-
-    /*EncodedLightFieldData &vx = *result;
-    auto s = result->bytes();
-    LOG(INFO) << "a" << vx.bytes()->size();
-    LOG(INFO) << "b" << SingletonFileEncodedLightField::create("resources/red10.h264")->bytes()->size();
-    auto x = *SingletonFileEncodedLightField::create("resources/red10.h264")->bytes();
-    auto y = *result->bytes();
-    auto z = x == y;*/
-
-    ASSERT_GT(result->bytes().size(), 0);
-    ASSERT_EQ(result->bytes(), SingletonFileEncodedLightField::create("resources/red10.h264")->bytes());
+    ASSERT_GT(result->bytes()->size(), 0);
+    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10.h264")->bytes());
 }
 
 TEST_F(OperatorTestFixture, testIdentityUnionEncode) {
@@ -99,8 +77,8 @@ TEST_F(OperatorTestFixture, testIdentityUnionEncode) {
             >> Select(Point3D::Zero.ToVolume({0, 20}))
             >> Encode<YUVColorSpace>();
 
-    ASSERT_GT(result->bytes().size(), 0);
-    ASSERT_EQ(result->bytes(), SingletonFileEncodedLightField::create("resources/red10-green10.h264")->bytes());
+    ASSERT_GT(result->bytes()->size(), 0);
+    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10-green10.h264")->bytes());
 }
 
 TEST_F(OperatorTestFixture, test360VerticalTiling) {

@@ -25,6 +25,8 @@ struct SpatiotemporalRange {
         return start <= value && value <= end;
     }
 
+    bool Empty() const { return start == end; }
+
     static const SpatiotemporalRange SpatialMax;
     static const SpatiotemporalRange TemporalMax;
 };
@@ -134,6 +136,10 @@ public:
 
     operator Volume() {
         return Volume{{x, x}, {y, y}, {z, z}, {t, t}, AngularRange::ThetaMax, AngularRange::PhiMax};
+    }
+
+    inline Volume ToVolume(AngularRange thetaRange, AngularRange phiRange) const {
+        return Volume{{x, x}, {y, y}, {z, z}, {t, t}, thetaRange, phiRange};
     }
 
     inline double get(Dimension dimension) const {

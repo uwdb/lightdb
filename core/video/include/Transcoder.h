@@ -34,7 +34,7 @@ public:
         });
     }
 
-    void transcode(DecodeReader &reader, EncodeWriter &writer, FrameTransform transform) {
+    virtual void transcode(DecodeReader &reader, EncodeWriter &writer, FrameTransform transform) {
         VideoDecoderSession decodeSession(decoder_, reader);
         VideoEncoderSession encodeSession(encoder_, writer);
         FrameRateAlignment alignment(encoder_.configuration().framerate, decoder_.configuration().framerate);
@@ -59,6 +59,8 @@ private:
     VideoLock lock_;
     CUVIDFrameQueue frameQueue_;
     VideoEncoder encoder_;
+
+protected:
     CudaDecoder decoder_;
 };
 

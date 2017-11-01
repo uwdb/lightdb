@@ -15,6 +15,10 @@ fi
 if [ "$MEAN_PSNR" = "inf" ];
 then
     IS_VALID=1
+elif [ "$MEAN_PSNR" = "" ];
+then
+    IS_VALID=0
+    MEAN_PSNR="[NaN]"
 else
     IS_VALID=$(bc <<< "$MEAN_PSNR >= $PSNR_LIMIT")
 fi

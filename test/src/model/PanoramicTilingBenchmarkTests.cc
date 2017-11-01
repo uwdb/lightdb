@@ -6,9 +6,9 @@
 using namespace visualcloud;
 using namespace std::chrono;
 
-class BenchmarkTestFixture : public testing::Test {
+class PanoramicTilingBenchmarkTestFixture : public testing::Test {
 public:
-    BenchmarkTestFixture()
+    PanoramicTilingBenchmarkTestFixture()
             : name("result"),
               bitrates{50,   50,   50, 50,
                        50, 1000, 5000, 50,
@@ -40,7 +40,7 @@ public:
                 >> Encode<YUVColorSpace>()
                 >> Store(name);
 
-        LOG(INFO) << source << ':' << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
+        LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
 
         EXPECT_VIDEO_VALID(name);
         EXPECT_VIDEO_FRAMES(name, frames);
@@ -49,41 +49,41 @@ public:
     }
 };
 
-TEST_F(BenchmarkTestFixture, test360TilingBenchmark_1K_20s) {
+TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_1K_20s) {
     tilingBenchmark(1, 20, 600, 512, 1024);
 }
 
-TEST_F(BenchmarkTestFixture, test360TilingBenchmark_1K_40s) {
+TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_1K_40s) {
     tilingBenchmark(1, 40, 1200, 512, 1024);
 }
 
-TEST_F(BenchmarkTestFixture, test360TilingBenchmark_1K_60s) {
+TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_1K_60s) {
     tilingBenchmark(1, 60, 1800, 512, 1024);
 }
 
 
-TEST_F(BenchmarkTestFixture, test360TilingBenchmark_2K_20s) {
+TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_2K_20s) {
     tilingBenchmark(2, 20, 600, 1024, 2048);
 }
 
-TEST_F(BenchmarkTestFixture, test360TilingBenchmark_2K_40s) {
+TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_2K_40s) {
     tilingBenchmark(2, 40, 1200, 1024, 2048);
 }
 
-TEST_F(BenchmarkTestFixture, test360TilingBenchmark_2K_620s) {
+TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_2K_620s) {
     tilingBenchmark(2, 60, 1800, 1024, 2048);
 }
 
 
-TEST_F(BenchmarkTestFixture, test360TilingBenchmark_4K_20s) {
+TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_4K_20s) {
     tilingBenchmark(4, 20, 600, 1920, 3840);
 }
 
-TEST_F(BenchmarkTestFixture, test360TilingBenchmark_4K_40s) {
+TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_4K_40s) {
     tilingBenchmark(4, 40, 1200, 1920, 3840);
 }
 
-TEST_F(BenchmarkTestFixture, test360TilingBenchmark_42K_620s) {
+TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_42K_620s) {
     tilingBenchmark(4, 60, 1800, 1920, 3840);
 }
 

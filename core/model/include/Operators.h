@@ -185,12 +185,14 @@ public:
         //auto singleton = dynamic_cast<visualcloud::SingletonEncodedLightField*>(&*encoded);
         //assert(singleton != nullptr); //TODO may be a composite...
 
+        encoded->write("out*");
+
         std::vector<LightFieldReference<YUVColorSpace>> decodes;
-        for(auto i = 0u; i < encoded->encodings().size(); i++) {
+        for(auto i = 0u; i < encoded->segments().size(); i++) {
             auto filename = std::string("out") + std::to_string(i); //+ ".hevc";
-            std::ofstream fout{filename, std::ofstream::out | std::ofstream::binary};
-            fout.write(encoded->encodings()[i]->data(), encoded->encodings()[i]->size());
-            fout.close();
+            //std::ofstream fout{filename, std::ofstream::out | std::ofstream::binary};
+            //fout.write(encoded->segments()[i]->data(), encoded->segments()[i]->size());
+            //fout.close();
 
             decodes.emplace_back(Decode<EquirectangularGeometry>(filename).apply());
         }
@@ -256,14 +258,14 @@ inline LightFieldReference<OutColorSpace> operator>>(LightField<InColorSpace>& i
 }
 
 template<typename ColorSpace>
-inline visualcloud::EncodedLightField operator>>(LightFieldReference<ColorSpace>& input,
+inline visualcloud::EncodedLightField operator>>(const LightFieldReference<ColorSpace>& input,
                                                  const Encode<ColorSpace>& encoder)
 {
     return encoder.apply(LightFieldReference<ColorSpace>(input));
 }
 
 template<typename ColorSpace>
-inline visualcloud::EncodedLightField operator>>(LightFieldReference<ColorSpace>&& input,
+inline visualcloud::EncodedLightField operator>>(const LightFieldReference<ColorSpace>&& input,
                                                  const Encode<ColorSpace>& encoder)
 {
     return encoder.apply(LightFieldReference<ColorSpace>(input));

@@ -8,201 +8,61 @@
 
 namespace visualcloud {
 
-class EncodedLightFieldData;
-class SingletonEncodedLightField;
+    using bytestring = std::vector<char>;
 
-using bytestring = std::vector<char>;
-using EncodedLightField = std::shared_ptr<EncodedLightFieldData>;
+    class EncodedLightFieldData {
+    public:
+        virtual ~EncodedLightFieldData() { }
 
-class EncodedLightFieldData {
-public:
-    virtual ~EncodedLightFieldData() { }
+        virtual const std::vector<std::shared_ptr<bytestring>> segments() = 0;
+        virtual const std::shared_ptr<bytestring> bytes() = 0;
+        virtual void write(const std::string &filename) = 0;
+    };
 
-    virtual const std::vector<std::shared_ptr<bytestring>> encodings() = 0;
-    virtual const bytestring bytes() = 0;
-    virtual size_t size() = 0;
-    virtual void write(const std::string &filename) = 0;
-};
+    using EncodedLightField = std::shared_ptr<EncodedLightFieldData>;
 
-//using CompositeEncodedLightField = EncodedLightFieldData;
-/*
-class EncodedLightFieldDataXXX {
-public:
-    static EncodedLightField create(std::vector<std::shared_ptr<std::istream>> &&streams) {
-        return std::shared_ptr<EncodedLightFieldData>(new EncodedLightFieldData(std::move(streams)));
-    }
 
-    static EncodedLightField create(std::vector<bytestring> &&encodings) {
-        return std::shared_ptr<EncodedLightFieldData>(new EncodedLightFieldData(std::move(encodings)));
-    }
+    class SingletonFileEncodedLightField: public EncodedLightFieldData {
+    public:
+        static EncodedLightField create(const std::string &filename) {
+            return std::shared_ptr<SingletonFileEncodedLightField>(new SingletonFileEncodedLightField{filename});
+        }
 
-    virtual ~EncodedLightFieldData() { }
+        virtual ~SingletonFileEncodedLightField() { }
 
-    EncodedLightFieldData(const EncodedLightFieldData&) = delete;
-    EncodedLightFieldData(const EncodedLightFieldData&&) = delete;
+        const std::string &filename() const { return filename_; }
 
-    const std::vector<std::shared_ptr<std::istream>>& streams() const { return streams_; }
-    const std::vector<bytestring> encodings() {
-        if(!data_.has_value()) {
-            data_ = std::vector<bytestring>{};
-            for(auto &stream: streams_) {
-                // TODO(bhaynes)
-                bytestring b(std::istreambuf_iterator<char> { *stream },
+        const std::vector<std::shared_ptr<bytestring>> segments() override {
+            return data_;
+        }
+
+        const std::shared_ptr<bytestring> bytes() override {
+            if(data_.size() == 0) {
+                std::ifstream stream{filename_};
+                auto b = std::make_shared<bytestring>(std::istreambuf_iterator<char>{ stream },
                              std::istreambuf_iterator<char>{});
-                LOG(INFO) << "Encoding materializing; read " << b.size() << " bytes";
-                data_.value().emplace_back(b);
+                LOG(INFO) << "Encoding materializing; read " << b->size() << " bytes";
+                data_.push_back(b);
             }
+
+            return data_[0];
         }
 
-        return data_.value();
-    }
-    const bytestring bytes() {
-        //TODO improve efficiency
-        LOG(ERROR) << "foo";
-        if(encodings().size() == 1)
-            return encodings().at(0);
-        else {
-            bytestring result;
-            for(auto &v: encodings())
-                result.insert(result.end(), v.begin(), v.end());
-            return result;
-        }
-    }
-
-    virtual void write(const std::string &filename) {
-        throw std::runtime_error("Serializing a composite not currently supported."); //TODO support this...
-    }
-
-    //TODO this whole singleton encoding thing is a hack
-    virtual const SingletonEncodedLightField* singleton() const {
-        return {};
-    }
-
-protected:
-    EncodedLightFieldData(std::vector<std::shared_ptr<std::istream>> &&streams)
-        : streams_(std::move(streams))
-    { }
-
-    EncodedLightFieldData(std::vector<bytestring> &&encodings)
-            : streams_{}, data_(std::move(encodings))
-    { }
-
-private:
-    const std::vector<std::shared_ptr<std::istream>> streams_;
-    std::optional<std::vector<bytestring>> data_;
-};
- */
-
-class SingletonFileEncodedLightField: public EncodedLightFieldData {
-public:
-    static EncodedLightField create(const std::string &filename) {
-        return std::shared_ptr<SingletonFileEncodedLightField>(new SingletonFileEncodedLightField{filename});
-    }
-
-    //static EncodedLightField create(std::shared_ptr<std::istream> &&stream) {
-    //    return std::shared_ptr<SingletonEncodedLightField>(new SingletonEncodedLightField(std::move(stream)));
-    //}
-
-    virtual ~SingletonFileEncodedLightField() { }
-
-    //std::istream& stream() const { return *streams().at(0); }
-
-    //const SingletonEncodedLightField* singleton() const override {
-    //    return this;
-    //}
-    const std::string &filename() const { return filename_; }
-
-    const std::vector<std::shared_ptr<bytestring>> encodings() override {
-        return data_; //std::vector<bytestring>{std::vector{bytes()}};
-    }
-
-    size_t size() override {
-        if(data_.size() == 0)
-            bytes();
-        return data_[0]->size();
-    }
-
-    const bytestring bytes() override {
-        //if(!data_.has_value()) {
-        if(data_.size() == 0) {
-            std::ifstream stream{filename_};
-            auto b = std::make_shared<bytestring>(std::istreambuf_iterator<char>{ stream },
-                         std::istreambuf_iterator<char>{});
-            LOG(INFO) << "Encoding materializing; read " << b->size() << " bytes";
-            data_.push_back(b);
+        void write(const std::string &filename) override {
+            //TODO serializing a singleton should kind of still create a directory and persist metadata
+            std::ofstream fout{filename, std::ofstream::out | std::ofstream::binary};
+            fout.write(bytes()->data(), bytes()->size());
         }
 
-        //return data_.value();
-        return *data_[0];
-    }
+    protected:
+        explicit SingletonFileEncodedLightField(const std::string &filename)
+            : filename_(filename)
+        { }
 
-    void write(const std::string &filename) override {
-        //TODO serializing a singleton should kind of still create a directory and persist metadata
-        std::ofstream fout{filename, std::ofstream::out | std::ofstream::binary};
-        auto materialized = bytes();
-        fout.write(materialized.data(), materialized.size());
-    }
-
-protected:
-    explicit SingletonFileEncodedLightField(const std::string &filename)
-        //: EncodedLightFieldData(std::move(singleton(filename)))
-        : filename_(filename)
-    { }
-
-private:
-    std::string filename_;
-    std::vector<std::shared_ptr<bytestring>> data_;
-};
-
-/*
-class SingletonEncodedLightField: public EncodedLightFieldData {
-public:
-    static EncodedLightField create(const std::string &filename) {
-        return std::shared_ptr<SingletonEncodedLightField>(new SingletonEncodedLightField{filename});
-    }
-
-    static EncodedLightField create(std::shared_ptr<std::istream> &&stream) {
-        return std::shared_ptr<SingletonEncodedLightField>(new SingletonEncodedLightField(std::move(stream)));
-    }
-
-    ~SingletonEncodedLightField() { }
-
-    std::istream& stream() const { return *streams().at(0); }
-
-    const SingletonEncodedLightField* singleton() const override {
-        return this;
-    }
-
-    void write(const std::string &filename) override {
-        //TODO serializing a singleton should kind of still create a directory and persist metadata
-        std::ofstream fout{filename, std::ofstream::out | std::ofstream::binary};
-        fout.write(bytes().data(), bytes().size());
-    }
-
-protected:
-    explicit SingletonEncodedLightField(const std::string &filename)
-        : EncodedLightFieldData(std::move(singleton(filename)))
-    { }
-
-    explicit SingletonEncodedLightField(std::shared_ptr<std::istream> &&stream)
-        : EncodedLightFieldData(singleton(std::move(stream)))
-    { }
-
-private:
-    //TODO collapse both of these into one function
-    static std::vector<std::shared_ptr<std::istream>> singleton(std::shared_ptr<std::istream> &&stream) {
-        std::vector<std::shared_ptr<std::istream>> vector;
-        vector.emplace_back(std::move(stream));
-        return std::move(vector);
-    }
-
-    static std::vector<std::shared_ptr<std::istream>> singleton(const std::string &filename) {
-        //std::vector<std::shared_ptr<std::istream>> vector;
-        //vector.emplace_back(std::make_shared<std::ifstream>(filename, std::ios::in | std::ios::binary));
-        return {std::make_shared<std::ifstream>(filename, std::ios::in | std::ios::binary)};
-    }
-};
- */
+    private:
+        std::string filename_;
+        std::vector<std::shared_ptr<bytestring>> data_;
+    };
 
     class CompositeMemoryEncodedLightField: public EncodedLightFieldData {
     public:
@@ -210,36 +70,37 @@ private:
         static EncodedLightField create(std::vector<std::shared_ptr<bytestring>> &encodings) {
             return std::shared_ptr<CompositeMemoryEncodedLightField>(new CompositeMemoryEncodedLightField(encodings));
         }
-        //static EncodedLightField create(std::vector<std::shared_ptr<bytestring>> &&encodings) {
-        //    return std::shared_ptr<CompositeMemoryEncodedLightField>(new CompositeMemoryEncodedLightField(std::move(encodings)));
-        //}
 
         ~CompositeMemoryEncodedLightField() { }
 
-        const std::vector<std::shared_ptr<bytestring>> encodings() { return data_; }
-        const bytestring bytes() {
+        const std::vector<std::shared_ptr<bytestring>> segments() { return data_; }
+        const std::shared_ptr<bytestring> bytes() {
             //TODO improve efficiency
-            LOG(ERROR) << "foo";
-            if(encodings().size() == 1)
-                return *encodings()[0];
+            if(segments().size() == 1)
+                return segments()[0];
             else {
-                bytestring result;
-                for(auto &v: encodings())
-                    result.insert(result.end(), v->begin(), v->end());
-                return result; // std::make_shared<bytestring>(result);
+                std::shared_ptr<bytestring> result{};
+                for(auto &v: segments())
+                    result->insert(result->end(), v->begin(), v->end());
+                return result;
             }
         }
 
-        size_t size() override {
-            //TODO way inefficient!
-            return bytes().size();
-        }
-
         void write(const std::string &filename) override {
+            size_t position = filename.find('*');
+
             //TODO serializing a singleton should kind of still create a directory and persist metadata
-            std::ofstream fout{filename, std::ofstream::out | std::ofstream::binary};
-            auto materialized = bytes();
-            fout.write(materialized.data(), materialized.size());
+            if(position == std::string::npos) {
+                std::ofstream fout{filename, std::ofstream::out | std::ofstream::binary};
+                for (auto bytes: data_)
+                    fout.write(bytes->data(), bytes->size());
+            } else {
+                for(auto i = 0; i < segments().size(); i++) {
+                    auto current_filename = std::string{filename}.replace(position, 1, std::to_string(i));
+                    std::ofstream fout{current_filename, std::ofstream::out | std::ofstream::binary};
+                    fout.write(segments()[i]->data(), segments()[i]->size());
+                }
+            }
         }
 
     protected:
@@ -251,6 +112,42 @@ private:
         std::vector<std::shared_ptr<bytestring>> data_;
     };
 
+    class SingletonMemoryEncodedLightField: public EncodedLightFieldData {
+    public:
+        //TODO should just take a vector of bytestrings
+        static EncodedLightField create(std::shared_ptr<bytestring> &encoding) {
+            return std::shared_ptr<SingletonMemoryEncodedLightField>(new SingletonMemoryEncodedLightField(encoding));
+        }
+
+        ~SingletonMemoryEncodedLightField() { }
+
+        const std::vector<std::shared_ptr<bytestring>> segments() { return data_; }
+        const std::shared_ptr<bytestring> bytes() {
+            //TODO improve efficiency
+            if(segments().size() == 1)
+                return segments()[0];
+            else {
+                std::shared_ptr<bytestring> result{};
+                for(auto &v: segments())
+                    result->insert(result->end(), v->begin(), v->end());
+                return result;
+            }
+        }
+
+        void write(const std::string &filename) override {
+            //TODO serializing a singleton should kind of still create a directory and persist metadata
+            std::ofstream fout{filename, std::ofstream::out | std::ofstream::binary};
+            fout.write(bytes()->data(), bytes()->size());
+        }
+
+    protected:
+        explicit SingletonMemoryEncodedLightField(const std::shared_ptr<bytestring> &data)
+            : data_({data})
+        { }
+
+    private:
+        std::vector<std::shared_ptr<bytestring>> data_;
+    };
 };
 
 #endif //VISUALCLOUD_ENCODING_H
