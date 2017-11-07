@@ -9,11 +9,12 @@ public:
 };
 
 TEST_F(LightFieldTestFixture, testPanoramicConstructor) {
-    PanoramicVideoLightField<EquirectangularGeometry, YUVColorSpace>({0, 10}, "resources/test-pattern.h264");
+    PanoramicVideoLightField<EquirectangularGeometry, YUVColorSpace>("resources/test-pattern.h264");
 }
 
 TEST_F(LightFieldTestFixture, testPanoramicValueOutOfVolume) {
-    auto field = PanoramicVideoLightField<EquirectangularGeometry, YUVColorSpace>({0, 10}, "resources/test-pattern.h264");
+    auto field = PanoramicVideoLightField<EquirectangularGeometry, YUVColorSpace>("resources/test-pattern.h264",
+                                                                                  {0, 0, 0});
 
     ASSERT_EQ(field.value({-1,  0,  0,  0,  0,  0}), YUVColor::Null);
     ASSERT_EQ(field.value({ 0, -1,  0,  0,  0,  0}), YUVColor::Null);

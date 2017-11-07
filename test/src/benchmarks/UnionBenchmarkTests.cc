@@ -28,18 +28,100 @@ public:
                 "K-" + std::to_string(duration) + "s.h264";
     }
 
-    void testUnion(const std::vector<std::string> &filenames) {
-        auto red = Decode<EquirectangularGeometry>("resources/red10.h264").apply();
-        auto green = Decode<EquirectangularGeometry>("resources/green10.h264").apply();
+    void testStitchedUnion(size_t size, size_t duration, size_t frames, size_t height, size_t width) {
+        auto source = std::string("resources/test-") + std::to_string(size) + "K-" + std::to_string(duration) + "s";
 
-        auto result = (red | green) >> Encode<YUVColorSpace>();
+        LOG(INFO) << "Creating stitchable HEVC input";
+        Decode<EquirectangularGeometry, YUVColorSpace>(source + ".h264")
+                >> Encode<YUVColorSpace>("hevc")
+                >> Store(source + ".hevc");
 
-        ASSERT_GT(result->bytes()->size(), 0);
-        ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10-green10.h264")->bytes());
+        auto start = steady_clock::now();
+
+        auto left = Decode<EquirectangularGeometry>(source + ".hevc", {0, temptodouble(pi)}).apply();
+        auto right = Decode<EquirectangularGeometry>(source + ".hevc", {0, temptodouble(pi)}).apply()
+                >> Rotate(temptodouble(pi), 0);
+
+        auto result = (left | right)
+                >> Encode<YUVColorSpace>()
+                >> Store(name);
+
+        LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
+
+        EXPECT_VIDEO_VALID(name);
+        EXPECT_VIDEO_FRAMES(name, frames);
+        EXPECT_VIDEO_RESOLUTION(name, height, 2*width);
+        EXPECT_EQ(remove(name), 0);
     }
 
+    void testTranscodedUnion(size_t size, size_t duration, size_t frames, size_t height, size_t width) {
+        auto source = std::string("resources/test-") + std::to_string(size) + "K-" + std::to_string(duration) + "s.h264";
+
+        auto start = steady_clock::now();
+
+        auto left = Decode<EquirectangularGeometry>(source, {0, temptodouble(pi)}).apply();
+        auto right = Decode<EquirectangularGeometry>(source, {0, temptodouble(pi)}).apply()
+                >> Rotate(temptodouble(pi), 0);
+
+        auto result = (left | right)
+                >> Encode<YUVColorSpace>()
+                >> Store(name);
+
+        LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
+
+        EXPECT_VIDEO_VALID(name);
+        EXPECT_VIDEO_FRAMES(name, frames);
+        EXPECT_VIDEO_RESOLUTION(name, height, 2*width);
+        EXPECT_EQ(remove(name), 0);
+    }
 };
 
-TEST_F(UnionBenchmarkTestFixture, testUnion1) {
-    testUnion({});
+
+// Stitchable union tests
+
+TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_1K_20s) {
+    testStitchedUnion(1, 20, 600, 512, 1024);
 }
+
+TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_1K_40s) {
+    testStitchedUnion(1, 40, 1200, 512, 1024);
+}
+
+TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_1K_60s) {
+    testStitchedUnion(1, 60, 1800, 512, 1024);
+}
+
+
+
+TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_2K_20s) {
+    testStitchedUnion(2, 20, 600, 1024, 2048);
+}
+
+TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_2K_40s) {
+    testStitchedUnion(2, 40, 1200, 1024, 2048);
+}
+
+TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_2K_60s) {
+    testStitchedUnion(2, 60, 1800, 1024, 2048);
+}
+
+
+
+TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_4K_20s) {
+    testStitchedUnion(4, 20, 600, 1920, 3840);
+}
+
+TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_4K_40s) {
+    testStitchedUnion(4, 40, 1200, 1920, 3840);
+}
+
+TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_4K_60s) {
+    testStitchedUnion(4, 60, 1800, 1920, 3840);
+}
+
+
+// Unstitchable union tests
+TEST_F(UnionBenchmarkTestFixture, testTranscodedUnion_1K_20s) {
+    testTranscodedUnion(1, 20, 600, 512, 1024);
+}
+

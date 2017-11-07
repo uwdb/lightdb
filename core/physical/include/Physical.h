@@ -90,7 +90,7 @@ namespace visualcloud {
         class StitchedLightField: public LightField<ColorSpace> {
         public:
             StitchedLightField(const LightFieldReference<ColorSpace> &field)
-                    : field_(field), videos_(get_tiles(field))
+                    : StitchedLightField(field, get_tiles(field))
             { }
 
             const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {field_}; }
@@ -102,9 +102,15 @@ namespace visualcloud {
             EncodedLightField apply(const visualcloud::rational &temporalInterval);
 
         private:
-            static std::vector<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*> get_tiles(const LightFieldReference<ColorSpace>& field) {
+            StitchedLightField(const LightFieldReference<ColorSpace> &field,
+                               const std::pair<std::vector<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>, std::vector<Volume>> &pair)
+                    : field_(field), videos_(pair.first), volumes_(pair.second)
+            { }
+
+            static std::pair<std::vector<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>, std::vector<Volume>> get_tiles(const LightFieldReference<ColorSpace>& field) {
                 auto *composite = dynamic_cast<const CompositeLightField<ColorSpace>*>(&*field);
                 std::vector<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*> videos;
+                std::vector<Volume> volumes;
 
                 if(composite == nullptr)
                     throw std::invalid_argument("Plan root was not a composite.");
@@ -112,16 +118,76 @@ namespace visualcloud {
                 for(auto &child: field->provenance()) {
                     LightField<ColorSpace> *cf = &*child;
                     auto *video = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(cf);
+                    auto *rotation = dynamic_cast<RotatedLightField<ColorSpace>*>(cf);
+                    if(rotation != nullptr)
+                        video = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*rotation->provenance()[0]);
+
                     if(video == nullptr)
                         throw std::invalid_argument("Composite child was not a video.");
+                    else if(video->metadata().codec != "hevc")
+                        throw std::invalid_argument("Input video was not HEVC encoded.");
+
                     videos.push_back(video);
+                    volumes.push_back(rotation != nullptr ? rotation->volumes()[0] : video->volumes()[0]);
                 }
 
-                return videos;
+                return std::make_pair(videos, volumes);
             }
 
             const LightFieldReference<ColorSpace> field_;
             const std::vector<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*> videos_;
+            const std::vector<Volume> volumes_;
+        };
+
+        template<typename ColorSpace>
+        class NaiveStitchedLightField: public LightField<ColorSpace> {
+        public:
+            NaiveStitchedLightField(const LightFieldReference<ColorSpace> &field)
+                    : NaiveStitchedLightField(field, get_tiles(field))
+            { }
+
+            const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {field_}; }
+            const ColorSpace colorSpace() const override { return ColorSpace::Instance; }
+            const std::vector<Volume> volumes() const override { return field_->volumes(); }
+            inline const typename ColorSpace::Color value(const Point6D &point) const override { return field_->value(point); }
+
+            EncodedLightField apply();
+
+        private:
+            NaiveStitchedLightField(const LightFieldReference<ColorSpace> &field,
+                                    const std::pair<std::vector<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>,
+                                            std::vector<Volume>> &pair)
+                    : field_(field), videos_(pair.first), volumes_(pair.second)
+            { }
+
+            static std::pair<std::vector<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>, std::vector<Volume>> get_tiles(const LightFieldReference<ColorSpace>& field) {
+                auto *composite = dynamic_cast<const CompositeLightField<ColorSpace>*>(&*field);
+                std::vector<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*> videos;
+                std::vector<Volume> volumes;
+
+                if(composite == nullptr)
+                    throw std::invalid_argument("Plan root was not a composite.");
+
+                for(auto &child: field->provenance()) {
+                    LightField<ColorSpace> *cf = &*child;
+                    auto *video = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(cf);
+                    auto *rotation = dynamic_cast<RotatedLightField<ColorSpace>*>(cf);
+                    if(rotation != nullptr)
+                        video = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*rotation->provenance()[0]);
+
+                    if(video == nullptr)
+                        throw std::invalid_argument("Composite child was not a video.");
+
+                    videos.push_back(video);
+                    volumes.push_back(rotation != nullptr ? rotation->volumes()[0] : video->volumes()[0]);
+                }
+
+                return std::make_pair(videos, volumes);
+            }
+
+            const LightFieldReference<ColorSpace> field_;
+            const std::vector<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*> videos_;
+            const std::vector<Volume> volumes_;
         };
 
         template<typename ColorSpace>

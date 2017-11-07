@@ -32,14 +32,37 @@ public:
 };
 
 
+template<typename ColorSpace>
+class Encode: public Operator {
+public:
+    //TODO string as a format is horrible, fix
+    Encode()
+            : format_("hevc")
+    { }
+
+    Encode(std::string &&format)
+            : format_(format)
+    { }
+
+    visualcloud::EncodedLightField apply(const LightFieldReference<ColorSpace> &lightField) const { //TODO ostream
+        return visualcloud::pipeline::execute(lightField, format_);
+    }
+
+private:
+    const std::string format_;
+};
+
+
 template<typename Geometry, typename ColorSpace=YUVColorSpace>
 class Decode: public Operator {
 public:
     //TODO constructors should accept EncodedLightFields, not string/streams
-
-    Decode(const std::string &filename)
+    //TODO theta and phi should be drawn from the container, not explicitly parameterized
+    Decode(const std::string &filename,
+           const AngularRange& theta=AngularRange::ThetaMax,
+           const AngularRange& phi=AngularRange::PhiMax)
         //: Decode(std::ifstream{filename})
-            : field_(std::shared_ptr<LightField<ColorSpace>>(new PanoramicVideoLightField<Geometry, ColorSpace>(filename)))
+            : field_(std::shared_ptr<LightField<ColorSpace>>(new PanoramicVideoLightField<Geometry, ColorSpace>(filename, theta, phi)))
 
     { }
 
@@ -56,7 +79,11 @@ public:
         return field_;
     }
 
-    const LightFieldReference<ColorSpace> operator>>(const UnaryOperator<ColorSpace, ColorSpace>& op) {
+    const LightFieldReference<ColorSpace> operator>>(const UnaryOperator<ColorSpace, ColorSpace>& op) const {
+        return field_ >> op;
+    }
+
+    const visualcloud::EncodedLightField operator>>(const Encode<ColorSpace>& op) const {
         return field_ >> op;
     }
 
@@ -64,26 +91,6 @@ private:
     const LightFieldReference<ColorSpace> field_;
 };
 
-
-template<typename ColorSpace>
-class Encode: public Operator {
-public:
-    //TODO string as a format is horrible, fix
-    Encode()
-            : format_("hevc")
-    { }
-
-    Encode(std::string &&format)
-        : format_(format)
-    { }
-
-    visualcloud::EncodedLightField apply(const LightFieldReference<ColorSpace> &lightField) const { //TODO ostream
-        return visualcloud::pipeline::execute(lightField, format_);
-    }
-
-private:
-    const std::string format_;
-};
 
 template<typename ColorSpace>
 class Scan: public Operator {
@@ -98,7 +105,7 @@ public:
         : name_(name)
     { }
 
-    visualcloud::EncodedLightField apply(visualcloud::EncodedLightField &encoded) const {
+    visualcloud::EncodedLightField apply(const visualcloud::EncodedLightField &encoded) const {
         encoded->write(name_);
         return encoded;
     }
@@ -150,6 +157,20 @@ private:
     const Volume volume_;
 };
 
+class Rotate: public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
+public:
+    explicit Rotate(const angle theta, const angle phi)
+            : theta_(theta), phi_(phi)
+    { }
+
+    LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace>& field) const override {
+        return LightFieldReference<YUVColorSpace>::make<RotatedLightField<YUVColorSpace>>(field, theta_, phi_);
+    }
+
+private:
+    const angle theta_, phi_;
+};
+
 class Partition: public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
 public:
     Partition(const Dimension &dimension, const visualcloud::rational interval)
@@ -180,25 +201,19 @@ public:
     { }
 
     LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace>& field) const override {
-        //TODO clean this up
+        //TODO clean this up, should be able to decode from memory
         auto encoded = Encode<YUVColorSpace>("hevc").apply(field);
-        //auto singleton = dynamic_cast<visualcloud::SingletonEncodedLightField*>(&*encoded);
-        //assert(singleton != nullptr); //TODO may be a composite...
 
         encoded->write("out*");
 
         std::vector<LightFieldReference<YUVColorSpace>> decodes;
         for(auto i = 0u; i < encoded->segments().size(); i++) {
             auto filename = std::string("out") + std::to_string(i); //+ ".hevc";
-            //std::ofstream fout{filename, std::ofstream::out | std::ofstream::binary};
-            //fout.write(encoded->segments()[i]->data(), encoded->segments()[i]->size());
-            //fout.close();
 
-            decodes.emplace_back(Decode<EquirectangularGeometry>(filename).apply());
+            decodes.emplace_back(Decode<EquirectangularGeometry>(filename, encoded->volumes()[i].theta, encoded->volumes()[i].phi).apply());
         }
 
         return LightFieldReference<YUVColorSpace>::make<CompositeLightField<YUVColorSpace>>(decodes);
-        //return Decode<EquirectangularGeometry>("/tmp/out.h264").apply(); //encoded);
     }
 
 private:
@@ -296,7 +311,7 @@ inline LightFieldReference<ColorSpace> operator|(const LightFieldReference<Color
     return Union().apply(left, right);
 }
 
-inline visualcloud::EncodedLightField operator>>(visualcloud::EncodedLightField& input, const Store& store)
+inline visualcloud::EncodedLightField operator>>(const visualcloud::EncodedLightField& input, const Store& store)
 {
     return store.apply(input);
 }

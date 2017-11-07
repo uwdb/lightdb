@@ -69,13 +69,18 @@ namespace visualcloud {
             tiler.tile(reader, writers);
 
             std::vector<std::shared_ptr<bytestring>> decodes{};
+            std::vector<Volume> volumes{};
             //std::vector<std::unique_ptr<std::istream>> decodes{};
-            for(auto i = 0; i < rows_ * columns_; i++)
+            for(auto i = 0; i < rows_ * columns_; i++) {
                 //decodes.emplace_back(bytestring{});
-                decodes.emplace_back(std::make_shared<bytestring>(dynamic_cast<SegmentedMemoryEncodeWriter*>(writers[i].get())->buffer()));
+                decodes.emplace_back(std::make_shared<bytestring>(dynamic_cast<SegmentedMemoryEncodeWriter *>(writers[i].get())->buffer()));
+                volumes.push_back({video_.volume().x, video_.volume().y, video_.volume().z, video_.volume().t,
+                                      {(i % columns()) * AngularRange::ThetaMax.end / columns(), ((i % columns()) + 1) * AngularRange::ThetaMax.end / columns()},
+                                      {(i / columns()) * AngularRange::PhiMax.end / columns(), ((i / columns()) + 1) * AngularRange::PhiMax.end / columns()}});
                 //decodes.emplace_back(std::make_unique<std::ifstream>(std::string("out") + std::to_string(i)));
+            }
 
-            return CompositeMemoryEncodedLightField::create(decodes);
+            return CompositeMemoryEncodedLightField::create(decodes, volumes);
 /*
 
 
@@ -157,27 +162,73 @@ namespace visualcloud {
         EncodedLightField StitchedLightField<ColorSpace>::apply(const visualcloud::rational &interval) {
             //auto height = 0u, width = 0u;
 
-            //TODO broken; this doesn't take tile coordinates into account
-            /*for(auto &video: videos_) {
-                auto resolution = video_.frames().resolution();
-                height += resolution.second;
-                width += resolution.first;
-            }*/
+            //TODO this only applies to equirectanguler format
+            //TODO make sure no angles overlap
+            auto theta_range = AngularRange::ThetaMax, phi_range = AngularRange::PhiMax;
+            auto columns = std::lround(AngularRange::ThetaMax.magnitude() / volumes_[0].theta.magnitude()),
+                 rows = std::lround(AngularRange::PhiMax.magnitude() / volumes_[0].phi.magnitude());
+            auto width = std::lround(videos_[0]->metadata().width / (volumes_[0].theta.magnitude() / AngularRange::ThetaMax.magnitude())),
+                 height = std::lround(videos_[0]->metadata().height / (volumes_[0].phi.magnitude() / AngularRange::PhiMax.magnitude()));
 
-            LOG(INFO) << "Hardcoded tile resolution; this will break for other tilings.";
+            for(auto i = 0; i < videos_.size(); i++) {
+                assert(width == std::lround(videos_[i]->metadata().width / (volumes_[i].theta.magnitude() / AngularRange::ThetaMax.magnitude())));
+                assert(height == std::lround(videos_[i]->metadata().height / (volumes_[i].phi.magnitude() / AngularRange::PhiMax.magnitude())));
+                assert(columns == std::lround(AngularRange::ThetaMax.magnitude() / volumes_[i].theta.magnitude()));
+                assert(rows == std::lround(AngularRange::PhiMax.magnitude() / volumes_[i].phi.magnitude()));
+
+                if(volumes_[i].theta.start < theta_range.start)
+                    theta_range.start = volumes_[i].theta.start;
+                if(volumes_[i].theta.end > theta_range.end)
+                    theta_range.end = volumes_[i].theta.end;
+                if(volumes_[i].phi.start < phi_range.start)
+                    theta_range.start = volumes_[i].phi.start;
+                if(volumes_[i].phi.end > phi_range.end)
+                    phi_range.end = volumes_[i].phi.end;
+            }
+
             LOG(INFO) << "Wonky GOP/time interval splitting";
-            //auto columns = EquirectangularTiledLightField<ColorSpace>::columns, rows = EquirectangularTiledLightField<ColorSpace>::rows;
-            auto columns = 4, rows = 4;
-            //auto height = 1920, width = 3840;
-            auto height = videos_[0]->metadata().height * rows, width = videos_[0]->metadata().width * columns;
-            //height = EquirectangularTiledLightField<ColorSpace>::height, width = EquirectangularTiledLightField<ColorSpace>::width;
+            //auto columns = 4, rows = 4;
+            //auto height = videos_[0]->metadata().height * rows, width = videos_[0]->metadata().width * columns;
             auto dinterval = (double)interval.numerator() / interval.denominator();
 
             std::string cwd = getcwd(nullptr, 0);
             std::string command{std::string("/home/bhaynes/projects/visualcloud/stitch.sh '") + cwd + "' " + std::to_string(height) + " " + std::to_string(width) + " " + std::to_string(rows) + " " + std::to_string(columns) + " " + std::to_string(dinterval)};
+            for(auto &v: videos_)
+                command += ' ' + v->filename();
             system(command.c_str());
 
-            return SingletonFileEncodedLightField::create("stitched.hevc");
+            return SingletonFileEncodedLightField::create("stitched.hevc",
+                                                          {videos_[0]->volumes()[0].x, videos_[0]->volumes()[0].y, videos_[0]->volumes()[0].z, videos_[0]->volumes()[0].t, theta_range, phi_range});
+        }
+
+        template<typename ColorSpace>
+        EncodedLightField NaiveStitchedLightField<ColorSpace>::apply() {
+            //TODO make sure no angles overlap
+            auto theta_range = AngularRange::ThetaMax, phi_range = AngularRange::PhiMax;
+            auto columns = std::lround(AngularRange::ThetaMax.magnitude() / volumes_[0].theta.magnitude()),
+                    rows = std::lround(AngularRange::PhiMax.magnitude() / volumes_[0].phi.magnitude());
+            auto width = std::lround(videos_[0]->metadata().width / (volumes_[0].theta.magnitude() / AngularRange::ThetaMax.magnitude())),
+                    height = std::lround(videos_[0]->metadata().height / (volumes_[0].phi.magnitude() / AngularRange::PhiMax.magnitude()));
+
+            for(auto i = 0; i < videos_.size(); i++) {
+                assert(width == std::lround(videos_[i]->metadata().width / (volumes_[i].theta.magnitude() / AngularRange::ThetaMax.magnitude())));
+                assert(height == std::lround(videos_[i]->metadata().height / (volumes_[i].phi.magnitude() / AngularRange::PhiMax.magnitude())));
+                assert(columns == std::lround(AngularRange::ThetaMax.magnitude() / volumes_[i].theta.magnitude()));
+                assert(rows == std::lround(AngularRange::PhiMax.magnitude() / volumes_[i].phi.magnitude()));
+
+                if(volumes_[i].theta.start < theta_range.start)
+                    theta_range.start = volumes_[i].theta.start;
+                if(volumes_[i].theta.end > theta_range.end)
+                    theta_range.end = volumes_[i].theta.end;
+                if(volumes_[i].phi.start < phi_range.start)
+                    theta_range.start = volumes_[i].phi.start;
+                if(volumes_[i].phi.end > phi_range.end)
+                    phi_range.end = volumes_[i].phi.end;
+            }
+
+
+            return SingletonFileEncodedLightField::create("stitched.hevc",
+                                                          {videos_[0]->volumes()[0].x, videos_[0]->volumes()[0].y, videos_[0]->volumes()[0].z, videos_[0]->volumes()[0].t, theta_range, phi_range});
         }
 
         template<typename ColorSpace>
@@ -215,7 +266,7 @@ namespace visualcloud {
 
             auto decode = std::make_shared<bytestring>(writer.buffer());
 
-            return SingletonMemoryEncodedLightField::create(decode);
+            return SingletonMemoryEncodedLightField::create(decode, {video_.volumes()[0].x, video_.volumes()[0].y, video_.volumes()[0].z, video_.volumes()[0].t, theta_, phi_});
         }
 
         template<typename ColorSpace>
@@ -246,7 +297,7 @@ namespace visualcloud {
 
             auto decode = std::make_shared<bytestring>(writer.buffer());
 
-            return SingletonMemoryEncodedLightField::create(decode);
+            return SingletonMemoryEncodedLightField::create(decode, video_.volumes()[0]);
         }
 
         template class EquirectangularTiledLightField<YUVColorSpace>;

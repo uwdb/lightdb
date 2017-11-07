@@ -51,7 +51,8 @@ public:
             : filename_(filename),
               packets(), // Must be initialized before source
               source(CreateVideoSource(filename)),
-              format_(GetVideoSourceFormat(source)) {
+              format_(GetVideoSourceFormat(source)),
+              decoded_bytes_(0) {
         if(format().codec != cudaVideoCodec_H264 && format().codec != cudaVideoCodec_HEVC)
             throw std::runtime_error("Reader only supports H264/HEVC input video"); //TODO
         else if(format().chroma_format != cudaVideoChromaFormat_420)
@@ -68,9 +69,13 @@ public:
                 !packets.read_available())
             std::this_thread::yield();
 
-        return packets.pop(packet)
-               ? packet
-               : std::optional<DecodeReaderPacket>();
+        if(packets.pop(packet)) {
+            decoded_bytes_ += packet.payload_size;
+            return packet;
+        } else {
+            LOG(INFO) << "Decoded " << decoded_bytes_ << " bytes";
+            return {};
+        }
     }
 
     bool isComplete() const override {
@@ -132,6 +137,7 @@ private:
     boost::lockfree::spsc_queue<DecodeReaderPacket, boost::lockfree::capacity<4096>> packets;
     CUvideosource source;
     CUVIDEOFORMAT format_;
+    size_t decoded_bytes_;
 };
 
 #endif //VISUALCLOUD_DECODEREADER_H

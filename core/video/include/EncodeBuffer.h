@@ -93,6 +93,7 @@ struct EncodeBuffer
     void copy(VideoLock &lock, const Frame &frame) {
         if(frame.width() != input_buffer.width ||
            frame.height() != input_buffer.height) {
+            LOG(ERROR) << "frame size does not match buffer size";
             throw std::runtime_error("frame size does not match buffer size"); //TODO
         }
 
@@ -119,52 +120,58 @@ struct EncodeBuffer
         });
     }
 
-    void copy(VideoLock &lock, const Frame &frame, size_t top, size_t left) {
-        if (frame.width() - left < input_buffer.width ||
-            frame.height() - top < input_buffer.height) {
+    void copy(VideoLock &lock, const Frame &frame,
+              size_t frame_top, size_t frame_left,
+              size_t buffer_top=0, size_t buffer_left=0) {
+        if (frame.width() - frame_left < input_buffer.width - buffer_left ||
+            frame.height() - frame_top < input_buffer.height - buffer_top) {
+            LOG(ERROR) << "buffer size too small for frame copy";
             throw std::runtime_error("buffer size too small for frame copy"); //TODO
         }
 
+        //LOG(INFO) << (frame.width() - frame_left) << " vs " << input_buffer.width - buffer_left;
+        //LOG(INFO) << (frame.height() - frame_top) << " vs " << input_buffer.height - buffer_top;
+
         CUDA_MEMCPY2D lumaPlaneParameters = {
-                srcXInBytes:   left,
-                srcY:          top,
+                srcXInBytes:   frame_left,
+                srcY:          frame_top,
                 srcMemoryType: CU_MEMORYTYPE_DEVICE,
                 srcHost:       nullptr,
                 srcDevice:     frame.handle(),
                 srcArray:      nullptr,
                 srcPitch:      frame.pitch(),
 
-                dstXInBytes:   0,
-                dstY:          0,
+                dstXInBytes:   buffer_left,
+                dstY:          buffer_top,
                 dstMemoryType: CU_MEMORYTYPE_DEVICE,
                 dstHost:       nullptr,
                 dstDevice:     static_cast<CUdeviceptr>(input_buffer.NV12devPtr),
                 dstArray:      nullptr,
                 dstPitch:      input_buffer.NV12Stride,
 
-                WidthInBytes:  input_buffer.width,
-                Height:        input_buffer.height,
+                WidthInBytes:  input_buffer.width - buffer_left,
+                Height:        input_buffer.height - buffer_top,
         };
 
         CUDA_MEMCPY2D chromaPlaneParameters = {
-                srcXInBytes:   left,
-                srcY:          frame.height() + top / 2, //(frame.height() + top) / 2,
+                srcXInBytes:   frame_left,
+                srcY:          frame.height() + frame_top / 2, //(frame.height() + top) / 2,
                 srcMemoryType: CU_MEMORYTYPE_DEVICE,
                 srcHost:       nullptr,
                 srcDevice:     frame.handle(),
                 srcArray:      nullptr,
                 srcPitch:      frame.pitch(),
 
-                dstXInBytes:   0,
-                dstY:          input_buffer.height,
+                dstXInBytes:   buffer_left,
+                dstY:          input_buffer.height + buffer_top,
                 dstMemoryType: CU_MEMORYTYPE_DEVICE,
                 dstHost:       nullptr,
                 dstDevice:     static_cast<CUdeviceptr>(input_buffer.NV12devPtr),
                 dstArray:      nullptr,
                 dstPitch:      input_buffer.NV12Stride,
 
-                WidthInBytes:  input_buffer.width,
-                Height:        input_buffer.height / 2
+                WidthInBytes:  input_buffer.width - buffer_left,
+                Height:        (input_buffer.height - buffer_top) / 2
         };
 
         copy(lock, {lumaPlaneParameters, chromaPlaneParameters});

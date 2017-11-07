@@ -19,7 +19,7 @@ public:
         cuvidDestroyVideoParser(parser);
     }
 
-    const DecodedFrame decode() {
+    DecodedFrame decode() {
         return DecodedFrame(decoder, decoder.frame_queue().dequeue_wait<CUVIDPARSERDISPINFO>());
     }
 

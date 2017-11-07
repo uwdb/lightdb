@@ -19,7 +19,7 @@ void print_plan(const LightFieldReference<ColorSpace> lightField) {
                typeid(*current.first).name());
 
         for(const auto &field: current.first->provenance())
-            queue.push_back({field, current.second + 4});
+            queue.push_front({field, current.second + 4});
     }
 }
 

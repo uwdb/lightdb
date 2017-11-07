@@ -60,3 +60,12 @@ std::vector<Volume> Volume::partition(const Dimension dimension, const visualclo
 
     return result;
 }
+
+Volume Volume::translate(const Point6D &delta) const{
+    return {{x.start + delta.x,         x.end + delta.x},
+            {y.start + delta.y,         y.end + delta.y},
+            {z.start + delta.z,         z.end + delta.z},
+            {t.start + delta.t,         t.end + delta.t},
+            {theta.start + delta.theta, theta.end + delta.theta},
+            {phi.start + delta.phi,     phi.end + delta.phi}};
+}

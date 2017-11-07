@@ -21,6 +21,17 @@ namespace visualcloud {
         virtual bool hasFrameTransform() const { return false; }
     };
 
+    //TODO functor namespace
+    class Identity: public functor<YUVColorSpace> {
+    public:
+        ~Identity() { }
+
+        const YUVColorSpace::Color operator()(const LightField<YUVColorSpace> &field,
+                                              const Point6D &point) const override;
+        operator const FrameTransform() const override;
+        bool hasFrameTransform() const override { return true; }
+    };
+
     class Greyscale: public functor<YUVColorSpace> {
     public:
         ~Greyscale() { }

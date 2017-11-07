@@ -15,6 +15,7 @@ namespace visualcloud {
             const LightFieldReference<ColorSpace>&, const Point6D &point)>;
 
     namespace interpolation {
+        //TODO
         static interpolator<YUVColorSpace> NearestNeighbor = [](auto&, auto&) { return YUVColor::Green; };
     } // namespace interpolation
 } // namespace visualcloud

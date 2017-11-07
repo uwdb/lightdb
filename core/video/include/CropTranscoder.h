@@ -48,10 +48,7 @@ public:
             auto processedFrame = transform(lock_, decodedFrame);
 
             for (auto i = 0u; i <= dropOrDuplicate; i++, framesEncoded++)
-                if(top == 0 && left == 0)
-                    encodeSession.Encode(processedFrame);
-                else
-                    encodeSession.Encode(processedFrame, top, left);
+                encodeSession.Encode(processedFrame, top, left);
         }
 
         LOG(INFO) << "Transcode complete (decoded " << framesDecoded << ", encoded " << framesEncoded << ")";

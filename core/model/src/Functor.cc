@@ -23,4 +23,14 @@ namespace visualcloud {
         };
     };
 
+    const YUVColorSpace::Color Identity::operator()(const LightField<YUVColorSpace> &field,
+                                                     const Point6D &point) const {
+        return field.value(point);
+    }
+
+    Identity::operator const FrameTransform() const {
+        return [](VideoLock&, Frame& frame) -> Frame& {
+            return frame;
+        };
+    };
 }; // namespace visualcloud

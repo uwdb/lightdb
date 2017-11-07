@@ -21,11 +21,22 @@ struct SpatiotemporalRange {
 
     //TODO guard against end < start
 
+    double magnitude() const { return end - start; }
+
     bool Contains(double value) const {
         return start <= value && value <= end;
     }
 
     bool Empty() const { return start == end; }
+
+    bool operator==(const SpatiotemporalRange &other) const {
+        return this == &other ||
+               (start == other.start && end == other.end);
+    }
+
+    bool operator!=(const SpatiotemporalRange &other) const {
+        return !operator==(other);
+    }
 
     static const SpatiotemporalRange SpatialMax;
     static const SpatiotemporalRange TemporalMax;
@@ -33,13 +44,15 @@ struct SpatiotemporalRange {
 
 typedef struct SpatiotemporalRange SpatialRange;
 typedef struct SpatiotemporalRange TemporalRange;
+typedef double angle; //TODO add some range guards?
 
 struct AngularRange {
 public:
-    double start;
-    double end;
+    angle start;
+    angle end;
 
     //TODO guard against end < start
+    double magnitude() const { return end - start; }
 
     bool Contains(const double angle) const {
         return start <= angle && angle <= end;
@@ -73,6 +86,8 @@ public:
                theta.start == theta.end &&
                phi.start == phi.end;
     }
+
+    Volume translate(const Point6D &delta) const;
 };
 
 inline Volume operator|(const Volume& left, const Volume &right) {
@@ -163,6 +178,12 @@ public:
         return Volume{{x, x}, {y, y}, {z, z}, {t, t}, {theta, theta}, {phi, phi}};
     }
 
+    Point6D operator+(const Point6D &other) const {
+        return {x + other.x, y + other.y, z + other.z,
+                t + other.t,
+                theta + other.theta, phi + other.phi};
+    }
+
     inline double get(Dimension dimension) const {
         switch(dimension) {
             case Dimension::Theta:
@@ -224,6 +245,24 @@ public:
 private:
     const Dimension dimension_;
     const visualcloud::rational interval_;
+};
+
+class LightFieldGeometry: public Geometry {
+public:
+    //TODO need Plane class
+    LightFieldGeometry(size_t rows, size_t columns)
+            : rows_(rows), columns_(columns)
+    { }
+
+    bool defined_at(const Point6D &point) const override {
+        return true;
+    }
+
+    inline const size_t rows() const { return rows; }
+    inline const size_t columns() const { return interval_; }
+
+private:
+    const size_t rows_, columns_;
 };
 
 

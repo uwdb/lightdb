@@ -57,6 +57,7 @@ public:
       });
     }
 
+#include <chrono>
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers,
                      FrameTransform transform) {
       VideoDecoderSession decodeSession(decoder_, reader);

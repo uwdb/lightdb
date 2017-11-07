@@ -3,6 +3,7 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
+//TODO this all shoudl be in the video subdirectory, it's all video stuff...
 namespace visualcloud::utility {
     namespace ffmpeg {
         //TemporalRange duration(std::istream& stream) {

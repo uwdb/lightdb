@@ -14,7 +14,10 @@ namespace visualcloud {
     public:
         virtual ~EncodedLightFieldData() { }
 
+        //TODO combine these into a single struct
         virtual const std::vector<std::shared_ptr<bytestring>> segments() = 0;
+        virtual const std::vector<Volume> volumes() const = 0;
+
         virtual const std::shared_ptr<bytestring> bytes() = 0;
         virtual void write(const std::string &filename) = 0;
     };
@@ -24,8 +27,8 @@ namespace visualcloud {
 
     class SingletonFileEncodedLightField: public EncodedLightFieldData {
     public:
-        static EncodedLightField create(const std::string &filename) {
-            return std::shared_ptr<SingletonFileEncodedLightField>(new SingletonFileEncodedLightField{filename});
+        static EncodedLightField create(const std::string &filename, const Volume &volume) {
+            return std::shared_ptr<SingletonFileEncodedLightField>(new SingletonFileEncodedLightField{filename, volume});
         }
 
         virtual ~SingletonFileEncodedLightField() { }
@@ -54,21 +57,26 @@ namespace visualcloud {
             fout.write(bytes()->data(), bytes()->size());
         }
 
+        const std::vector<Volume> volumes() const override {
+            return {volume_};
+        }
+
     protected:
-        explicit SingletonFileEncodedLightField(const std::string &filename)
-            : filename_(filename)
+        explicit SingletonFileEncodedLightField(const std::string &filename, const Volume &volume)
+            : filename_(filename), volume_(volume)
         { }
 
     private:
         std::string filename_;
         std::vector<std::shared_ptr<bytestring>> data_;
+        const Volume volume_;
     };
 
     class CompositeMemoryEncodedLightField: public EncodedLightFieldData {
     public:
         //TODO should just take a vector of bytestrings
-        static EncodedLightField create(std::vector<std::shared_ptr<bytestring>> &encodings) {
-            return std::shared_ptr<CompositeMemoryEncodedLightField>(new CompositeMemoryEncodedLightField(encodings));
+        static EncodedLightField create(std::vector<std::shared_ptr<bytestring>> &encodings, const std::vector<Volume> &volumes) {
+            return std::shared_ptr<CompositeMemoryEncodedLightField>(new CompositeMemoryEncodedLightField(encodings, volumes));
         }
 
         ~CompositeMemoryEncodedLightField() { }
@@ -84,6 +92,10 @@ namespace visualcloud {
                     result->insert(result->end(), v->begin(), v->end());
                 return result;
             }
+        }
+
+        const std::vector<Volume> volumes() const override {
+            return volumes_;
         }
 
         void write(const std::string &filename) override {
@@ -104,19 +116,21 @@ namespace visualcloud {
         }
 
     protected:
-        explicit CompositeMemoryEncodedLightField(const std::vector<std::shared_ptr<bytestring>> &data)
-                : data_(data)
+        explicit CompositeMemoryEncodedLightField(const std::vector<std::shared_ptr<bytestring>> &data,
+                                                  const std::vector<Volume> &volumes)
+                : data_(data), volumes_(volumes)
         { }
 
     private:
         std::vector<std::shared_ptr<bytestring>> data_;
+        const std::vector<Volume> volumes_;
     };
 
     class SingletonMemoryEncodedLightField: public EncodedLightFieldData {
     public:
         //TODO should just take a vector of bytestrings
-        static EncodedLightField create(std::shared_ptr<bytestring> &encoding) {
-            return std::shared_ptr<SingletonMemoryEncodedLightField>(new SingletonMemoryEncodedLightField(encoding));
+        static EncodedLightField create(std::shared_ptr<bytestring> &encoding, const Volume &volume) {
+            return std::shared_ptr<SingletonMemoryEncodedLightField>(new SingletonMemoryEncodedLightField(encoding, volume));
         }
 
         ~SingletonMemoryEncodedLightField() { }
@@ -134,6 +148,10 @@ namespace visualcloud {
             }
         }
 
+        const std::vector<Volume> volumes() const override {
+            return {volume_};
+        }
+
         void write(const std::string &filename) override {
             //TODO serializing a singleton should kind of still create a directory and persist metadata
             std::ofstream fout{filename, std::ofstream::out | std::ofstream::binary};
@@ -141,12 +159,13 @@ namespace visualcloud {
         }
 
     protected:
-        explicit SingletonMemoryEncodedLightField(const std::shared_ptr<bytestring> &data)
-            : data_({data})
+        explicit SingletonMemoryEncodedLightField(const std::shared_ptr<bytestring> &data, const Volume &volume)
+            : data_({data}), volume_(volume)
         { }
 
     private:
         std::vector<std::shared_ptr<bytestring>> data_;
+        const Volume volume_;
     };
 };
 

@@ -65,7 +65,7 @@ TEST_F(OperatorTestFixture, testUnionEncode) {
     auto result = (red | green) >> Encode<YUVColorSpace>();
 
     ASSERT_GT(result->bytes()->size(), 0);
-    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10-green10.h264")->bytes());
+    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10-green10.h264", Volume::VolumeMax)->bytes());
 }
 
 
@@ -78,7 +78,7 @@ TEST_F(OperatorTestFixture, testIdentityEncode) {
     auto result = video >> Encode<YUVColorSpace>("h264");
 
     ASSERT_GT(result->bytes()->size(), 0);
-    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10.h264")->bytes());
+    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10.h264", Volume::VolumeMax)->bytes());
 }
 
 TEST_F(OperatorTestFixture, testUnionSelect) {
@@ -94,5 +94,5 @@ TEST_F(OperatorTestFixture, testUnionSelect) {
             >> Encode<YUVColorSpace>();
 
     ASSERT_GT(result->bytes()->size(), 0);
-    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10-green10.h264")->bytes());
+    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10-green10.h264", Volume::VolumeMax)->bytes());
 }
