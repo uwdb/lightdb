@@ -1,39 +1,29 @@
 #!/usr/bin/env bash
 
+DATASET_NAME=timelapse
+DATASET_PATH=../../datasets/$DATASET_NAME/
+DATASET_EXTENSION=h264
+echo Dataset: $DATASET_NAME
+
 echo "----------------"
 echo "1K Input"
 
-echo "20 seconds"
-time ./greyscale.sh ../../../test/resources/test-1K-20s.h264 out.hevc
+file=$DATASET_PATH${DATASET_NAME}1K.$DATASET_EXTENSION
 
-echo "40 seconds"
-time ./greyscale.sh ../../../test/resources/test-1K-40s.h264 out.hevc
-
-echo "60 seconds"
-time ./greyscale.sh ../../../test/resources/test-1K-60s.h264 out.hevc
+#time ./greyscale.sh $file out.h264
 
 echo "----------------"
 echo "2K Input"
 
-echo "20 seconds"
-time ./greyscale.sh ../../../test/resources/test-2K-20s.h264 out.hevc
+file=$DATASET_PATH${DATASET_NAME}2K.$DATASET_EXTENSION
 
-echo "40 seconds"
-time ./greyscale.sh ../../../test/resources/test-2K-40s.h264 out.hevc
-
-echo "60 seconds"
-time ./greyscale.sh ../../../test/resources/test-2K-60s.h264 out.hevc
+time ./greyscale.sh $file out.h264
 
 echo "----------------"
 echo "4K Input"
 
-echo "20 seconds"
-time ./greyscale.sh ../../../test/resources/test-4K-20s.h264 out.hevc
+file=$DATASET_PATH${DATASET_NAME}4K.$DATASET_EXTENSION
 
-echo "40 seconds"
-time ./greyscale.sh ../../../test/resources/test-4K-40s.h264 out.hevc
+time ./greyscale.sh $file out.h264
 
-echo "60 seconds"
-time ./greyscale.sh ../../../test/resources/test-4K-60s.h264 out.hevc
-
-rm out.hevc
+rm out.h264
