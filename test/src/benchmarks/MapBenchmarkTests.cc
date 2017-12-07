@@ -14,8 +14,9 @@ public:
 
     const char *name;
 
-    void testMap(size_t size, size_t duration, size_t frames, size_t height, size_t width) {
-        auto source = std::string("resources/test-") + std::to_string(size) + "K-" + std::to_string(duration) + "s.h264";
+    void testMap(std::string dataset, size_t size, size_t frames, size_t height, size_t width) {
+        //auto source = std::string("resources/test-") + std::to_string(size) + "K-" + std::to_string(duration) + "s.h264";
+        auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + "K.h264";
 
         auto start = steady_clock::now();
 
@@ -34,42 +35,14 @@ public:
 
 };
 
-TEST_F(MapBenchmarkTestFixture, testMap_1K_20s) {
-    testMap(1, 20, 600, 512, 1024);
+TEST_F(MapBenchmarkTestFixture, testMap_1K) {
+    testMap("timelapse", 1, 2701, 512, 960);
 }
 
-TEST_F(MapBenchmarkTestFixture, testMap_1K_40s) {
-    testMap(1, 40, 1200, 512, 1024);
+TEST_F(MapBenchmarkTestFixture, testMap_2K) {
+    testMap("timelapse", 2, 2701, 1024, 1920);
 }
 
-TEST_F(MapBenchmarkTestFixture, testMap_1K_60s) {
-    testMap(1, 60, 1800, 512, 1024);
+TEST_F(MapBenchmarkTestFixture, testMap_4K) {
+    testMap("timelapse", 4, 2701, 2048, 3840);
 }
-
-
-TEST_F(MapBenchmarkTestFixture, testMap_2K_20s) {
-    testMap(2, 20, 600, 1024, 2048);
-}
-
-TEST_F(MapBenchmarkTestFixture, testMap_2K_40s) {
-    testMap(2, 40, 1200, 1024, 2048);
-}
-
-TEST_F(MapBenchmarkTestFixture, testMap_2K_60s) {
-    testMap(2, 60, 1800, 1024, 2048);
-}
-
-
-
-TEST_F(MapBenchmarkTestFixture, testMap_4K_20s) {
-    testMap(4, 20, 600, 1920, 3840);
-}
-
-TEST_F(MapBenchmarkTestFixture, testMap_4K_40s) {
-    testMap(4, 40, 1200, 1920, 3840);
-}
-
-TEST_F(MapBenchmarkTestFixture, testMap_4K_60s) {
-    testMap(4, 60, 1800, 1920, 3840);
-}
-

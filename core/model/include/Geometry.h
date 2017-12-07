@@ -247,23 +247,4 @@ private:
     const visualcloud::rational interval_;
 };
 
-class LightFieldGeometry: public Geometry {
-public:
-    //TODO need Plane class
-    LightFieldGeometry(size_t rows, size_t columns)
-            : rows_(rows), columns_(columns)
-    { }
-
-    bool defined_at(const Point6D &point) const override {
-        return true;
-    }
-
-    inline const size_t rows() const { return rows; }
-    inline const size_t columns() const { return interval_; }
-
-private:
-    const size_t rows_, columns_;
-};
-
-
 #endif //VISUALCLOUD_GEOMETRY_H

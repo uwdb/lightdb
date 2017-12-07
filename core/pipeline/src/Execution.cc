@@ -182,6 +182,26 @@ namespace visualcloud {
         }
 
         template<typename ColorSpace>
+        static std::optional<EncodedLightField> applyLightFieldToVideoSelection(LightFieldReference<ColorSpace> lightfield, const std::string &format) {
+            if(lightfield->provenance().size() != 1)
+                return {};
+
+            auto *subset = dynamic_cast<SubsetLightField<ColorSpace>*>(&*lightfield);
+            auto *planar = dynamic_cast<PlanarTiledVideoLightField<ColorSpace>*>(&*lightfield->provenance()[0]);
+            if(subset != nullptr && planar != nullptr &&
+               subset->volumes().size() == 1 &&
+               subset->volumes()[0].x.Empty() &&
+               subset->volumes()[0].y.Empty() &&
+               subset->volumes()[0].z.Empty() &&
+                    subset->volumes()[0].z.start == 0) {
+                auto elf = visualcloud::physical::PlanarTiledToVideoLightField<ColorSpace>(*planar, subset->volumes()[0].x.start, subset->volumes()[0].y.start, subset->volumes()[0].theta, subset->volumes()[0].phi).apply(format);
+                return elf;
+            }
+            else
+                return {};
+        }
+
+        template<typename ColorSpace>
         EncodedLightField execute(LightFieldReference <ColorSpace> lightfield, const std::string &format) {
             //print_plan(lightfield);
 
@@ -204,6 +224,8 @@ namespace visualcloud {
             else if((result = applySelection(lightfield, format)).has_value())
                 return result.value();
             else if((result = applyTransformTranscode(lightfield, format)).has_value())
+                return result.value();
+            else if((result = applyLightFieldToVideoSelection(lightfield, format)))
                 return result.value();
             else
                 throw std::runtime_error("Unable to execute query");

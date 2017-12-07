@@ -63,7 +63,14 @@ public:
            const AngularRange& phi=AngularRange::PhiMax)
         //: Decode(std::ifstream{filename})
             : field_(std::shared_ptr<LightField<ColorSpace>>(new PanoramicVideoLightField<Geometry, ColorSpace>(filename, theta, phi)))
+    { }
 
+    Decode(const bool forceLightField,
+           const std::string &filename,
+           const AngularRange& theta=AngularRange::ThetaMax,
+           const AngularRange& phi=AngularRange::PhiMax)
+    //: Decode(std::ifstream{filename})
+            : field_(std::shared_ptr<LightField<ColorSpace>>(new PlanarTiledVideoLightField<ColorSpace>(filename, Volume{{0, 1}, {0, 1}, {0, 0}, TemporalRange::TemporalMax, theta, phi}, 3, 3)))
     { }
 
     Decode(std::istream &&stream)

@@ -28,8 +28,9 @@ public:
                 "K-" + std::to_string(duration) + "s.h264";
     }
 
-    void testStitchedUnion(size_t size, size_t duration, size_t frames, size_t height, size_t width) {
-        auto source = std::string("resources/test-") + std::to_string(size) + "K-" + std::to_string(duration) + "s";
+    void testStitchedUnion(std::string dataset, size_t size, size_t frames, size_t height, size_t width) {
+        //auto source = std::string("resources/test-") + std::to_string(size) + "K-" + std::to_string(duration) + "s";
+        auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + 'K';
 
         LOG(INFO) << "Creating stitchable HEVC input";
         Decode<EquirectangularGeometry, YUVColorSpace>(source + ".h264")
@@ -54,8 +55,9 @@ public:
         EXPECT_EQ(remove(name), 0);
     }
 
-    void testTranscodedUnion(size_t size, size_t duration, size_t frames, size_t height, size_t width) {
-        auto source = std::string("resources/test-") + std::to_string(size) + "K-" + std::to_string(duration) + "s.h264";
+    void testTranscodedUnion(std::string dataset, size_t size, size_t frames, size_t height, size_t width) {
+        //auto source = std::string("resources/test-") + std::to_string(size) + "K-" + std::to_string(duration) + "s.h264";
+        auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + "K.h264";
 
         auto start = steady_clock::now();
 
@@ -79,49 +81,19 @@ public:
 
 // Stitchable union tests
 
-TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_1K_20s) {
-    testStitchedUnion(1, 20, 600, 512, 1024);
+TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_1K) {
+    testStitchedUnion("timelapse", 1, 2700, 512, 960);
 }
 
-TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_1K_40s) {
-    testStitchedUnion(1, 40, 1200, 512, 1024);
+TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_2K) {
+    testStitchedUnion("timelapse", 2, 2700, 1024, 1920);
 }
 
-TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_1K_60s) {
-    testStitchedUnion(1, 60, 1800, 512, 1024);
+TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_4K) {
+    testStitchedUnion("timelapse", 4, 2700, 2048, 3840);
 }
-
-
-
-TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_2K_20s) {
-    testStitchedUnion(2, 20, 600, 1024, 2048);
-}
-
-TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_2K_40s) {
-    testStitchedUnion(2, 40, 1200, 1024, 2048);
-}
-
-TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_2K_60s) {
-    testStitchedUnion(2, 60, 1800, 1024, 2048);
-}
-
-
-
-TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_4K_20s) {
-    testStitchedUnion(4, 20, 600, 1920, 3840);
-}
-
-TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_4K_40s) {
-    testStitchedUnion(4, 40, 1200, 1920, 3840);
-}
-
-TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_4K_60s) {
-    testStitchedUnion(4, 60, 1800, 1920, 3840);
-}
-
 
 // Unstitchable union tests
-TEST_F(UnionBenchmarkTestFixture, testTranscodedUnion_1K_20s) {
-    testTranscodedUnion(1, 20, 600, 512, 1024);
+TEST_F(UnionBenchmarkTestFixture, testTranscodedUnion_1K) {
+    testTranscodedUnion("timelapse", 1, 2700, 512, 960);
 }
-

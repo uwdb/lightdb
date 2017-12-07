@@ -300,6 +300,7 @@ namespace visualcloud {
             return SingletonMemoryEncodedLightField::create(decode, video_.volumes()[0]);
         }
 
+        template class PlanarTiledToVideoLightField<YUVColorSpace>;
         template class EquirectangularTiledLightField<YUVColorSpace>;
         template class EquirectangularTranscodedLightField<YUVColorSpace>;
         template class StitchedLightField<YUVColorSpace>;

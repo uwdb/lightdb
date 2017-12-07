@@ -427,4 +427,43 @@ private:
     mutable std::optional<visualcloud::utility::StreamMetadata> metadata_;
 };
 
+template<typename ColorSpace=YUVColorSpace>
+class PlanarTiledVideoLightField: public DiscreteLightField<ColorSpace>, public visualcloud::SingletonFileEncodedLightField {
+public:
+    PlanarTiledVideoLightField(const std::string &filename,
+                               const Volume &volume,
+                               const size_t rows, const size_t columns)
+            : DiscreteLightField<ColorSpace>(IntervalGeometry(Dimension::Time, framerate())),
+              SingletonFileEncodedLightField(filename, volume), //TODO no need to duplicate filename here and in singleton
+              volume_(volume),
+              rows_(rows), columns_(columns)
+    { }
+
+    virtual ~PlanarTiledVideoLightField() { }
+
+    const std::vector<Volume> volumes() const override { return {volume_}; }
+    const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {}; }
+    //TODO remove both of these
+    inline visualcloud::rational framerate() const { return visualcloud::rational(30, 1); } //TODO hardcoded...
+
+    inline size_t duration() const { return 20; } //TODO remove hardcoded value
+    inline visualcloud::utility::StreamMetadata metadata() const { return (metadata_.has_value()
+                                                                           ? metadata_
+                                                                           : (metadata_ = visualcloud::utility::StreamMetadata(filename(), 0, true))).value(); }
+
+    const typename ColorSpace::Color value(const Point6D &point) const override {
+        return DiscreteLightField<ColorSpace>::defined_at(point) &&
+                       volume_.Contains(point)
+               ? ColorSpace::Color::Green //TODO
+               : ColorSpace::Color::Null;
+    }
+
+private:
+    //TODO drop filename after adding StreamDecodeReader in Physical.cc
+    // Can make SingletonEncodedLightField be a replacement for this class; one for in-memory, one for on-disk
+    const Volume volume_;
+    const size_t rows_, columns_;
+    mutable std::optional<visualcloud::utility::StreamMetadata> metadata_;
+};
+
 #endif //VISUALCLOUD_LIGHTFIELD_H

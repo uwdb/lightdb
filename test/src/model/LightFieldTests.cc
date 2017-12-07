@@ -9,12 +9,17 @@ public:
 };
 
 TEST_F(LightFieldTestFixture, testPanoramicConstructor) {
-    PanoramicVideoLightField<EquirectangularGeometry, YUVColorSpace>("resources/test-pattern.h264");
+    PlanarTiledVideoLightField("resources/test-lightfield.h265",
+                               Volume{{0, 1}, {0, 1}, {0, 0}, TemporalRange::TemporalMax,
+                                      AngularRange::ThetaMax, AngularRange::PhiMax},
+                               3, 3);
 }
 
-TEST_F(LightFieldTestFixture, testPanoramicValueOutOfVolume) {
-    auto field = PanoramicVideoLightField<EquirectangularGeometry, YUVColorSpace>("resources/test-pattern.h264",
-                                                                                  {0, 0, 0});
+TEST_F(LightFieldTestFixture, testValueOutOfVolume) {
+    auto field = PlanarTiledVideoLightField("resources/test-lightfield.h265",
+                                            Volume{{0, 1}, {0, 1}, {0, 0}, TemporalRange::TemporalMax,
+                                                   AngularRange::ThetaMax, AngularRange::PhiMax},
+                                            3, 3);
 
     ASSERT_EQ(field.value({-1,  0,  0,  0,  0,  0}), YUVColor::Null);
     ASSERT_EQ(field.value({ 0, -1,  0,  0,  0,  0}), YUVColor::Null);
@@ -25,11 +30,3 @@ TEST_F(LightFieldTestFixture, testPanoramicValueOutOfVolume) {
     ASSERT_EQ(field.value({ 1,  1,  1,  1,  1,  1}), YUVColor::Null);
     ASSERT_EQ(field.value({-1, -1, -1, -1, -1, -1}), YUVColor::Null);
 }
-
-TEST_F(LightFieldTestFixture, testPanoramicValue) {
-    auto field = ConstantLightField<YUVColorSpace>::create(YUVColor::Green);
-
-    ASSERT_NE(field->value({0, 0, 0, 0, 0, 0}), YUVColor::Null);
-    ASSERT_EQ(field->value({0, 0, 0, 0, 0, 0}), YUVColor::Green);
-}
-
