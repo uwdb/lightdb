@@ -24,8 +24,8 @@ public:
     const char *name;
     size_t i = 0u;
 
-    void tilingBenchmark(size_t size, size_t duration, size_t frames, size_t height, size_t width) {
-        auto source = std::string("resources/test-") + std::to_string(size) + "K-" + std::to_string(duration) + "s.h264";
+    void tilingBenchmark(std::string dataset, size_t size, size_t frames, size_t height, size_t width) {
+        auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + "K.h264";
         auto start = steady_clock::now();
 
         Decode<EquirectangularGeometry>(source)
@@ -45,45 +45,26 @@ public:
         EXPECT_VIDEO_VALID(name);
         EXPECT_VIDEO_FRAMES(name, frames);
         EXPECT_VIDEO_RESOLUTION(name, height, width);
-        EXPECT_EQ(remove(name), 0);
+        //EXPECT_EQ(remove(name), 0);
     }
 };
 
-TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_1K_20s) {
-    tilingBenchmark(1, 20, 600, 512, 1024);
+TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_timelapse_1K) {
+    tilingBenchmark("timelapse", 1, 2700, 512, 944);
 }
 
-TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_1K_40s) {
-    tilingBenchmark(1, 40, 1200, 512, 1024);
+TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_timelapse_2K) {
+    tilingBenchmark("timelapse", 2, 2700, 1024, 1920);
 }
 
-TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_1K_60s) {
-    tilingBenchmark(1, 60, 1800, 512, 1024);
+TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_timelapse_4K) {
+    tilingBenchmark("timelapse", 4, 2700, 2048, 3840);
 }
 
-
-TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_2K_20s) {
-    tilingBenchmark(2, 20, 600, 1024, 2048);
+TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_venice_4K) {
+    tilingBenchmark("venice", 4, 2700, 2048, 3840);
 }
 
-TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_2K_40s) {
-    tilingBenchmark(2, 40, 1200, 1024, 2048);
+TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_coaster_4K) {
+    tilingBenchmark("venice", 4, 2700, 2048, 3840);
 }
-
-TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_2K_60s) {
-    tilingBenchmark(2, 60, 1800, 1024, 2048);
-}
-
-
-TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_4K_20s) {
-    tilingBenchmark(4, 20, 600, 1920, 3840);
-}
-
-TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_4K_40s) {
-    tilingBenchmark(4, 40, 1200, 1920, 3840);
-}
-
-TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_4K_60s) {
-    tilingBenchmark(4, 60, 1800, 1920, 3840);
-}
-

@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.8)
+project(opencv_partitioner)
+
+set(CMAKE_CXX_STANDARD 14)
+
+set(SOURCE_FILES main.cc)
+add_executable(opencv_partitioner ${SOURCE_FILES})
+target_link_libraries(opencv_partitioner opencv_cudabgsegm opencv_cudaobjdetect opencv_cudastereo opencv_dnn opencv_ml opencv_shape opencv_stitching opencv_cudafeatures2d opencv_superres opencv_cudacodec opencv_videostab opencv_cudaoptflow opencv_cudalegacy opencv_calib3d opencv_features2d opencv_highgui opencv_videoio opencv_photo opencv_imgcodecs opencv_cudawarping opencv_cudaimgproc opencv_cudafilters opencv_video opencv_objdetect opencv_imgproc opencv_flann opencv_cudaarithm opencv_core opencv_cudev)

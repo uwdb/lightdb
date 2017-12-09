@@ -54,6 +54,26 @@ namespace visualcloud {
         }
 
         template<typename ColorSpace>
+        static std::optional<EncodedLightField> applyIdentitySelectTranscode(LightFieldReference<ColorSpace> lightfield, const std::string &format) {
+            auto *subset = dynamic_cast<SubsetLightField<ColorSpace>*>(&*lightfield);
+            auto *video = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*lightfield->provenance()[0]);
+
+            if(subset != nullptr && video != nullptr &&
+                    subset->volumes().size() == 1 &&
+                    subset->volumes()[0] == video->volume() &&
+                    video->metadata().codec == format) {
+                auto lf = lightfield->provenance()[0];
+                auto sp = static_cast<const std::shared_ptr<LightField<ColorSpace>>>(lf);
+                auto vlf = std::static_pointer_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>>(sp);
+                auto elf = std::static_pointer_cast<EncodedLightFieldData>(vlf);
+
+                return elf;
+            }
+            else
+                return {};
+        }
+
+        template<typename ColorSpace>
         static std::optional<EncodedLightField> applyIdentityTranscode(LightFieldReference<ColorSpace> lightfield, const std::string &format) {
             auto *video = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*lightfield);
             if(video != nullptr && video->metadata().codec == format) {
@@ -210,6 +230,8 @@ namespace visualcloud {
 
             std::optional<EncodedLightField> result;
             if((result = applyIdentityTranscode(lightfield, format)).has_value())
+                return result.value();
+            else if((result = applyIdentitySelectTranscode(lightfield, format)).has_value())
                 return result.value();
             else if((result = applyTranscode(lightfield, format)).has_value())
                 return result.value();

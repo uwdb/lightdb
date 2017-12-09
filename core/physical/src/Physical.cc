@@ -40,6 +40,8 @@ namespace visualcloud {
 
             //auto framerate = 30u;
             auto gop = std::lround(video_.metadata().framerate.numerator() * time_ / video_.metadata().framerate.denominator());
+            if(gop == 0) //TODO temp in case there's no temporal partitioning
+                gop = 1024*1024;
             auto low_bitrate = 50u, high_bitrate = 5000u*1024;
 
             auto start = std::chrono::steady_clock::now();

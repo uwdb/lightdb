@@ -4,6 +4,7 @@
 #include <glog/logging.h>
 #include <memory>
 #include <optional>
+#include <experimental/filesystem>
 #include <fstream>
 
 namespace visualcloud {
@@ -53,8 +54,9 @@ namespace visualcloud {
 
         void write(const std::string &filename) override {
             //TODO serializing a singleton should kind of still create a directory and persist metadata
-            std::ofstream fout{filename, std::ofstream::out | std::ofstream::binary};
-            fout.write(bytes()->data(), bytes()->size());
+            std::experimental::filesystem::copy_file(filename_, filename, std::experimental::filesystem::copy_options::overwrite_existing);
+            //std::ofstream fout{filename, std::ofstream::out | std::ofstream::binary};
+            //fout.write(bytes()->data(), bytes()->size());
         }
 
         const std::vector<Volume> volumes() const override {

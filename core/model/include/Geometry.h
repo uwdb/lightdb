@@ -30,8 +30,9 @@ struct SpatiotemporalRange {
     bool Empty() const { return start == end; }
 
     bool operator==(const SpatiotemporalRange &other) const {
+        static double epsilon = 0.000001; //TODO ugh
         return this == &other ||
-               (start == other.start && end == other.end);
+               (std::abs(start - other.start) < epsilon && std::abs(end - other.end) < epsilon);
     }
 
     bool operator!=(const SpatiotemporalRange &other) const {
@@ -56,6 +57,16 @@ public:
 
     bool Contains(const double angle) const {
         return start <= angle && angle <= end;
+    }
+
+    bool operator==(const AngularRange &other) const {
+        static double epsilon = 0.000001; //TODO ugh
+        return this == &other ||
+               (std::abs(start - other.start) < epsilon && std::abs(end - other.end) < epsilon);
+    }
+
+    bool operator!=(const AngularRange &other) const {
+        return !operator==(other);
     }
 
     static const AngularRange ThetaMax;
@@ -85,6 +96,16 @@ public:
                t.start == t.end &&
                theta.start == theta.end &&
                phi.start == phi.end;
+    }
+
+    bool operator==(const Volume &other) const {
+        return this == &other ||
+               (x == other.x && y == other.y && z == other.z && t == other.t &&
+                       theta == other.theta && phi == other.phi);
+    }
+
+    bool operator!=(const Volume &other) const {
+        return !operator==(other);
     }
 
     Volume translate(const Point6D &delta) const;
