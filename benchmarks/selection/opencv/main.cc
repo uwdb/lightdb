@@ -47,11 +47,43 @@ void select(const char* input_filename,
   }
 }
 
+void select_time(const char* input_filename,
+          unsigned int width, unsigned int height,
+          unsigned int start, unsigned int end) {
+
+  VideoCapture input(input_filename);
+  auto frames = std::lround(input.get(CAP_PROP_FRAME_COUNT));
+  auto fourcc = std::lround(input.get(CV_CAP_PROP_FOURCC));
+  auto fps = std::lround(input.get(CAP_PROP_FPS));
+
+  Mat frame;
+  Size size{width, height};
+  VideoWriter writer(OUTPUT_FILENAME, 0x21, fps, size, true);
+
+  if(!input.isOpened())
+      throw std::runtime_error("Failed to open input.");
+
+  for(int i = 0; i < fps * start; i++)
+     input >> frame;
+
+  frames = (end - start) * fps;
+  while(frames--) {
+      input >> frame; // get a new frame from camera
+
+      if(!frame.empty()){
+        writer.write(frame);
+      }
+  }
+}
+
 int main(int argc, char** argv) {
-    if(argc != 6)
-        printf("Usage: %s [input filename]\n", argv[0]);
-    else {
-	select(argv[1], atoi(argv[2]), atoi(argv[3]), 
-		atoi(argv[4]), atoi(argv[5]), -1);
+    if(argc != 7) {
+        printf("Usage: %s [input filename] crop width height left top\n", argv[0]);
+        printf("          [input filename] time width height start end\n");
+    } else if(std::string(argv[1]) == "crop") {
+	select(argv[2], atoi(argv[3]), atoi(argv[4]),
+		atoi(argv[5]), atoi(argv[6]), -1);
+    } else if(std::string(argv[1]) == "time") {
+        select_time(argv[2], atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]));
     }
 }

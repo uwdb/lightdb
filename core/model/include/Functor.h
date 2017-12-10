@@ -42,6 +42,22 @@ namespace visualcloud {
         operator const FrameTransform() const override;
         bool hasFrameTransform() const override { return true; }
     };
+
+    class GaussianBlur: public functor<YUVColorSpace> {
+    public:
+        GaussianBlur();
+        ~GaussianBlur() { }
+
+        const YUVColorSpace::Color operator()(const LightField<YUVColorSpace> &field,
+                                              const Point6D &point) const override;
+
+        operator const FrameTransform() const override;
+        bool hasFrameTransform() const override { return true; }
+
+    private:
+        mutable CUmodule module_; //TODO these shouldn't be mutable
+        mutable CUfunction function_;
+    };
 }; // namespace visualcloud
 
 #endif //VISUALCLOUD_FUNCTOR_H

@@ -6,39 +6,37 @@ DATASET_EXTENSION=h264
 echo Dataset: $DATASET_NAME
 
 echo "----------------"
-echo "1K Input"
+echo "4K Input, t=[2, 4]"
 
-width=384
-height=384
-left=128
-top=128
-file=$DATASET_PATH${DATASET_NAME}1K.$DATASET_EXTENSION
-
-ffmpeg -hide_banner -loglevel error -y -i $file -c copy input.mp4
-time ./opencv_selector input.mp4 $width $height $left $top
-
-echo "----------------"
-echo "2K Input"
-
-width=768
-height=768
-left=256
-top=256
-file=$DATASET_PATH${DATASET_NAME}2K.$DATASET_EXTENSION
-
-ffmpeg -hide_banner -loglevel error -y -i $file -c copy input.mp4
-time ./opencv_selector input.mp4 $width $height $left $top
-
-echo "----------------"
-echo "4K Input"
-
-width=1440
-height=1440
-left=480
-top=480
+width=3840
+height=2048
+start=2
+end=4
 file=$DATASET_PATH${DATASET_NAME}4K.$DATASET_EXTENSION
 
 ffmpeg -hide_banner -loglevel error -y -i $file -c copy input.mp4
-time ./opencv_selector input.mp4 $width $height $left $top
+time ./opencv_selector time input.mp4 $width $height $start $end
+
+echo "----------------"
+echo "4K Input, theta=[pi/2]"
+
+width=1920
+height=2048
+left=1920
+top=0
+file=$DATASET_PATH${DATASET_NAME}4K.$DATASET_EXTENSION
+
+ffmpeg -hide_banner -loglevel error -y -i $file -c copy input.mp4
+#time ./opencv_selector crop input.mp4 $width $height $left $top
+
+echo "----------------"
+echo "4K Input, theta=[pi/2, pi], phi=[pi/4, pi/2]"
+
+width=960
+height=512
+left=960
+top=512
+ffmpeg -hide_banner -loglevel error -y -i $file -c copy input.mp4
+#time ./opencv_selector crop input.mp4 $width $height $left $top
 
 rm input.mp4
