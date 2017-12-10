@@ -44,10 +44,10 @@ void tile(const char* input_filename,
 }
 
 int main(int argc, char** argv) {
-    if(argc != 2)
-        printf("Usage: %s [input filename]\n", argv[0]);
+    if(argc != 4)
+        printf("Usage: %s [input filename] [rows] [columns]\n", argv[0]);
     else {
-        auto rows = 1u, columns = 4u;
+        auto rows = atoi(argv[2]), columns = atoi(argv[3]);
         tile(argv[1], rows, columns);
     }
 }

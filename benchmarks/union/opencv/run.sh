@@ -6,27 +6,19 @@ DATASET_EXTENSION=h264
 echo Dataset: $DATASET_NAME
 
 echo "----------------"
-echo "1K Input"
-
-file=$DATASET_PATH${DATASET_NAME}1K.$DATASET_EXTENSION
-
-ffmpeg -hide_banner -loglevel error -y -i $file -c copy input.mp4
-time ./opencv_union input.mp4
-
-echo "----------------"
-echo "2K Input"
-
-file=$DATASET_PATH${DATASET_NAME}2K.$DATASET_EXTENSION
-
-ffmpeg -hide_banner -loglevel error -y -i $file -c copy input.mp4
-time ./opencv_union input.mp4
-
-echo "----------------"
-echo "4K Input"
+echo "4K Input, overlay"
 
 file=$DATASET_PATH${DATASET_NAME}4K.$DATASET_EXTENSION
 
-ffmpeg -hide_banner -loglevel error -y -i $file -c copy input.mp4
-time ./opencv_union input.mp4
+ffmpeg -hide_banner -loglevel error -y -i $file -filter:v "crop=in_w/2:in_h:0:0" input.mp4
+time ./opencv_union overlay input.mp4 input.mp4
 
-rm input.mp4
+echo "----------------"
+echo "4K Input, stack"
+
+file=$DATASET_PATH${DATASET_NAME}4K.$DATASET_EXTENSION
+
+#ffmpeg -hide_banner -loglevel error -y -i $file -filter:v "crop=in_w/2:in_h:0:0" input.mp4
+#time ./opencv_union stack input.mp4
+
+#rm input.mp4

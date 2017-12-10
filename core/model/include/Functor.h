@@ -58,6 +58,50 @@ namespace visualcloud {
         mutable CUmodule module_; //TODO these shouldn't be mutable
         mutable CUfunction function_;
     };
+
+    class DepthmapCPU: public functor<YUVColorSpace> {
+    public:
+        ~DepthmapCPU() { }
+
+        const YUVColorSpace::Color operator()(const LightField<YUVColorSpace> &field,
+                                              const Point6D &point) const override {
+            throw new std::runtime_error("Not implemented");
+        }
+
+        operator const FrameTransform() const override;
+        bool hasFrameTransform() const override { return true; }
+    };
+
+    class DepthmapGPU: public functor<YUVColorSpace> {
+    public:
+        DepthmapGPU() : module_(nullptr), function_(nullptr) { }
+        ~DepthmapGPU() { }
+
+        const YUVColorSpace::Color operator()(const LightField<YUVColorSpace> &field,
+                                              const Point6D &point) const override {
+            throw new std::runtime_error("Not implemented");
+        }
+
+        operator const FrameTransform() const override;
+        bool hasFrameTransform() const override { return true; }
+
+    private:
+        mutable CUmodule module_; //TODO these shouldn't be mutable
+        mutable CUfunction function_;
+    };
+
+    class DepthmapFPGA: public functor<YUVColorSpace> {
+    public:
+        ~DepthmapFPGA() { }
+
+        const YUVColorSpace::Color operator()(const LightField<YUVColorSpace> &field,
+                                              const Point6D &point) const override {
+            throw new std::runtime_error("Not implemented");
+        }
+
+        operator const FrameTransform() const override;
+        bool hasFrameTransform() const override { return true; }
+    };
 }; // namespace visualcloud
 
 #endif //VISUALCLOUD_FUNCTOR_H

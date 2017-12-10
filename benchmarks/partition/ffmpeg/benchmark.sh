@@ -6,30 +6,21 @@ DATASET_EXTENSION=h264
 echo Dataset: $DATASET_NAME
 
 echo "----------------"
-echo "1K Input"
-
-width=960
-height=512
-file=$DATASET_PATH${DATASET_NAME}1K.$DATASET_EXTENSION
-
-time ./partition.sh $file $width $height out.h264
-
-echo "----------------"
-echo "2K Input"
-
-width=1920
-height=1024
-file=$DATASET_PATH${DATASET_NAME}2K.$DATASET_EXTENSION
-
-time ./partition.sh $file $width $height out.h264
-
-echo "----------------"
-echo "4K Input"
+echo "4K Input, theta partition"
 
 width=3840
 height=2048
 file=$DATASET_PATH${DATASET_NAME}4K.$DATASET_EXTENSION
 
-time ./partition.sh $file $width $height out.h264
+time ./partition_theta.sh $file $width $height out.h264
+
+echo "----------------"
+echo "4K Input, phi partition"
+
+width=3840
+height=2048
+file=$DATASET_PATH${DATASET_NAME}4K.$DATASET_EXTENSION
+
+time ./partition_phi.sh $file $width $height out.h264
 
 rm *out.h264

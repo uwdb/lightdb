@@ -9,28 +9,24 @@ echo "================"
 echo "SIDE BY SIDE HEVC->HEVC"
 
 echo "----------------"
-echo "1K Input"
-
-file=$DATASET_PATH${DATASET_NAME}1K.$DATASET_EXTENSION
-
-ffmpeg -hide_banner -y -loglevel error -i ../../../test/resources/test-1K-60s.h264 -vcodec hevc_nvenc input.hevc
-/usr/bin/time --format "%E" ./side-by-side.sh input.hevc out.hevc
-
-echo "----------------"
-echo "2K Input"
-
-file=$DATASET_PATH${DATASET_NAME}2K.$DATASET_EXTENSION
-
-ffmpeg -hide_banner -y -loglevel error -i ../../../test/resources/test-2K-60s.h264 -vcodec hevc_nvenc input.hevc
-/usr/bin/time --format "%E" ./side-by-side.sh input.hevc out.hevc
-
-echo "----------------"
-echo "4K Input"
+echo "4K Input, side-by-side"
 
 file=$DATASET_PATH${DATASET_NAME}4K.$DATASET_EXTENSION
 
-ffmpeg -hide_banner -y -loglevel error -i ../../../test/resources/test-4K-60s.h264 -vcodec hevc_nvenc input.hevc
-/usr/bin/time --format "%E" ./side-by-side.sh input.hevc out.hevc
+ffmpeg -hide_banner -y -loglevel error -i $file -filter:v "crop=in_w/2:in_h:0:0" -vcodec hevc_nvenc left.hevc
+ffmpeg -hide_banner -y -loglevel error -i $file -filter:v "crop=in_w/2:in_h:in_w/2:0" -vcodec hevc_nvenc right.hevc
+time ./side-by-side.sh left.hevc right.hevc out.hevc
 
-rm input.hevc
+echo "================"
+echo "SIDE BY SIDE HEVC->HEVC"
+
+echo "----------------"
+echo "4K Input, self-overlay"
+
+file=$DATASET_PATH${DATASET_NAME}4K.$DATASET_EXTENSION
+
+time ./self-overlay.sh $file out.hevc
+
+rm left.hevc
+rm right.hevc
 rm out.hevc
