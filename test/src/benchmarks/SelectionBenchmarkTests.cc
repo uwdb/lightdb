@@ -74,29 +74,31 @@ public:
 };
 
 TEST_F(SelectionBenchmarkTestFixture, testSelect_1K) {
-    testSelect("timelapse", 1, 2730, 512, 960, {0, temptodouble(pi_div_2)}, {0, temptodouble(pi_div_2)});
-    testSelect("timelapse", 1, 2730, 512, 960, {0, temptodouble(pi_div_4)}, {0, temptodouble(pi_div_4)});
+    testSelect("timelapse", 1, 2701, 512, 960, {0, temptodouble(pi_div_2)}, {0, temptodouble(pi_div_2)});
+    testSelect("timelapse", 1, 2701, 512, 960, {0, temptodouble(pi_div_4)}, {0, temptodouble(pi_div_4)});
 
-    testSelect("timelapse", 1, 2730, 512, 960, {temptodouble(pi_div_2), temptodouble(pi)}, {temptodouble(pi_div_2), temptodouble(pi)});
-    testSelect("timelapse", 1, 2730, 512, 960, {temptodouble(pi_div_4), temptodouble(pi)}, {temptodouble(pi_div_4), temptodouble(pi)});
+    testSelect("timelapse", 1, 2701, 512, 960, {temptodouble(pi_div_2), temptodouble(pi)}, {temptodouble(pi_div_2), temptodouble(pi)});
+    testSelect("timelapse", 1, 2701, 512, 960, {temptodouble(pi_div_4), temptodouble(pi)}, {temptodouble(pi_div_4), temptodouble(pi)});
 }
 
 TEST_F(SelectionBenchmarkTestFixture, testSelect_2K) {
-    testSelect("timelapse", 2, 2730, 1024, 1920, {0, temptodouble(pi_div_2)}, {0, temptodouble(pi_div_2)});
-    testSelect("timelapse", 2, 2730, 1024, 1920, {0, temptodouble(pi_div_4)}, {0, temptodouble(pi_div_4)});
+    testSelect("timelapse", 2, 2701, 1024, 1920, {0, temptodouble(pi_div_2)}, {0, temptodouble(pi_div_2)});
+    testSelect("timelapse", 2, 2701, 1024, 1920, {0, temptodouble(pi_div_4)}, {0, temptodouble(pi_div_4)});
 
-    testSelect("timelapse", 2, 2730, 1024, 1920, {temptodouble(pi_div_2), temptodouble(pi)}, {temptodouble(pi_div_2), temptodouble(pi)});
-    testSelect("timelapse", 2, 2730, 1024, 1920, {temptodouble(pi_div_4), temptodouble(pi)}, {temptodouble(pi_div_4), temptodouble(pi)});
+    testSelect("timelapse", 2, 2701, 1024, 1920, {temptodouble(pi_div_2), temptodouble(pi)}, {temptodouble(pi_div_2), temptodouble(pi)});
+    testSelect("timelapse", 2, 2701, 1024, 1920, {temptodouble(pi_div_4), temptodouble(pi)}, {temptodouble(pi_div_4), temptodouble(pi)});
 }
 
 TEST_F(SelectionBenchmarkTestFixture, testSelect_4K) {
-    testSelect("timelapse", 4, 2730, 2048, 3840, {0, temptodouble(pi_div_2)}, {0, temptodouble(pi_div_2)});
-    testSelect("timelapse", 4, 2730, 2048, 3840, {0, temptodouble(pi_div_4)}, {0, temptodouble(pi_div_4)});
+    testSelect("timelapse", 4, 2701, 2048, 3840, {temptodouble(pi_div_2), temptodouble(pi)}, AngularRange::PhiMax);
 
-    testSelect("timelapse", 4, 2730, 2048, 3840, {temptodouble(pi_div_2), temptodouble(pi)}, {temptodouble(pi_div_2), temptodouble(pi)});
-    testSelect("timelapse", 4, 2730, 2048, 3840, {temptodouble(pi_div_4), temptodouble(pi)}, {temptodouble(pi_div_4), temptodouble(pi)});
+    testSelect("timelapse", 4, 2701, 2048, 3840, {0, temptodouble(pi_div_2)}, {0, temptodouble(pi_div_2)});
+    testSelect("timelapse", 4, 2701, 2048, 3840, {0, temptodouble(pi_div_4)}, {0, temptodouble(pi_div_4)});
+
+    testSelect("timelapse", 4, 2701, 2048, 3840, {temptodouble(pi_div_2), temptodouble(pi)}, {temptodouble(pi_div_2), temptodouble(pi)});
+    testSelect("timelapse", 4, 2701, 2048, 3840, {temptodouble(pi_div_4), temptodouble(pi)}, {temptodouble(pi_div_4), temptodouble(pi)});
 }
 
 TEST_F(SelectionBenchmarkTestFixture, testTemporalSelect_4K) {
-    testTemporalSelect("timelapse", 4, 2700, 30, 2048, 3840, {0, 2});
+    testTemporalSelect("timelapse", 4, 2701, 30, 2048, 3840, {0, 2});
 }

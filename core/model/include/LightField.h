@@ -405,7 +405,7 @@ public:
     //TODO remove both of these
     inline visualcloud::rational framerate() const { return visualcloud::rational(30, 1); } //TODO hardcoded...
 
-    inline size_t duration() const { return 20; } //TODO remove hardcoded value
+    inline size_t duration() const { return 99; } //TODO remove hardcoded value
     inline visualcloud::utility::StreamMetadata metadata() const { return (metadata_.has_value()
                                                                           ? metadata_
                                                                           : (metadata_ = visualcloud::utility::StreamMetadata(filename(), 0, true))).value(); }
