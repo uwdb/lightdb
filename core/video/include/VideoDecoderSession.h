@@ -15,6 +15,7 @@ public:
     { }
 
     ~VideoDecoderSession() {
+        decoder.frame_queue().endDecode();
         worker.join();
         cuvidDestroyVideoParser(parser);
     }

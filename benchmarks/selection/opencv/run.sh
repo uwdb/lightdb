@@ -6,12 +6,12 @@ DATASET_EXTENSION=h264
 echo Dataset: $DATASET_NAME
 
 echo "----------------"
-echo "4K Input, t=[2, 4]"
+echo "4K Input, t=[2.5, 4.5]"
 
 width=3840
 height=2048
-start=2
-end=4
+start=2.5
+end=4.5
 file=$DATASET_PATH${DATASET_NAME}4K.$DATASET_EXTENSION
 
 ffmpeg -hide_banner -loglevel error -y -i $file -c copy input.mp4

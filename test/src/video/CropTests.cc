@@ -28,11 +28,28 @@ TEST_F(CropperTestFixture, testFileCropper) {
     FileEncodeWriter writer(cropper.encoder().api(), FILENAME(0));
 
     ASSERT_SECS(
-            ASSERT_NO_THROW(cropper.crop(reader, writer, top, left)),
+            ASSERT_NO_THROW(cropper.crop(reader, writer, top, left, {})),
         1.5);
 
     EXPECT_VIDEO_VALID(FILENAME(0));
     EXPECT_VIDEO_FRAMES(FILENAME(0), 99);
+    EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
+    EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
+}
+
+TEST_F(CropperTestFixture, testFileCropperWithLimit) {
+    auto top = 200u, left = 200u, width = 512u, height = 128u, limit = 20u;
+    EncodeConfiguration encodeConfiguration{height, width, NV_ENC_HEVC, 24, 24, 1024*1024};
+    CropTranscoder cropper(context, decodeConfiguration, encodeConfiguration);
+    FileDecodeReader reader("resources/test-pattern.h264");
+    FileEncodeWriter writer(cropper.encoder().api(), FILENAME(0));
+
+    ASSERT_SECS(
+            ASSERT_NO_THROW(cropper.crop(reader, writer, top, left, limit)),
+            1.5);
+
+    EXPECT_VIDEO_VALID(FILENAME(0));
+    EXPECT_VIDEO_FRAMES(FILENAME(0), limit);
     EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
 }

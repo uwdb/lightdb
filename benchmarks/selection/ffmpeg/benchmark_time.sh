@@ -8,8 +8,8 @@ echo Dataset: $DATASET_NAME
 echo "----------------"
 echo "4K Input"
 
-start=2
-end=4
+start=2.5
+end=4.5
 file=$DATASET_PATH${DATASET_NAME}4K.$DATASET_EXTENSION
 
 time ./time.sh $file $start $end out.h264

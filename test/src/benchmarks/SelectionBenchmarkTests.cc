@@ -50,6 +50,27 @@ public:
         EXPECT_EQ(remove(name), 0);
     }
 
+    void testTemporalSelect(std::string dataset,
+                            size_t size, size_t frames, size_t fps,
+                            size_t height, size_t width,
+                            TemporalRange range) {
+        auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + "K.h264";
+        LOG(INFO) << "Temporal fragment from " << range.start << " to " << range.end;
+
+        auto start = steady_clock::now();
+
+        Decode<EquirectangularGeometry>(source)
+                >> Select(Point3D::Zero.ToVolume(range, AngularRange::ThetaMax, AngularRange::PhiMax))
+                >> Encode<YUVColorSpace>()
+                >> Store(name);
+
+        LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
+
+        EXPECT_VIDEO_VALID(name);
+        EXPECT_VIDEO_FRAMES(name, frames/(range.magnitude() / fps));
+        EXPECT_VIDEO_RESOLUTION(name, height, width);
+        EXPECT_EQ(remove(name), 0);
+    }
 };
 
 TEST_F(SelectionBenchmarkTestFixture, testSelect_1K) {
@@ -74,4 +95,8 @@ TEST_F(SelectionBenchmarkTestFixture, testSelect_4K) {
 
     testSelect("timelapse", 4, 2730, 2048, 3840, {temptodouble(pi_div_2), temptodouble(pi)}, {temptodouble(pi_div_2), temptodouble(pi)});
     testSelect("timelapse", 4, 2730, 2048, 3840, {temptodouble(pi_div_4), temptodouble(pi)}, {temptodouble(pi_div_4), temptodouble(pi)});
+}
+
+TEST_F(SelectionBenchmarkTestFixture, testTemporalSelect_4K) {
+    testTemporalSelect("timelapse", 4, 2700, 30, 2048, 3840, {0, 2});
 }

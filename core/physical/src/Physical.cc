@@ -264,7 +264,7 @@ namespace visualcloud {
             FileDecodeReader reader(video_.filename());
             SegmentedMemoryEncodeWriter writer{cropper.encoder().api(), encodeConfiguration};
 
-            cropper.crop(reader, writer, top, left);
+            cropper.crop(reader, writer, top, left, {});
 
             auto decode = std::make_shared<bytestring>(writer.buffer());
 
