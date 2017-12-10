@@ -246,6 +246,7 @@ namespace visualcloud {
                  bottom = std::lround((phi_.end / AngularRange::PhiMax.end) * video_.metadata().height),
                  left = std::lround((theta_.start / AngularRange::ThetaMax.end) * video_.metadata().width),
                  right = std::lround((theta_.end / AngularRange::ThetaMax.end) * video_.metadata().width);
+            auto frame_count = t.end * (video_.metadata().framerate.numerator() / video_.metadata().framerate.denominator());
 
             auto start = std::chrono::steady_clock::now();
             GPUContext context(0);
@@ -264,7 +265,7 @@ namespace visualcloud {
             FileDecodeReader reader(video_.filename());
             SegmentedMemoryEncodeWriter writer{cropper.encoder().api(), encodeConfiguration};
 
-            cropper.crop(reader, writer, top, left, {});
+            cropper.crop(reader, writer, top, left, frame_count);
 
             auto decode = std::make_shared<bytestring>(writer.buffer());
 

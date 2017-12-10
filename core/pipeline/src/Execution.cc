@@ -194,7 +194,7 @@ namespace visualcloud {
                     subset->volumes()[0].x.Empty() &&
                     subset->volumes()[0].y.Empty() &&
                     subset->volumes()[0].z.Empty()) {
-                auto elf = visualcloud::physical::EquirectangularCroppedLightField<ColorSpace>(*video, subset->volumes()[0].theta, subset->volumes()[0].phi).apply(format);
+                auto elf = visualcloud::physical::EquirectangularCroppedLightField<ColorSpace>(*video, subset->volumes()[0].theta, subset->volumes()[0].phi, subset->volumes()[0].t).apply(format);
                 return elf;
             }
             else

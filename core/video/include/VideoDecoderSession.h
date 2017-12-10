@@ -43,7 +43,7 @@ protected:
                     //throw std::runtime_error(std::to_string(status) + "DecodeAll"); //TODO
                 }
             }
-        } while (packet.has_value());
+        } while (!decoder.frame_queue().isEndOfDecode() && packet.has_value());
 
         decoder.frame_queue().endDecode();
     }

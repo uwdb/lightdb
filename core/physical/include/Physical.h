@@ -193,8 +193,8 @@ namespace visualcloud {
         template<typename ColorSpace>
         class EquirectangularCroppedLightField: public LightField<ColorSpace> {
         public:
-            EquirectangularCroppedLightField(const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace> &video, AngularRange theta, AngularRange phi)
-                    : video_(video), theta_(theta), phi_(phi)
+            EquirectangularCroppedLightField(const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace> &video, AngularRange theta, AngularRange phi, TemporalRange t)
+                    : video_(video), theta_(theta), phi_(phi), t(t)
             { }
 
             const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {}; } //TODO incorrect
@@ -207,6 +207,7 @@ namespace visualcloud {
         private:
             const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>& video_;
             const AngularRange theta_, phi_;
+            const TemporalRange t;
         };
 
         template<typename ColorSpace>
