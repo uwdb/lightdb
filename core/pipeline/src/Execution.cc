@@ -56,7 +56,7 @@ namespace visualcloud {
         template<typename ColorSpace>
         static std::optional<EncodedLightField> applyIdentitySelectTranscode(LightFieldReference<ColorSpace> lightfield, const std::string &format) {
             auto *subset = dynamic_cast<SubsetLightField<ColorSpace>*>(&*lightfield);
-            auto *video = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*lightfield->provenance()[0]);
+            auto *video = subset != nullptr ? dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*lightfield->provenance()[0]) : nullptr;
 
             if(subset != nullptr && video != nullptr &&
                     subset->volumes().size() == 1 &&
