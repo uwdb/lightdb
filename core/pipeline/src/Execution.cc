@@ -56,7 +56,7 @@ namespace visualcloud {
 
         //TODO what is this, it's just a copy of the applyStitchingFunction?  Probably remove(?)
         template<typename ColorSpace>
-        static std::optional<EncodedLightField> applyBinaryOverlayUnion(LightFieldReference<ColorSpace> lightfield) {
+        static std::optional<EncodedLightField> applyBinaryOverlayUnion(LightFieldReference<ColorSpace> lightfield, const std::string format) {
             auto *composite = dynamic_cast<const CompositeLightField<ColorSpace>*>(&*lightfield);
             if(composite == nullptr || composite->provenance().size() != 2)
                 return {};
@@ -67,7 +67,31 @@ namespace visualcloud {
             if(left != nullptr && right != nullptr &&
                     left->volume() == right->volume()) {
                 //TODO this is just broken, need a binary union transcoder
-                return visualcloud::physical::BinaryUnionTranscodedLightField<ColorSpace>(*left, *right, Overlay(YUVColor::Red)).apply("hevc");
+                return visualcloud::physical::BinaryUnionTranscodedLightField<ColorSpace>(*left, *right, Overlay(YUVColor::Red)).apply(format);
+            }
+            else
+                return {};
+        }
+
+        template<typename ColorSpace>
+        static std::optional<EncodedLightField> applySelfUnion(LightFieldReference<ColorSpace> lightfield, const std::string &format) {
+            auto *composite = dynamic_cast<const CompositeLightField<ColorSpace>*>(&*lightfield);
+            if(composite == nullptr || composite->provenance().size() != 2)
+                return {};
+
+            auto *left = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*composite->provenance()[0]);
+            auto *right = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*composite->provenance()[1]);
+
+            if(left != nullptr && right != nullptr &&
+               left->volume() == right->volume() &&
+               left->filename() == right->filename() &&
+               left->metadata().codec == format) {
+                auto lf = composite->provenance()[0];
+                auto sp = static_cast<const std::shared_ptr<LightField<ColorSpace>>>(lf);
+                auto vlf = std::static_pointer_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>>(sp);
+                auto elf = std::static_pointer_cast<EncodedLightFieldData>(vlf);
+
+                return elf;
             }
             else
                 return {};
@@ -112,6 +136,17 @@ namespace visualcloud {
             auto *video = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*lightfield);
             if(video != nullptr && video->metadata().codec != format)
                 return {visualcloud::physical::EquirectangularTranscodedLightField<ColorSpace>(*video, Identity()).apply(format)};
+            else
+                return {};
+        }
+
+        template<typename ColorSpace>
+        static std::optional<EncodedLightField> applyTemporalPartitonedTranscode(LightFieldReference<ColorSpace> lightfield, const std::string &format) {
+            auto *partitioning = dynamic_cast<const PartitionedLightField<ColorSpace>*>(&*lightfield);
+            auto *video = partitioning != nullptr && partitioning->provenance().size() == 1 ? dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*partitioning->provenance()[0]) : nullptr;
+
+            if(partitioning != nullptr && video != nullptr && video->metadata().codec != format && video->volumes().size() > 0)
+                return {visualcloud::physical::TemporalPartitionedEquirectangularTranscodedLightField<ColorSpace>(*partitioning, *video, Identity()).apply(format)};
             else
                 return {};
         }
@@ -253,6 +288,10 @@ namespace visualcloud {
                 return result.value();
             else if((result = applyIdentitySelectTranscode(lightfield, format)).has_value())
                 return result.value();
+            else if((result = applySelfUnion(lightfield, format)).has_value())
+                return result.value();
+            else if((result = applyTemporalPartitonedTranscode(lightfield, format)).has_value())
+                return result.value();
             else if((result = applyTranscode(lightfield, format)).has_value())
                 return result.value();
             else if((result = applyTiling(lightfield, format)).has_value())
@@ -261,7 +300,7 @@ namespace visualcloud {
                 return result.value();
             else if((result = applyNaiveStitching(lightfield)).has_value()) // Should come after fast stitching, I guess
                 return result.value();
-            else if((result = applyBinaryOverlayUnion(lightfield)).has_value())
+            else if((result = applyBinaryOverlayUnion(lightfield, format)).has_value())
                 return result.value();
             //else if((result = applyRotatedStitching(lightfield, format)).has_value())
             //    return result.value();

@@ -45,7 +45,7 @@ public:
                     [this](auto& frame, auto& f) -> Frame& { return f(lock_, frame); });
         });
     }
-*/`
+*/
     NVENCSTATUS join(const std::vector<std::shared_ptr<DecodeReader>> &readers, EncodeWriter &writer) {
         auto decodeSessions = CreateDecodeSessions(readers);
         auto encoderSession = VideoEncoderSession(encoder_, writer);

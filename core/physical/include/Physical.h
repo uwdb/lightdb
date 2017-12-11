@@ -256,6 +256,31 @@ namespace visualcloud {
         };
 
         template<typename ColorSpace>
+        class TemporalPartitionedEquirectangularTranscodedLightField: public LightField<ColorSpace> {
+        public:
+            TemporalPartitionedEquirectangularTranscodedLightField(
+                    const PartitionedLightField<ColorSpace> &partitioning,
+                    const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace> &video,
+                    const visualcloud::functor<ColorSpace> &functor)
+                    : partitioning_(partitioning), video_(video), functor_(functor)
+            { }
+
+            const std::vector<LightFieldReference<ColorSpace>> provenance() const override { video_.provenance(); } //TODO incorrect
+            const ColorSpace colorSpace() const override { return ColorSpace::Instance; }
+            const std::vector<Volume> volumes() const override { return video_.volumes(); }
+            inline const typename ColorSpace::Color value(const Point6D &point) const override {
+                return functor_(video_, point);
+            }
+
+            EncodedLightField apply(const std::string &format);
+
+        private:
+            const PartitionedLightField<ColorSpace>& partitioning_;
+            const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>& video_;
+            const visualcloud::functor<ColorSpace> &functor_;
+        };
+
+        template<typename ColorSpace>
         class BinaryUnionTranscodedLightField: public LightField<ColorSpace> {
         public:
             BinaryUnionTranscodedLightField(const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace> &left,

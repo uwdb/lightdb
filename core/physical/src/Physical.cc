@@ -305,6 +305,50 @@ namespace visualcloud {
             return SingletonMemoryEncodedLightField::create(decode, video_.volumes()[0]);
         }
 
+        //TODO think this can be rolled into the above
+        template<typename ColorSpace>
+        EncodedLightField TemporalPartitionedEquirectangularTranscodedLightField<ColorSpace>::apply(const std::string &format) {
+            LOG(INFO) << "Executing ER partitioned transcode physical operator";
+
+            auto gop = video_.metadata().framerate.numerator() / video_.metadata().framerate.denominator();
+            auto bitrate = 500u*1024;
+            auto encodeCodec = format == "h264" ? NV_ENC_H264 : NV_ENC_HEVC; //TODO what about others?
+
+            auto start = std::chrono::steady_clock::now();
+            GPUContext context(0);
+
+            DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
+            //TODO why CBR?
+            EncodeConfiguration encodeConfiguration{video_.metadata().height, video_.metadata().width,
+                                                    NV_ENC_HEVC, video_.metadata().framerate, gop, bitrate, NV_ENC_PARAMS_RC_CBR};
+
+            Transcoder transcoder(context, decodeConfiguration, encodeConfiguration);
+
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
+            LOG(INFO) << "ER transcode initialization took " << elapsed.count() << "ms";
+
+            std::vector<SegmentedMemoryEncodeWriter> writers;
+            FileDecodeReader reader(video_.filename());
+
+            printf("*** %d\n", partitioning_.volumes().size());
+            for(auto &volume: partitioning_.volumes())
+            {
+                if(reader.isComplete()) //TODO this shouldn't happen, but TLFs have hardcoded duration...
+                    break;
+
+                auto frames = volume.t.magnitude() * gop;
+                writers.emplace_back(transcoder.encoder().api(), encodeConfiguration);
+
+                transcoder.transcode(reader, writers.back(), static_cast<const FrameTransform&>(functor_), frames);
+            }
+
+            std::vector<std::shared_ptr<bytestring>> decodes;
+            for(auto &writer: writers)
+                decodes.emplace_back(std::make_shared<bytestring>(writer.buffer()));
+
+            return CompositeMemoryEncodedLightField::create(decodes, video_.volumes());
+        }
+
         template<typename ColorSpace>
         EncodedLightField BinaryUnionTranscodedLightField<ColorSpace>::apply(const std::string &format) {
             LOG(INFO) << "Executing binary union physical operator";
@@ -351,6 +395,7 @@ namespace visualcloud {
         template class EquirectangularTranscodedLightField<YUVColorSpace>;
         template class StitchedLightField<YUVColorSpace>;
         template class EquirectangularCroppedLightField<YUVColorSpace>;
+        template class TemporalPartitionedEquirectangularTranscodedLightField<YUVColorSpace>;
         template class BinaryUnionTranscodedLightField<YUVColorSpace>;
     } // namespace physical
 } // namespace visualcloud

@@ -4,6 +4,7 @@
 using namespace cv;
 
 #define OUTPUT_FILENAME std::string("out.mp4")
+#define SEGMENT_FILENAME(i) (std::string("segment") + std::to_string(i) + ".mp4")
 
 // video Union function - stacks the same video next to each other
 void vUnion(const char* input_filename){
@@ -69,12 +70,48 @@ void overlay(const char* input_filename, const char *input_filename2){
   }
 }
 
+void gop_concat(const size_t segments)
+{
+
+  VideoCapture input(SEGMENT_FILENAME(1));
+  auto segment_frames = std::lround(input.get(CAP_PROP_FRAME_COUNT));
+  auto fourcc = std::lround(input.get(CV_CAP_PROP_FOURCC));
+  auto fps = std::lround(input.get(CAP_PROP_FPS));
+
+  auto width = std::lround(input.get(CAP_PROP_FRAME_WIDTH));
+  auto height = std::lround(input.get(CAP_PROP_FRAME_HEIGHT));
+
+  Size size{width, height};
+  Mat frame{size, CV_8UC3};
+  Mat frame2{size, CV_8UC3};
+  Size out_size{width, height};
+  Mat out_frame{out_size, CV_8UC3};
+  VideoWriter writer(OUTPUT_FILENAME, 0x21, fps, out_size, true);
+
+  for(auto i = 1u; i <= segments; i++)
+  {
+    input = VideoCapture(SEGMENT_FILENAME(i));
+    auto frames = segment_frames;
+
+    if(!input.isOpened())
+      throw std::runtime_error("Failed to open input.");
+
+    while(frames--) {
+      input >> frame; // get a new frame from camera
+
+      writer.write(frame);
+    }
+  }
+}
+
 int main(int argc, char** argv) {
     if(argc < 3)
-        printf("Usage: %s [overlay,stack] [input filename]\n", argv[0]);
+        printf("Usage: %s [overlay,stack,gop] [input filename]\n", argv[0]);
     else if(std::string(argv[1]) == "stack") {
 	vUnion(argv[2]);
     } else if(std::string(argv[1]) == "overlay") {
         overlay(argv[2], argv[3]);
+    } else if(std::string(argv[1]) == "gop") {
+        gop_concat(atoi(argv[2]));
     }
 }
