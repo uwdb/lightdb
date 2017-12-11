@@ -9,23 +9,25 @@
 class VideoDecoderSession {
 public:
     VideoDecoderSession(CudaDecoder& decoder, DecodeReader& reader)
-            : decoder(decoder), reader(reader), parser(CreateParser(this, decoder)),
-              worker{&VideoDecoderSession::DecodeAll, this},
-              decodedFrameCount_(0)
+            : decoder_(decoder), reader(reader), parser(CreateParser(this, decoder_)),
+              decodedFrameCount_(0),
+              worker{&VideoDecoderSession::DecodeAll, this}
     { }
 
     ~VideoDecoderSession() {
-        decoder.frame_queue().endDecode();
+        decoder_.frame_queue().endDecode();
         worker.join();
         cuvidDestroyVideoParser(parser);
     }
 
     DecodedFrame decode() {
-        return DecodedFrame(decoder, decoder.frame_queue().dequeue_wait<CUVIDPARSERDISPINFO>());
+        return DecodedFrame(decoder_, decoder_.frame_queue().dequeue_wait<CUVIDPARSERDISPINFO>());
     }
 
+    const CudaDecoder &decoder() const { return decoder_; }
+
 protected:
-    CudaDecoder &decoder;
+    CudaDecoder &decoder_;
     DecodeReader &reader;
     CUvideoparser parser;
     size_t decodedFrameCount_;
@@ -43,9 +45,9 @@ protected:
                     //throw std::runtime_error(std::to_string(status) + "DecodeAll"); //TODO
                 }
             }
-        } while (!decoder.frame_queue().isEndOfDecode() && packet.has_value());
+        } while (!decoder_.frame_queue().isEndOfDecode() && packet.has_value());
 
-        decoder.frame_queue().endDecode();
+        decoder_.frame_queue().endDecode();
     }
 
 private:
@@ -83,12 +85,12 @@ private:
             LOG(ERROR) << "Unexpected null session data during video decode (HandleVideoSequence)";
         //assert(session);
 
-        else if ((format->codec != session->decoder.configuration().codec) ||
-            ((format->display_area.right - format->display_area.left) != session->decoder.configuration().width) ||
-            ((format->display_area.bottom - format->display_area.top) != session->decoder.configuration().height) ||
-            (format->coded_width < session->decoder.configuration().width) ||
-            (format->coded_height < session->decoder.configuration().height) ||
-            (format->chroma_format != session->decoder.configuration().chroma_format)) {
+        else if ((format->codec != session->decoder_.configuration().codec) ||
+            ((format->display_area.right - format->display_area.left) != session->decoder_.configuration().width) ||
+            ((format->display_area.bottom - format->display_area.top) != session->decoder_.configuration().height) ||
+            (format->coded_width < session->decoder_.configuration().width) ||
+            (format->coded_height < session->decoder_.configuration().height) ||
+            (format->chroma_format != session->decoder_.configuration().chroma_format)) {
             LOG(ERROR) << "Video format changed but not currently supported";
             throw std::runtime_error("Video format changed but not currently supported"); //TODO
         }
@@ -105,8 +107,8 @@ private:
             LOG(ERROR) << "Unexpected null session data during video decode (HandlePictureDecode)";
         //assert(session);
         else {
-            session->decoder.frame_queue().waitUntilFrameAvailable(parameters->CurrPicIdx);
-            if((status = cuvidDecodePicture(session->decoder.handle(), parameters)) != CUDA_SUCCESS)
+            session->decoder_.frame_queue().waitUntilFrameAvailable(parameters->CurrPicIdx);
+            if((status = cuvidDecodePicture(session->decoder_.handle(), parameters)) != CUDA_SUCCESS)
                 LOG(ERROR) << "cuvidDecodePicture failed (" << status << ")";
             //assert(cuvidDecodePicture(session->decoder.handle(), parameters) == CUDA_SUCCESS);
         }
@@ -122,7 +124,7 @@ private:
             LOG(ERROR) << "Unexpected null session data during video decode (HandlePictureDisplay)";
         //assert(session);
         else {
-            session->decoder.frame_queue().enqueue(frame);
+            session->decoder_.frame_queue().enqueue(frame);
             session->decodedFrameCount_++;
         }
 

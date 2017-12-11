@@ -35,7 +35,7 @@ namespace visualcloud {
     GaussianBlur::operator const FrameTransform() const {
         CUresult result;
         //TODO hardcoded path; cannot call in constructor
-        if(module_ == nullptr && (result = cuModuleLoad(&module_, "/home/bhaynes/projects/visualcloud/core/model/src/blur.cubin")) != CUDA_SUCCESS)
+        if(module_ == nullptr && (result = cuModuleLoad(&module_, "/home/bhaynes/projects/visualcloud/core/model/src/kernels.cubin")) != CUDA_SUCCESS)
             throw new std::runtime_error(std::string("Failure loading module") + std::to_string(result));
         else if(function_ == nullptr && (result = cuModuleGetFunction(&function_, module_, "blur")) != CUDA_SUCCESS)
             throw new std::runtime_error(std::string("Failure loading kernel") + std::to_string(result));
@@ -64,6 +64,39 @@ namespace visualcloud {
     Identity::operator const FrameTransform() const {
         return [](VideoLock&, Frame& frame) -> Frame& {
             return frame;
+        };
+    };
+
+    Left::operator const NaryFrameTransform() const {
+        return [](VideoLock&, const std::vector<Frame>& frames) -> const Frame& {
+            return frames[0];
+        };
+    };
+
+    Overlay::operator const NaryFrameTransform() const {
+        CUresult result;
+        //TODO hardcoded path; cannot call in constructor
+        if(module_ == nullptr && (result = cuModuleLoad(&module_, "/home/bhaynes/projects/visualcloud/core/model/src/kernels.cubin")) != CUDA_SUCCESS)
+            throw new std::runtime_error(std::string("Failure loading module") + std::to_string(result));
+        else if(function_ == nullptr && (result = cuModuleGetFunction(&function_, module_, "overlay")) != CUDA_SUCCESS)
+            throw new std::runtime_error(std::string("Failure loading kernel") + std::to_string(result));
+
+        return [this](VideoLock& lock, const std::vector<Frame>& frames) -> const Frame& {
+            std::scoped_lock{lock};
+
+            assert(frames.size() == 2);
+
+            dim3 blockDims(512,1,1);
+            dim3 gridDims((unsigned int) std::ceil((double)(frames[0].width() * frames[0].height() * 3 / blockDims.x)), 1, 1 );
+            CUdeviceptr left = frames[0].handle(), right = frames[1].handle(), output = frames[0].handle();
+            auto height = frames[0].height(), width = frames[0].width();
+            auto transparent = transparent_;
+            void *arguments[6] = {&left, &right, &output, &height, &width, &transparent};
+
+            cuLaunchKernel(function_, gridDims.x, gridDims.y, gridDims.z, blockDims.x, blockDims.y, blockDims.z,
+                           0, nullptr, arguments, nullptr);
+
+            return frames[0];
         };
     };
 }; // namespace visualcloud

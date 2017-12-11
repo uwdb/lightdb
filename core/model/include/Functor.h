@@ -21,6 +21,17 @@ namespace visualcloud {
         virtual bool hasFrameTransform() const { return false; }
     };
 
+    template<typename ColorSpace>
+    class naryfunctor {
+    public:
+        virtual ~naryfunctor() { }
+
+        virtual const typename ColorSpace::Color operator()(const std::vector<LightFieldReference<ColorSpace>> &fields,
+                                                            const Point6D &point) = 0;
+        virtual operator const NaryFrameTransform() const { throw std::bad_cast(); }
+        virtual bool hasFrameTransform() const { return false; }
+    };
+
     //TODO functor namespace
     class Identity: public functor<YUVColorSpace> {
     public:
@@ -101,6 +112,38 @@ namespace visualcloud {
 
         operator const FrameTransform() const override;
         bool hasFrameTransform() const override { return true; }
+    };
+
+    class Left: public naryfunctor<YUVColorSpace> {
+    public:
+        ~Left() { }
+
+        const YUVColorSpace::Color operator()(const std::vector<LightFieldReference<YUVColorSpace>> &fields,
+                                              const Point6D &point) override {
+            throw std::runtime_error("Not implemented");
+        }
+
+        operator const NaryFrameTransform() const override;
+        bool hasFrameTransform() const override { return true; }
+    };
+
+    class Overlay: public naryfunctor<YUVColorSpace> {
+    public:
+        Overlay(YUVColorSpace::Color transparent) : transparent_(transparent) { }
+        ~Overlay() { }
+
+        const YUVColorSpace::Color operator()(const std::vector<LightFieldReference<YUVColorSpace>> &fields,
+                                              const Point6D &point) override {
+            throw std::runtime_error("Not implemented");
+        }
+
+        operator const NaryFrameTransform() const override;
+        bool hasFrameTransform() const override { return true; }
+
+    private:
+        YUVColorSpace::Color transparent_;
+        mutable CUmodule module_; //TODO these shouldn't be mutable
+        mutable CUfunction function_;
     };
 }; // namespace visualcloud
 

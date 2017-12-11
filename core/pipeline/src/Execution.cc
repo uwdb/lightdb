@@ -33,6 +33,7 @@ namespace visualcloud {
             }
         }
 
+        //TODO what is this, it's just a copy of the applyStitchingFunction?  Probably remove(?)
         template<typename ColorSpace>
         static std::optional<EncodedLightField> applyNaiveStitching(LightFieldReference<ColorSpace> lightfield, visualcloud::rational temporalInterval=0) {
             try {
@@ -51,6 +52,25 @@ namespace visualcloud {
                 else
                     return {};
             }
+        }
+
+        //TODO what is this, it's just a copy of the applyStitchingFunction?  Probably remove(?)
+        template<typename ColorSpace>
+        static std::optional<EncodedLightField> applyBinaryOverlayUnion(LightFieldReference<ColorSpace> lightfield) {
+            auto *composite = dynamic_cast<const CompositeLightField<ColorSpace>*>(&*lightfield);
+            if(composite == nullptr || composite->provenance().size() != 2)
+                return {};
+
+            auto *left = dynamic_cast<const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*composite->provenance()[0]);
+            auto *right = dynamic_cast<const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*composite->provenance()[1]);
+
+            if(left != nullptr && right != nullptr &&
+                    left->volume() == right->volume()) {
+                //TODO this is just broken, need a binary union transcoder
+                return visualcloud::physical::BinaryUnionTranscodedLightField<ColorSpace>(*left, *right, Overlay(YUVColor::Red)).apply("hevc");
+            }
+            else
+                return {};
         }
 
         template<typename ColorSpace>
@@ -223,7 +243,7 @@ namespace visualcloud {
 
         template<typename ColorSpace>
         EncodedLightField execute(LightFieldReference <ColorSpace> lightfield, const std::string &format) {
-            //print_plan(lightfield);
+            print_plan(lightfield);
 
             //auto volumes = lightfield->volumes();
             //auto vl = volumes.size();
@@ -240,6 +260,8 @@ namespace visualcloud {
             else if((result = applyStitching(lightfield)).has_value())
                 return result.value();
             else if((result = applyNaiveStitching(lightfield)).has_value()) // Should come after fast stitching, I guess
+                return result.value();
+            else if((result = applyBinaryOverlayUnion(lightfield)).has_value())
                 return result.value();
             //else if((result = applyRotatedStitching(lightfield, format)).has_value())
             //    return result.value();

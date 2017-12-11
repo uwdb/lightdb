@@ -3,10 +3,12 @@
 #include "TileVideoEncoder.h"
 #include "Transcoder.h"
 #include "CropTranscoder.h"
+#include "UnionTranscoder.h"
 #include "Configuration.h"
 #include <glog/logging.h>
 #include <optional>
 #include <unistd.h>
+#include <UnionTranscoder.h>
 
 namespace visualcloud {
     namespace physical {
@@ -303,11 +305,53 @@ namespace visualcloud {
             return SingletonMemoryEncodedLightField::create(decode, video_.volumes()[0]);
         }
 
+        template<typename ColorSpace>
+        EncodedLightField BinaryUnionTranscodedLightField<ColorSpace>::apply(const std::string &format) {
+            LOG(INFO) << "Executing binary union physical operator";
+
+            assert(left_.metadata().framerate.numerator() == right_.metadata().framerate.numerator());
+            assert(left_.metadata().framerate.denominator() == right_.metadata().framerate.denominator());
+            assert(left_.metadata().width == right_.metadata().width);
+            assert(left_.metadata().height == right_.metadata().height);
+            assert(left_.volume() == right_.volume());
+
+            auto gop = left_.metadata().framerate.numerator() / left_.metadata().framerate.denominator();
+            auto bitrate = 500u*1024;
+            auto encodeCodec = format == "h264" ? NV_ENC_H264 : NV_ENC_HEVC; //TODO what about others?
+
+            auto start = std::chrono::steady_clock::now();
+            GPUContext context(0);
+
+            DecodeConfiguration leftDecodeConfiguration{left_.metadata().width, left_.metadata().height, left_.metadata().framerate, cudaVideoCodec_H264};
+            DecodeConfiguration rightDecodeConfiguration{right_.metadata().width, right_.metadata().height, right_.metadata().framerate, cudaVideoCodec_H264};
+            std::vector<DecodeConfiguration> decodeConfigurations{leftDecodeConfiguration, rightDecodeConfiguration};
+            //TODO why CBR?
+            EncodeConfiguration encodeConfiguration{left_.metadata().height, left_.metadata().width,
+                                                    NV_ENC_HEVC, left_.metadata().framerate, gop, bitrate, NV_ENC_PARAMS_RC_CBR};
+
+            UnionTranscoder transcoder(context, decodeConfigurations, encodeConfiguration);
+
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
+            LOG(INFO) << "ER transcode initialization took " << elapsed.count() << "ms";
+
+            FileDecodeReader leftReader(left_.filename());
+            FileDecodeReader rightReader(right_.filename());
+            SegmentedMemoryEncodeWriter writer{transcoder.encoder().api(), encodeConfiguration};
+            std::vector<DecodeReader*> readers{&leftReader, &rightReader};
+
+            transcoder.Union(readers, writer, static_cast<const NaryFrameTransform&>(functor_));
+
+            auto decode = std::make_shared<bytestring>(writer.buffer());
+
+            return SingletonMemoryEncodedLightField::create(decode, left_.volume());
+        }
+
         template class PlanarTiledToVideoLightField<YUVColorSpace>;
         template class EquirectangularTiledLightField<YUVColorSpace>;
         template class EquirectangularTranscodedLightField<YUVColorSpace>;
         template class StitchedLightField<YUVColorSpace>;
         template class EquirectangularCroppedLightField<YUVColorSpace>;
+        template class BinaryUnionTranscodedLightField<YUVColorSpace>;
     } // namespace physical
 } // namespace visualcloud
 

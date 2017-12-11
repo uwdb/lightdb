@@ -84,5 +84,6 @@ private:
 };
 
 typedef std::function<Frame&(VideoLock&, Frame&)> FrameTransform;
+typedef std::function<const Frame&(VideoLock&, const std::vector<Frame>&)> NaryFrameTransform;
 
 #endif //VISUALCLOUD_FRAME_H

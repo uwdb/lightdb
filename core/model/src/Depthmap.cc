@@ -4,7 +4,7 @@
 #include <mutex>
 
 //TODO hardcoded path :(
-static const char* kernel_path = "/home/bhaynes/projects/visualcloud/core/model/src/blur.cubin";
+static const char* kernel_path = "/home/bhaynes/projects/visualcloud/core/model/src/kernels.cubin";
 static const char* kernel_name = "blur";
 
 namespace visualcloud {

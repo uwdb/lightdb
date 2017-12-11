@@ -1,6 +1,6 @@
 extern "C"
 __global__
-void blur(unsigned char* input, unsigned char* output, int width, int height) {
+void blur(unsigned char* input, unsigned char* output, const unsigned int width, const unsigned int height) {
     const unsigned int index = blockIdx.x * blockDim.x + threadIdx.x;
     int x = index % width;
     int y = (index-x)/width;
@@ -28,4 +28,15 @@ void blur(unsigned char* input, unsigned char* output, int width, int height) {
         output[index*3+1] = output_green / applications;
         output[index*3+2] = output_blue / applications;
     }
+}
+
+extern "C"
+__global__
+void overlay(unsigned char* left, unsigned char* right, unsigned char* output,
+             const unsigned int width, const unsigned int height,
+             const unsigned int transparent_color) {
+    const unsigned int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if(right[index] != transparent_color)
+        left[index] = right[index];
 }

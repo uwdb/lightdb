@@ -55,25 +55,25 @@ public:
         EXPECT_EQ(remove(name), 0);
     }
 
-    void testTranscodedUnion(std::string dataset, size_t size, size_t frames, size_t height, size_t width) {
+    void testTranscodedUnion(std::string dataset1, std::string dataset2, size_t size, size_t frames, size_t height, size_t width) {
         //auto source = std::string("resources/test-") + std::to_string(size) + "K-" + std::to_string(duration) + "s.h264";
-        auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + "K.h264";
+        auto source1 = std::string("../../benchmarks/datasets/") + dataset1 + '/' + dataset1 + std::to_string(size) + "K.h264";
+        auto source2 = std::string("../../benchmarks/datasets/") + dataset1 + '/' + dataset1 + std::to_string(size) + "K.h264";
 
         auto start = steady_clock::now();
 
-        auto left = Decode<EquirectangularGeometry>(source, {0, temptodouble(pi)}).apply();
-        auto right = Decode<EquirectangularGeometry>(source, {0, temptodouble(pi)}).apply()
-                >> Rotate(temptodouble(pi), 0);
+        auto left = Decode<EquirectangularGeometry>(source1, {0, temptodouble(pi)}).apply();
+        auto right = Decode<EquirectangularGeometry>(source2, {0, temptodouble(pi)}).apply();
 
         auto result = (left | right)
                 >> Encode<YUVColorSpace>()
                 >> Store(name);
 
-        LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
+        LOG(INFO) << source1 << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
 
         EXPECT_VIDEO_VALID(name);
         EXPECT_VIDEO_FRAMES(name, frames);
-        EXPECT_VIDEO_RESOLUTION(name, height, 2*width);
+        EXPECT_VIDEO_RESOLUTION(name, height, width);
         EXPECT_EQ(remove(name), 0);
     }
 };
@@ -95,5 +95,5 @@ TEST_F(UnionBenchmarkTestFixture, testStitchedUnion_4K) {
 
 // Unstitchable union tests
 TEST_F(UnionBenchmarkTestFixture, testTranscodedUnion_1K) {
-    testTranscodedUnion("timelapse", 1, 2700, 512, 960);
+    testTranscodedUnion("timelapse", "timelapse", 4, 2701, 2048, 3480);
 }
