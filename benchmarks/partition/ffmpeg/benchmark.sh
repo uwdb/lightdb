@@ -6,6 +6,14 @@ DATASET_EXTENSION=h264
 echo Dataset: $DATASET_NAME
 
 echo "----------------"
+echo "4K Input, 1.5s temporal partition"
+
+delta=1.5
+file=$DATASET_PATH${DATASET_NAME}4K.$DATASET_EXTENSION
+
+time ./partition_time.sh $file $delta
+
+echo "----------------"
 echo "4K Input, theta partition"
 
 width=3840
@@ -24,3 +32,4 @@ file=$DATASET_PATH${DATASET_NAME}4K.$DATASET_EXTENSION
 time ./partition_phi.sh $file $width $height out.h264
 
 rm *out.h264
+rm out*.mp4
