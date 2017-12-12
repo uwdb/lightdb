@@ -12,9 +12,6 @@
 #include <vector>
 #include <numeric>
 
-#include <chrono>
-using namespace std::chrono;
-
 class TileVideoEncoder {
 public:
     TileVideoEncoder(GPUContext& context,
@@ -72,20 +69,13 @@ public:
 
       LOG(INFO) << "Tiling starting (" << rows() << 'x' << columns() << ')';
 
-        unsigned time = 0;
-
-        auto decodedFrame = decodeSession.decode();
-        auto start = steady_clock::now();
-        int i = 2700;
-        while(i--) {
-//    while (!decoder_.frame_queue().isComplete()) {
+      while (!decoder_.frame_queue().isComplete()) {
         auto dropOrDuplicate = alignment.dropOrDuplicate(framesDecoded++, framesEncoded);
 
-        //auto decodedFrame = decodeSession.decode();
+        auto decodedFrame = decodeSession.decode();
         auto processedFrame = transform(lock_, decodedFrame);
 
         for (auto i = 0u; i <= dropOrDuplicate; i++, framesEncoded++) {
-            auto start = steady_clock::now();
           for(auto j = 0u; j < sessions.size(); j++) {
             auto &session = sessions[j];
             auto row = j / columns(), column = j % columns();
@@ -101,8 +91,6 @@ public:
         }
       }
 
-        time += ::duration_cast<milliseconds>(steady_clock::now() - start).count();
-        LOG(INFO) << " dtime:" << time << "ms";
       LOG(INFO) << "Tiling complete (decoded " << framesDecoded << ", encoded " << framesEncoded << ")";
 
       return NV_ENC_SUCCESS;
