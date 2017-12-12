@@ -1,0 +1,2 @@
+Create tiled.mp4 by running the PanoramicTilingBenchmarkTestFixture.test360TilingBenchmark_timelapse_4K unit test
+and copying "result" to this directory as tiled.hevc

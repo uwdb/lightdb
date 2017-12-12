@@ -12,6 +12,9 @@
 #include <vector>
 #include <numeric>
 
+#include <chrono>
+using namespace std::chrono;
+
 class TileVideoEncoder {
 public:
     TileVideoEncoder(GPUContext& context,
@@ -57,7 +60,6 @@ public:
       });
     }
 
-#include <chrono>
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers,
                      FrameTransform transform) {
       VideoDecoderSession decodeSession(decoder_, reader);
@@ -70,12 +72,20 @@ public:
 
       LOG(INFO) << "Tiling starting (" << rows() << 'x' << columns() << ')';
 
-      while (!decoder_.frame_queue().isComplete()) {
-        auto dropOrDuplicate = alignment.dropOrDuplicate(framesDecoded++, framesEncoded);
+        unsigned time = 0;
+
         auto decodedFrame = decodeSession.decode();
+        auto start = steady_clock::now();
+        int i = 2700;
+        while(i--) {
+//    while (!decoder_.frame_queue().isComplete()) {
+        auto dropOrDuplicate = alignment.dropOrDuplicate(framesDecoded++, framesEncoded);
+
+        //auto decodedFrame = decodeSession.decode();
         auto processedFrame = transform(lock_, decodedFrame);
 
         for (auto i = 0u; i <= dropOrDuplicate; i++, framesEncoded++) {
+            auto start = steady_clock::now();
           for(auto j = 0u; j < sessions.size(); j++) {
             auto &session = sessions[j];
             auto row = j / columns(), column = j % columns();
@@ -91,6 +101,8 @@ public:
         }
       }
 
+        time += ::duration_cast<milliseconds>(steady_clock::now() - start).count();
+        LOG(INFO) << " dtime:" << time << "ms";
       LOG(INFO) << "Tiling complete (decoded " << framesDecoded << ", encoded " << framesEncoded << ")";
 
       return NV_ENC_SUCCESS;

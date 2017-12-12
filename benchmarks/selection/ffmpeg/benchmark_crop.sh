@@ -27,4 +27,15 @@ file=$DATASET_PATH${DATASET_NAME}4K.$DATASET_EXTENSION
 
 time ./crop.sh $file $width $height $left $top out.h264
 
+echo "----------------"
+echo "4K 4x4 tiled Input, tile 0,0"
+
+rows=4
+cols=4
+row=0
+col=0
+file=tiled.hevc
+
+time ./select_tile.sh $file $col $row $rows $cols out.hevc
+
 rm out.h264
