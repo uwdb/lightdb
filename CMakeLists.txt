@@ -35,12 +35,14 @@ set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG --coverage -g3 -Wall")
 # Find required library dependencies
 set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} cuda nvcuvid dl pthread glog gflags stdc++fs)
 
-#TODO add FindFLV.cmake; clean this up
+# TODO add FindDarknet.cmake
+LINK_DIRECTORIES(/home/bhaynes/projects/darknet)
+set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} darknet)
+
+#TODO add FindLLV.cmake; clean this up
 #find_package(Qt5Core REQUIRED)
 #find_package(Qt5Widgets REQUIRED)
 find_package(OpenCV REQUIRED)
-message("foo")
-message("${OPENCV_LIBS}")
 set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} ${OPENCV_LIBS} opencv_features2d)
 set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} lfv)
 
