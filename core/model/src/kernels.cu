@@ -45,21 +45,138 @@ void overlay(unsigned char* left, unsigned char* right, unsigned char* output,
 
 extern "C"
 __global__
-void resize(unsigned char* input, unsigned char* output,
+void resize(const unsigned int* input, unsigned int* output,
             const unsigned int input_width, const unsigned int input_height,
             const unsigned int output_width, const unsigned int output_height,
             const float fx, const float fy) {
     const unsigned int output_x = blockDim.x * blockIdx.x + threadIdx.x;
     const unsigned int output_y = blockDim.y * blockIdx.y + threadIdx.y;
-    const unsigned int input_index = output_y * input_width + output_x;
+    const unsigned int output_index = output_y * output_width + output_x;
 
     if (output_x < output_width && output_y < output_height)
     {
-        const float src_x = output_x * fx;
-        const float src_y = output_y * fy;
-        const unsigned int output_index = src_y * output_width + src_x;
+        const unsigned int src_x = output_x / fx;
+        const unsigned int src_y = output_y / fy;
+        const unsigned int input_index = src_y * input_width + src_x;
 
         output[output_index] = input[input_index];
+    }
+}
+
+extern "C"
+__global__
+void resize_weighted(
+            const unsigned int* input, float* output,
+            const unsigned int input_width, const unsigned int input_height,
+            const unsigned int output_width, const unsigned int output_height,
+            const float fx, const float fy) {
+    const unsigned int output_x = blockDim.x * blockIdx.x + threadIdx.x;
+    const unsigned int output_y = blockDim.y * blockIdx.y + threadIdx.y;
+    const unsigned int output_index = output_y * output_width + output_x;
+
+    if (output_x < output_width && output_y < output_height)
+    {
+        const unsigned int src_x = output_x / fx;
+        const unsigned int src_y = output_y / fy;
+        const unsigned int input_index = src_y * input_width + src_x;
+
+        const unsigned int rgba = input[input_index];
+        const unsigned int channel_size = output_height * output_width;
+
+        output[output_index] =                  (rgba & 0xff) / 255.0f;
+        output[output_index + channel_size] =   ((rgba >> 8) & 0xff) / 255.0f;
+        output[output_index + 2*channel_size] = ((rgba >> 16) & 0xff) / 255.0f;
+    }
+}
+
+/*extern "C"
+__global__
+void extract_luma_and_resize(
+            const unsigned int* input, unsigned int* output,
+            const unsigned int input_width, const unsigned int input_height,
+            const unsigned int output_width, const unsigned int output_height,
+            const float fx, const float fy) {
+    const unsigned int output_x = blockDim.x * blockIdx.x + threadIdx.x;
+    const unsigned int output_y = blockDim.y * blockIdx.y + threadIdx.y;
+    const unsigned int output_index = output_y * output_width + output_x;
+
+    if (output_x < output_width && output_y < output_height)
+    {
+        const unsigned int src_x = output_x / fx;
+        const unsigned int src_y = output_y / fy;
+        const unsigned int input_index = src_y * input_width + src_x;
+
+        output[output_index] = input[input_index];
+    }
+}*/
+
+typedef struct {
+    int classes;
+    char **names;
+} metadata;
+typedef struct {
+    float x, y, w, h;
+} box;
+
+
+extern "C"
+__global__
+void draw_detections(
+            unsigned char* nv12image,
+            const unsigned int pitch,
+            const unsigned int width,
+            const unsigned int height,
+            const float *probabilities,
+            const unsigned int class_count,
+            const box *boxes,
+            const unsigned int box_count,
+            const float fx, const float fy) {
+    const unsigned int prediction_class = blockDim.x * blockIdx.x + threadIdx.x;
+    const unsigned int box_id = blockDim.y * blockIdx.y + threadIdx.y;
+
+    const unsigned int prediction_index = box_id * class_count + prediction_class;
+
+    if(prediction_class < class_count &&
+            box_id < box_count &&
+            probabilities[prediction_index] > 0.001)
+    {
+
+        const box &b = boxes[box_id];
+
+        const unsigned int x1 = (b.x - b.w/2) / fx;
+        const unsigned int x2 = (b.x + b.w/2) / fx;
+        const unsigned int y1 = (b.y - b.h/2) / fy;
+        const unsigned int y2 = (b.y + b.h/2) / fy;
+        const unsigned int image_x1 = min(x1, width - 3);
+        const unsigned int image_x2 = min(x2, width - 3);
+        const unsigned int image_y1 = min(y1, height - 3);
+        const unsigned int image_y2 = min(y2, height - 3);
+
+        //printf("%d %d %d %d\n", image_x1, image_x2, image_y1, image_y2);
+        for(int y = image_y1; y < image_y2; y++)
+        {
+            nv12image[y * pitch + image_x1] = 0;
+            nv12image[(y+1) * pitch + image_x1] = 0;
+            nv12image[(y+2) * pitch + image_x1] = 0;
+        }
+        for(int y = image_y1; y < image_y2; y++)
+        {
+            nv12image[y * pitch + image_x2] = 0;
+            nv12image[(y+1) * pitch + image_x2 + 1] = 0;
+            nv12image[(y+2) * pitch + image_x2 + 2] = 0;
+        }
+        for(int x = image_x1; x < image_x2; x++)
+        {
+            nv12image[image_y1 * pitch + x] = 0;
+            nv12image[image_y1 * pitch + x + 1] = 0;
+            nv12image[image_y1 * pitch + x + 2] = 0;
+        }
+        for(int x = image_x1; x < image_x2; x++)
+        {
+            nv12image[image_y2 * pitch + x] = 0;
+            nv12image[image_y2 * pitch + x + 1] = 0;
+            nv12image[image_y2 * pitch + x + 2] = 0;
+        }
     }
 }
 

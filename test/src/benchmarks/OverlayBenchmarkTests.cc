@@ -41,5 +41,5 @@ TEST_F(ObjectDetectionBenchmarkTestFixture, testObjectDetection) {
     EXPECT_VIDEO_VALID(name);
     EXPECT_VIDEO_FRAMES(name, 2701);
     EXPECT_VIDEO_RESOLUTION(name, 2048, 3840);
-    EXPECT_EQ(remove(name), 0);
+    //EXPECT_EQ(remove(name), 0);
 }

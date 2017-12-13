@@ -71,7 +71,7 @@ namespace visualcloud {
     };
 
     ObjectDetect::ObjectDetect()
-        : network_(load_network("/home/bhaynes/projects/darknet/cfg/tiny-yolo.cfg", "/home/bhaynes/projects/darknet/tiny-yolo.weights", 0)),
+        : network_(load_network("/home/bhaynes/projects/darknet/cfg/yolo.cfg", "/home/bhaynes/projects/darknet/yolo.weights", 0)),
           metadata_(get_metadata("/home/bhaynes/projects/darknet/cfg/coco.data"))
     { }
 
@@ -80,11 +80,11 @@ namespace visualcloud {
         auto threshold = 0.5f, hier_thresh=0.5f, nms=.45f;
         auto num = num_boxes(network_);
         //auto im = load_image("/home/bhaynes/projects/darknet/data/dog.jpg", 0, 0, 3);
-        auto im = load_image("/home/bhaynes/projects/darknet/data/dog416.jpg", 416, 416, 3);
+        //auto im = load_image("/home/bhaynes/projects/darknet/data/dog416.jpg", 416, 416, 3);
         auto *boxes = make_boxes(network_);
         auto **probs = make_probs(network_);
 
-        CUdeviceptr output;
+        CUdeviceptr resizedFrame;
         CUdeviceptr rgbFrame;
         size_t rgbPitch = 3840*sizeof(unsigned int);
 
@@ -94,7 +94,7 @@ namespace visualcloud {
         result = cuMemAlloc(&rgbFrame, 3840 * 2048 * sizeof(unsigned int));
         if(result != CUDA_SUCCESS) printf("result %d\n", result);
 
-        result = cuMemAlloc(&output, 416 * 416 * sizeof(float));
+        result = cuMemAlloc(&resizedFrame, 3*416 * 416 * sizeof(float));
         if(result != CUDA_SUCCESS) printf("result %d\n", result);
 
         //std::shared_ptr<unsigned int[]> rgbHostShared( new unsigned int[3840*2048] );
@@ -106,15 +106,32 @@ namespace visualcloud {
         result = cuCtxSynchronize();
         if(result != CUDA_SUCCESS) printf("cuCtxSynchronize result %d\n", result);
 
+        CUdeviceptr boxDevice, probDevice;
+        result = cuMemAlloc(&boxDevice, sizeof(box) * num);
+        if(result != CUDA_SUCCESS) printf("cuMemAlloc result %d\n", result);
+        result = cuMemAlloc(&probDevice, sizeof(float) * num * metadata_.classes);
+        if(result != CUDA_SUCCESS) printf("cuMemAlloc result %d\n", result);
+
+        void *flatprobs;
+        void *flatboxes;
+        void *hostframe;
+        cuMemHostAlloc(&flatprobs, sizeof(float) * num * metadata_.classes, CU_MEMHOSTALLOC_WRITECOMBINED);
+        cuMemHostAlloc(&flatboxes, sizeof(box) * num, CU_MEMHOSTALLOC_WRITECOMBINED);
+        cuMemHostAlloc(&hostframe, sizeof(float) * 3 *  416 * 416, 0);
+
 
         if(module_ == nullptr && (result = cuModuleLoad(&module_, "/home/bhaynes/projects/visualcloud/core/model/src/kernels.cubin")) != CUDA_SUCCESS)
             throw new std::runtime_error(std::string("Failure loading module") + std::to_string(result));
-        else if(function_ == nullptr && (result = cuModuleGetFunction(&function_, module_, "resize")) != CUDA_SUCCESS)
+        else if(function_ == nullptr && (result = cuModuleGetFunction(&function_, module_, "resize_weighted")) != CUDA_SUCCESS)
             throw new std::runtime_error(std::string("Failure loading kernel") + std::to_string(result));
 
         CUfunction nv12_to_rgb, resize = function_;
         if((result = cuModuleGetFunction(&nv12_to_rgb, module_, "NV12_to_RGB")) != CUDA_SUCCESS)
             throw new std::runtime_error(std::string("Failure loading NV12_to_RGB kernel") + std::to_string(result));
+
+        CUfunction draw_detections;
+        if((result = cuModuleGetFunction(&draw_detections, module_, "draw_detections")) != CUDA_SUCCESS)
+            throw new std::runtime_error(std::string("Failure loading draw_detections kernel") + std::to_string(result));
 
         //result = cuMemFree(output);
         //result = cuMemFree(rgbFrame);
@@ -141,30 +158,64 @@ namespace visualcloud {
             if(result != CUDA_SUCCESS) printf("cuCtxSynchronize result %d\n", result);
 
             result = cuMemcpyDtoH(rgbHost, rgbFrame, 3840*2048*sizeof(unsigned int));
-
-
             if(result != CUDA_SUCCESS) printf("cuMemcpy2D result %d\n", result);
             //stbi_write_bmp("foo.bmp", 3840, 2048, 4, rgbHost);
 
-            dim3 resizeBlockDims(512,1,1);
-            dim3 resizeGridDims((unsigned int) std::ceil((double)(frame.width() * frame.height() * 3 / resizeBlockDims.x)), 1, 1 );
-            //void *resize_arguments[8] = {&rgbFrame, &output, &height, &width, &output_width, &output_height, &fx, &fy};
-            void *resize_arguments[8] = {&input, &output, &height, &width, &output_width, &output_height, &fx, &fy};
+            //dim3 resizeBlockDims(1,1,1);
+            //dim3 resizeGridDims((unsigned int) std::ceil(output_width / resizeBlockDims.x), (unsigned int) std::ceil(output_height / resizeBlockDims.y), 1 );
+            dim3 resizeBlockDims(32,32,1);
+            dim3 resizeGridDims(1+416/32, 1+416/32, 1 );
+            void *resize_arguments[8] = {&rgbFrame, &resizedFrame, &width, &height, &output_width, &output_height, &fx, &fy};
+            //void *resize_arguments[8] = {&input, &output, &height, &width, &output_width, &output_height, &fx, &fy};
             result = cuLaunchKernel(resize, resizeGridDims.x, resizeGridDims.y, resizeGridDims.z, resizeBlockDims.x, resizeBlockDims.y, resizeBlockDims.z,
                                    0, nullptr, resize_arguments, nullptr);
             if(result != CUDA_SUCCESS) printf("result %d\n", result);
+            result = cuCtxSynchronize();
+            if(result != CUDA_SUCCESS) printf("cuCtxSynchronize result %d\n", result);
 
-            float hostframe[416*416];
-            result = cuMemcpyDtoH(hostframe, output, 416*416*sizeof(float));
+            result = cuMemcpyDtoH(hostframe, resizedFrame, 3*416*416*sizeof(float));
+
+            //stbi_write_bmp("bar.bmp", 416, 416, 4, hostframe);
             if(result != CUDA_SUCCESS) printf("result %d\n", result);
-            image hostimage{416, 416, 1, hostframe};
+            image hostimage{416, 416, 3, (float*)hostframe};
+                static int index = 0;
+            //save_image_png(hostimage, (std::string("frame") + std::to_string(index++)).c_str());
 
-                network_detect(network_, hostimage, threshold, hier_thresh, nms, boxes, probs);
+            network_detect(network_, hostimage, threshold, hier_thresh, nms, boxes, probs);
 
-                for(auto i = 0u; i < num; i++)
+                memcpy(flatboxes, boxes, sizeof(box) * num);
+                //float flatprobs[num * metadata_.classes];
+                void *current = flatprobs;
+                for(int i = 0; i < num; i++)
+                {
+                    size_t s = sizeof(float) * metadata_.classes;
+                    memcpy(current, probs[i], s);
+                    current += s;
+                }
+            cuMemcpyHtoD(boxDevice, flatboxes, sizeof(box) * num);
+            cuMemcpyHtoD(probDevice, flatprobs, sizeof(float) * num * metadata_.classes);
+
+
+            dim3 detectBlockDims(32,32,1);
+            dim3 detectGridDims(1+metadata_.classes/32, 1+num/32, 1 );
+            void *detect_arguments[10] = {&input, &input_pitch, &width, &height, &probDevice, const_cast<int*>(&metadata_.classes), &boxDevice, &num, &fx, &fy};
+            result = cuLaunchKernel(draw_detections, detectGridDims.x, detectGridDims.y, detectGridDims.z, detectBlockDims.x, detectBlockDims.y, detectBlockDims.z,
+                                    0, nullptr, detect_arguments, nullptr);
+            if(result != CUDA_SUCCESS) printf("result %d\n", result);
+            result = cuCtxSynchronize();
+            if(result != CUDA_SUCCESS)
+                printf("cuCtxSynchronize result %d\n", result);
+
+                /*for(auto i = 0u; i < num; i++)
+                    for(auto j = 0u; j < metadata_.classes; j++)
+                        if(probs[i][j] - ((float*)flatprobs)[i * metadata_.classes + j] > 0.0001)
+                            printf("%d %d\n", i, j);*/
+
+                /*for(auto i = 0u; i < num; i++)
                     for(auto j = 0u; j < metadata_.classes; j++)
                         if(probs[i][j] > 0.001)
-                            printf("%s (%d): %0.2f\n", metadata_.names[j], i, probs[i][j]);
+                            printf("%d %d %s (%.2f): %X %f\n", i, j, metadata_.names[j], boxes[i].x, *(int *)&probs[i][j], probs[i][j]);*/
+                //printf("---\n");
             }
 
             return frame;
