@@ -5,6 +5,9 @@
 //#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+using namespace std::chrono;
+
+
 namespace visualcloud {
     const YUVColorSpace::Color Greyscale::operator()(const LightField<YUVColorSpace> &field,
                                                      const Point6D &point) const {
@@ -71,7 +74,7 @@ namespace visualcloud {
     };
 
     ObjectDetect::ObjectDetect()
-        : network_(load_network("/home/bhaynes/projects/darknet/cfg/yolo.cfg", "/home/bhaynes/projects/darknet/yolo.weights", 0)),
+        : network_(load_network("/home/bhaynes/projects/darknet/cfg/tiny-yolo.cfg", "/home/bhaynes/projects/darknet/tiny-yolo.weights", 0)),
           metadata_(get_metadata("/home/bhaynes/projects/darknet/cfg/coco.data"))
     { }
 
@@ -88,7 +91,9 @@ namespace visualcloud {
         CUdeviceptr rgbFrame;
         size_t rgbPitch = 3840*sizeof(unsigned int);
 
-        assert(system("/home/bhaynes/projects/visualcloud/core/model/src/compile_kernels.sh") == 0);
+        auto initstart = steady_clock::now();
+
+        //assert(system("/home/bhaynes/projects/visualcloud/core/model/src/compile_kernels.sh") == 0);
 
         //result = cuMemAllocPitch(&rgbFrame, &rgbPitch, 3840, 2048, sizeof(unsigned int));
         result = cuMemAlloc(&rgbFrame, 3840 * 2048 * sizeof(unsigned int));
@@ -103,8 +108,8 @@ namespace visualcloud {
         cuMemAllocHost((void **)&rgbHost, 3840 * 2048 * sizeof(unsigned int));
         //cuMemHostAlloc
 
-        result = cuCtxSynchronize();
-        if(result != CUDA_SUCCESS) printf("cuCtxSynchronize result %d\n", result);
+        //result = cuCtxSynchronize();
+        //if(result != CUDA_SUCCESS) printf("cuCtxSynchronize result %d\n", result);
 
         CUdeviceptr boxDevice, probDevice;
         result = cuMemAlloc(&boxDevice, sizeof(box) * num);
@@ -136,42 +141,52 @@ namespace visualcloud {
         //result = cuMemFree(output);
         //result = cuMemFree(rgbFrame);
 
+        unsigned int output_height = 416, output_width = 416;
+        dim3 detectBlockDims(32,32,1);
+        dim3 detectGridDims(1+metadata_.classes/32, 1+num/32, 1 );
+
+        size_t maptime = ::duration_cast<milliseconds>(steady_clock::now() - initstart).count();
+        size_t uniontime = 0, resizetime = 0, detections = 0;
+
         return [=](VideoLock &lock, Frame& frame) mutable -> Frame& {
             static unsigned int id = 0;
+            auto start = steady_clock::now();
 
             std::scoped_lock{lock};
+
+            CUdeviceptr input = frame.handle(); //, output = frame.handle();
+            auto height = frame.height(), width = frame.width(), input_pitch = frame.pitch();
+            float fx = ((float)output_width)/width, fy = ((float)output_height)/height;
 
             if(id++ % 15 == 0)
             {
             dim3 rgbBlockDims(32, 8);
             dim3 rgbGridDims(std::ceil(float(frame.width()) / (2 * rgbBlockDims.x)), std::ceil(float(frame.height()) / rgbBlockDims.y));
-            CUdeviceptr input = frame.handle(); //, output = frame.handle();
-            auto height = frame.height(), width = frame.width(), input_pitch = frame.pitch();
-            unsigned int output_height = 416, output_width = 416;
-            float fx = 416.0f/width, fy = 416.0f/height;
 
             void *rgb_arguments[6] = {&input, &input_pitch, &rgbFrame, &rgbPitch, &width, &height};
             result = cuLaunchKernel(nv12_to_rgb, rgbGridDims.x, rgbGridDims.y, rgbGridDims.z, rgbBlockDims.x, rgbBlockDims.y, rgbBlockDims.z,
                                     0, nullptr, rgb_arguments, nullptr);
-            if(result != CUDA_SUCCESS) printf("result %d\n", result);
-            result = cuCtxSynchronize();
-            if(result != CUDA_SUCCESS) printf("cuCtxSynchronize result %d\n", result);
+            //if(result != CUDA_SUCCESS) printf("result %d\n", result);
+            //result = cuCtxSynchronize();
+            //if(result != CUDA_SUCCESS) printf("cuCtxSynchronize result %d\n", result);
 
-            result = cuMemcpyDtoH(rgbHost, rgbFrame, 3840*2048*sizeof(unsigned int));
-            if(result != CUDA_SUCCESS) printf("cuMemcpy2D result %d\n", result);
+            //result = cuMemcpyDtoH(rgbHost, rgbFrame, 3840*2048*sizeof(unsigned int));
+            //if(result != CUDA_SUCCESS) printf("cuMemcpy2D result %d\n", result);
             //stbi_write_bmp("foo.bmp", 3840, 2048, 4, rgbHost);
 
             //dim3 resizeBlockDims(1,1,1);
             //dim3 resizeGridDims((unsigned int) std::ceil(output_width / resizeBlockDims.x), (unsigned int) std::ceil(output_height / resizeBlockDims.y), 1 );
+                auto resizestart = steady_clock::now();
             dim3 resizeBlockDims(32,32,1);
             dim3 resizeGridDims(1+416/32, 1+416/32, 1 );
             void *resize_arguments[8] = {&rgbFrame, &resizedFrame, &width, &height, &output_width, &output_height, &fx, &fy};
             //void *resize_arguments[8] = {&input, &output, &height, &width, &output_width, &output_height, &fx, &fy};
             result = cuLaunchKernel(resize, resizeGridDims.x, resizeGridDims.y, resizeGridDims.z, resizeBlockDims.x, resizeBlockDims.y, resizeBlockDims.z,
                                    0, nullptr, resize_arguments, nullptr);
-            if(result != CUDA_SUCCESS) printf("result %d\n", result);
-            result = cuCtxSynchronize();
-            if(result != CUDA_SUCCESS) printf("cuCtxSynchronize result %d\n", result);
+            //if(result != CUDA_SUCCESS) printf("result %d\n", result);
+            //result = cuCtxSynchronize();
+            //if(result != CUDA_SUCCESS) printf("cuCtxSynchronize result %d\n", result);
+                resizetime += ::duration_cast<microseconds>(steady_clock::now() - start).count();
 
             result = cuMemcpyDtoH(hostframe, resizedFrame, 3*416*416*sizeof(float));
 
@@ -196,8 +211,25 @@ namespace visualcloud {
             cuMemcpyHtoD(probDevice, flatprobs, sizeof(float) * num * metadata_.classes);
 
 
-            dim3 detectBlockDims(32,32,1);
-            dim3 detectGridDims(1+metadata_.classes/32, 1+num/32, 1 );
+
+                /*for(auto i = 0u; i < num; i++)
+                    for(auto j = 0u; j < metadata_.classes; j++)
+                        if(probs[i][j] - ((float*)flatprobs)[i * metadata_.classes + j] > 0.0001)
+                            printf("%d %d\n", i, j);*/
+
+                for(auto i = 0u; i < num; i++)
+                    for(auto j = 0u; j < metadata_.classes; j++)
+                        if(probs[i][j] > 0.001)
+                            detections++;
+                            //printf("%d %d %s (%.2f): %X %f\n", i, j, metadata_.names[j], boxes[i].x, *(int *)&probs[i][j], probs[i][j]);*/
+                //printf("---\n");
+            }
+
+            result = cuCtxSynchronize();
+            if(result != CUDA_SUCCESS) printf("result %d\n", result);
+            maptime += ::duration_cast<milliseconds>(steady_clock::now() - start).count();
+            start = steady_clock::now();
+
             void *detect_arguments[10] = {&input, &input_pitch, &width, &height, &probDevice, const_cast<int*>(&metadata_.classes), &boxDevice, &num, &fx, &fy};
             result = cuLaunchKernel(draw_detections, detectGridDims.x, detectGridDims.y, detectGridDims.z, detectBlockDims.x, detectBlockDims.y, detectBlockDims.z,
                                     0, nullptr, detect_arguments, nullptr);
@@ -206,17 +238,9 @@ namespace visualcloud {
             if(result != CUDA_SUCCESS)
                 printf("cuCtxSynchronize result %d\n", result);
 
-                /*for(auto i = 0u; i < num; i++)
-                    for(auto j = 0u; j < metadata_.classes; j++)
-                        if(probs[i][j] - ((float*)flatprobs)[i * metadata_.classes + j] > 0.0001)
-                            printf("%d %d\n", i, j);*/
-
-                /*for(auto i = 0u; i < num; i++)
-                    for(auto j = 0u; j < metadata_.classes; j++)
-                        if(probs[i][j] > 0.001)
-                            printf("%d %d %s (%.2f): %X %f\n", i, j, metadata_.names[j], boxes[i].x, *(int *)&probs[i][j], probs[i][j]);*/
-                //printf("---\n");
-            }
+            uniontime += ::duration_cast<microseconds>(steady_clock::now() - start).count();
+            if(id == 109)
+                LOG(INFO) << "map time:" << maptime << "ms" << " union time " << uniontime << " resize time " << resizetime << " detections " << detections;
 
             return frame;
         };

@@ -152,8 +152,12 @@ void draw_detections(
         const unsigned int image_y1 = min(y1, height - 3);
         const unsigned int image_y2 = min(y2, height - 3);
 
-        //printf("%d %d %d %d\n", image_x1, image_x2, image_y1, image_y2);
-        for(int y = image_y1; y < image_y2; y++)
+        nv12image[image_y1 * pitch + image_x1] = 0;
+        nv12image[image_y2 * pitch + image_x2] = 0;
+        nv12image[image_y1 * pitch + image_x1] = 0;
+        nv12image[image_y2 * pitch + image_x2] = 0;
+
+/*        for(int y = image_y1; y < image_y2; y++)
         {
             nv12image[y * pitch + image_x1] = 0;
             nv12image[(y+1) * pitch + image_x1] = 0;
@@ -176,7 +180,7 @@ void draw_detections(
             nv12image[image_y2 * pitch + x] = 0;
             nv12image[image_y2 * pitch + x + 1] = 0;
             nv12image[image_y2 * pitch + x + 2] = 0;
-        }
+        }*/
     }
 }
 

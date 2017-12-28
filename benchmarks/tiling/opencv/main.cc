@@ -1,5 +1,8 @@
 #include <cstdio>
 #include "opencv2/opencv.hpp"
+#include <opencv2/cudacodec.hpp>
+#include "opencv2/cudaarithm.hpp"
+#include "opencv2/cudafilters.hpp"
 
 using namespace cv;
 
@@ -10,25 +13,33 @@ void tile(const char* input_filename,
           unsigned int rows, unsigned int columns,
           std::vector<size_t> bitrates)
 {
-    VideoCapture input(input_filename);
-    auto frames = std::lround(input.get(CAP_PROP_FRAME_COUNT));
-    auto fourcc = std::lround(input.get(CV_CAP_PROP_FOURCC));
-    auto fps = std::lround(input.get(CAP_PROP_FPS));
-    Mat frame;
-    Size size{std::lround(input.get(CAP_PROP_FRAME_WIDTH))/columns,
-              std::lround(input.get(CAP_PROP_FRAME_HEIGHT)/rows)};
+    printf("Open reader\n");
+    cv::Ptr<cv::cudacodec::VideoReader> input = cv::cudacodec::createVideoReader(std::string(input_filename));
+    auto frames = std::lround(VideoCapture("model.mp4").get(CAP_PROP_FRAME_COUNT));
+    auto fourcc = std::lround(VideoCapture("model.mp4").get(CV_CAP_PROP_FOURCC));
+    auto fps = std::lround(VideoCapture("model.mp4").get(CAP_PROP_FPS));
+    cv::cuda::GpuMat frame;
+    Mat hosttile;
+    Size size{std::lround(VideoCapture("model.mp4").get(CAP_PROP_FRAME_WIDTH))/columns,
+              std::lround(VideoCapture("model.mp4").get(CAP_PROP_FRAME_HEIGHT)/rows)};
     std::vector<VideoWriter> writers;
+    //std::vector<cv::Ptr<cv::cudacodec::VideoWriter>> writers; GPU writer not supported on Linux
 
-    if(!input.isOpened())
-        throw std::runtime_error("Failed to open input.");
-
-    for(auto i = 0u; i < rows * columns; i++)
+    printf("Open writers\n");
+    for(auto i = 0u; i < rows * columns; i++) {
+        //cv::cudacodec::EncoderParams parameters{};
+        //parameters.AvgBitrate = bitrates.at(i)*10000;
+        //writers.push_back(cv::cudacodec::createVideoWriter(TILE_FILENAME(i), size,  fps, parameters));
         writers.push_back({TILE_FILENAME(i), fourcc, fps, size, true, bitrates.at(i)*1000});
+    }
 
-    printf("Tiling\n");
+    printf("Tiling %d frames\n", frames);
+    if(frames < 0)
+        exit(1);
 
     while(frames--) {
-        input >> frame; // get a new frame from camera
+        //input >> frame;
+        input->nextFrame(frame); // get a new frame from camera
 
         if(!frame.empty())
             for(auto i = 0u; i < columns; i++)
@@ -38,8 +49,9 @@ void tile(const char* input_filename,
                     auto range_x = Range(offset_x, offset_x + size.width),
                          range_y = Range(offset_y, offset_y + size.height);
                     auto tile = frame(range_y, range_x);
+                    tile.download(hosttile);
 
-                    writers.at(i + j * columns).write(tile);
+                    writers.at(i + j * columns).write(hosttile);
                 }
     }
 }

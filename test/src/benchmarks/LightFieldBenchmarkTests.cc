@@ -15,7 +15,7 @@ public:
     const char *name;
 
     void lightFieldToVideoBenchmark(const char *name) {
-        auto source = std::string("resources/test-lightfield.h265");
+        auto source = std::string("../../benchmark/datasets/cats/cats.h264");
         auto start = steady_clock::now();
 
         Decode<EquirectangularGeometry>(true, source)
