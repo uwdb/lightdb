@@ -4,11 +4,13 @@
 #include "Geometry.h"
 #include "Color.h"
 #include "Interpolation.h"
+#include "Encoding.h"
 #include "Ffmpeg.h"
 #include <memory>
 #include <vector>
+#include <numeric>
+#include <optional>
 #include <stdexcept>
-#include <math.h>
 
 template<typename ColorSpace>
 class LightFieldReference;
@@ -24,17 +26,25 @@ public:
     virtual const typename ColorSpace::Color value(const Point6D &point) const = 0;
     virtual const ColorSpace colorSpace() const { return ColorSpace::Instance; }
     virtual const std::vector<Volume> volumes() const = 0;
+
+    inline std::string type() const {
+        return typeid(*this).name();
+    }
 };
 
 template<typename ColorSpace>
 class LightFieldReference {
 public:
     LightFieldReference(const std::shared_ptr<LightField<ColorSpace>> lightfield)
-        : pointer_(lightfield)
+        : pointer_(lightfield), direct_(pointer_.get())
     { }
 
     LightFieldReference(LightField<ColorSpace> &&lightfield)
-            : pointer_(nullptr)
+        : pointer_(std::make_shared<LightField<ColorSpace>>(std::move(lightfield))), direct_(pointer_.get())
+    { }
+
+    LightFieldReference(const LightFieldReference &reference)
+        : pointer_(reference.pointer_), direct_(pointer_.get())
     { }
 
     inline operator LightField<ColorSpace>&() const {
@@ -49,6 +59,14 @@ public:
         return *pointer_;
     }
 
+    inline std::string type() const {
+        return this->name();
+    }
+
+    explicit operator const std::shared_ptr<LightField<ColorSpace>>() const {
+        return pointer_;
+    }
+
     template<typename T, typename... _Args>
     inline static LightFieldReference<ColorSpace>
     make(_Args&&... args) {
@@ -57,6 +75,7 @@ public:
 
 private:
     const std::shared_ptr<LightField<ColorSpace>> pointer_;
+    const LightField<ColorSpace> *direct_; // Useful for debugging, not exposed
 };
 
 template<typename ColorSpace>
@@ -89,6 +108,7 @@ private:
 template<typename ColorSpace>
 class CompositeLightField: public LightField<ColorSpace> {
 public:
+    //TODO ensure that lightfields don't overlap
     CompositeLightField(const std::vector<LightFieldReference<ColorSpace>> &lightfields)
         : lightfields_(lightfields)
     { }
@@ -105,8 +125,18 @@ public:
     }
 
     const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return lightfields_; }
-    const std::vector<Volume> volumes() const override { return {}; } //TODO
     const ColorSpace colorSpace() const override { return ColorSpace::Instance; } //TODO
+    const std::vector<Volume> volumes() const override {
+        //TODO doesn't eliminate overlaps, is that bad?
+        return std::accumulate(lightfields_.begin(),
+                               lightfields_.end(),
+                               std::vector<Volume>(lightfields_.size() * 4),
+                               [](auto &result, auto &field) {
+                                   auto volumes = field->volumes();
+                                   result.insert(result.end(), volumes.begin(), volumes.end());
+                                   return result;
+                               });
+    }
 
 private:
     const std::vector<LightFieldReference<ColorSpace>> lightfields_;
@@ -125,8 +155,21 @@ public:
     }
 
     const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {source_}; }
-    const std::vector<Volume> volumes() const override { return {}; } //TODO
-    const ColorSpace colorSpace() const override { return ColorSpace::Instance; } //TODO
+    const ColorSpace colorSpace() const override { return ColorSpace::Instance; }
+    const std::vector<Volume> volumes() const override {
+        //TODO switch to iterator
+        std::vector<Volume> result;
+        for(auto &volume: source_->volumes()) {
+            auto partitions = volume.partition(dimension_, interval_);
+            result.insert(result.end(), partitions.begin(), partitions.end());
+        }
+        return result;
+    }
+
+    Dimension dimension() const { return dimension_; }
+    visualcloud::rational interval() const { return interval_; }
+    //const std::vector<LightFieldReference<ColorSpace>> partitions() const {
+    //}
 
 private:
     const LightFieldReference<ColorSpace> source_;
@@ -138,7 +181,7 @@ template<typename ColorSpace>
 class SubsetLightField: public LightField<ColorSpace> {
 public:
     SubsetLightField(const LightFieldReference<ColorSpace> &lightfield, const Volume &volume)
-            : lightfield_(lightfield), volume_(volume)
+        : lightfield_(lightfield), volume_(volume) //TODO don't we need to intersect volume with lightvield.volumes()?
     { }
 
     const typename ColorSpace::Color value(const Point6D &point) const override {
@@ -148,38 +191,49 @@ public:
     }
 
     const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {lightfield_}; }
-    const std::vector<Volume> volumes() const override { return {volume_}; }
     const ColorSpace colorSpace() const override { return lightfield_->colorSpace(); }
+    const std::vector<Volume> volumes() const override {
+        //TODO clean this up
+        std::vector<Volume> result;
+        for(auto &volume: lightfield_->volumes()) {
+            auto intersection = volume | volume_;
+            if(!intersection.is_point())
+                result.push_back(intersection);
+        }
+        return result;
+    }
 
 private:
     const LightFieldReference<ColorSpace> lightfield_;
     const Volume volume_;
 };
 
-/*template<typename Geometry, typename ColorSpace>
-class OldDiscreteLightField: public LightField<ColorSpace> {
+template<typename ColorSpace>
+class RotatedLightField: public LightField<ColorSpace> {
 public:
-    Dimension dimension() const { return dimension_; }
-    visualcloud::rational interval() const { return interval_; }
-
-protected:
-    OldDiscreteLightField(const Dimension dimension, const visualcloud::rational interval)
-            : dimension_(dimension), interval_(interval)
+    RotatedLightField(const LightFieldReference<ColorSpace> &lightfield, const angle &theta, const angle &phi)
+            : lightfield_(lightfield), offset_{0, 0, 0, 0, theta, phi}
     { }
-    virtual ~OldDiscreteLightField() { }
 
-    bool IsDefinedAt(const Point6D &point) const {
-        //TODO holy cow this is like the worst thing ever
-        //TODO add rational overloads for value() and Volume::contains()
-        return std::remainder(
-                point.get(dimension()),
-                this->interval().numerator() / (double)this->interval().denominator()) <= 0.000000000001l;
+    const typename ColorSpace::Color value(const Point6D &point) const override {
+        return lightfield_->value(point + offset_);
+    }
+
+    const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {lightfield_}; }
+    const ColorSpace colorSpace() const override { return lightfield_->colorSpace(); }
+    const std::vector<Volume> volumes() const override {
+        //TODO perf
+        std::vector<Volume> vs;
+        vs.reserve(lightfield_->volumes().size());
+        for(auto &v: lightfield_->volumes())
+            vs.emplace_back(Volume{v.translate(offset_)});
+        return vs;
     }
 
 private:
-    const Dimension dimension_;
-    const visualcloud::rational interval_;
-};*/
+    const LightFieldReference<ColorSpace> lightfield_;
+    const Point6D offset_;
+};
 
 template<typename ColorSpace>
 class DiscreteLightField: public LightField<ColorSpace> {
@@ -201,7 +255,6 @@ private:
     const std::function<bool(const Point6D&)> predicate_;
 };
 
-//TODO add a Geometry template and just make an IntervalGeometry
 template<typename ColorSpace>
 class DiscretizedLightField: public DiscreteLightField<ColorSpace> {
 public:
@@ -228,11 +281,13 @@ template<typename ColorSpace>
 class InterpolatedLightField: public LightField<ColorSpace> {
 public:
     InterpolatedLightField(const LightFieldReference<ColorSpace> &source,
+                           const Dimension dimension,
                            const visualcloud::interpolator<ColorSpace> interpolator)
             : source_(source), interpolator_(interpolator)
     { }
 
     inline const typename ColorSpace::Color value(const Point6D &point) const override {
+        // TODO this ignores interpolation dimension
         auto value = source_->value(point);
         return value != ColorSpace::Color::Null
             ? value
@@ -248,26 +303,55 @@ private:
     const visualcloud::interpolator<ColorSpace> interpolator_;
 };
 
+#include "Functor.h"
+
+template<typename ColorSpace>
+class TransformedLightField: public LightField<ColorSpace> {
+public:
+    TransformedLightField(const LightFieldReference<ColorSpace> &source,
+                           const visualcloud::functor<ColorSpace> &functor)
+            : source_(source), functor_(functor)
+    { }
+
+    const typename ColorSpace::Color value(const Point6D &point) const override {
+        return functor_(source_, point);
+    }
+
+    const visualcloud::functor<ColorSpace> &functor() const { return functor_; };
+
+    //TODO just add a DecoratedLightField class that does all of this, rather than repeating it over and over
+    const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {source_}; }
+    const std::vector<Volume> volumes() const override { return source_->volumes(); }
+    const ColorSpace colorSpace() const override { return ColorSpace::Instance; }
+
+private:
+    const LightFieldReference<ColorSpace> source_;
+    const visualcloud::functor<ColorSpace> &functor_;
+};
+
 template<typename Geometry, typename ColorSpace>
 class PanoramicLightField: public DiscreteLightField<ColorSpace> {
 public:
-    PanoramicLightField(const Point3D &point, const TemporalRange &range)
+    PanoramicLightField(const Point3D &point,
+                        const TemporalRange &range,
+                        const AngularRange& theta=AngularRange::ThetaMax,
+                        const AngularRange& phi=AngularRange::PhiMax)
         : DiscreteLightField<ColorSpace>(Geometry::Instance),
-          point_(point), volume_{point.ToVolume(range, AngularRange::ThetaMax, AngularRange::PhiMax)}
+          point_(point), volume_{point.ToVolume(range, theta, phi)}
     { }
 
-    PanoramicLightField(const Point3D &&point, const TemporalRange &&range)
-        : DiscreteLightField<ColorSpace>(Geometry::Instance),
-          point_(point), volume_{point.ToVolume(range, AngularRange::ThetaMax, AngularRange::PhiMax)}
-    { }
+    //PanoramicLightField(const Point3D &&point, const TemporalRange &&range)
+    //    : DiscreteLightField<ColorSpace>(Geometry::Instance),
+    //      point_(point), volume_{point.ToVolume(range, AngularRange::ThetaMax, AngularRange::PhiMax)}
+    //{ }
 
     PanoramicLightField(const TemporalRange &range)
         : PanoramicLightField(Point3D{0, 0, 0}, range)
     { }
 
-    PanoramicLightField(const TemporalRange &&range)
-        : PanoramicLightField(Point3D{0, 0, 0}, range)
-    { }
+    //PanoramicLightField(const TemporalRange &&range)
+    //    : PanoramicLightField(Point3D{0, 0, 0}, range)
+    //{ }
 
     virtual ~PanoramicLightField() { }
 
@@ -277,11 +361,12 @@ public:
                 : ColorSpace::Color::Null;
     }
 
+    const Volume volume() const { return volume_; }
     const std::vector<Volume> volumes() const override { return {volume_}; }
 
 protected:
     bool defined_at(const Point6D &point) const override {
-        return Geometry::Instance.defined_at(point);
+        return volume_.Contains(point) && Geometry::Instance.defined_at(point);
     }
 
     virtual const typename ColorSpace::Color value(const double t, const double theta, const double phi) const {
@@ -296,27 +381,35 @@ private:
 };
 
 template<typename Geometry, typename ColorSpace>
-class PanoramicVideoLightField: public PanoramicLightField<Geometry, ColorSpace> {
+class PanoramicVideoLightField: public PanoramicLightField<Geometry, ColorSpace>, public visualcloud::SingletonFileEncodedLightField {
 public:
-    PanoramicVideoLightField(std::istream &&stream)
-        : PanoramicVideoLightField(Point3D::Zero, std::move(stream))
+    PanoramicVideoLightField(const std::string &filename,
+                             const AngularRange& theta=AngularRange::ThetaMax,
+                             const AngularRange& phi=AngularRange::PhiMax) //TODO drop filename; see below
+        : PanoramicVideoLightField(filename, Point3D::Zero, theta, phi)
     { }
 
-    PanoramicVideoLightField(const Point3D &point, std::istream &&stream)
-          : PanoramicVideoLightField(point, visualcloud::utility::ffmpeg::decode(stream))
+    PanoramicVideoLightField(const std::string &filename,
+                             const Point3D &point,
+                             const AngularRange& theta=AngularRange::ThetaMax,
+                             const AngularRange& phi=AngularRange::PhiMax) //TODO drop filename; see below
+            : PanoramicLightField<Geometry, ColorSpace>(point, {0, duration()}, theta, phi),
+              SingletonFileEncodedLightField(filename, PanoramicLightField<Geometry, ColorSpace>::volume()), //TODO no need to duplicate filename here and in singleton
+              geometry_(Dimension::Time, framerate())
     { }
 
+    virtual ~PanoramicVideoLightField() { }
+
+    const std::vector<Volume> volumes() const override { return PanoramicLightField<Geometry, ColorSpace>::volumes(); }
     const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {}; }
-    inline visualcloud::rational framerate() const { return frames_->framerate(); }
+    //TODO remove both of these
+    inline visualcloud::rational framerate() const { return visualcloud::rational(30, 1); } //TODO hardcoded...
 
+    inline size_t duration() const { return 99; } //TODO remove hardcoded value
+    inline visualcloud::utility::StreamMetadata metadata() const { return (metadata_.has_value()
+                                                                          ? metadata_
+                                                                          : (metadata_ = visualcloud::utility::StreamMetadata(filename(), 0, true))).value(); }
 protected:
-    PanoramicVideoLightField(const Point3D &point,
-                             std::unique_ptr<visualcloud::utility::ffmpeg::FrameIterator> frames)
-            : PanoramicLightField<Geometry, ColorSpace>(point, {0, frames_->duration()}),
-              frames_(std::move(frames)),
-              geometry_(Dimension::Time, frames_->framerate())
-    { }
-
     bool defined_at(const Point6D &point) const override {
         return geometry_.defined_at(point) &&
                PanoramicLightField<Geometry, ColorSpace>::defined_at(point);
@@ -328,8 +421,49 @@ protected:
     };
 
 private:
-    const std::unique_ptr<visualcloud::utility::ffmpeg::FrameIterator> frames_;
+    //TODO drop filename after adding StreamDecodeReader in Physical.cc
+    // Can make SingletonEncodedLightField be a replacement for this class; one for in-memory, one for on-disk
     const IntervalGeometry geometry_;
+    mutable std::optional<visualcloud::utility::StreamMetadata> metadata_;
+};
+
+template<typename ColorSpace=YUVColorSpace>
+class PlanarTiledVideoLightField: public DiscreteLightField<ColorSpace>, public visualcloud::SingletonFileEncodedLightField {
+public:
+    PlanarTiledVideoLightField(const std::string &filename,
+                               const Volume &volume,
+                               const size_t rows, const size_t columns)
+            : DiscreteLightField<ColorSpace>(IntervalGeometry(Dimension::Time, framerate())),
+              SingletonFileEncodedLightField(filename, volume), //TODO no need to duplicate filename here and in singleton
+              volume_(volume),
+              rows_(rows), columns_(columns)
+    { }
+
+    virtual ~PlanarTiledVideoLightField() { }
+
+    const std::vector<Volume> volumes() const override { return {volume_}; }
+    const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {}; }
+    //TODO remove both of these
+    inline visualcloud::rational framerate() const { return visualcloud::rational(30, 1); } //TODO hardcoded...
+
+    inline size_t duration() const { return 20; } //TODO remove hardcoded value
+    inline visualcloud::utility::StreamMetadata metadata() const { return (metadata_.has_value()
+                                                                           ? metadata_
+                                                                           : (metadata_ = visualcloud::utility::StreamMetadata(filename(), 0, true))).value(); }
+
+    const typename ColorSpace::Color value(const Point6D &point) const override {
+        return DiscreteLightField<ColorSpace>::defined_at(point) &&
+                       volume_.Contains(point)
+               ? ColorSpace::Color::Green //TODO
+               : ColorSpace::Color::Null;
+    }
+
+private:
+    //TODO drop filename after adding StreamDecodeReader in Physical.cc
+    // Can make SingletonEncodedLightField be a replacement for this class; one for in-memory, one for on-disk
+    const Volume volume_;
+    const size_t rows_, columns_;
+    mutable std::optional<visualcloud::utility::StreamMetadata> metadata_;
 };
 
 #endif //VISUALCLOUD_LIGHTFIELD_H

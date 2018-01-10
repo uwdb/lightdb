@@ -23,14 +23,36 @@ if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
 
+# Set C++ standards
+set (CMAKE_CXX_STANDARD 17)
+#set (CLANG_TIDY_CXX_STANDARD 14)
+
+# Set compiler flags
+set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -g3 -rdynamic -Wall")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -fvisibility=hidden -Wall")
+set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG --coverage -g3 -Wall")
+
 # Find required library dependencies
-set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} cuda nvcuvid dl pthread glog)
+set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} cuda nvcuvid dl pthread glog gflags stdc++fs)
+
+# TODO add FindDarknet.cmake
+LINK_DIRECTORIES(/home/bhaynes/projects/darknet)
+set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} darknet)
+
+#TODO add FindLLV.cmake; clean this up
+#find_package(Qt5Core REQUIRED)
+#find_package(Qt5Widgets REQUIRED)
+find_package(OpenCV REQUIRED)
+set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} ${OPENCV_LIBS} opencv_features2d)
+set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} lfv)
+
 
 find_package(NVENC REQUIRED)
 set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} ${NVENC_LIBRARIES})
 
 find_package(NvidiaSDK REQUIRED)
 include_directories(${NVIDIASDK_INCLUDE_DIR})
+set(CLANG_TIDY_EXCLUDED_SOURCES ${NVIDIASDK_SOURCES})
 
 find_package(PythonLibs 2.7 REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
@@ -44,15 +66,7 @@ set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} ${FFMPEG_LIBRAR
 
 find_package(GTest)
 find_package (Glog REQUIRED)
-find_package(ClangTidy)
-
-# Set compiler flags
-set (CMAKE_CXX_STANDARD 17)
-
-# Set compiler flags
-set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -g3 -rdynamic -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -fvisibility=hidden -Wall")
-set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG --coverage -g3 -Wall")
+#find_package(ClangTidy)
 
 # Enable testing
 enable_testing()

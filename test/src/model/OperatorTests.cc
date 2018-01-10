@@ -1,5 +1,7 @@
 #include "Operators.h"
+#include "Physical.h"
 #include <gtest/gtest.h>
+#include <AssertVideo.h>
 
 using namespace visualcloud;
 
@@ -51,19 +53,35 @@ TEST_F(OperatorTestFixture, testSelect) {
     ASSERT_EQ(selected->value({0, 0, 0, 2, 0, 0}), YUVColor::Null);
 }
 
+TEST_F(OperatorTestFixture, testUnionEncode) {
+    auto red = Decode<EquirectangularGeometry>("resources/red10.h264").apply();
+    auto green = Decode<EquirectangularGeometry>("resources/green10.h264").apply();
+
+    ASSERT_EQ(red->value(  {0, 0, 0,  0, 0, 0}), YUVColor::Red);
+    ASSERT_EQ(red->value(  {0, 0, 0, 99, 0, 0}), YUVColor::Null);
+    ASSERT_EQ(green->value({0, 0, 0,  0, 0, 0}), YUVColor::Green);
+    ASSERT_EQ(green->value({0, 0, 0, 99, 0, 0}), YUVColor::Null);
+
+    auto result = (red | green) >> Encode<YUVColorSpace>();
+
+    ASSERT_GT(result->bytes()->size(), 0);
+    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10-green10.h264", Volume::VolumeMax)->bytes());
+}
+
+
 TEST_F(OperatorTestFixture, testIdentityEncode) {
     auto video = Decode<EquirectangularGeometry>("resources/red10.h264").apply();
 
     ASSERT_EQ(video->value({0, 0, 0,  0, 0, 0}), YUVColor::Red);
     ASSERT_EQ(video->value({0, 0, 0, 99, 0, 0}), YUVColor::Null);
 
-    auto encoded = video >> Encode<YUVColorSpace>();
+    auto result = video >> Encode<YUVColorSpace>("h264");
 
-    ASSERT_GT(encoded.bytes().size(), 0);
-    ASSERT_EQ(encoded.bytes(), EncodedLightField("resources/red10.h264").bytes());
+    ASSERT_GT(result->bytes()->size(), 0);
+    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10.h264", Volume::VolumeMax)->bytes());
 }
 
-TEST_F(OperatorTestFixture, testIdentityUnionEncode) {
+TEST_F(OperatorTestFixture, testUnionSelect) {
     auto red = Decode<EquirectangularGeometry>("resources/red10.h264").apply();
     auto green = ConstantLightField<YUVColorSpace>::create(YUVColor::Green);
 
@@ -75,51 +93,6 @@ TEST_F(OperatorTestFixture, testIdentityUnionEncode) {
             >> Select(Point3D::Zero.ToVolume({0, 20}))
             >> Encode<YUVColorSpace>();
 
-    ASSERT_GT(result.bytes().size(), 0);
-    ASSERT_EQ(result.bytes(), EncodedLightField("resources/red10-green10.h264").bytes());
-}
-
-TEST_F(OperatorTestFixture, test360Tiling) {
-    /*
-    auto result =
-        Decode<EquirectangularGeometry>("resources/red10.h264")
-          >> Select(Point3D{0, 0, 0})
-          >> Partition(Dimension::Time, 1)
-          >> Partition(Dimension::Theta, 90)
-          >> Transcode(std::vector<unsigned int>{50u, 50u, 5000u, 50u})
-          >> Interpolate(Interpolate::NearestNeighbor)
-          >> Discretize(Dimension::Time, rational(1, 60))
-          >> Partition(Dimension::Time, rational(1, 60))
-          >> Encode<YUVColorSpace>();
-*/
-/*
-    auto input = Decode<YUVColorSpace, EquirectangularGeometry>().apply(std::ifstream{"resources/red10.h264"});
-
-    auto threesixty = Select().apply(input, {{0, 0}, {0, 0}, {0, 0}, {0, 20}, AngularRange::ThetaMax, AngularRange::PhiMax});
-    auto timePartitioned = Partition().applyTime(threesixty, 1);
-    auto slices = Partition().applyTheta(timePartitioned, 90);
-    auto transcoded = Transcode().apply(slices, {50, 50, 5000, 50});
-    auto interpolated = Interpolate().apply(transcoded, Interpolate::NearestNeighbor);
-    auto sample60fps = Select().applyFPS(60);
-    auto dashable = Partition().applyTime(sample60fps, 1);
-    auto encoded = Encode<YUVColorSpace>().apply(dashable);
-*/
-}
-
-TEST_F(OperatorTestFixture, temp) {
-    auto query =
-        Decode<EquirectangularGeometry>("resources/red10.h264")
-            >> Select(Point3D::Zero)
-            >> Partition(Dimension::Time, 1)
-            >> Partition(Dimension::Theta, 90)
-            //>> Transcode([](auto& volume) { return 50; })
-            >> Interpolate([](auto&, auto&) { return YUVColor::Green; })
-            >> Discretize(Dimension::Time, rational(1, 60))
-            >> Partition(Dimension::Time, rational(1, 60))
-            ;
-
-    auto result = query >> Encode<YUVColorSpace>();
-
-    auto &cs = query->colorSpace();
-    printf("%ld\n", &cs);
+    ASSERT_GT(result->bytes()->size(), 0);
+    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10-green10.h264", Volume::VolumeMax)->bytes());
 }

@@ -6,7 +6,7 @@
 
 namespace visualcloud::pipeline {
     template<typename ColorSpace>
-    EncodedLightField execute(LightFieldReference<ColorSpace>);
+    visualcloud::EncodedLightField execute(LightFieldReference<ColorSpace>, const std::string&);
 }
 
 #endif //VISUALCLOUD_EXECUTION_H_H

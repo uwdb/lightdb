@@ -114,7 +114,7 @@ TEST_F(TilerVideoEncoderTestFixture, test6x2) {
 
     ASSERT_SECS(
         ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS),
-        0.25);
+        0.75);
 
     for(auto i = 0; i < rows * columns; i++) {
         EXPECT_VIDEO_VALID(FILENAME(i));
@@ -135,7 +135,7 @@ TEST_F(TilerVideoEncoderTestFixture, test2x8) {
 
     ASSERT_SECS(
             ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS),
-        0.25);
+            0.75);
 
     for(auto i = 0; i < rows * columns; i++) {
         EXPECT_VIDEO_VALID(FILENAME(i));
@@ -156,7 +156,7 @@ TEST_F(TilerVideoEncoderTestFixture, test1x8) {
 
     ASSERT_SECS(
             ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS),
-            0.25);
+            0.75);
 
     for(auto i = 0; i < rows * columns; i++) {
         EXPECT_VIDEO_VALID(FILENAME(i));
@@ -177,7 +177,7 @@ TEST_F(TilerVideoEncoderTestFixture, test6x1) {
 
     ASSERT_SECS(
             ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS),
-            0.25);
+            0.75);
 
     for(auto i = 0; i < rows * columns; i++) {
         EXPECT_VIDEO_VALID(FILENAME(i));
@@ -203,6 +203,78 @@ TEST_F(TilerVideoEncoderTestFixture, test6x8) {
     for(auto i = 0; i < rows * columns; i++) {
         EXPECT_VIDEO_VALID(FILENAME(i));
         EXPECT_VIDEO_FRAMES(FILENAME(i), 99);
+        EXPECT_VIDEO_RESOLUTION(FILENAME(i), encodeConfiguration.height / rows, encodeConfiguration.width / columns);
+        EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
+    }
+}
+
+TEST_F(TilerVideoEncoderTestFixture, test2x2_at_4K) {
+    const auto rows = 2, columns = 2;
+    EncodeConfiguration encodeConfiguration(2160, 3840, NV_ENC_HEVC, 24, 30, 1024*1024);
+    DecodeConfiguration decodeConfiguration(encodeConfiguration, cudaVideoCodec_H264);
+
+    TileVideoEncoder tiler(context, decodeConfiguration, encodeConfiguration, rows, columns);
+    FileDecodeReader reader("resources/test-pattern-4K.h264");
+    std::vector<std::shared_ptr<EncodeWriter>> writers;
+
+    for(auto i = 0; i < rows * columns; i++)
+        writers.emplace_back(std::make_shared<FileEncodeWriter>(tiler.api(), FILENAME(i)));
+
+    ASSERT_SECS(
+            ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS),
+            15);
+
+    for(auto i = 0; i < rows * columns; i++) {
+        EXPECT_VIDEO_VALID(FILENAME(i));
+        EXPECT_VIDEO_FRAMES(FILENAME(i), 600);
+        EXPECT_VIDEO_RESOLUTION(FILENAME(i), encodeConfiguration.height / rows, encodeConfiguration.width / columns);
+        EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
+    }
+}
+
+TEST_F(TilerVideoEncoderTestFixture, test4x4_at_4K) {
+    const auto rows = 4, columns = 4;
+    EncodeConfiguration encodeConfiguration(2160, 3840, NV_ENC_HEVC, 24, 24, 1024*1024);
+    DecodeConfiguration decodeConfiguration(encodeConfiguration, cudaVideoCodec_H264);
+
+    TileVideoEncoder tiler(context, decodeConfiguration, encodeConfiguration, rows, columns);
+    FileDecodeReader reader("resources/test-pattern-4K.h264");
+    std::vector<std::shared_ptr<EncodeWriter>> writers;
+
+    for(auto i = 0; i < rows * columns; i++)
+        writers.emplace_back(std::make_shared<FileEncodeWriter>(tiler.api(), FILENAME(i)));
+
+    ASSERT_SECS(
+            ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS),
+            15);
+
+    for(auto i = 0; i < rows * columns; i++) {
+        EXPECT_VIDEO_VALID(FILENAME(i));
+        EXPECT_VIDEO_FRAMES(FILENAME(i), 600);
+        EXPECT_VIDEO_RESOLUTION(FILENAME(i), encodeConfiguration.height / rows, encodeConfiguration.width / columns);
+        EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
+    }
+}
+
+TEST_F(TilerVideoEncoderTestFixture, test6x8_at_4K) {
+    const auto rows = 6, columns = 8;
+    EncodeConfiguration encodeConfiguration(2160, 3840, NV_ENC_HEVC, 24, 24, 1024*1024);
+    DecodeConfiguration decodeConfiguration(encodeConfiguration, cudaVideoCodec_H264);
+
+    TileVideoEncoder tiler(context, decodeConfiguration, encodeConfiguration, rows, columns);
+    FileDecodeReader reader("resources/test-pattern-4K.h264");
+    std::vector<std::shared_ptr<EncodeWriter>> writers;
+
+    for(auto i = 0; i < rows * columns; i++)
+        writers.emplace_back(std::make_shared<FileEncodeWriter>(tiler.api(), FILENAME(i)));
+
+    ASSERT_SECS(
+            ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS),
+            15);
+
+    for(auto i = 0; i < rows * columns; i++) {
+        EXPECT_VIDEO_VALID(FILENAME(i));
+        EXPECT_VIDEO_FRAMES(FILENAME(i), 600);
         EXPECT_VIDEO_RESOLUTION(FILENAME(i), encodeConfiguration.height / rows, encodeConfiguration.width / columns);
         EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
     }

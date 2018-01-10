@@ -56,15 +56,73 @@ protected:
 };
 
 
+class MemoryEncodeWriter: public EncodeWriter {
+public:
+    MemoryEncodeWriter(EncodeAPI &api, size_t initial_buffer_size=16*1024*1024)
+        : EncodeWriter(api), buffer_()
+    {
+        buffer_.reserve(initial_buffer_size);
+    }
+
+    NVENCSTATUS Flush() override { return NV_ENC_SUCCESS; }
+    const std::vector<char> buffer() const { return buffer_; }
+
+protected:
+    NVENCSTATUS WriteFrame(const void *buffer, const size_t size) override {
+        buffer_.insert(buffer_.end(), static_cast<const char*>(buffer), static_cast<const char*>(buffer) + size);
+    }
+
+private:
+    std::vector<char> buffer_;
+};
+
+
+class SegmentedMemoryEncodeWriter: public EncodeWriter {
+public:
+    SegmentedMemoryEncodeWriter(EncodeAPI &api, EncodeConfiguration &configuration,
+                                size_t initial_buffer_size=16*1024*1024)
+            : SegmentedMemoryEncodeWriter(api, configuration.gopLength, initial_buffer_size)
+    { }
+
+    SegmentedMemoryEncodeWriter(EncodeAPI &api, size_t gop_length, size_t initial_buffer_size=16*1024*1024)
+            : EncodeWriter(api), gop_length_(gop_length), buffer_(), offsets_(1, 0), writes_(0)
+    {
+        buffer_.reserve(initial_buffer_size);
+        offsets_.reserve(360);
+    }
+
+    NVENCSTATUS Flush() override { return NV_ENC_SUCCESS; }
+    const std::vector<char> buffer() const { return buffer_; }
+
+    const std::vector<char> segment(size_t index) {
+        return {};
+    }
+
+protected:
+    NVENCSTATUS WriteFrame(const void *buffer, const size_t size) override {
+        buffer_.insert(buffer_.end(), static_cast<const char*>(buffer), static_cast<const char*>(buffer) + size);
+        if(++writes_ % gop_length_ == 0)
+            offsets_.emplace_back(buffer_.size());
+    }
+
+private:
+    std::vector<char> buffer_;
+    std::vector<off_t> offsets_;
+    off_t writes_;
+    size_t gop_length_;
+};
 
 class DescriptorEncodeWriter: public EncodeWriter {
+public:
     DescriptorEncodeWriter(EncodeAPI &api, const int descriptor): EncodeWriter(api), descriptor(descriptor) { }
 
+    NVENCSTATUS Flush() override { return NV_ENC_SUCCESS; }
+
+protected:
     NVENCSTATUS WriteFrame(const void *buffer, const size_t size) override {
         return write(descriptor, buffer, size) != -1 ? NV_ENC_SUCCESS : NV_ENC_ERR_GENERIC;
     }
 
-    NVENCSTATUS Flush() override { return NV_ENC_SUCCESS; }
 
 private:
     const int descriptor;
@@ -96,16 +154,16 @@ public:
             fclose(file);
     }
 
-    NVENCSTATUS WriteFrame(const void *buffer, const size_t size) override {
-        return fwrite(buffer, size, 1, file) == size
-            ? NV_ENC_SUCCESS
-            : NV_ENC_ERR_GENERIC;
-    }
-
     NVENCSTATUS Flush() override {
         return fflush(file) == 0 ? NV_ENC_SUCCESS : NV_ENC_ERR_GENERIC;
     }
 
+protected:
+    NVENCSTATUS WriteFrame(const void *buffer, const size_t size) override {
+        return fwrite(buffer, size, 1, file) == size
+               ? NV_ENC_SUCCESS
+               : NV_ENC_ERR_GENERIC;
+    }
 
 private:
     FILE* file;

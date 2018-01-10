@@ -32,13 +32,45 @@ public:
 };
 
 
+template<typename ColorSpace>
+class Encode: public Operator {
+public:
+    //TODO string as a format is horrible, fix
+    Encode()
+            : format_("hevc")
+    { }
+
+    Encode(std::string &&format)
+            : format_(format)
+    { }
+
+    visualcloud::EncodedLightField apply(const LightFieldReference<ColorSpace> &lightField) const { //TODO ostream
+        return visualcloud::pipeline::execute(lightField, format_);
+    }
+
+private:
+    const std::string format_;
+};
+
+
 template<typename Geometry, typename ColorSpace=YUVColorSpace>
 class Decode: public Operator {
 public:
     //TODO constructors should accept EncodedLightFields, not string/streams
+    //TODO theta and phi should be drawn from the container, not explicitly parameterized
+    Decode(const std::string &filename,
+           const AngularRange& theta=AngularRange::ThetaMax,
+           const AngularRange& phi=AngularRange::PhiMax)
+        //: Decode(std::ifstream{filename})
+            : field_(std::shared_ptr<LightField<ColorSpace>>(new PanoramicVideoLightField<Geometry, ColorSpace>(filename, theta, phi)))
+    { }
 
-    Decode(const std::string &filename)
-        : Decode(std::ifstream{filename})
+    Decode(const bool forceLightField,
+           const std::string &filename,
+           const AngularRange& theta=AngularRange::ThetaMax,
+           const AngularRange& phi=AngularRange::PhiMax)
+    //: Decode(std::ifstream{filename})
+            : field_(std::shared_ptr<LightField<ColorSpace>>(new PlanarTiledVideoLightField<ColorSpace>(filename, Volume{{0, 1}, {0, 1}, {0, 0}, TemporalRange::TemporalMax, theta, phi}, 3, 3)))
     { }
 
     Decode(std::istream &&stream)
@@ -54,7 +86,11 @@ public:
         return field_;
     }
 
-    const LightFieldReference<ColorSpace> operator>>(const UnaryOperator<ColorSpace, ColorSpace>& op) {
+    const LightFieldReference<ColorSpace> operator>>(const UnaryOperator<ColorSpace, ColorSpace>& op) const {
+        return field_ >> op;
+    }
+
+    const visualcloud::EncodedLightField operator>>(const Encode<ColorSpace>& op) const {
         return field_ >> op;
     }
 
@@ -64,18 +100,27 @@ private:
 
 
 template<typename ColorSpace>
-class Encode: public Operator {
-public:
-    visualcloud::EncodedLightField apply(const LightFieldReference<ColorSpace> &lightField) const { //TODO ostream
-        return visualcloud::pipeline::execute(lightField);
-    }
-};
-
-template<typename ColorSpace>
 class Scan: public Operator {
     LightField<ColorSpace>&& scan(std::string name) {
         return ConstantLightField<YUVColorSpace>(YUVColor::Green); //TODO
     }
+};
+
+class Store: public Operator {
+public:
+    Store(const std::string &name)
+        : name_(name)
+    { }
+
+    visualcloud::EncodedLightField apply(const visualcloud::EncodedLightField &encoded) const {
+        encoded->write(name_);
+        return encoded;
+    }
+
+    //TODO can also store an unencoded query by just default-encoding it; add new >> and apply overloads
+
+private:
+    const std::string name_;
 };
 
 //template<typename LeftColorSpace, typename RightColorSpace, typename OutColorSpace>
@@ -119,6 +164,20 @@ private:
     const Volume volume_;
 };
 
+class Rotate: public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
+public:
+    explicit Rotate(const angle theta, const angle phi)
+            : theta_(theta), phi_(phi)
+    { }
+
+    LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace>& field) const override {
+        return LightFieldReference<YUVColorSpace>::make<RotatedLightField<YUVColorSpace>>(field, theta_, phi_);
+    }
+
+private:
+    const angle theta_, phi_;
+};
+
 class Partition: public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
 public:
     Partition(const Dimension &dimension, const visualcloud::rational interval)
@@ -141,6 +200,7 @@ private:
 
 
 using bitrate = unsigned int;
+
 class Transcode: public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
 public:
     explicit Transcode(const std::function<bitrate(Volume&)> &bitrater)
@@ -148,8 +208,19 @@ public:
     { }
 
     LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace>& field) const override {
-        printf("Transcode.apply");
-        return ConstantLightField<YUVColorSpace>::create(YUVColor::Green);
+        //TODO clean this up, should be able to decode from memory
+        auto encoded = Encode<YUVColorSpace>("hevc").apply(field);
+
+        encoded->write("out*");
+
+        std::vector<LightFieldReference<YUVColorSpace>> decodes;
+        for(auto i = 0u; i < encoded->segments().size(); i++) {
+            auto filename = std::string("out") + std::to_string(i); //+ ".hevc";
+
+            decodes.emplace_back(Decode<EquirectangularGeometry>(filename, encoded->volumes()[i].theta, encoded->volumes()[i].phi).apply());
+        }
+
+        return LightFieldReference<YUVColorSpace>::make<CompositeLightField<YUVColorSpace>>(decodes);
     }
 
 private:
@@ -158,15 +229,17 @@ private:
 
 class Interpolate: public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
 public:
-    explicit Interpolate(const visualcloud::interpolator<YUVColorSpace> &interpolator)
-            : interpolator_(interpolator)
+    explicit Interpolate(const Dimension dimension, const visualcloud::interpolator<YUVColorSpace> &interpolator)
+            : dimension_(dimension), interpolator_(interpolator)
     { }
 
     LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace>& field) const override {
-        return LightFieldReference<YUVColorSpace>::make<InterpolatedLightField<YUVColorSpace>>(field, interpolator_);
+        return LightFieldReference<YUVColorSpace>::make<InterpolatedLightField<YUVColorSpace>>(
+                field, dimension_, interpolator_);
     }
 
 private:
+    const Dimension dimension_;
     const visualcloud::interpolator<YUVColorSpace> &interpolator_;
 };
 
@@ -192,6 +265,24 @@ private:
     const Geometry &geometry_;
 };
 
+class Map: public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
+public:
+    Map(visualcloud::functor<YUVColorSpace> &functor)
+        : functor_(functor)
+    { }
+
+    Map(visualcloud::functor<YUVColorSpace> &&functor)
+            : functor_(functor)
+    { }
+
+    LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace>& field) const override {
+        return LightFieldReference<YUVColorSpace>::make<TransformedLightField<YUVColorSpace>>(field, functor_);
+    }
+
+private:
+    const visualcloud::functor<YUVColorSpace> &functor_;
+};
+
 template<typename InColorSpace, typename OutColorSpace>
 inline LightFieldReference<OutColorSpace> operator>>(const LightFieldReference<InColorSpace>& input,
                                                      const UnaryOperator<InColorSpace, OutColorSpace>& op)
@@ -207,14 +298,14 @@ inline LightFieldReference<OutColorSpace> operator>>(LightField<InColorSpace>& i
 }
 
 template<typename ColorSpace>
-inline visualcloud::EncodedLightField operator>>(LightFieldReference<ColorSpace>& input,
+inline visualcloud::EncodedLightField operator>>(const LightFieldReference<ColorSpace>& input,
                                                  const Encode<ColorSpace>& encoder)
 {
     return encoder.apply(LightFieldReference<ColorSpace>(input));
 }
 
 template<typename ColorSpace>
-inline visualcloud::EncodedLightField operator>>(LightFieldReference<ColorSpace>&& input,
+inline visualcloud::EncodedLightField operator>>(const LightFieldReference<ColorSpace>&& input,
                                                  const Encode<ColorSpace>& encoder)
 {
     return encoder.apply(LightFieldReference<ColorSpace>(input));
@@ -225,6 +316,16 @@ inline LightFieldReference<ColorSpace> operator|(const LightFieldReference<Color
                                                  const LightFieldReference<ColorSpace>& right)
 {
     return Union().apply(left, right);
+}
+
+inline visualcloud::EncodedLightField operator>>(const visualcloud::EncodedLightField& input, const Store& store)
+{
+    return store.apply(input);
+}
+
+inline visualcloud::EncodedLightField operator>>(visualcloud::EncodedLightField&& input, const Store& store)
+{
+    return store.apply(input);
 }
 
 #endif //VISUALCLOUD_OPERATORS_H

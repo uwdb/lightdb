@@ -12,6 +12,7 @@
 #include "FrameQueue.h"
 #include <assert.h>
 #include <stdio.h>
+#include <glog/logging.h>
 
 FrameQueue::FrameQueue(CUvideoctxlock ctxLock)
     : hEvent_(0), nReadPosition_(0), nWritePosition_(0), nFramesInQueue_(0), bEndOfDecode_(0), m_ctxLock(ctxLock) {

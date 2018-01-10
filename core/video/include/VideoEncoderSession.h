@@ -5,6 +5,12 @@
 #include "VideoEncoder.h"
 #include "EncodeWriter.h"
 
+struct VideoEncodePosition {
+    const size_t x, y;
+};
+
+using FrameCopierFunction = std::function<void(EncodeBuffer&, Frame&, size_t)>;
+
 class VideoEncoderSession {
 public:
     VideoEncoderSession(VideoEncoder &encoder, EncodeWriter &writer)
@@ -15,20 +21,35 @@ public:
         Flush();
     }
 
-    void Encode(Frame &frame) {
+    void Encode(Frame &frame, size_t top=0, size_t left=0) {
         auto &buffer = GetAvailableBuffer();
 
-        buffer.copy(encoder().lock, frame);
-        return Encode(frame, buffer);
-    }
-
-    void Encode(Frame &frame, size_t top, size_t left) {
-        auto &buffer = GetAvailableBuffer();
-
+        if(buffer.input_buffer.buffer_format != NV_ENC_BUFFER_FORMAT_NV12_PL)
+            LOG(ERROR) << "buffer.input_buffer.buffer_format != NV_ENC_BUFFER_FORMAT_NV12_PL";
         assert(buffer.input_buffer.buffer_format == NV_ENC_BUFFER_FORMAT_NV12_PL);
 
-        buffer.copy(encoder().lock, frame, top, left);
-        return Encode(frame, buffer);
+        if(top == 0 && left == 0 &&
+           frame.width() == buffer.input_buffer.width &&
+           frame.height() == buffer.input_buffer.height)
+            buffer.copy(encoder().lock, frame);
+        else
+            buffer.copy(encoder().lock, frame, top, left);
+        return Encode(buffer, frame.type());
+    }
+
+    void Encode(std::vector<Frame> &frames, FrameCopierFunction copier) {
+        auto &buffer = GetAvailableBuffer();
+
+        if(frames.size() == 0)
+            LOG(ERROR) << "no frames";
+        else if(buffer.input_buffer.buffer_format != NV_ENC_BUFFER_FORMAT_NV12_PL)
+            LOG(ERROR) << "buffer.input_buffer.buffer_format != NV_ENC_BUFFER_FORMAT_NV12_PL";
+        assert(buffer.input_buffer.buffer_format == NV_ENC_BUFFER_FORMAT_NV12_PL);
+        assert(frames.size() > 0);
+
+        for(auto i = 0u; i < frames.size(); i++)
+            copier(buffer, frames[i], i);
+        return Encode(buffer, frames[0].type());
     }
 
     void Flush() {
@@ -38,7 +59,7 @@ public:
             std::this_thread::yield();
 
         if((status = encoder_.api().NvEncFlushEncoderQueue(nullptr)) != NV_ENC_SUCCESS)
-            throw std::runtime_error(std::to_string(status)); //TODO
+            throw std::runtime_error(std::to_string(status) + "flush"); //TODO
 
         writer.Flush();
     }
@@ -104,12 +125,12 @@ private:
         return buffer;
     }
 
-    void Encode(Frame &frame, EncodeBuffer &buffer) {
+    void Encode(EncodeBuffer &buffer, NV_ENC_PIC_STRUCT type) {
         NVENCSTATUS status;
 
         std::scoped_lock{buffer};
-        if ((status = encoder_.api().NvEncEncodeFrame(&buffer, nullptr, frame.type(), frameCount() == 0)) != NV_ENC_SUCCESS)
-            throw std::runtime_error(std::to_string(status)); //TODO
+        if ((status = encoder_.api().NvEncEncodeFrame(&buffer, nullptr, type, frameCount() == 0)) != NV_ENC_SUCCESS)
+            throw std::runtime_error(std::to_string(status) + "encode"); //TODO
 
         frameCount_++;
     }

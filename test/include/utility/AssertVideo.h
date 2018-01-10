@@ -14,6 +14,11 @@
                      (filename) + ' ' + \
                      std::to_string(height) + ' ' + \
                      std::to_string(width))
+#define _QUALITY_COMMAND(filename, reference_filename, minimum_psnr) \
+     (std::string("resources/assert-quality.sh ") + \
+                     (filename) + ' ' + \
+                     (reference_filename) + ' ' + \
+                     std::to_string(minimum_psnr))
 
 #define ASSERT_VIDEO_FRAMES(filename, frame_count) { \
     auto command = _FRAME_COMMAND(filename, frame_count); \
@@ -44,5 +49,15 @@
     auto command = _RESOLUTION_COMMAND(filename, height, width); \
     EXPECT_EQ(system(command.c_str()), 0) \
         << (filename) << ": unexpected video resolution (expected " << (width) << 'x' << (height) << ')'; }
+
+#define ASSERT_VIDEO_QUALITY(filename, reference_filename, minimum_psnr) { \
+    auto command = _QUALITY_COMMAND(filename, reference_filename, minimum_psnr); \
+    ASSERT_EQ(system(command.c_str()), 0) \
+        << (filename) << ": unexpected video quality (expected >=" << (minimum_psnr) << ')'; }
+
+#define EXPECT_VIDEO_QUALITY(filename, reference_filename, minimum_psnr) { \
+    auto command = _QUALITY_COMMAND(filename, reference_filename, minimum_psnr); \
+    EXPECT_EQ(system(command.c_str()), 0) \
+        << (filename) << ": unexpected video quality (expected >=" << (minimum_psnr) << ')'; }
 
 #endif //VISUALCLOUD_ASSERT_VIDEO_H

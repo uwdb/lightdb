@@ -1,6 +1,7 @@
 #ifndef VISUALCLOUD_GPUCONTEXT_H
 #define VISUALCLOUD_GPUCONTEXT_H
 
+#include <glog/logging.h>
 #include <stdexcept>
 #include <dynlink_nvcuvid.h>
 
@@ -10,22 +11,23 @@ public:
         CUresult result;
 
         if(!ensureInitialized())
-            throw std::runtime_error("throw\n"); //TODO
+            throw std::invalid_argument("throw\n"); //TODO
         else if((result = cuCtxGetCurrent(&context)) != CUDA_SUCCESS)
-            throw std::runtime_error("throw\n"); //TODO
+            throw std::invalid_argument("throw\n"); //TODO
         else if(context != nullptr)
             ;
         else if((result = cuDeviceGet(&device, deviceId)) != CUDA_SUCCESS)
             throw std::invalid_argument("Getting CUDA device " + std::to_string(deviceId) +
                                                 " generated error " + std::to_string(result));
         else if((result = cuCtxCreate(&context, CU_CTX_SCHED_AUTO, device)) != CUDA_SUCCESS)
-            throw std::runtime_error("throw\n"); //TODO
+            throw std::invalid_argument("throw\n"); //TODO
     }
     ~GPUContext() {
         CUresult result;
 
+
         if((result = cuCtxDestroy(context)) != CUDA_SUCCESS)
-            throw std::runtime_error("log error");
+            LOG(ERROR) << "Swallowed failure to destroy CUDA context (CUresult " << result << ") in destructor";
     }
 
     CUcontext get() { return context; }
@@ -33,8 +35,10 @@ public:
     void AttachToThread() const {
         CUresult result;
 
-        if((result = cuCtxSetCurrent(context)) != CUDA_SUCCESS)
-            throw std::runtime_error(std::to_string(result)); //TODO
+        if((result = cuCtxSetCurrent(context)) != CUDA_SUCCESS) {
+            LOG(ERROR) << "cuCtxSetCurrent";
+            throw std::runtime_error(std::to_string(result) + "AttachToThread"); //TODO
+        }
     }
 
 private:
@@ -45,9 +49,9 @@ private:
             if(isInitialized)
                 return true;
             else if((result = cuInit(0, __CUDA_API_VERSION, nullptr)) != CUDA_SUCCESS)
-                throw std::runtime_error("throw\n"); //TODO
+                throw std::invalid_argument("throw\n"); //TODO
             else if(cuvidInit(0) != CUDA_SUCCESS)
-                throw std::runtime_error("throw\n"); //TODO
+                throw std::invalid_argument("throw\n"); //TODO
             else
                 return (isInitialized = true);
         }

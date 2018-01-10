@@ -57,7 +57,7 @@ public:
 
         if((result = cuvidMapVideoFrame(decoder_.handle(), parameters->picture_index,
                                         &handle_, &pitch_, &mapParameters)) != CUDA_SUCCESS)
-            throw std::runtime_error(std::to_string(result)); //TODO
+            throw std::runtime_error(std::to_string(result) + "DecodedFrame.cuvidMapVideoFrame"); //TODO
     }
 
     ~DecodedFrame() {
@@ -65,6 +65,7 @@ public:
             cuvidUnmapVideoFrame(decoder_.handle(), handle());
     }
 
+    const CudaDecoder &decoder() const { return decoder_; }
     const std::shared_ptr<CUVIDPARSERDISPINFO> parameters() const { return parameters_; }
     virtual unsigned int height() const { return decoder_.configuration().height; }
     virtual unsigned int width() const { return decoder_.configuration().width; }
@@ -82,6 +83,7 @@ private:
     const std::shared_ptr<CUVIDPARSERDISPINFO> parameters_;
 };
 
-typedef std::function<Frame&(Frame&)> FrameTransform;
+typedef std::function<Frame&(VideoLock&, Frame&)> FrameTransform;
+typedef std::function<const Frame&(VideoLock&, const std::vector<Frame>&)> NaryFrameTransform;
 
 #endif //VISUALCLOUD_FRAME_H
