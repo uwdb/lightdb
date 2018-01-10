@@ -43,10 +43,10 @@ endif ()
 #
 macro(set_component_found _component )
   if (${_component}_LIBRARIES AND ${_component}_INCLUDE_DIRS)
-    #message(STATUS "  - ${_component} found.")
+    message(STATUS "  ${_component} found.")
     set(${_component}_FOUND TRUE)
   else ()
-    #message(STATUS "  - ${_component} not found.")
+    message(STATUS "  ${_component} not found.")
   endif ()
 endmacro()
 
@@ -99,7 +99,6 @@ endmacro()
 
 # Check for cached results. If there are skip the costly part.
 if (NOT FFMPEG_LIBRARIES)
-
   # Check for all possible component.
   find_component(AVCODEC    libavcodec    avcodec  libavcodec/avcodec.h)
   find_component(AVFORMAT   libavformat   avformat libavformat/avformat.h)
@@ -113,7 +112,7 @@ if (NOT FFMPEG_LIBRARIES)
   # Check if the required components were found and add their stuff to the FFMPEG_* vars.
   foreach (_component ${FFmpeg_FIND_COMPONENTS})
     if (${_component}_FOUND)
-      #message(STATUS "Required component ${_component} present.")
+      message(STATUS "Required component ${_component} present.")
       set(FFMPEG_LIBRARIES   ${FFMPEG_LIBRARIES}   ${${_component}_LIBRARIES})
       set(FFMPEG_DEFINITIONS ${FFMPEG_DEFINITIONS} ${${_component}_DEFINITIONS})
       list(APPEND FFMPEG_INCLUDE_DIRS ${${_component}_INCLUDE_DIRS})
@@ -137,6 +136,8 @@ if (NOT FFMPEG_LIBRARIES)
                    FFMPEG_DEFINITIONS)
 
 endif ()
+
+message("-- Found the following FFmpeg libraries:")
 
 # Now set the noncached _FOUND vars for the components.
 foreach (_component AVCODEC AVDEVICE AVFORMAT AVUTIL POSTPROCESS SWSCALE)

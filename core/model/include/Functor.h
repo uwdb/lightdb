@@ -3,7 +3,6 @@
 
 #include "Color.h"
 #include "Frame.h"
-#include "darknet.h"
 #include <optional>
 
 namespace visualcloud {
@@ -67,28 +66,6 @@ namespace visualcloud {
         bool hasFrameTransform() const override { return true; }
 
     private:
-        mutable CUmodule module_; //TODO these shouldn't be mutable
-        mutable CUfunction function_;
-    };
-
-    class ObjectDetect: public functor<YUVColorSpace> {
-    public:
-        ObjectDetect();
-        ~ObjectDetect() {
-            free_network(network_);
-        }
-
-        const YUVColorSpace::Color operator()(const LightField<YUVColorSpace> &field,
-                                              const Point6D &point) const override {
-            throw new std::runtime_error("Not implemented");
-        }
-
-        operator const FrameTransform() const override;
-        bool hasFrameTransform() const override { return true; }
-
-    private:
-        network *network_;
-        metadata metadata_;
         mutable CUmodule module_; //TODO these shouldn't be mutable
         mutable CUfunction function_;
     };

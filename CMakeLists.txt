@@ -35,13 +35,7 @@ set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG --coverage -g3 -Wall")
 # Find required library dependencies
 set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} cuda nvcuvid dl pthread glog gflags stdc++fs)
 
-# TODO add FindDarknet.cmake
-LINK_DIRECTORIES(/home/bhaynes/projects/darknet)
-set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} darknet)
-
 #TODO add FindLLV.cmake; clean this up
-#find_package(Qt5Core REQUIRED)
-#find_package(Qt5Widgets REQUIRED)
 find_package(OpenCV REQUIRED)
 set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} ${OPENCV_LIBS} opencv_features2d)
 set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} lfv)
@@ -60,8 +54,9 @@ include_directories(${PYTHON_INCLUDE_DIRS})
 find_package(Boost COMPONENTS python REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
-find_package(FFmpeg REQUIRED)
+find_package(FFmpeg REQUIRED COMPONENTS AVCODEC AVFORMAT AVUTIL SWSCALE)
 include_directories(${FFMPEG_INCLUDE_DIRS})
+
 set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} ${FFMPEG_LIBRARIES})
 
 find_package(GTest)
