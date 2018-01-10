@@ -50,5 +50,15 @@ cuda-*.recv
 # Google Test
 Testing/
 
-
+# CLion
 .idea/
+cmake-build-*
+
+# clang-tidy
+.clang-tidy
+
+# Videos
+*.hevc
+*.h265
+*.h264
+*.mp4
