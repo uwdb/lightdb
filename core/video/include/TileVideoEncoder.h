@@ -105,8 +105,8 @@ private:
     VideoLock lock_;
     CUVIDFrameQueue frameQueue_;
     const std::vector<EncodeConfiguration> encodeConfigurations_;
-    std::vector<std::shared_ptr<VideoEncoder>> encoders_;
     CudaDecoder decoder_; //TODO this should be a base VideoDecoder
+    std::vector<std::shared_ptr<VideoEncoder>> encoders_;
     const size_t rows_, columns_;
     GPUThreadPool pool;
 

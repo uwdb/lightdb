@@ -32,11 +32,11 @@ DepthmapGPU::operator const FrameTransform() const {
         return [this](VideoLock& lock, Frame& frame) -> Frame& {
             std::scoped_lock{lock};
 
-            dim3 blockDims{512,1,1};
-            dim3 gridDims{(unsigned int) std::ceil((double)(frame.width() * frame.height() * 3 / blockDims.x)), 1, 1};
-            CUdeviceptr input = frame.handle(), output = frame.handle();
-            auto height = frame.height(), width = frame.width();
-            void *arguments[4] = {&input, &output, &height, &width};
+            //dim3 blockDims{512,1,1};
+            //dim3 gridDims{(unsigned int) std::ceil((double)(frame.width() * frame.height() * 3 / blockDims.x)), 1, 1};
+            //CUdeviceptr input = frame.handle(), output = frame.handle();
+            //auto height = frame.height(), width = frame.width();
+            //void *arguments[4] = {&input, &output, &height, &width};
 
             //cuLaunchKernel(function_, gridDims.x, gridDims.y, gridDims.z, blockDims.x, blockDims.y, blockDims.z,
             //               0, nullptr, arguments, nullptr);

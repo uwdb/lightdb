@@ -21,9 +21,9 @@ public:
               i(0u)
     { }
 
-    const rational pi, pi_div_4, pi_div_2, pi_div_8;
-    const std::vector<bitrate> bitrates;
     const char *name;
+    const std::vector<bitrate> bitrates;
+    const rational pi, pi_div_2, pi_div_4, pi_div_8;
     size_t i = 0u;
 
     void tilingBenchmark(std::string dataset, size_t size, size_t frames, size_t height, size_t width, size_t rows, size_t cols) {

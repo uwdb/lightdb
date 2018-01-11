@@ -41,7 +41,7 @@ namespace visualcloud {
             LOG(INFO) << "Executing tiling physical operator with " << rows_ << " rows and " << columns_ << " columns";
 
             //auto framerate = 30u;
-            auto gop = std::lround(video_.metadata().framerate.numerator() * time_ / video_.metadata().framerate.denominator());
+            auto gop = static_cast<unsigned int>(std::lround(video_.metadata().framerate.numerator() * time_ / video_.metadata().framerate.denominator()));
             if(gop == 0) //TODO temp in case there's no temporal partitioning
                 gop = 1024*1024;
             auto low_bitrate = 50u, high_bitrate = 5000u*1024;
@@ -66,7 +66,7 @@ namespace visualcloud {
             FileDecodeReader reader(video_.filename());
             std::vector<std::shared_ptr<EncodeWriter>> writers;
 
-            for(auto i = 0; i < rows() * columns(); i++)
+            for(auto i = 0u; i < rows() * columns(); i++)
                 writers.emplace_back(std::make_shared<SegmentedMemoryEncodeWriter>(tiler.api(), encodeConfigurations[0]));
                 //writers.emplace_back(std::make_shared<FileEncodeWriter>(tiler.api(), std::string("out") + std::to_string(i)));
 
@@ -75,7 +75,7 @@ namespace visualcloud {
             std::vector<std::shared_ptr<bytestring>> decodes{};
             std::vector<Volume> volumes{};
             //std::vector<std::unique_ptr<std::istream>> decodes{};
-            for(auto i = 0; i < rows_ * columns_; i++) {
+            for(auto i = 0u; i < rows_ * columns_; i++) {
                 //decodes.emplace_back(bytestring{});
                 decodes.emplace_back(std::make_shared<bytestring>(dynamic_cast<SegmentedMemoryEncodeWriter *>(writers[i].get())->buffer()));
                 volumes.push_back({video_.volume().x, video_.volume().y, video_.volume().z, video_.volume().t,
@@ -174,7 +174,7 @@ namespace visualcloud {
             auto width = std::lround(videos_[0]->metadata().width / (volumes_[0].theta.magnitude() / AngularRange::ThetaMax.magnitude())),
                  height = std::lround(videos_[0]->metadata().height / (volumes_[0].phi.magnitude() / AngularRange::PhiMax.magnitude()));
 
-            for(auto i = 0; i < videos_.size(); i++) {
+            for(auto i = 0u; i < videos_.size(); i++) {
                 assert(width == std::lround(videos_[i]->metadata().width / (volumes_[i].theta.magnitude() / AngularRange::ThetaMax.magnitude())));
                 assert(height == std::lround(videos_[i]->metadata().height / (volumes_[i].phi.magnitude() / AngularRange::PhiMax.magnitude())));
                 assert(columns == std::lround(AngularRange::ThetaMax.magnitude() / volumes_[i].theta.magnitude()));
@@ -239,15 +239,15 @@ namespace visualcloud {
         EncodedLightField EquirectangularCroppedLightField<ColorSpace>::apply(const std::string &format) {
             LOG(INFO) << "Executing ER cropping physical operator";
 
-            size_t gop = video_.metadata().framerate.numerator() / video_.metadata().framerate.denominator();
-            auto bitrate = 500*1024;
-            auto encodeCodec = format == "h264" ? NV_ENC_H264 : NV_ENC_HEVC; //TODO what about others?
-            auto phiratio = phi_.end / AngularRange::PhiMax.end;
-            auto thetaratio = theta_.end / AngularRange::ThetaMax.end;
-            auto top = std::lround((phi_.start / AngularRange::PhiMax.end) * video_.metadata().height),
-                 bottom = std::lround((phi_.end / AngularRange::PhiMax.end) * video_.metadata().height),
-                 left = std::lround((theta_.start / AngularRange::ThetaMax.end) * video_.metadata().width),
-                 right = std::lround((theta_.end / AngularRange::ThetaMax.end) * video_.metadata().width);
+            unsigned int gop = video_.metadata().framerate.numerator() / video_.metadata().framerate.denominator();
+            auto bitrate = 500*1024u;
+            //auto encodeCodec = format == "h264" ? NV_ENC_H264 : NV_ENC_HEVC; //TODO what about others?
+            //auto phiratio = phi_.end / AngularRange::PhiMax.end;
+            //auto thetaratio = theta_.end / AngularRange::ThetaMax.end;
+            auto top = static_cast<unsigned int>(std::lround((phi_.start / AngularRange::PhiMax.end) * video_.metadata().height)),
+                 bottom = static_cast<unsigned int>(std::lround((phi_.end / AngularRange::PhiMax.end) * video_.metadata().height)),
+                 left = static_cast<unsigned int>(std::lround((theta_.start / AngularRange::ThetaMax.end) * video_.metadata().width)),
+                 right = static_cast<unsigned int>(std::lround((theta_.end / AngularRange::ThetaMax.end) * video_.metadata().width));
             auto frame_count = t.end * (video_.metadata().framerate.numerator() / video_.metadata().framerate.denominator());
 
             auto start = std::chrono::steady_clock::now();
@@ -280,7 +280,7 @@ namespace visualcloud {
 
             auto gop = video_.metadata().framerate.numerator() / video_.metadata().framerate.denominator();
             auto bitrate = 500u*1024;
-            auto encodeCodec = format == "h264" ? NV_ENC_H264 : NV_ENC_HEVC; //TODO what about others?
+            //auto encodeCodec = format == "h264" ? NV_ENC_H264 : NV_ENC_HEVC; //TODO what about others?
 
             auto start = std::chrono::steady_clock::now();
             GPUContext context(0);
@@ -312,7 +312,7 @@ namespace visualcloud {
 
             auto gop = video_.metadata().framerate.numerator() / video_.metadata().framerate.denominator();
             auto bitrate = 500u*1024;
-            auto encodeCodec = format == "h264" ? NV_ENC_H264 : NV_ENC_HEVC; //TODO what about others?
+            //auto encodeCodec = format == "h264" ? NV_ENC_H264 : NV_ENC_HEVC; //TODO what about others?
 
             auto start = std::chrono::steady_clock::now();
             GPUContext context(0);
@@ -330,7 +330,7 @@ namespace visualcloud {
             std::vector<SegmentedMemoryEncodeWriter> writers;
             FileDecodeReader reader(video_.filename());
 
-            printf("*** %d\n", partitioning_.volumes().size());
+            printf("*** %lu\n", partitioning_.volumes().size());
             for(auto &volume: partitioning_.volumes())
             {
                 if(reader.isComplete()) //TODO this shouldn't happen, but TLFs have hardcoded duration...
@@ -361,7 +361,7 @@ namespace visualcloud {
 
             auto gop = left_.metadata().framerate.numerator() / left_.metadata().framerate.denominator();
             auto bitrate = 500u*1024;
-            auto encodeCodec = format == "h264" ? NV_ENC_H264 : NV_ENC_HEVC; //TODO what about others?
+            //auto encodeCodec = format == "h264" ? NV_ENC_H264 : NV_ENC_HEVC; //TODO what about others?
 
             auto start = std::chrono::steady_clock::now();
             GPUContext context(0);

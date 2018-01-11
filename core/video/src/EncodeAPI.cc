@@ -578,7 +578,7 @@ NVENCSTATUS EncodeAPI::NvEncUnregisterResource(NV_ENC_REGISTERED_PTR registeredR
     nvStatus = m_pEncodeAPI->nvEncUnregisterResource(encodeSessionHandle, registeredRes);
     if (nvStatus != NV_ENC_SUCCESS)
     {
-        printf("nvEncUnregisterResource error %d %ld\n", nvStatus, registeredRes);
+        printf("nvEncUnregisterResource error %d %ld\n", nvStatus, reinterpret_cast<unsigned long>(registeredRes));
         LOG(ERROR) << "nvEncUnregisterResource";
         assert(0);
     }
@@ -999,7 +999,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfiguration *pEncCfg)
 
     //pEncCfg->flags.enableAsyncMode = asyncMode;
 
-    if (pEncCfg->flags.enableMEOnly == 1 || pEncCfg->flags.enableMEOnly == 2)
+    if (pEncCfg->flags.enableMEOnly == 1) // || pEncCfg->flags.enableMEOnly == 2)
     {
 
         stCapsParam.capsToQuery = NV_ENC_CAPS_SUPPORT_MEONLY_MODE;
@@ -1066,8 +1066,7 @@ NVENCSTATUS EncodeAPI::CreateEncoder(const EncodeConfiguration *pEncCfg)
 
 GUID EncodeAPI::GetPresetGUID(const char* encoderPreset, int codec)
 {
-    NVENCSTATUS nvStatus = NV_ENC_SUCCESS;
-    GUID presetGUID = NV_ENC_PRESET_DEFAULT_GUID;
+    GUID presetGUID;
 
     if (encoderPreset && (stricmp(encoderPreset, "hq") == 0))
     {

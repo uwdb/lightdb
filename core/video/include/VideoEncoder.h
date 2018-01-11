@@ -49,9 +49,9 @@ private:
         }
 
     private:
-        const EncodeConfiguration &configuration_;
         GPUContext &context_;
         EncodeAPI &api_;
+        const EncodeConfiguration &configuration_;
     } encoderHandle_;
 
   std::vector<std::shared_ptr<EncodeBuffer>> buffers;

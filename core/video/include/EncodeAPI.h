@@ -87,12 +87,11 @@ protected:
 
     NV_ENCODE_API_FUNCTION_LIST*                         m_pEncodeAPI;
     HINSTANCE                                            m_hinstLib;
+    FrameEncodedHandler                                  *frameEncodedHandler;
+    MotionEstimationEncodedHandler                       *motionEstimationEncodedHandler;
     EncodeSessionHandle                                  *encodeSessionHandle;
     NV_ENC_INITIALIZE_PARAMS                             m_stCreateEncodeParams;
     NV_ENC_CONFIG                                        m_stEncodeConfig;
-
-    FrameEncodedHandler *frameEncodedHandler;
-    MotionEstimationEncodedHandler *motionEstimationEncodedHandler;
 
 public:
     bool encoderCreated() const { return encoderCreated_; }

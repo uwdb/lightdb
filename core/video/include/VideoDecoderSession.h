@@ -81,13 +81,16 @@ private:
     static int CUDAAPI HandleVideoSequence(void *userData, CUVIDEOFORMAT *format) {
         auto* session = static_cast<VideoDecoderSession*>(userData);
 
+        assert(format->display_area.bottom - format->display_area.top >= 0);
+        assert(format->display_area.right - format->display_area.left >= 0);
+
         if(session == nullptr)
             LOG(ERROR) << "Unexpected null session data during video decode (HandleVideoSequence)";
         //assert(session);
 
         else if ((format->codec != session->decoder_.configuration().codec) ||
-            ((format->display_area.right - format->display_area.left) != session->decoder_.configuration().width) ||
-            ((format->display_area.bottom - format->display_area.top) != session->decoder_.configuration().height) ||
+            ((static_cast<unsigned int>(format->display_area.right - format->display_area.left)) != session->decoder_.configuration().width) ||
+            ((static_cast<unsigned int>(format->display_area.bottom - format->display_area.top)) != session->decoder_.configuration().height) ||
             (format->coded_width < session->decoder_.configuration().width) ||
             (format->coded_height < session->decoder_.configuration().height) ||
             (format->chroma_format != session->decoder_.configuration().chroma_format)) {

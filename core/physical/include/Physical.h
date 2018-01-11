@@ -218,7 +218,7 @@ namespace visualcloud {
                     : video_(video), functor_(functor)
             { }
 
-            const std::vector<LightFieldReference<ColorSpace>> provenance() const override { video_.provenance(); } //TODO incorrect
+            const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return video_.provenance(); } //TODO incorrect
             const ColorSpace colorSpace() const override { return ColorSpace::Instance; }
             const std::vector<Volume> volumes() const override { return video_.volumes(); }
             inline const typename ColorSpace::Color value(const Point6D &point) const override {
@@ -240,7 +240,7 @@ namespace visualcloud {
                     : video_(video), x_(x), y_(y), theta_(theta), phi_(phi)
             { }
 
-            const std::vector<LightFieldReference<ColorSpace>> provenance() const override { video_.provenance(); } //TODO incorrect
+            const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return video_.provenance(); } //TODO incorrect
             const ColorSpace colorSpace() const override { return ColorSpace::Instance; }
             const std::vector<Volume> volumes() const override { return video_.volumes(); }
             inline const typename ColorSpace::Color value(const Point6D &point) const override {
@@ -265,7 +265,7 @@ namespace visualcloud {
                     : partitioning_(partitioning), video_(video), functor_(functor)
             { }
 
-            const std::vector<LightFieldReference<ColorSpace>> provenance() const override { video_.provenance(); } //TODO incorrect
+            const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return video_.provenance(); } //TODO incorrect
             const ColorSpace colorSpace() const override { return ColorSpace::Instance; }
             const std::vector<Volume> volumes() const override { return video_.volumes(); }
             inline const typename ColorSpace::Color value(const Point6D &point) const override {
@@ -289,7 +289,7 @@ namespace visualcloud {
                     : left_(left), right_(right), functor_(functor)
             { }
 
-            const std::vector<LightFieldReference<ColorSpace>> provenance() const override { left_.provenance(); } //TODO incorrect
+            const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return left_.provenance(); } //TODO incorrect
             const ColorSpace colorSpace() const override { return ColorSpace::Instance; }
             const std::vector<Volume> volumes() const override { return left_.volumes(); } //TODO incorrect
             inline const typename ColorSpace::Color value(const Point6D &point) const override {

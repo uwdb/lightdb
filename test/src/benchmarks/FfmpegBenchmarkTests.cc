@@ -23,7 +23,7 @@ public:
                                              frame->height,
                                              AV_PIX_FMT_BGR24,
                                              SWS_BICUBIC,
-                                             NULL, NULL, NULL);
+                                             nullptr, nullptr, nullptr);
 
             *rgbFrame = av_frame_alloc();
             (*rgbFrame)->width = frame->width;
@@ -35,7 +35,7 @@ public:
             //memset((*rgbFrame)->data[0], 0, frame->width * frame->height * 3);
             //(*rgbFrame)->linesize[0] = (*rgbFrame)->width * 3;
 
-            uint8_t* rgbBuffer = (uint8_t *)av_malloc( avpicture_get_size(AV_PIX_FMT_RGB24, frame->width, frame->height));
+            auto* rgbBuffer = (uint8_t *)av_malloc( avpicture_get_size(AV_PIX_FMT_RGB24, frame->width, frame->height));
             avpicture_fill((AVPicture*)rgbFrame, rgbBuffer, AV_PIX_FMT_RGB24, frame->width, frame->height);
         }
     }
@@ -78,7 +78,7 @@ TEST_F(FfmpegTestFixture, testTiling) {
                 avcodec_send_packet(context, packet);
                 break;
             } else {
-                printf("%d %d\n", frames++, end - current);
+                printf("%d %lu\n", frames++, end - current);
                 initFrame(&rgbFrame, frame);
 
                 /*auto scale = sws_scale(swsContext,

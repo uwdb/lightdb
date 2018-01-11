@@ -11,8 +11,9 @@ namespace visualcloud {
         EncodedLightField PlanarTiledToVideoLightField<ColorSpace>::apply(const std::string &format) {
             //CLFVideo lfv("/home/bhaynes/projects/light-field-video/data/cats/");
 
-            auto frames = 100;
-            auto fps = 30u, width = 512u, height = 352u;
+            auto frames = 100u;
+            auto fps = 30u;
+            auto width = 512, height = 352;
             double duration = frames/fps;
             VideoWriter writer("planar.mp4", 0x21, fps, Size{width, height}, true);
 

@@ -16,7 +16,7 @@ public:
     { }
 
     const char *name;
-    const rational pi, pi_div_4, pi_div_2;
+    const rational pi, pi_div_2, pi_div_4;
 
     //TODO fix
     double temptodouble(const rational &value) {

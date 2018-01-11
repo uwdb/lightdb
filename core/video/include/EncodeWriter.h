@@ -70,6 +70,7 @@ public:
 protected:
     NVENCSTATUS WriteFrame(const void *buffer, const size_t size) override {
         buffer_.insert(buffer_.end(), static_cast<const char*>(buffer), static_cast<const char*>(buffer) + size);
+        return NV_ENC_SUCCESS;
     }
 
 private:
@@ -103,13 +104,14 @@ protected:
         buffer_.insert(buffer_.end(), static_cast<const char*>(buffer), static_cast<const char*>(buffer) + size);
         if(++writes_ % gop_length_ == 0)
             offsets_.emplace_back(buffer_.size());
+        return NV_ENC_SUCCESS;
     }
 
 private:
+    size_t gop_length_;
     std::vector<char> buffer_;
     std::vector<off_t> offsets_;
     off_t writes_;
-    size_t gop_length_;
 };
 
 class DescriptorEncodeWriter: public EncodeWriter {

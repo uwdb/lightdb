@@ -11,7 +11,7 @@ struct Configuration {
     unsigned int height;
     unsigned int max_width;
     unsigned int max_height;
-    unsigned int bitrate;
+    size_t bitrate;
     struct FrameRate { //TODO change to type rational
         unsigned int numerator;
         unsigned int denominator;
@@ -127,10 +127,10 @@ struct EncodeConfiguration: public Configuration
                         const unsigned int b_frames=0,
                         const NV_ENC_BUFFER_FORMAT input_format=NV_ENC_BUFFER_FORMAT_NV12,
                         const NV_ENC_PIC_STRUCT picture_struct=NV_ENC_PIC_STRUCT_FRAME,
-                        const unsigned int i_qfactor=DEFAULT_I_QFACTOR,
-                        const unsigned int b_qfactor=DEFAULT_B_QFACTOR,
-                        const unsigned int i_qoffset=DEFAULT_I_QOFFSET,
-                        const unsigned int b_qoffset=DEFAULT_B_QOFFSET) :
+                        const float i_qfactor=DEFAULT_I_QFACTOR,
+                        const float b_qfactor=DEFAULT_B_QFACTOR,
+                        const float i_qoffset=DEFAULT_I_QOFFSET,
+                        const float b_qoffset=DEFAULT_B_QOFFSET) :
             Configuration{width, height, max_width, max_height, bitrate, fps},
             codec(codec),
             inputFormat(input_format),
@@ -258,31 +258,42 @@ struct DecodeConfiguration: public Configuration {
         return AsCuvidCreateInfo(lock.get());
     }
 
-    CUVIDDECODECREATEINFO AsCuvidCreateInfo(CUvideoctxlock lock, const unsigned int left = 0, const unsigned int top = 0) const {
-        return {
-                .ulWidth = width,
-                .ulHeight = height,
-                .ulNumDecodeSurfaces = decode_surfaces,
-                .CodecType = codec,
-                .ChromaFormat = chroma_format,
-                .ulCreationFlags = creation_flags,
-                .bitDepthMinus8 = 0,
-                .Reserved1 = {0},
-                .display_area = {
-                        .left = left,
-                        .top = top,
-                        .right = static_cast<short>(width) - left,
-                        .bottom = static_cast<const short>(height) - top,
-                },
-                .OutputFormat = output_format,
-                .DeinterlaceMode = deinterlace_mode,
-                .ulTargetWidth = width,
-                .ulTargetHeight = height,
-                .ulNumOutputSurfaces = output_surfaces,
-                .vidLock = lock,
-                .target_rect = {0},
-                .Reserved2 = {0}
-        };
+    CUVIDDECODECREATEINFO AsCuvidCreateInfo(CUvideoctxlock lock,
+                                            const unsigned short int left = 0,
+                                            const unsigned short int top = 0) const {
+        assert(left < SHRT_MAX);
+        assert(top < SHRT_MAX);
+        assert(width < SHRT_MAX);
+        assert(height < SHRT_MAX);
+        if(left > width)
+            throw std::runtime_error("bad value"); //TODO
+        if(top > height)
+            throw std::runtime_error("bad value"); //TODO
+        else
+            return {
+                    .ulWidth = width,
+                    .ulHeight = height,
+                    .ulNumDecodeSurfaces = decode_surfaces,
+                    .CodecType = codec,
+                    .ChromaFormat = chroma_format,
+                    .ulCreationFlags = creation_flags,
+                    .bitDepthMinus8 = 0,
+                    .Reserved1 = {0},
+                    .display_area = {
+                            .left = static_cast<short>(left),
+                            .top = static_cast<short>(top),
+                            .right = static_cast<short>(width - left),
+                            .bottom = static_cast<const short>(height - top),
+                    },
+                    .OutputFormat = output_format,
+                    .DeinterlaceMode = deinterlace_mode,
+                    .ulTargetWidth = width,
+                    .ulTargetHeight = height,
+                    .ulNumOutputSurfaces = output_surfaces,
+                    .vidLock = lock,
+                    .target_rect = {0},
+                    .Reserved2 = {0}
+            };
     }
 
 private:
@@ -298,7 +309,7 @@ private:
             decode_surfaces = 12;
         } else if (codec == cudaVideoCodec_HEVC) {
             // ref HEVC spec: A.4.1 General tier and level limits
-            auto MaxLumaPS = 35651584; // currently assuming level 6.2, 8Kx4K
+            auto MaxLumaPS = 35651584u; // currently assuming level 6.2, 8Kx4K
             auto MaxDpbPicBuf = 6;
             auto PicSizeInSamplesY = width * height;
             unsigned int MaxDpbSize;

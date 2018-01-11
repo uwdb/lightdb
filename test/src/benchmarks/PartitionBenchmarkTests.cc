@@ -14,8 +14,8 @@ public:
               pi_div_4(102928, 4*32763)
     { }
 
-    const rational pi_div_2, pi_div_4;
     const char *name;
+    const rational pi_div_2, pi_div_4;
 
     void partitioningThetaBenchmark(std::string dataset, size_t size, size_t frames, size_t height, size_t width) {
         auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + "K.h264";

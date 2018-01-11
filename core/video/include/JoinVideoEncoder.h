@@ -111,7 +111,6 @@ private:
             const std::vector<std::shared_ptr<CUVIDFrameQueue>> frameQueues,
             VideoLock &lock, size_t count) {
         std::vector<std::shared_ptr<CudaDecoder>> decoders;
-        size_t i = 0u;
 
         decoders.reserve(count);
         for(auto i = 0u; i < count; i++)

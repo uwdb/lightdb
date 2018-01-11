@@ -109,7 +109,7 @@ namespace visualcloud {
                 for (auto bytes: data_)
                     fout.write(bytes->data(), bytes->size());
             } else {
-                for(auto i = 0; i < segments().size(); i++) {
+                for(auto i = 0u; i < segments().size(); i++) {
                     auto current_filename = std::string{filename}.replace(position, 1, std::to_string(i));
                     std::ofstream fout{current_filename, std::ofstream::out | std::ofstream::binary};
                     fout.write(segments()[i]->data(), segments()[i]->size());

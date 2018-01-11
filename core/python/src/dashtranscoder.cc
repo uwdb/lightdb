@@ -1,11 +1,18 @@
 //#include "Tiler.h"
 #include "EncodeAPI.h"
 #include "Transcoder.h"
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#pragma GCC diagnostic ignored "-Wregister"
 #include <Python.h>
 #include <boost/python/class.hpp>
 #include <boost/python/def.hpp>
 #include <boost/python/module.hpp>
 #include <boost/python/numeric.hpp>
+
+#pragma GCC diagnostic pop
+
 #include <future>
 #include <stddef.h>
 #include <string>
@@ -83,9 +90,9 @@ public:
   }
 
 private:
+    GPUContext context;
     EncodeConfiguration encodeConfiguration;
     DecodeConfiguration decodeConfiguration;
-    GPUContext context;
   ::Transcoder gpuTranscoder;
 };
 
@@ -114,10 +121,10 @@ public:
     std::vector<EncodeConfiguration> configurations;
 
     for (auto i = 0; i < length; i++) {
-      auto quality = PySequence_Fast_GET_ITEM(sequence, i);
-      auto bitrate = PyLong_AsLong(PyObject_GetAttrString(quality, "bitrate")) * 1024;
-      auto rate_control_mode = PyLong_AsLong(PyObject_GetAttrString(quality, "rate_control_mode"));
-      auto *preset = PyString_AsString(PyObject_GetAttrString(quality, "preset"));
+      //auto quality = PySequence_Fast_GET_ITEM(sequence, i);
+      //auto bitrate = PyLong_AsLong(PyObject_GetAttrString(quality, "bitrate")) * 1024;
+      //auto rate_control_mode = PyLong_AsLong(PyObject_GetAttrString(quality, "rate_control_mode"));
+      //auto *preset = PyString_AsString(PyObject_GetAttrString(quality, "preset"));
       std::string outputFilenameFormat;
 
       outputFilenameFormat.reserve(65);
@@ -168,11 +175,11 @@ public:
     Py_buffer *buffer;
     PyObject *list = PyList_New(tile_count * quality_count); // TODO leaks on failure
     char filename[1024], *outputData;
-    ssize_t outputFileSize;
+    long outputFileSize;
     FILE *outputFile;
 
-    for (auto quality = 0; quality < quality_count; quality++)
-      for (auto tile = 0; tile < tile_count; tile++) {
+    for (auto quality = 0u; quality < quality_count; quality++)
+      for (auto tile = 0u; tile < tile_count; tile++) {
         if (snprintf(filename, sizeof(filename), outputFilenameFormat, quality, tile) < 0)
           throw std::runtime_error("snprintf");
         else if ((outputFile = fopen(filename, "rb")) == nullptr)
@@ -185,7 +192,7 @@ public:
           throw std::runtime_error("Output length seek to start");
         else if ((outputData = new char[outputFileSize]) == nullptr)
           throw std::runtime_error("Output buffer allocation");
-        else if (fread(outputData, 1, outputFileSize, outputFile) != outputFileSize)
+        else if (fread(outputData, 1, static_cast<size_t>(outputFileSize), outputFile) != static_cast<size_t>(outputFileSize))
           throw std::runtime_error("Output read underflow");
         else if (fclose(outputFile) != 0)
           throw std::runtime_error("Output close");

@@ -182,15 +182,15 @@ namespace visualcloud::utility {
         }
 
         void decodexxx(std::istream &input, size_t buffer_size = 1024 * 1024) {
-            const char *filename, *outfilename;
+            //const char *filename, *outfilename;
             const AVCodec *codec;
             AVCodecParserContext *parser;
             AVCodecContext *c = nullptr;
             AVFrame *frame;
             std::vector<uint8_t> buffer(buffer_size + AV_INPUT_BUFFER_PADDING_SIZE, 0);
             //uint8_t buffer[INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
-            uint8_t *data;
-            size_t data_size;
+            //uint8_t *data;
+            //size_t data_size;
             AVPacket *pkt;
             size_t parse_count;
 
@@ -209,7 +209,7 @@ namespace visualcloud::utility {
             CHECK_NOTNULL(frame = av_frame_alloc());
 
             //while (!feof(f)) {
-            while (!input.eofbit) {
+            while (!input.eof()) {
                 input.read(reinterpret_cast<char *>(buffer.data()), buffer.size());
 
                 for (auto iterator = buffer.begin(), end = buffer.begin() + input.gcount();
