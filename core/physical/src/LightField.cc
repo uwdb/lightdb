@@ -5,11 +5,11 @@
 
 namespace visualcloud {
     namespace physical {
-        static CLFVideo lfv("/home/bhaynes/projects/light-field-video/data/cats/");
+        //static CLFVideo lfv("/home/bhaynes/projects/light-field-video/data/cats/");
 
         template<typename ColorSpace>
         EncodedLightField PlanarTiledToVideoLightField<ColorSpace>::apply(const std::string &format) {
-            //CLFVideo lfv("/home/bhaynes/projects/light-field-video/data/cats/");
+            CLFVideo lfv("/home/bhaynes/projects/light-field-video/data/cats/");
 
             auto frames = 100u;
             auto fps = 30u;
