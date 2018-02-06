@@ -11,7 +11,7 @@ public:
     FfmpegTestFixture()
     { }
 
-    SwsContext* swsContext;
+/*    SwsContext* swsContext;
 
     void initFrame(AVFrame **rgbFrame, AVFrame *frame)
     {
@@ -38,10 +38,11 @@ public:
             auto* rgbBuffer = (uint8_t *)av_malloc( avpicture_get_size(AV_PIX_FMT_RGB24, frame->width, frame->height));
             avpicture_fill((AVPicture*)rgbFrame, rgbBuffer, AV_PIX_FMT_RGB24, frame->width, frame->height);
         }
-    }
+    }*/
 };
 
 TEST_F(FfmpegTestFixture, testTiling) {
+    /*
     //TODO Move this to a separate project, this is all a hack
 
     av_register_all();
@@ -81,13 +82,13 @@ TEST_F(FfmpegTestFixture, testTiling) {
                 printf("%d %lu\n", frames++, end - current);
                 initFrame(&rgbFrame, frame);
 
-                /*auto scale = sws_scale(swsContext,
+                / *auto scale = sws_scale(swsContext,
                                    frame->data,
                                    frame->linesize,
                                    0,
                                    frame->height,
                                    rgbFrame->data,
-                                   rgbFrame->linesize);*/
+                                   rgbFrame->linesize);* /
             }
         }
     }
@@ -98,4 +99,5 @@ TEST_F(FfmpegTestFixture, testTiling) {
     av_parser_close(parser);
     avcodec_free_context(&context);
     av_packet_free(&packet);
+*/
 }
