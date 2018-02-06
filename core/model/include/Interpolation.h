@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_INTERPOLATION_H
-#define VISUALCLOUD_INTERPOLATION_H
+#ifndef LIGHTDB_INTERPOLATION_H
+#define LIGHTDB_INTERPOLATION_H
 
 #include "Geometry.h"
 #include "Color.h"
@@ -8,7 +8,7 @@
 template<typename ColorSpace>
 class LightFieldReference;
 
-namespace visualcloud {
+namespace lightdb {
     //TODO move this into interpolation namespace
     template<typename ColorSpace>
     using interpolator = std::function<typename ColorSpace::Color(
@@ -18,6 +18,6 @@ namespace visualcloud {
         //TODO
         static interpolator<YUVColorSpace> NearestNeighbor = [](auto&, auto&) { return YUVColor::Green; };
     } // namespace interpolation
-} // namespace visualcloud
+} // namespace lightdb
 
-#endif //VISUALCLOUD_INTERPOLATION_H
+#endif //LIGHTDB_INTERPOLATION_H

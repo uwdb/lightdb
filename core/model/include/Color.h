@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_COLOR_H
-#define VISUALCLOUD_COLOR_H
+#ifndef LIGHTDB_COLOR_H
+#define LIGHTDB_COLOR_H
 
 class YUVColor;
 
@@ -68,4 +68,4 @@ public:
 };
 */
 
-#endif //VISUALCLOUD_COLOR_H
+#endif //LIGHTDB_COLOR_H

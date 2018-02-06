@@ -4,7 +4,7 @@ extern "C" {
 }
 
 //TODO this all shoudl be in the video subdirectory, it's all video stuff...
-namespace visualcloud::utility {
+namespace lightdb::utility {
     namespace ffmpeg {
         //TemporalRange duration(std::istream& stream) {
         //    return TemporalRange{0, 20}; //TODO broken
@@ -291,4 +291,4 @@ namespace visualcloud::utility {
         avformat_close_input(&context);
         avformat_free_context(context);
     }
-} // namespace visualcloud::utility
+} // namespace lightdb::utility

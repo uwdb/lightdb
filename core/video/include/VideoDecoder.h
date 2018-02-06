@@ -1,5 +1,5 @@
-#ifndef _VIDEO_DECODER
-#define _VIDEO_DECODER
+#ifndef LIGHTDB_VIDEODECODER_H
+#define LIGHTDB_VIDEODECODER_H
 
 #include "Configuration.h"
 #include "FrameQueue.h"
@@ -48,4 +48,4 @@ protected:
   CUvideodecoder handle_;
 };
 
-#endif
+#endif // LIGHTDB_VIDEODECODER_H

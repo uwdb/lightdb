@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_PHYSICAL_H
-#define VISUALCLOUD_PHYSICAL_H
+#ifndef LIGHTDB_PHYSICAL_H
+#define LIGHTDB_PHYSICAL_H
 
 #include "LightField.h"
 #include "Encoding.h"
@@ -7,7 +7,7 @@
 #include <tuple>
 #include <stdexcept>
 
-namespace visualcloud {
+namespace lightdb {
     namespace physical {
 
         template<typename ColorSpace>
@@ -28,7 +28,7 @@ namespace visualcloud {
 
             static void hardcode_hack(const unsigned int framerate, const unsigned int gop, const unsigned int height, const unsigned int width, const unsigned int rows, const unsigned int columns, const unsigned int max_bitrate, const std::string &intermediate_format, const std::string &output_format);
             //TODO hacks...
-            static double hack_divide(const double left, const visualcloud::rational &right) {
+            static double hack_divide(const double left, const lightdb::rational &right) {
                 //TODO oh noes...
                 return left / ((double)right.numerator() / (double)right.denominator()) + 0.5;
             }
@@ -99,7 +99,7 @@ namespace visualcloud {
             inline const typename ColorSpace::Color value(const Point6D &point) const override { return field_->value(point); }
 
             EncodedLightField apply();
-            EncodedLightField apply(const visualcloud::rational &temporalInterval);
+            EncodedLightField apply(const lightdb::rational &temporalInterval);
 
         private:
             StitchedLightField(const LightFieldReference<ColorSpace> &field,
@@ -214,7 +214,7 @@ namespace visualcloud {
         class EquirectangularTranscodedLightField: public LightField<ColorSpace> {
         public:
             EquirectangularTranscodedLightField(const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace> &video,
-                                                const visualcloud::functor<ColorSpace> &functor)
+                                                const lightdb::functor<ColorSpace> &functor)
                     : video_(video), functor_(functor)
             { }
 
@@ -229,7 +229,7 @@ namespace visualcloud {
 
         private:
             const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>& video_;
-            const visualcloud::functor<ColorSpace> &functor_;
+            const lightdb::functor<ColorSpace> &functor_;
         };
 
         template<typename ColorSpace>
@@ -261,7 +261,7 @@ namespace visualcloud {
             TemporalPartitionedEquirectangularTranscodedLightField(
                     const PartitionedLightField<ColorSpace> &partitioning,
                     const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace> &video,
-                    const visualcloud::functor<ColorSpace> &functor)
+                    const lightdb::functor<ColorSpace> &functor)
                     : partitioning_(partitioning), video_(video), functor_(functor)
             { }
 
@@ -277,7 +277,7 @@ namespace visualcloud {
         private:
             const PartitionedLightField<ColorSpace>& partitioning_;
             const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>& video_;
-            const visualcloud::functor<ColorSpace> &functor_;
+            const lightdb::functor<ColorSpace> &functor_;
         };
 
         template<typename ColorSpace>
@@ -319,6 +319,6 @@ namespace visualcloud {
         template<typename ColorSpace> std::string EquirectangularTiledLightField<ColorSpace>::encode_format = "";
         template<typename ColorSpace> std::string EquirectangularTiledLightField<ColorSpace>::decode_format = "";
     } // namespace physical
-} // namespace visualcloud
+} // namespace lightdb
 
-#endif //VISUALCLOUD_PHYSICAL_H
+#endif //LIGHTDB_PHYSICAL_H

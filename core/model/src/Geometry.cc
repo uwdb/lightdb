@@ -23,7 +23,7 @@ bool Volume::Contains(const Point6D &point) const {
            this->theta.Contains(point.theta) && this->phi.Contains(point.phi);
 }
 
-std::vector<Volume> Volume::partition(const Dimension dimension, const visualcloud::rational &interval) const {
+std::vector<Volume> Volume::partition(const Dimension dimension, const lightdb::rational &interval) const {
     std::vector<Volume> result;
     double span = (double)interval.numerator() / interval.denominator(); //TODO horrible!
     double current;

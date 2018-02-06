@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_CONFIGURATION_H
-#define VISUALCLOUD_CONFIGURATION_H
+#ifndef LIGHTDB_CONFIGURATION_H
+#define LIGHTDB_CONFIGURATION_H
 
 #include "EncodeAPI.h"
 #include "VideoLock.h"
@@ -79,7 +79,7 @@ struct EncodeConfiguration: public Configuration
     }
 
     EncodeConfiguration(const unsigned int height, const unsigned int width,
-                        const EncodeCodec codec, const visualcloud::rational fps,
+                        const EncodeCodec codec, const lightdb::rational fps,
                         const unsigned int gop_length, const size_t bitrate,
                         const NV_ENC_PARAMS_RC_MODE rateControlMode=NV_ENC_PARAMS_RC_CONSTQP) :
             EncodeConfiguration(height, width, 0, 0, codec, NV_ENC_PRESET_DEFAULT_GUID,
@@ -156,7 +156,7 @@ struct DecodeConfiguration: public Configuration {
 
     DecodeConfiguration(const unsigned int height, const unsigned int width,
                         const unsigned int max_height, const unsigned int max_width,
-                        const visualcloud::rational fps,
+                        const lightdb::rational fps,
                         const cudaVideoCodec codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
@@ -171,7 +171,7 @@ struct DecodeConfiguration: public Configuration {
 
     DecodeConfiguration(const unsigned int height, const unsigned int width,
                         const unsigned int max_height, const unsigned int max_width,
-                        const visualcloud::rational fps, const unsigned int bitrate,
+                        const lightdb::rational fps, const unsigned int bitrate,
                         const cudaVideoCodec codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
@@ -198,7 +198,7 @@ struct DecodeConfiguration: public Configuration {
     { }
 
     DecodeConfiguration(const unsigned int height, const unsigned int width,
-                        const visualcloud::rational fps, const unsigned int bitrate,
+                        const lightdb::rational fps, const unsigned int bitrate,
                         const cudaVideoCodec codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
@@ -211,7 +211,7 @@ struct DecodeConfiguration: public Configuration {
     { }
 
     DecodeConfiguration(const unsigned int height, const unsigned int width,
-                        const visualcloud::rational fps,
+                        const lightdb::rational fps,
                         const cudaVideoCodec codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
@@ -331,4 +331,4 @@ private:
     }
 };
 
-#endif //VISUALCLOUD_CONFIGURATION_H
+#endif //LIGHTDB_CONFIGURATION_H

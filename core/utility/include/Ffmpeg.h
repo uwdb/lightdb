@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_FFMPEG_H
-#define VISUALCLOUD_FFMPEG_H
+#ifndef LIGHTDB_FFMPEG_H
+#define LIGHTDB_FFMPEG_H
 
 #include "Geometry.h"
 #include "rational.h"
@@ -10,7 +10,7 @@ extern "C" {
 #include <vector>
 #include <istream>
 
-namespace visualcloud::utility {
+namespace lightdb::utility {
     struct StreamMetadata {
         std::string codec;
         unsigned int height, width;
@@ -95,6 +95,6 @@ namespace visualcloud::utility {
         //std::optional<MediaMetadata> get_metadata(std::string &filename, bool probe_stream=false);
         //TemporalRange duration(std::istream& stream); //TODO hardcoded
     }; // namespace ffmpeg
-}; // namespace visualcloud::utility
+}; // namespace lightdb::utility
 
-#endif //VISUALCLOUD_FFMPEG_H
+#endif //LIGHTDB_FFMPEG_H

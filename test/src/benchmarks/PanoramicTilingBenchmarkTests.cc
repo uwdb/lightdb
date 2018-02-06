@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include <AssertVideo.h>
 
-using namespace visualcloud;
+using namespace lightdb;
 using namespace std::chrono;
 
 class PanoramicTilingBenchmarkTestFixture : public testing::Test {

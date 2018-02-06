@@ -1,5 +1,5 @@
-#ifndef _ENCODE_API
-#define _ENCODE_API
+#ifndef LIGHTDB_ENCODE_API
+#define LIGHTDB_ENCODE_API
 
 #include "GPUContext.h"
 #include "nvEncodeAPI.h"
@@ -159,4 +159,4 @@ protected:
 
 typedef NVENCSTATUS (NVENCAPI *MYPROC)(NV_ENCODE_API_FUNCTION_LIST*);
 
-#endif
+#endif // LIGHTDB_ENCODE_H

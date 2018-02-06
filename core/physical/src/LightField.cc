@@ -3,7 +3,7 @@
 #include <LFVideo.h>
 #include <glog/logging.h>
 
-namespace visualcloud {
+namespace lightdb {
     namespace physical {
         //static CLFVideo lfv("/home/bhaynes/projects/light-field-video/data/cats/");
 
@@ -33,5 +33,5 @@ namespace visualcloud {
 
         template class PlanarTiledToVideoLightField<YUVColorSpace>;
     } // namespace physical
-} // namespace visualcloud
+} // namespace lightdb
 

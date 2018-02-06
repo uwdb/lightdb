@@ -1,5 +1,5 @@
-#ifndef CROPPER_H
-#define CROPPER_H
+#ifndef LIGHTDB_CROPTRANSCODER_H
+#define LIGHTDB_CROPTRANSCODER_H
 
 #include "VideoDecoder.h"
 #include "VideoEncoder.h"
@@ -65,5 +65,4 @@ private:
     CudaDecoder decoder_;
 };
 
-
-#endif // CROPPER_H
+#endif // LIGHTDB_CROPTRANSCODER_H

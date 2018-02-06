@@ -8,7 +8,7 @@
 using namespace std::chrono;
 
 
-namespace visualcloud {
+namespace lightdb {
     const YUVColorSpace::Color Greyscale::operator()(const LightField<YUVColorSpace> &field,
                                                      const Point6D &point) const {
         return YUVColor{field.value(point).y(), 0, 0};
@@ -99,4 +99,4 @@ namespace visualcloud {
             return frames[0];
         };
     };
-}; // namespace visualcloud
+}; // namespace lightdb

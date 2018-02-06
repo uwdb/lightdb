@@ -1,11 +1,11 @@
-#ifndef VISUALCLOUD_FUNCTOR_H
-#define VISUALCLOUD_FUNCTOR_H
+#ifndef LIGHTDB_FUNCTOR_H
+#define LIGHTDB_FUNCTOR_H
 
 #include "Color.h"
 #include "Frame.h"
 #include <optional>
 
-namespace visualcloud {
+namespace lightdb {
     template<typename ColorSpace>
     class functor {
     public:
@@ -145,6 +145,6 @@ namespace visualcloud {
         mutable CUmodule module_; //TODO these shouldn't be mutable
         mutable CUfunction function_;
     };
-}; // namespace visualcloud
+}; // namespace lightdb
 
-#endif //VISUALCLOUD_FUNCTOR_H
+#endif //LIGHTDB_FUNCTOR_H

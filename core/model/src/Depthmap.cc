@@ -7,7 +7,7 @@
 static const char* kernel_path = "/home/bhaynes/projects/visualcloud/core/model/src/kernels.cubin";
 static const char* kernel_name = "blur";
 
-namespace visualcloud {
+namespace lightdb {
 
 DepthmapCPU::operator const FrameTransform() const {
     return [this](VideoLock &lock, Frame &frame) -> Frame & {

@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <UnionTranscoder.h>
 
-namespace visualcloud {
+namespace lightdb {
     namespace physical {
         template<typename ColorSpace>
         void EquirectangularTiledLightField<ColorSpace>::hardcode_hack(const unsigned int framerate, const unsigned int gop, const unsigned int height, const unsigned int width, const unsigned int rows, const unsigned int columns, const unsigned int max_bitrate, const std::string &decode_format, const std::string &encode_format) {
@@ -163,7 +163,7 @@ namespace visualcloud {
         }
 
         template<typename ColorSpace>
-        EncodedLightField StitchedLightField<ColorSpace>::apply(const visualcloud::rational &interval) {
+        EncodedLightField StitchedLightField<ColorSpace>::apply(const lightdb::rational &interval) {
             //auto height = 0u, width = 0u;
 
             //TODO this only applies to equirectanguler format
@@ -398,5 +398,5 @@ namespace visualcloud {
         template class TemporalPartitionedEquirectangularTranscodedLightField<YUVColorSpace>;
         template class BinaryUnionTranscodedLightField<YUVColorSpace>;
     } // namespace physical
-} // namespace visualcloud
+} // namespace lightdb
 

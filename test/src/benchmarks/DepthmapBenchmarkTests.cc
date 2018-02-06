@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include <AssertVideo.h>
 
-using namespace visualcloud;
+using namespace lightdb;
 using namespace std::chrono;
 
 class DepthmapBenchmarkTestFixture: public testing::Test {
@@ -25,7 +25,7 @@ TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_CPU) {
     auto start = steady_clock::now();
 
     Decode<EquirectangularGeometry>(source)
-            >> Map(visualcloud::DepthmapCPU())
+            >> Map(lightdb::DepthmapCPU())
             >> Encode<YUVColorSpace>()
             >> Store(name);
 
@@ -41,7 +41,7 @@ TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_GPU) {
     auto start = steady_clock::now();
 
     Decode<EquirectangularGeometry>(source)
-            >> Map(visualcloud::DepthmapGPU())
+            >> Map(lightdb::DepthmapGPU())
             >> Encode<YUVColorSpace>()
             >> Store(name);
 
@@ -57,7 +57,7 @@ TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_FPGA) {
     auto start = steady_clock::now();
 
     Decode<EquirectangularGeometry>(source)
-            >> Map(visualcloud::DepthmapFPGA())
+            >> Map(lightdb::DepthmapFPGA())
             >> Encode<YUVColorSpace>()
             >> Store(name);
 

@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_FRAME_H
-#define VISUALCLOUD_FRAME_H
+#ifndef LIGHTDB_FRAME_H
+#define LIGHTDB_FRAME_H
 
 #include "dynlink_nvcuvid.h"
 #include "VideoDecoder.h"
@@ -140,4 +140,4 @@ typedef std::function<EncodeBuffer&(VideoLock&, EncodeBuffer&)> EncodableFrameTr
 typedef std::function<Frame&(VideoLock&, Frame&)> FrameTransform;
 typedef std::function<const Frame&(VideoLock&, const std::vector<Frame>&)> NaryFrameTransform;
 
-#endif //VISUALCLOUD_FRAME_H
+#endif //LIGHTDB_FRAME_H

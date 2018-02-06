@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_ENCODEBUFFER_H
-#define VISUALCLOUD_ENCODEBUFFER_H
+#ifndef LIGHTDB_ENCODEBUFFER_H
+#define LIGHTDB_ENCODEBUFFER_H
 
 #include "Frame.h"
 #include "Configuration.h"
@@ -209,4 +209,4 @@ struct MotionEstimationBuffer
     unsigned int            referenceFrameIndex;
 };
 
-#endif //VISUALCLOUD_ENCODEBUFFER_H
+#endif //LIGHTDB_ENCODEBUFFER_H

@@ -2,21 +2,21 @@
 #include "Physical.h"
 #include "Display.h"
 
-namespace visualcloud {
+namespace lightdb {
     namespace pipeline {
         template<typename ColorSpace>
         static std::optional<EncodedLightField> applyTiling(LightFieldReference <ColorSpace> lightfield, const std::string &format) {
             try {
-                return {visualcloud::physical::EquirectangularTiledLightField<ColorSpace>(lightfield).apply(format)};
+                return {lightdb::physical::EquirectangularTiledLightField<ColorSpace>(lightfield).apply(format)};
             } catch(std::invalid_argument) {
                 return {};
             }
         }
 
         template<typename ColorSpace>
-        static std::optional<EncodedLightField> applyStitching(LightFieldReference<ColorSpace> lightfield, visualcloud::rational temporalInterval=0) {
+        static std::optional<EncodedLightField> applyStitching(LightFieldReference<ColorSpace> lightfield, lightdb::rational temporalInterval=0) {
             try {
-                return {visualcloud::physical::StitchedLightField<ColorSpace>(lightfield).apply(temporalInterval)};
+                return {lightdb::physical::StitchedLightField<ColorSpace>(lightfield).apply(temporalInterval)};
             } catch(std::invalid_argument) {
                 //TODO just name these things, rather than relying on dynamic casting
                 auto *partitioning = dynamic_cast<const PartitionedLightField<ColorSpace>*>(&*lightfield);
@@ -35,9 +35,9 @@ namespace visualcloud {
 
         //TODO what is this, it's just a copy of the applyStitchingFunction?  Probably remove(?)
         template<typename ColorSpace>
-        static std::optional<EncodedLightField> applyNaiveStitching(LightFieldReference<ColorSpace> lightfield, visualcloud::rational temporalInterval=0) {
+        static std::optional<EncodedLightField> applyNaiveStitching(LightFieldReference<ColorSpace> lightfield, lightdb::rational temporalInterval=0) {
             try {
-                return {visualcloud::physical::StitchedLightField<ColorSpace>(lightfield).apply(temporalInterval)};
+                return {lightdb::physical::StitchedLightField<ColorSpace>(lightfield).apply(temporalInterval)};
             } catch(std::invalid_argument) {
                 //TODO just name these things, rather than relying on dynamic casting
                 auto *partitioning = dynamic_cast<const PartitionedLightField<ColorSpace>*>(&*lightfield);
@@ -67,7 +67,7 @@ namespace visualcloud {
             if(left != nullptr && right != nullptr &&
                     left->volume() == right->volume()) {
                 //TODO this is just broken, need a binary union transcoder
-                return visualcloud::physical::BinaryUnionTranscodedLightField<ColorSpace>(*left, *right, Overlay(YUVColor::Red)).apply(format);
+                return lightdb::physical::BinaryUnionTranscodedLightField<ColorSpace>(*left, *right, Overlay(YUVColor::Red)).apply(format);
             }
             else
                 return {};
@@ -135,7 +135,7 @@ namespace visualcloud {
         static std::optional<EncodedLightField> applyTranscode(LightFieldReference<ColorSpace> lightfield, const std::string &format) {
             auto *video = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*lightfield);
             if(video != nullptr && video->metadata().codec != format)
-                return {visualcloud::physical::EquirectangularTranscodedLightField<ColorSpace>(*video, Identity()).apply(format)};
+                return {lightdb::physical::EquirectangularTranscodedLightField<ColorSpace>(*video, Identity()).apply(format)};
             else
                 return {};
         }
@@ -146,7 +146,7 @@ namespace visualcloud {
             auto *video = partitioning != nullptr && partitioning->provenance().size() == 1 ? dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*partitioning->provenance()[0]) : nullptr;
 
             if(partitioning != nullptr && video != nullptr && video->metadata().codec != format && video->volumes().size() > 0)
-                return {visualcloud::physical::TemporalPartitionedEquirectangularTranscodedLightField<ColorSpace>(*partitioning, *video, Identity()).apply(format)};
+                return {lightdb::physical::TemporalPartitionedEquirectangularTranscodedLightField<ColorSpace>(*partitioning, *video, Identity()).apply(format)};
             else
                 return {};
         }
@@ -160,14 +160,14 @@ namespace visualcloud {
             auto *video = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*lightfield->provenance()[0]);
             if(transform != nullptr && video != nullptr &&
                transform->functor().hasFrameTransform())
-                return {visualcloud::physical::EquirectangularTranscodedLightField<ColorSpace>(*video, transform->functor()).apply(format)};
+                return {lightdb::physical::EquirectangularTranscodedLightField<ColorSpace>(*video, transform->functor()).apply(format)};
             else
                 return {};
         }
 
         /*
         template<typename ColorSpace>
-        static std::optional<EncodedLightField> applyRotatedStitching(LightFieldReference<ColorSpace> lightfield, const std::string &format, visualcloud::rational temporalInterval=0) {
+        static std::optional<EncodedLightField> applyRotatedStitching(LightFieldReference<ColorSpace> lightfield, const std::string &format, lightdb::rational temporalInterval=0) {
             //if(lightfield->provenance().size() != 1)
             //    return {};
 
@@ -175,7 +175,7 @@ namespace visualcloud {
             //auto *video = dynamic_cast<PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*lightfield->provenance()[0]);
             //if(transform != nullptr && video != nullptr &&
             //   transform->functor().hasFrameTransform())
-            //    return visualcloud::physical::EquirectangularTranscodedLightField<ColorSpace>(*video, transform->functor()).apply(format);
+            //    return lightdb::physical::EquirectangularTranscodedLightField<ColorSpace>(*video, transform->functor()).apply(format);
             //else
             //    return {};
 
@@ -203,7 +203,7 @@ namespace visualcloud {
                         rright->volumes()[0].phi.end - AngularRange::PhiMax.end > 0.00000001)
                     return {};
                 else
-                    return {visualcloud::physical::StitchedLightField<ColorSpace>(lightfield).apply(temporalInterval)};
+                    return {lightdb::physical::StitchedLightField<ColorSpace>(lightfield).apply(temporalInterval)};
 
                 //auto *sleft = dynamic_cast<const SubsetLightField<ColorSpace>*>(&*composite->provenance()[0]);
                 //auto *vleft = dynamic_cast<const PanoramicVideoLightField<EquirectangularGeometry, ColorSpace>*>(&*sleft->provenance()[0]);
@@ -230,7 +230,7 @@ namespace visualcloud {
                 //        rright->volumes()[0].phi.end - AngularRange::PhiMax.end > 0.00000001)
                 //    return {};
                 //else
-                //    return {visualcloud::physical::StitchedLightField<ColorSpace>(lightfield).apply(temporalInterval)};
+                //    return {lightdb::physical::StitchedLightField<ColorSpace>(lightfield).apply(temporalInterval)};
             } catch(std::invalid_argument) {
                 //TODO awful
                 return {};
@@ -249,7 +249,7 @@ namespace visualcloud {
                     subset->volumes()[0].x.Empty() &&
                     subset->volumes()[0].y.Empty() &&
                     subset->volumes()[0].z.Empty()) {
-                auto elf = visualcloud::physical::EquirectangularCroppedLightField<ColorSpace>(*video, subset->volumes()[0].theta, subset->volumes()[0].phi, subset->volumes()[0].t).apply(format);
+                auto elf = lightdb::physical::EquirectangularCroppedLightField<ColorSpace>(*video, subset->volumes()[0].theta, subset->volumes()[0].phi, subset->volumes()[0].t).apply(format);
                 return elf;
             }
             else
@@ -269,7 +269,7 @@ namespace visualcloud {
                subset->volumes()[0].y.Empty() &&
                subset->volumes()[0].z.Empty() &&
                     subset->volumes()[0].z.start == 0) {
-                auto elf = visualcloud::physical::PlanarTiledToVideoLightField<ColorSpace>(*planar, subset->volumes()[0].x.start, subset->volumes()[0].y.start, subset->volumes()[0].theta, subset->volumes()[0].phi).apply(format);
+                auto elf = lightdb::physical::PlanarTiledToVideoLightField<ColorSpace>(*planar, subset->volumes()[0].x.start, subset->volumes()[0].y.start, subset->volumes()[0].theta, subset->volumes()[0].phi).apply(format);
                 return elf;
             }
             else
@@ -313,10 +313,10 @@ namespace visualcloud {
             else
                 throw std::runtime_error("Unable to execute query");
 
-            //visualcloud::physical::EquirectangularTiledLightField<ColorSpace> foo(lightfield);
+            //lightdb::physical::EquirectangularTiledLightField<ColorSpace> foo(lightfield);
             //return foo.apply(format);
         }
 
         template EncodedLightField execute<YUVColorSpace>(const LightFieldReference <YUVColorSpace>, const std::string&);
     } // namespace pipeline
-} // namespace visualcloud
+} // namespace lightdb

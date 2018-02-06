@@ -1,5 +1,5 @@
-#ifndef _TILE_VIDEO_ENCODER
-#define _TILE_VIDEO_ENCODER
+#ifndef LIGHTDB_TILEVIDEOENCODER_H
+#define LIGHTDB_TILEVIDEOENCODER_H
 
 #include "VideoDecoder.h"
 #include "VideoEncoder.h"
@@ -136,4 +136,4 @@ private:
     }
 };
 
-#endif
+#endif // LIGHTDB_TILEVIDEOENCODER_H

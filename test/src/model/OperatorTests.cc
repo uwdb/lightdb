@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include <AssertVideo.h>
 
-using namespace visualcloud;
+using namespace lightdb;
 
 class OperatorTestFixture : public testing::Test {
 public:

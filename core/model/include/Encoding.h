@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_ENCODING_H
-#define VISUALCLOUD_ENCODING_H
+#ifndef LIGHTDB_ENCODING_H
+#define LIGHTDB_ENCODING_H
 
 #include <glog/logging.h>
 #include <memory>
@@ -7,7 +7,7 @@
 #include <experimental/filesystem>
 #include <fstream>
 
-namespace visualcloud {
+namespace lightdb {
 
     using bytestring = std::vector<char>;
 
@@ -171,4 +171,4 @@ namespace visualcloud {
     };
 };
 
-#endif //VISUALCLOUD_ENCODING_H
+#endif //LIGHTDB_ENCODING_H

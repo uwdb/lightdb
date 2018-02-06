@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_ENCODEWRITER_H
-#define VISUALCLOUD_ENCODEWRITER_H
+#ifndef LIGHTDB_ENCODEWRITER_H
+#define LIGHTDB_ENCODEWRITER_H
 
 #include "VideoEncoder.h"
 #include "EncodeBuffer.h"
@@ -171,4 +171,4 @@ private:
     FILE* file;
 };
 
-#endif //VISUALCLOUD_ENCODEWRITER_H
+#endif //LIGHTDB_ENCODEWRITER_H

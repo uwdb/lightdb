@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_PTHREADMUTEX_H
-#define VISUALCLOUD_PTHREADMUTEX_H
+#ifndef LIGHTDB_PTHREADMUTEX_H
+#define LIGHTDB_PTHREADMUTEX_H
 
 struct PThreadMutex
 {
@@ -14,4 +14,4 @@ private:
     pthread_mutex_t mutex;
 };
 
-#endif //VISUALCLOUD_PTHREADMUTEX_H
+#endif //LIGHTDB_PTHREADMUTEX_H

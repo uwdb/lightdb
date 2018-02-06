@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_THREADPOOL_H
-#define VISUALCLOUD_THREADPOOL_H
+#ifndef LIGHTDB_THREADPOOL_H
+#define LIGHTDB_THREADPOOL_H
 
 #include "GPUContext.h"
 #include <vector>
@@ -96,4 +96,4 @@ protected:
     }
 };
 
-#endif //VISUALCLOUD_THREADPOOL_H
+#endif //LIGHTDB_THREADPOOL_H

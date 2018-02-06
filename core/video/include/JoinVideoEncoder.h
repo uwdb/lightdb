@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_JOINVIDEOENCODER_H
-#define VISUALCLOUD_JOINVIDEOENCODER_H
+#ifndef LIGHTDB_JOINVIDEOENCODER_H
+#define LIGHTDB_JOINVIDEOENCODER_H
 
 #include "VideoDecoder.h"
 #include "VideoEncoder.h"
@@ -139,4 +139,4 @@ private:
     }
 };
 
-#endif //VISUALCLOUD_JOINVIDEOENCODER_H
+#endif //LIGHTDB_JOINVIDEOENCODER_H

@@ -1,5 +1,5 @@
-#ifndef TRANSCODER_H
-#define TRANSCODER_H
+#ifndef LIGHTDB_TRANSCODER_H
+#define LIGHTDB_TRANSCODER_H
 
 #include "CropTranscoder.h"
 
@@ -41,4 +41,4 @@ public:
     VideoDecoder &decoder() { return CropTranscoder::decoder(); }
 };
 
-#endif
+#endif // LIGHTDB_TRANSCODER_H

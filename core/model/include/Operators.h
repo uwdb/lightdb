@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_OPERATORS_H
-#define VISUALCLOUD_OPERATORS_H
+#ifndef LIGHTDB_OPERATORS_H
+#define LIGHTDB_OPERATORS_H
 
 #include "LightField.h"
 #include "Encoding.h"
@@ -12,7 +12,7 @@
 #include <fstream>
 #include <iterator>
 
-//TODO namespace visualcloud {
+//TODO namespace lightdb {
 
 class Operator {
 
@@ -44,8 +44,8 @@ public:
             : format_(format)
     { }
 
-    visualcloud::EncodedLightField apply(const LightFieldReference<ColorSpace> &lightField) const { //TODO ostream
-        return visualcloud::pipeline::execute(lightField, format_);
+    lightdb::EncodedLightField apply(const LightFieldReference<ColorSpace> &lightField) const { //TODO ostream
+        return lightdb::pipeline::execute(lightField, format_);
     }
 
 private:
@@ -90,7 +90,7 @@ public:
         return field_ >> op;
     }
 
-    const visualcloud::EncodedLightField operator>>(const Encode<ColorSpace>& op) const {
+    const lightdb::EncodedLightField operator>>(const Encode<ColorSpace>& op) const {
         return field_ >> op;
     }
 
@@ -112,7 +112,7 @@ public:
         : name_(name)
     { }
 
-    visualcloud::EncodedLightField apply(const visualcloud::EncodedLightField &encoded) const {
+    lightdb::EncodedLightField apply(const lightdb::EncodedLightField &encoded) const {
         encoded->write(name_);
         return encoded;
     }
@@ -180,12 +180,12 @@ private:
 
 class Partition: public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
 public:
-    Partition(const Dimension &dimension, const visualcloud::rational interval)
+    Partition(const Dimension &dimension, const lightdb::rational interval)
         : dimension_(dimension), interval_(interval)
     { }
 
     Dimension dimension() const { return dimension_; }
-    visualcloud::rational interval() const { return interval_; }
+    lightdb::rational interval() const { return interval_; }
 
     LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace>& field) const override {
         return LightFieldReference<YUVColorSpace>::make<PartitionedLightField<YUVColorSpace>>(
@@ -195,7 +195,7 @@ public:
 
 private:
     const Dimension dimension_;
-    const visualcloud::rational interval_;
+    const lightdb::rational interval_;
 };
 
 
@@ -229,7 +229,7 @@ private:
 
 class Interpolate: public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
 public:
-    explicit Interpolate(const Dimension dimension, const visualcloud::interpolator<YUVColorSpace> &interpolator)
+    explicit Interpolate(const Dimension dimension, const lightdb::interpolator<YUVColorSpace> &interpolator)
             : dimension_(dimension), interpolator_(interpolator)
     { }
 
@@ -240,16 +240,16 @@ public:
 
 private:
     const Dimension dimension_;
-    const visualcloud::interpolator<YUVColorSpace> &interpolator_;
+    const lightdb::interpolator<YUVColorSpace> &interpolator_;
 };
 
 class Discretize: public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
 public:
-    Discretize(const Dimension &dimension, visualcloud::rational &&interval)
+    Discretize(const Dimension &dimension, lightdb::rational &&interval)
         : Discretize(IntervalGeometry(dimension, interval))
     { }
 
-    Discretize(const Dimension &dimension, visualcloud::rational &interval)
+    Discretize(const Dimension &dimension, lightdb::rational &interval)
         : Discretize(IntervalGeometry(dimension, interval))
     { }
 
@@ -267,11 +267,11 @@ private:
 
 class Map: public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
 public:
-    Map(visualcloud::functor<YUVColorSpace> &functor)
+    Map(lightdb::functor<YUVColorSpace> &functor)
         : functor_(functor)
     { }
 
-    Map(visualcloud::functor<YUVColorSpace> &&functor)
+    Map(lightdb::functor<YUVColorSpace> &&functor)
             : functor_(functor)
     { }
 
@@ -280,7 +280,7 @@ public:
     }
 
 private:
-    const visualcloud::functor<YUVColorSpace> &functor_;
+    const lightdb::functor<YUVColorSpace> &functor_;
 };
 
 template<typename InColorSpace, typename OutColorSpace>
@@ -298,14 +298,14 @@ inline LightFieldReference<OutColorSpace> operator>>(LightField<InColorSpace>& i
 }
 
 template<typename ColorSpace>
-inline visualcloud::EncodedLightField operator>>(const LightFieldReference<ColorSpace>& input,
+inline lightdb::EncodedLightField operator>>(const LightFieldReference<ColorSpace>& input,
                                                  const Encode<ColorSpace>& encoder)
 {
     return encoder.apply(LightFieldReference<ColorSpace>(input));
 }
 
 template<typename ColorSpace>
-inline visualcloud::EncodedLightField operator>>(const LightFieldReference<ColorSpace>&& input,
+inline lightdb::EncodedLightField operator>>(const LightFieldReference<ColorSpace>&& input,
                                                  const Encode<ColorSpace>& encoder)
 {
     return encoder.apply(LightFieldReference<ColorSpace>(input));
@@ -318,14 +318,14 @@ inline LightFieldReference<ColorSpace> operator|(const LightFieldReference<Color
     return Union().apply(left, right);
 }
 
-inline visualcloud::EncodedLightField operator>>(const visualcloud::EncodedLightField& input, const Store& store)
+inline lightdb::EncodedLightField operator>>(const lightdb::EncodedLightField& input, const Store& store)
 {
     return store.apply(input);
 }
 
-inline visualcloud::EncodedLightField operator>>(visualcloud::EncodedLightField&& input, const Store& store)
+inline lightdb::EncodedLightField operator>>(lightdb::EncodedLightField&& input, const Store& store)
 {
     return store.apply(input);
 }
 
-#endif //VISUALCLOUD_OPERATORS_H
+#endif //LIGHTDB_OPERATORS_H

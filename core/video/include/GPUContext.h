@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_GPUCONTEXT_H
-#define VISUALCLOUD_GPUCONTEXT_H
+#ifndef LIGHTDB_GPUCONTEXT_H
+#define LIGHTDB_GPUCONTEXT_H
 
 #include <glog/logging.h>
 #include <stdexcept>
@@ -60,4 +60,4 @@ private:
     CUcontext context = nullptr;
 };
 
-#endif //VISUALCLOUD_GPUCONTEXT_H
+#endif //LIGHTDB_GPUCONTEXT_H

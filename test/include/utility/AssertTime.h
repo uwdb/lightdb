@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_ASSERT_TIME_H
-#define VISUALCLOUD_ASSERT_TIME_H
+#ifndef LIGHTDB_ASSERTTIME_H
+#define LIGHTDB_ASSERTTIME_H
 
 #include "gtest/gtest.h"
 #include <chrono>
@@ -16,4 +16,4 @@
 #define ASSERT_MSECS(f, msecs) ASSERT_USECS(f, (msecs) * 1000)
 #define ASSERT_SECS(f, secs) ASSERT_MSECS(f, (secs) * 1000)
 
-#endif //VISUALCLOUD_ASSERT_TIME_H
+#endif //LIGHTDB_ASSERTTIME_H

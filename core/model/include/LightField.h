@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_LIGHTFIELD_H
-#define VISUALCLOUD_LIGHTFIELD_H
+#ifndef LIGHTDB_LIGHTFIELD_H
+#define LIGHTDB_LIGHTFIELD_H
 
 #include "Geometry.h"
 #include "Color.h"
@@ -146,7 +146,7 @@ template<typename ColorSpace>
 class PartitionedLightField: public LightField<ColorSpace> {
 public:
     PartitionedLightField(const LightFieldReference<ColorSpace> &source,
-                          const Dimension dimension, const visualcloud::rational &interval)
+                          const Dimension dimension, const lightdb::rational &interval)
         : source_(source), dimension_(dimension), interval_(interval)
     { }
 
@@ -167,14 +167,14 @@ public:
     }
 
     Dimension dimension() const { return dimension_; }
-    visualcloud::rational interval() const { return interval_; }
+    lightdb::rational interval() const { return interval_; }
     //const std::vector<LightFieldReference<ColorSpace>> partitions() const {
     //}
 
 private:
     const LightFieldReference<ColorSpace> source_;
     const Dimension dimension_;
-    const visualcloud::rational interval_;
+    const lightdb::rational interval_;
 };
 
 template<typename ColorSpace>
@@ -282,7 +282,7 @@ class InterpolatedLightField: public LightField<ColorSpace> {
 public:
     InterpolatedLightField(const LightFieldReference<ColorSpace> &source,
                            const Dimension dimension,
-                           const visualcloud::interpolator<ColorSpace> interpolator)
+                           const lightdb::interpolator<ColorSpace> interpolator)
             : source_(source), interpolator_(interpolator)
     { }
 
@@ -300,7 +300,7 @@ public:
 
 private:
     const LightFieldReference<ColorSpace> source_;
-    const visualcloud::interpolator<ColorSpace> interpolator_;
+    const lightdb::interpolator<ColorSpace> interpolator_;
 };
 
 #include "Functor.h"
@@ -309,7 +309,7 @@ template<typename ColorSpace>
 class TransformedLightField: public LightField<ColorSpace> {
 public:
     TransformedLightField(const LightFieldReference<ColorSpace> &source,
-                           const visualcloud::functor<ColorSpace> &functor)
+                           const lightdb::functor<ColorSpace> &functor)
             : source_(source), functor_(functor)
     { }
 
@@ -317,7 +317,7 @@ public:
         return functor_(source_, point);
     }
 
-    const visualcloud::functor<ColorSpace> &functor() const { return functor_; };
+    const lightdb::functor<ColorSpace> &functor() const { return functor_; };
 
     //TODO just add a DecoratedLightField class that does all of this, rather than repeating it over and over
     const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {source_}; }
@@ -326,7 +326,7 @@ public:
 
 private:
     const LightFieldReference<ColorSpace> source_;
-    const visualcloud::functor<ColorSpace> &functor_;
+    const lightdb::functor<ColorSpace> &functor_;
 };
 
 template<typename Geometry, typename ColorSpace>
@@ -381,7 +381,7 @@ private:
 };
 
 template<typename Geometry, typename ColorSpace>
-class PanoramicVideoLightField: public PanoramicLightField<Geometry, ColorSpace>, public visualcloud::SingletonFileEncodedLightField {
+class PanoramicVideoLightField: public PanoramicLightField<Geometry, ColorSpace>, public lightdb::SingletonFileEncodedLightField {
 public:
     PanoramicVideoLightField(const std::string &filename,
                              const AngularRange& theta=AngularRange::ThetaMax,
@@ -403,12 +403,12 @@ public:
     const std::vector<Volume> volumes() const override { return PanoramicLightField<Geometry, ColorSpace>::volumes(); }
     const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {}; }
     //TODO remove both of these
-    inline visualcloud::rational framerate() const { return visualcloud::rational(30, 1); } //TODO hardcoded...
+    inline lightdb::rational framerate() const { return lightdb::rational(30, 1); } //TODO hardcoded...
 
     inline size_t duration() const { return 99; } //TODO remove hardcoded value
-    inline visualcloud::utility::StreamMetadata metadata() const { return (metadata_.has_value()
+    inline lightdb::utility::StreamMetadata metadata() const { return (metadata_.has_value()
                                                                           ? metadata_
-                                                                          : (metadata_ = visualcloud::utility::StreamMetadata(filename(), 0, true))).value(); }
+                                                                          : (metadata_ = lightdb::utility::StreamMetadata(filename(), 0, true))).value(); }
 protected:
     bool defined_at(const Point6D &point) const override {
         return geometry_.defined_at(point) &&
@@ -424,11 +424,11 @@ private:
     //TODO drop filename after adding StreamDecodeReader in Physical.cc
     // Can make SingletonEncodedLightField be a replacement for this class; one for in-memory, one for on-disk
     const IntervalGeometry geometry_;
-    mutable std::optional<visualcloud::utility::StreamMetadata> metadata_;
+    mutable std::optional<lightdb::utility::StreamMetadata> metadata_;
 };
 
 template<typename ColorSpace=YUVColorSpace>
-class PlanarTiledVideoLightField: public DiscreteLightField<ColorSpace>, public visualcloud::SingletonFileEncodedLightField {
+class PlanarTiledVideoLightField: public DiscreteLightField<ColorSpace>, public lightdb::SingletonFileEncodedLightField {
 public:
     PlanarTiledVideoLightField(const std::string &filename,
                                const Volume &volume,
@@ -444,12 +444,12 @@ public:
     const std::vector<Volume> volumes() const override { return {volume_}; }
     const std::vector<LightFieldReference<ColorSpace>> provenance() const override { return {}; }
     //TODO remove both of these
-    inline visualcloud::rational framerate() const { return visualcloud::rational(30, 1); } //TODO hardcoded...
+    inline lightdb::rational framerate() const { return lightdb::rational(30, 1); } //TODO hardcoded...
 
     inline size_t duration() const { return 20; } //TODO remove hardcoded value
-    inline visualcloud::utility::StreamMetadata metadata() const { return (metadata_.has_value()
+    inline lightdb::utility::StreamMetadata metadata() const { return (metadata_.has_value()
                                                                            ? metadata_
-                                                                           : (metadata_ = visualcloud::utility::StreamMetadata(filename(), 0, true))).value(); }
+                                                                           : (metadata_ = lightdb::utility::StreamMetadata(filename(), 0, true))).value(); }
 
     const typename ColorSpace::Color value(const Point6D &point) const override {
         return DiscreteLightField<ColorSpace>::defined_at(point) &&
@@ -463,7 +463,7 @@ private:
     // Can make SingletonEncodedLightField be a replacement for this class; one for in-memory, one for on-disk
     const Volume volume_;
     const size_t rows_, columns_;
-    mutable std::optional<visualcloud::utility::StreamMetadata> metadata_;
+    mutable std::optional<lightdb::utility::StreamMetadata> metadata_;
 };
 
-#endif //VISUALCLOUD_LIGHTFIELD_H
+#endif //LIGHTDB_LIGHTFIELD_H

@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_GEOMETRY_H
-#define VISUALCLOUD_GEOMETRY_H
+#ifndef LIGHTDB_GEOMETRY_H
+#define LIGHTDB_GEOMETRY_H
 
 #include "rational.h"
 #include <vector>
@@ -88,7 +88,7 @@ public:
 
 
     bool Contains(const Point6D &point) const;
-    std::vector<Volume> partition(const Dimension, const visualcloud::rational&) const;
+    std::vector<Volume> partition(const Dimension, const lightdb::rational&) const;
     inline bool is_point() const {
         return x.start == x.end &&
                y.start == y.end &&
@@ -248,7 +248,7 @@ public:
 
 class IntervalGeometry: public Geometry {
 public:
-    IntervalGeometry(const Dimension dimension, const visualcloud::rational interval)
+    IntervalGeometry(const Dimension dimension, const lightdb::rational interval)
         : dimension_(dimension), interval_(interval)
     { }
 
@@ -261,11 +261,11 @@ public:
     }
 
     inline const Dimension dimension() const { return dimension_; }
-    inline const visualcloud::rational interval() const { return interval_; }
+    inline const lightdb::rational interval() const { return interval_; }
 
 private:
     const Dimension dimension_;
-    const visualcloud::rational interval_;
+    const lightdb::rational interval_;
 };
 
-#endif //VISUALCLOUD_GEOMETRY_H
+#endif //LIGHTDB_GEOMETRY_H

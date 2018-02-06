@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_VIDEOLOCK_H
-#define VISUALCLOUD_VIDEOLOCK_H
+#ifndef LIGHTDB_VIDEOLOCK_H
+#define LIGHTDB_VIDEOLOCK_H
 
 #include <dynlink_cuda.h>
 #include <dynlink_cuviddec.h>
@@ -45,4 +45,4 @@ private:
     CUvideoctxlock lock_ = nullptr;
 };
 
-#endif //VISUALCLOUD_VIDEOLOCK_H
+#endif //LIGHTDB_VIDEOLOCK_H

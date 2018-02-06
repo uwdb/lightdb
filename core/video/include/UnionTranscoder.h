@@ -1,5 +1,5 @@
-#ifndef UNIONTRANSCODER_H
-#define UNIONTRANSCODER_H
+#ifndef LIGHTDB_UNIONTRANSCODER_H
+#define LIGHTDB_UNIONTRANSCODER_H
 
 #include "VideoDecoder.h"
 #include "VideoEncoder.h"
@@ -64,4 +64,4 @@ private:
 };
 
 
-#endif // UNIONTRANSCODER_H
+#endif // LIGHTDB_UNIONTRANSCODER_H

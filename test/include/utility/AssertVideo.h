@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_ASSERT_VIDEO_H
-#define VISUALCLOUD_ASSERT_VIDEO_H
+#ifndef LIGHTDB_ASSERTVIDEO_H
+#define LIGHTDB_ASSERTVIDEO_H
 
 #include "Frame.h"
 #include "gtest/gtest.h"
@@ -137,4 +137,4 @@
 Frame CREATE_BLACK_FRAME(const Configuration &);
 void ASSERT_BLACK_FRAME(const Frame &);
 
-#endif //VISUALCLOUD_ASSERT_VIDEO_H
+#endif //LIGHTDB_ASSERTVIDEO_H

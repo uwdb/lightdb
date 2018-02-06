@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 #include <AssertVideo.h>
 
-using namespace visualcloud;
+using namespace lightdb;
 using namespace std::chrono;
 
 class MapBenchmarkTestFixture: public testing::Test {
@@ -20,7 +20,7 @@ public:
         auto start = steady_clock::now();
 
         Decode<EquirectangularGeometry>(source)
-                >> Map(visualcloud::Greyscale())
+                >> Map(lightdb::Greyscale())
                 >> Encode<YUVColorSpace>()
                 >> Store(name);
 
@@ -38,7 +38,7 @@ public:
         auto start = steady_clock::now();
 
         Decode<EquirectangularGeometry>(source)
-                >> Map(visualcloud::GaussianBlur())
+                >> Map(lightdb::GaussianBlur())
                 >> Encode<YUVColorSpace>()
                 >> Store(name);
 

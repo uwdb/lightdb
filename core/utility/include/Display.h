@@ -1,10 +1,10 @@
-#ifndef VISUALCLOUD_DISPLAY_H
-#define VISUALCLOUD_DISPLAY_H
+#ifndef LIGHTDB_DISPLAY_H
+#define LIGHTDB_DISPLAY_H
 
 #include "LightField.h"
 #include <queue>
 
-namespace visualcloud {
+namespace lightdb {
 
 template<typename ColorSpace>
 void print_plan(const LightFieldReference<ColorSpace> lightField) {
@@ -25,4 +25,4 @@ void print_plan(const LightFieldReference<ColorSpace> lightField) {
 
 }
 
-#endif //VISUALCLOUD_DISPLAY_H
+#endif //LIGHTDB_DISPLAY_H

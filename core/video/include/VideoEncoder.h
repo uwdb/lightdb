@@ -1,5 +1,5 @@
-#ifndef _VIDEO_ENCODER
-#define _VIDEO_ENCODER
+#ifndef LIGHTDB_VIDEOENCODER_H
+#define LIGHTDB_VIDEOENCODER_H
 
 #include "EncodeAPI.h"
 #include "Configuration.h"
@@ -64,4 +64,4 @@ private:
   std::vector<std::shared_ptr<EncodeBuffer>> CreateBuffers(const size_t size);
 };
 
-#endif
+#endif // LIGHTDB_VIDEOENCODER_H

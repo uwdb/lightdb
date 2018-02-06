@@ -1,5 +1,5 @@
-#ifndef VISUALCLOUD_DECODEREADER_H
-#define VISUALCLOUD_DECODEREADER_H
+#ifndef LIGHTDB_DECODEREADER_H
+#define LIGHTDB_DECODEREADER_H
 
 #include <boost/lockfree/spsc_queue.hpp>
 #include "dynlink_cuda.h"
@@ -140,4 +140,4 @@ private:
     size_t decoded_bytes_;
 };
 
-#endif //VISUALCLOUD_DECODEREADER_H
+#endif //LIGHTDB_DECODEREADER_H
