@@ -38,6 +38,10 @@ public:
     }
 
     void Encode(std::vector<Frame> &frames, FrameCopierFunction copier) {
+        return Encode(frames, copier, [](VideoLock&, EncodeBuffer& buffer) -> EncodeBuffer& { return buffer; });
+    }
+
+    void Encode(std::vector<Frame> &frames, FrameCopierFunction copier, EncodableFrameTransform transform) {
         auto &buffer = GetAvailableBuffer();
 
         if(frames.size() == 0)
@@ -49,7 +53,7 @@ public:
 
         for(auto i = 0u; i < frames.size(); i++)
             copier(buffer, frames[i], i);
-        return Encode(buffer, frames[0].type());
+        return Encode(transform(encoder().lock, buffer), frames[0].type());
     }
 
     void Flush() {

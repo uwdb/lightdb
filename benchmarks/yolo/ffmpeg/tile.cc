@@ -104,6 +104,11 @@ int main(int argc, char *argv[]) {
     uint8_t* rgbBuffer = (uint8_t *)av_malloc( avpicture_get_size(AV_PIX_FMT_RGB24, rgbFrame->width, rgbFrame->height));
     avpicture_fill((AVPicture*)rgbFrame, rgbBuffer, AV_PIX_FMT_RGB24, rgbFrame->width, rgbFrame->height);
 
+    //AVFilterContext *overlayContext;
+    //auto *overlayFilter = avfilter_get_by_name("overlay");
+    //void (*blender)(AVFilterContext *ctx, AVFrame *dst, const AVFrame *src, int x, int y);
+    //blender = ((OverlayContext*)overlayFilter.priv_class).blend_image;
+
     while(current < end)
     {
         auto bytes_parsed = av_parser_parse2(
@@ -135,6 +140,8 @@ int main(int argc, char *argv[]) {
                 network_detect(network, image, threshold, hier_thresh, nms, boxes, probs);
                 draw_detections(image, num, threshold, boxes, probs, nullptr, metadata.names,
                         alphabet, metadata.classes);
+
+                //blender();
 
                 AVPacket pkt;
                 av_init_packet(&pkt);

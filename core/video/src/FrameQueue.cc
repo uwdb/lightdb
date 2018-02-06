@@ -14,6 +14,10 @@
 #include <stdio.h>
 #include <glog/logging.h>
 
+FrameQueue::FrameQueue(VideoLock &lock)
+        : FrameQueue(lock.get())
+{ }
+
 FrameQueue::FrameQueue(CUvideoctxlock ctxLock)
     : hEvent_(0), nReadPosition_(0), nWritePosition_(0), nFramesInQueue_(0), bEndOfDecode_(0), m_ctxLock(ctxLock) {
 #ifdef _WIN32
@@ -99,6 +103,9 @@ bool FrameQueue::waitUntilFrameAvailable(int nPictureIndex) {
 }
 
 void FrameQueue::signalStatusChange() { set_event(hEvent_); }
+
+CUVIDFrameQueue::CUVIDFrameQueue(VideoLock &lock) : CUVIDFrameQueue(lock.get()) {
+}
 
 CUVIDFrameQueue::CUVIDFrameQueue(CUvideoctxlock ctxLock) : FrameQueue(ctxLock) {
   memset(aDisplayQueue_, 0, cnMaximumSize * sizeof(CUVIDPARSERDISPINFO));

@@ -34,6 +34,8 @@ TEST_F(CropperTestFixture, testFileCropper) {
     EXPECT_VIDEO_VALID(FILENAME(0));
     EXPECT_VIDEO_FRAMES(FILENAME(0), 99);
     EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
+    EXPECT_VIDEO_QUALITY(FILENAME(0), reader.filename(), DEFAULT_PSNR, 0, 0, width, height,
+                                                                       left, top, left+width, top+height);
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
 }
 
@@ -51,5 +53,7 @@ TEST_F(CropperTestFixture, testFileCropperWithLimit) {
     EXPECT_VIDEO_VALID(FILENAME(0));
     EXPECT_VIDEO_FRAMES(FILENAME(0), limit);
     EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
+    EXPECT_VIDEO_QUALITY(FILENAME(0), reader.filename(), DEFAULT_PSNR, 0, 0, width, height,
+                                                                       left, top, left+width, top+height);
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
 }

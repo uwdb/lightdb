@@ -8,7 +8,7 @@ class VideoEncoderSessionTestFixture : public testing::Test {
 public:
     VideoEncoderSessionTestFixture()
         : context(0),
-          configuration(1080, 1920, NV_ENC_HEVC, 30, 30, 1024*1024),
+          configuration(1080, 1920, NV_ENC_HEVC, 24, 30, 1024*1024),
           lock(context),
           encoder(context, configuration, lock),
           writer(encoder, FILENAME),
@@ -35,19 +35,9 @@ TEST_F(VideoEncoderSessionTestFixture, testFlush) {
 }
 
 TEST_F(VideoEncoderSessionTestFixture, testEncodeSingleFrame) {
-    CUdeviceptr handle;
-    size_t pitch;
+    auto blackFrame = CREATE_BLACK_FRAME(configuration);
 
-    ASSERT_EQ(cuMemAllocPitch(
-        &handle,
-        &pitch,
-        configuration.width,
-        configuration.height * (3/2) * 2,
-        16), CUDA_SUCCESS);
-
-    Frame inputFrame(handle, static_cast<unsigned int>(pitch), configuration, NV_ENC_PIC_STRUCT_FRAME);
-
-    ASSERT_NO_THROW(session.Encode(inputFrame));
+    ASSERT_NO_THROW(session.Encode(blackFrame));
 
     EXPECT_EQ(session.frameCount(), 1);
 
@@ -56,28 +46,18 @@ TEST_F(VideoEncoderSessionTestFixture, testEncodeSingleFrame) {
     EXPECT_VIDEO_VALID(FILENAME);
     EXPECT_VIDEO_FRAMES(FILENAME, 1);
     EXPECT_VIDEO_RESOLUTION(FILENAME, configuration.height, configuration.width);
+    EXPECT_VIDEO_QUALITY(FILENAME, "resources/black.h264", DEFAULT_PSNR, 0, 0, configuration.width, configuration.height);
 
     EXPECT_EQ(remove(FILENAME), 0);
-    EXPECT_EQ(cuMemFree(handle), CUDA_SUCCESS);
+    EXPECT_EQ(cuMemFree(blackFrame.handle()), CUDA_SUCCESS);
 }
 
 TEST_F(VideoEncoderSessionTestFixture, testEncodeMultipleFrames) {
     auto count = 60;
-    CUdeviceptr handle;
-    size_t pitch;
+    auto blackFrame = CREATE_BLACK_FRAME(configuration);
 
-    ASSERT_EQ(cuMemAllocPitch(
-            &handle,
-            &pitch,
-            configuration.width,
-            configuration.height * (3/2) * 2,
-            16), CUDA_SUCCESS);
-
-    Frame inputFrame(handle, static_cast<unsigned int>(pitch), configuration, NV_ENC_PIC_STRUCT_FRAME);
-
-    for(int i = 0; i < count; i++) {
-        ASSERT_NO_THROW(session.Encode(inputFrame));
-    }
+    for(int i = 0; i < count; i++)
+        ASSERT_NO_THROW(session.Encode(blackFrame));
 
     EXPECT_EQ(session.frameCount(), count);
 
@@ -87,5 +67,5 @@ TEST_F(VideoEncoderSessionTestFixture, testEncodeMultipleFrames) {
     EXPECT_VIDEO_RESOLUTION(FILENAME, configuration.height, configuration.width);
 
     EXPECT_EQ(remove(FILENAME), 0);
-    EXPECT_EQ(cuMemFree(handle), CUDA_SUCCESS);
+    EXPECT_EQ(cuMemFree(blackFrame.handle()), CUDA_SUCCESS);
 }

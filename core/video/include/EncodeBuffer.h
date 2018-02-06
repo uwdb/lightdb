@@ -123,15 +123,6 @@ struct EncodeBuffer
     void copy(VideoLock &lock, const Frame &frame,
               size_t frame_top, size_t frame_left,
               size_t buffer_top=0, size_t buffer_left=0) {
-        if (frame.width() - frame_left < input_buffer.width - buffer_left ||
-            frame.height() - frame_top < input_buffer.height - buffer_top) {
-            LOG(ERROR) << "buffer size too small for frame copy";
-            throw std::runtime_error("buffer size too small for frame copy"); //TODO
-        }
-
-        //LOG(INFO) << (frame.width() - frame_left) << " vs " << input_buffer.width - buffer_left;
-        //LOG(INFO) << (frame.height() - frame_top) << " vs " << input_buffer.height - buffer_top;
-
         CUDA_MEMCPY2D lumaPlaneParameters = {
                 srcXInBytes:   frame_left,
                 srcY:          frame_top,
@@ -149,13 +140,13 @@ struct EncodeBuffer
                 dstArray:      nullptr,
                 dstPitch:      input_buffer.NV12Stride,
 
-                WidthInBytes:  input_buffer.width - buffer_left,
-                Height:        input_buffer.height - buffer_top,
+                WidthInBytes:  std::min(input_buffer.width - buffer_left, frame.width() - frame_left),
+                Height:        std::min(input_buffer.height - buffer_top, frame.height() - frame_top) ,
         };
 
         CUDA_MEMCPY2D chromaPlaneParameters = {
                 srcXInBytes:   frame_left,
-                srcY:          frame.height() + frame_top / 2, //(frame.height() + top) / 2,
+                srcY:          frame.height() + frame_top / 2,
                 srcMemoryType: CU_MEMORYTYPE_DEVICE,
                 srcHost:       nullptr,
                 srcDevice:     frame.handle(),
@@ -163,15 +154,15 @@ struct EncodeBuffer
                 srcPitch:      frame.pitch(),
 
                 dstXInBytes:   buffer_left,
-                dstY:          input_buffer.height + buffer_top,
+                dstY:          input_buffer.height + buffer_top / 2,
                 dstMemoryType: CU_MEMORYTYPE_DEVICE,
                 dstHost:       nullptr,
                 dstDevice:     static_cast<CUdeviceptr>(input_buffer.NV12devPtr),
                 dstArray:      nullptr,
                 dstPitch:      input_buffer.NV12Stride,
 
-                WidthInBytes:  input_buffer.width - buffer_left,
-                Height:        (input_buffer.height - buffer_top) / 2
+                WidthInBytes:  std::min(input_buffer.width - buffer_left, frame.width() - frame_left),
+                Height:        std::min(input_buffer.height - buffer_top, frame.height() - frame_top) / 2
         };
 
         copy(lock, {lumaPlaneParameters, chromaPlaneParameters});

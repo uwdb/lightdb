@@ -1,6 +1,6 @@
-#include "Transcoder.h"
 #include "AssertTime.h"
 #include "AssertVideo.h"
+#include "Transcoder.h"
 
 #define FILENAME(n) (std::string("resources/test-pattern-") + std::to_string(n) + ".h265")
 
@@ -30,13 +30,13 @@ TEST_F(TranscoderTestFixture, testFileTranscoder) {
     FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
 
     ASSERT_SECS(
-            ASSERT_NO_THROW(transcoder.transcode(reader, writer)),
+        ASSERT_NO_THROW(transcoder.transcode(reader, writer)),
         1.5);
 
     EXPECT_VIDEO_VALID(FILENAME(0));
     EXPECT_VIDEO_FRAMES(FILENAME(0), 99);
     EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
-    EXPECT_VIDEO_QUALITY(FILENAME(0), reader.filename(), 30);
+    EXPECT_VIDEO_QUALITY(FILENAME(0), reader.filename(), DEFAULT_PSNR);
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
 }
 
@@ -53,7 +53,7 @@ TEST_F(TranscoderTestFixture, testTwoFileTranscoder) {
     EXPECT_VIDEO_VALID(FILENAME(0));
     EXPECT_VIDEO_FRAMES(FILENAME(0), 99);
     EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
-    EXPECT_VIDEO_QUALITY(FILENAME(0), reader1.filename(), 30);
+    EXPECT_VIDEO_QUALITY(FILENAME(0), reader1.filename(), DEFAULT_PSNR);
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
 
     ASSERT_SECS(
@@ -63,7 +63,7 @@ TEST_F(TranscoderTestFixture, testTwoFileTranscoder) {
     EXPECT_VIDEO_VALID(FILENAME(1));
     EXPECT_VIDEO_FRAMES(FILENAME(1), 99);
     EXPECT_VIDEO_RESOLUTION(FILENAME(1), encodeConfiguration.height, encodeConfiguration.width);
-    EXPECT_VIDEO_QUALITY(FILENAME(1), reader2.filename(), 30);
+    EXPECT_VIDEO_QUALITY(FILENAME(1), reader2.filename(), DEFAULT_PSNR);
     EXPECT_EQ(remove(FILENAME(1).c_str()), 0);
 }
 
@@ -80,7 +80,7 @@ TEST_F(TranscoderTestFixture, testMultipleFileTranscoder) {
         EXPECT_VIDEO_VALID(FILENAME(i));
         EXPECT_VIDEO_FRAMES(FILENAME(i), 99);
         EXPECT_VIDEO_RESOLUTION(FILENAME(i), encodeConfiguration.height, encodeConfiguration.width);
-        EXPECT_VIDEO_QUALITY(FILENAME(i), "resources/test-pattern.h264", 30);
+        EXPECT_VIDEO_QUALITY(FILENAME(i), "resources/test-pattern.h264", DEFAULT_PSNR);
         EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
     }
 }
@@ -97,15 +97,17 @@ TEST_F(TranscoderTestFixture, testTranscoderWithIdentityTransform) {
     EXPECT_VIDEO_VALID(FILENAME(0));
     EXPECT_VIDEO_FRAMES(FILENAME(0), 99);
     EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
-    EXPECT_VIDEO_QUALITY(FILENAME(0), reader.filename(), 30);
+    EXPECT_VIDEO_QUALITY(FILENAME(0), reader.filename(), DEFAULT_PSNR);
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
 }
 
 TEST_F(TranscoderTestFixture, testTranscoderWithComplexTransform) {
     FileDecodeReader reader("resources/test-pattern.h264");
     FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
+    auto height = reader.format().display_area.bottom, width = reader.format().display_area.right;
+
     FrameTransform halfBlackTransform = [](VideoLock& lock, Frame& frame) -> Frame& {
-        std::scoped_lock{lock};
+        std::scoped_lock mutex{lock};
         assert(cuMemsetD2D8(frame.handle(), frame.pitch(), 0,
                             frame.width() / 2, frame.height()) == CUDA_SUCCESS);
         return frame;
@@ -113,25 +115,33 @@ TEST_F(TranscoderTestFixture, testTranscoderWithComplexTransform) {
 
     ASSERT_SECS(
             ASSERT_NO_THROW(transcoder.transcode(reader, writer, halfBlackTransform)),
-            1.5);
+            1.75);
 
     EXPECT_VIDEO_VALID(FILENAME(0));
     EXPECT_VIDEO_FRAMES(FILENAME(0), 99);
     EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
+    // Right half original video
+    EXPECT_VIDEO_QUALITY(FILENAME(0), reader.filename(), DEFAULT_PSNR, width/2, 0, width, height,
+                                                                       width/2, 0, width, height);
+    // Left half black
+    EXPECT_VIDEO_QUALITY(FILENAME(0), "resources/black.h264", DEFAULT_PSNR, 0, 0, width/2, height,
+                                                                            0, 0, width/2, height);
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
 }
 
 TEST_F(TranscoderTestFixture, testTranscoderWithMultipleTransform) {
     FileDecodeReader reader("resources/test-pattern.h264");
     FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
+    auto height = reader.format().display_area.bottom, width = reader.format().display_area.right;
+
     FrameTransform leftHalfBlackTransform = [](VideoLock& lock, Frame& frame) -> Frame& {
-        std::scoped_lock{lock};
+        std::scoped_lock mutex{lock};
         assert(cuMemsetD2D8(frame.handle(), frame.pitch(), 0,
                             frame.width() / 2, frame.height()) == CUDA_SUCCESS);
         return frame;
     };
     FrameTransform topHalfBlackTransform = [](VideoLock& lock, Frame& frame) -> Frame& {
-        std::scoped_lock{lock};
+        std::scoped_lock mutex{lock};
         assert(cuMemsetD2D8(frame.handle(), frame.pitch(), 0,
                             frame.width(), frame.height() / 2) == CUDA_SUCCESS);
         return frame;
@@ -144,6 +154,15 @@ TEST_F(TranscoderTestFixture, testTranscoderWithMultipleTransform) {
     EXPECT_VIDEO_VALID(FILENAME(0));
     EXPECT_VIDEO_FRAMES(FILENAME(0), 99);
     EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
+    // Left half black
+    EXPECT_VIDEO_QUALITY(FILENAME(0), "resources/black.h264", DEFAULT_PSNR, 0, 0, width/2, height,
+                                                                            0, 0, width/2, height);
+    // Top half black
+    EXPECT_VIDEO_QUALITY(FILENAME(0), "resources/black.h264", DEFAULT_PSNR, 0, 0, width, height/2,
+                                                                            0, 0, width, height/2);
+    // Bottom-right corner original video
+    EXPECT_VIDEO_QUALITY(FILENAME(0), reader.filename(), DEFAULT_PSNR, width/2, height/2, width, height,
+                                                                       width/2, height/2, width, height);
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
 }
 
@@ -161,6 +180,6 @@ TEST_F(TranscoderTestFixture, testTranscoderAt4K) {
     EXPECT_VIDEO_VALID(FILENAME(0));
     EXPECT_VIDEO_FRAMES(FILENAME(0), 600);
     EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
-    EXPECT_VIDEO_QUALITY(FILENAME(0), reader.filename(), 30);
+    EXPECT_VIDEO_QUALITY(FILENAME(0), reader.filename(), DEFAULT_PSNR);
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
 }

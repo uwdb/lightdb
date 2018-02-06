@@ -11,6 +11,7 @@
  *
  */
 
+#include "VideoLock.h"
 #include "dynlink_nvcuvid.h" // <nvcuvid.h>
 
 #include <optional>
@@ -30,6 +31,8 @@ public:
   static const unsigned int cnMaximumSize = 20; // MAX_FRM_CNT;
 
   FrameQueue(CUvideoctxlock ctxLock);
+
+  FrameQueue(VideoLock &lock);
 
   virtual ~FrameQueue();
 
@@ -170,6 +173,7 @@ protected:
 class CUVIDFrameQueue : public FrameQueue {
 
 public:
+  CUVIDFrameQueue(VideoLock &lock);
   CUVIDFrameQueue(CUvideoctxlock ctxLock);
   ~CUVIDFrameQueue();
 

@@ -1,3 +1,5 @@
+#include <dynlink_nvcuvid.h>
+#include <Configuration.h>
 #include "TileVideoEncoder.h"
 #include "AssertTime.h"
 #include "AssertVideo.h"
@@ -35,6 +37,7 @@ TEST_F(TilerVideoEncoderTestFixture, testSingleTile) {
     EXPECT_VIDEO_VALID(FILENAME(0));
     EXPECT_VIDEO_FRAMES(FILENAME(0), 99);
     EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width);
+    EXPECT_VIDEO_QUALITY(FILENAME(0), reader.filename(), DEFAULT_PSNR);
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
 }
 
@@ -56,6 +59,9 @@ TEST_F(TilerVideoEncoderTestFixture, testTwoRows) {
 
     EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height / 2, encodeConfiguration.width);
     EXPECT_VIDEO_RESOLUTION(FILENAME(1), encodeConfiguration.height / 2, encodeConfiguration.width);
+
+    EXPECT_VIDEO_QUALITY(FILENAME(0), reader.filename(), DEFAULT_PSNR, 0, 0, 1920, 1080/2);
+    EXPECT_VIDEO_QUALITY(FILENAME(1), reader.filename(), DEFAULT_PSNR, 0, 1080/2, 1920, 1080);
 
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
     EXPECT_EQ(remove(FILENAME(1).c_str()), 0);
@@ -80,6 +86,9 @@ TEST_F(TilerVideoEncoderTestFixture, testTwoColumns) {
     EXPECT_VIDEO_RESOLUTION(FILENAME(0), encodeConfiguration.height, encodeConfiguration.width / 2);
     EXPECT_VIDEO_RESOLUTION(FILENAME(1), encodeConfiguration.height, encodeConfiguration.width / 2);
 
+    EXPECT_VIDEO_QUALITY(FILENAME(0), reader.filename(), DEFAULT_PSNR, 0, 0, 1920/2, 1080);
+    EXPECT_VIDEO_QUALITY(FILENAME(1), reader.filename(), DEFAULT_PSNR, 1920/2, 0, 1920, 1080);
+
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
     EXPECT_EQ(remove(FILENAME(1).c_str()), 0);
 }
@@ -96,9 +105,13 @@ TEST_F(TilerVideoEncoderTestFixture, test2x2) {
     ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS);
 
     for(auto i = 0; i < rows * columns; i++) {
+        auto row = i / columns, column = i % columns;
         EXPECT_VIDEO_VALID(FILENAME(i));
         EXPECT_VIDEO_FRAMES(FILENAME(i), 99);
         EXPECT_VIDEO_RESOLUTION(FILENAME(i), encodeConfiguration.height / rows, encodeConfiguration.width / columns);
+        EXPECT_VIDEO_QUALITY(FILENAME(i), reader.filename(), DEFAULT_PSNR,
+                             column * decodeConfiguration.width/columns, row * decodeConfiguration.height/rows,
+                             (column+1)*decodeConfiguration.width/columns, (row+1)*decodeConfiguration.height/rows);
         EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
     }
 }
@@ -117,9 +130,13 @@ TEST_F(TilerVideoEncoderTestFixture, test6x2) {
         0.75);
 
     for(auto i = 0; i < rows * columns; i++) {
+        auto row = i / columns, column = i % columns;
         EXPECT_VIDEO_VALID(FILENAME(i));
         EXPECT_VIDEO_FRAMES(FILENAME(i), 99);
         EXPECT_VIDEO_RESOLUTION(FILENAME(i), encodeConfiguration.height / rows, encodeConfiguration.width / columns);
+        EXPECT_VIDEO_QUALITY(FILENAME(i), reader.filename(), DEFAULT_PSNR,
+                             column * decodeConfiguration.width/columns, row * decodeConfiguration.height/rows,
+                             (column+1)*decodeConfiguration.width/columns, (row+1)*decodeConfiguration.height/rows);
         EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
     }
 }
@@ -138,9 +155,13 @@ TEST_F(TilerVideoEncoderTestFixture, test2x8) {
             0.75);
 
     for(auto i = 0; i < rows * columns; i++) {
+        auto row = i / columns, column = i % columns;
         EXPECT_VIDEO_VALID(FILENAME(i));
         EXPECT_VIDEO_FRAMES(FILENAME(i), 99);
         EXPECT_VIDEO_RESOLUTION(FILENAME(i), encodeConfiguration.height / rows, encodeConfiguration.width / columns);
+        EXPECT_VIDEO_QUALITY(FILENAME(i), reader.filename(), DEFAULT_PSNR,
+                             column * decodeConfiguration.width/columns, row * decodeConfiguration.height/rows,
+                             (column+1)*decodeConfiguration.width/columns, (row+1)*decodeConfiguration.height/rows);
         EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
     }
 }
@@ -159,9 +180,13 @@ TEST_F(TilerVideoEncoderTestFixture, test1x8) {
             0.75);
 
     for(auto i = 0; i < rows * columns; i++) {
+        auto row = i / columns, column = i % columns;
         EXPECT_VIDEO_VALID(FILENAME(i));
         EXPECT_VIDEO_FRAMES(FILENAME(i), 99);
         EXPECT_VIDEO_RESOLUTION(FILENAME(i), encodeConfiguration.height / rows, encodeConfiguration.width / columns);
+        EXPECT_VIDEO_QUALITY(FILENAME(i), reader.filename(), DEFAULT_PSNR,
+                             column * decodeConfiguration.width/columns, row * decodeConfiguration.height/rows,
+                             (column+1)*decodeConfiguration.width/columns, (row+1)*decodeConfiguration.height/rows);
         EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
     }
 }
@@ -180,9 +205,14 @@ TEST_F(TilerVideoEncoderTestFixture, test6x1) {
             0.75);
 
     for(auto i = 0; i < rows * columns; i++) {
+        auto row = i / columns, column = i % columns;
         EXPECT_VIDEO_VALID(FILENAME(i));
         EXPECT_VIDEO_FRAMES(FILENAME(i), 99);
         EXPECT_VIDEO_RESOLUTION(FILENAME(i), encodeConfiguration.height / rows, encodeConfiguration.width / columns);
+        EXPECT_VIDEO_MEAN_RGB(FILENAME(i), reader.filename(), 0.01);
+        EXPECT_VIDEO_QUALITY(FILENAME(i), reader.filename(), DEFAULT_PSNR,
+                             column * decodeConfiguration.width/columns, row * decodeConfiguration.height/rows,
+                             (column+1)*decodeConfiguration.width/columns, (row+1)*decodeConfiguration.height/rows);
         EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
     }
 }
@@ -198,19 +228,23 @@ TEST_F(TilerVideoEncoderTestFixture, test6x8) {
 
     ASSERT_SECS(
             ASSERT_EQ(tiler.tile(reader, writers), NV_ENC_SUCCESS),
-            0.75);
+            0.8);
 
     for(auto i = 0; i < rows * columns; i++) {
+        auto row = i / columns, column = i % columns;
         EXPECT_VIDEO_VALID(FILENAME(i));
         EXPECT_VIDEO_FRAMES(FILENAME(i), 99);
         EXPECT_VIDEO_RESOLUTION(FILENAME(i), encodeConfiguration.height / rows, encodeConfiguration.width / columns);
+        EXPECT_VIDEO_QUALITY(FILENAME(i), reader.filename(), DEFAULT_PSNR,
+                             column * decodeConfiguration.width/columns, row * decodeConfiguration.height/rows,
+                             (column+1)*decodeConfiguration.width/columns, (row+1)*decodeConfiguration.height/rows);
         EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
     }
 }
 
 TEST_F(TilerVideoEncoderTestFixture, test2x2_at_4K) {
     const auto rows = 2, columns = 2;
-    EncodeConfiguration encodeConfiguration(2160, 3840, NV_ENC_HEVC, 24, 30, 1024*1024);
+    EncodeConfiguration encodeConfiguration(2160, 3840, NV_ENC_HEVC, 30, 30, 8*1024*1024);
     DecodeConfiguration decodeConfiguration(encodeConfiguration, cudaVideoCodec_H264);
 
     TileVideoEncoder tiler(context, decodeConfiguration, encodeConfiguration, rows, columns);
@@ -225,16 +259,20 @@ TEST_F(TilerVideoEncoderTestFixture, test2x2_at_4K) {
             15);
 
     for(auto i = 0; i < rows * columns; i++) {
+        auto row = i / columns, column = i % columns;
         EXPECT_VIDEO_VALID(FILENAME(i));
         EXPECT_VIDEO_FRAMES(FILENAME(i), 600);
         EXPECT_VIDEO_RESOLUTION(FILENAME(i), encodeConfiguration.height / rows, encodeConfiguration.width / columns);
+        EXPECT_VIDEO_QUALITY(FILENAME(i), reader.filename(), DEFAULT_PSNR,
+                             column * decodeConfiguration.width/columns, row * decodeConfiguration.height/rows,
+                             (column+1)*decodeConfiguration.width/columns, (row+1)*decodeConfiguration.height/rows);
         EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
     }
 }
 
 TEST_F(TilerVideoEncoderTestFixture, test4x4_at_4K) {
     const auto rows = 4, columns = 4;
-    EncodeConfiguration encodeConfiguration(2160, 3840, NV_ENC_HEVC, 24, 24, 1024*1024);
+    EncodeConfiguration encodeConfiguration(2160, 3840, NV_ENC_HEVC, 30, 30, 1024*1024);
     DecodeConfiguration decodeConfiguration(encodeConfiguration, cudaVideoCodec_H264);
 
     TileVideoEncoder tiler(context, decodeConfiguration, encodeConfiguration, rows, columns);
@@ -249,16 +287,20 @@ TEST_F(TilerVideoEncoderTestFixture, test4x4_at_4K) {
             15);
 
     for(auto i = 0; i < rows * columns; i++) {
+        auto row = i / columns, column = i % columns;
         EXPECT_VIDEO_VALID(FILENAME(i));
         EXPECT_VIDEO_FRAMES(FILENAME(i), 600);
         EXPECT_VIDEO_RESOLUTION(FILENAME(i), encodeConfiguration.height / rows, encodeConfiguration.width / columns);
+        EXPECT_VIDEO_QUALITY(FILENAME(i), reader.filename(), DEFAULT_PSNR,
+                             column * decodeConfiguration.width/columns, row * decodeConfiguration.height/rows,
+                             (column+1)*decodeConfiguration.width/columns, (row+1)*decodeConfiguration.height/rows);
         EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
     }
 }
 
 TEST_F(TilerVideoEncoderTestFixture, test6x8_at_4K) {
     const auto rows = 6, columns = 8;
-    EncodeConfiguration encodeConfiguration(2160, 3840, NV_ENC_HEVC, 24, 24, 1024*1024);
+    EncodeConfiguration encodeConfiguration(2160, 3840, NV_ENC_HEVC, 30, 30, 8*1024*1024);
     DecodeConfiguration decodeConfiguration(encodeConfiguration, cudaVideoCodec_H264);
 
     TileVideoEncoder tiler(context, decodeConfiguration, encodeConfiguration, rows, columns);
@@ -273,9 +315,13 @@ TEST_F(TilerVideoEncoderTestFixture, test6x8_at_4K) {
             15);
 
     for(auto i = 0; i < rows * columns; i++) {
+        auto row = i / columns, column = i % columns;
         EXPECT_VIDEO_VALID(FILENAME(i));
         EXPECT_VIDEO_FRAMES(FILENAME(i), 600);
         EXPECT_VIDEO_RESOLUTION(FILENAME(i), encodeConfiguration.height / rows, encodeConfiguration.width / columns);
+        EXPECT_VIDEO_QUALITY(FILENAME(i), reader.filename(), DEFAULT_PSNR,
+                             column * decodeConfiguration.width/columns, row * decodeConfiguration.height/rows,
+                             (column+1)*decodeConfiguration.width/columns, (row+1)*decodeConfiguration.height/rows);
         EXPECT_EQ(remove(FILENAME(i).c_str()), 0);
     }
 }

@@ -31,22 +31,28 @@ public:
         else if(rows * columns != decodeConfigurations_.size())
             throw std::runtime_error("bad #decode configurations"); //TODO
     }
-/*
-    NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers) {
-        return tile(reader, writers, [](VideoLock&, Frame& frame) -> Frame& { return frame; });
+
+    NVENCSTATUS join(const std::vector<std::shared_ptr<DecodeReader>> &readers, EncodeWriter &writer) {
+        return join(readers, writer, [](VideoLock&, EncodeBuffer& buffer) -> EncodeBuffer& { return buffer; });
     }
 
-    NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers,
-                     std::vector<FrameTransform> transforms) {
-        return tile(reader, writers, [this, transforms](VideoLock&, Frame& frame) -> Frame& {
-            return std::accumulate(
-                    transforms.begin(), transforms.end(),
-                    std::ref(frame),
-                    [this](auto& frame, auto& f) -> Frame& { return f(lock_, frame); });
-        });
+    NVENCSTATUS join(const std::vector<std::shared_ptr<DecodeReader>> &readers, EncodeWriter &writer,
+                     const std::vector<FrameTransform> tileTransforms) {
+        return join(readers, writer, tileTransforms,
+                    [](VideoLock&, EncodeBuffer& buffer) -> EncodeBuffer& { return buffer; });
     }
-*/
-    NVENCSTATUS join(const std::vector<std::shared_ptr<DecodeReader>> &readers, EncodeWriter &writer) {
+
+    NVENCSTATUS join(const std::vector<std::shared_ptr<DecodeReader>> &readers, EncodeWriter &writer,
+                     EncodableFrameTransform joinedTransform) {
+        return join(readers, writer,
+                    std::vector<FrameTransform>{readers.size(), [](VideoLock&, Frame& frame) -> Frame& {
+                        return frame; }},
+                    joinedTransform);
+    }
+
+    NVENCSTATUS join(const std::vector<std::shared_ptr<DecodeReader>> &readers, EncodeWriter &writer,
+                     const std::vector<FrameTransform> tileTransforms,
+                     EncodableFrameTransform joinedTransform) {
         auto decodeSessions = CreateDecodeSessions(readers);
         auto encoderSession = VideoEncoderSession(encoder_, writer);
         size_t framesDecoded = 0, framesEncoded = 0;
@@ -55,9 +61,11 @@ public:
         FrameRateAlignment alignment(encoder_.configuration().framerate, decoders_[0]->configuration().framerate);
 
         if(readers.size() != decoders_.size())
-            throw std::runtime_error("bad size"); //TODO
+            throw std::runtime_error("bad readers size"); //TODO
+        else if(tileTransforms.size() != decoders_.size())
+            throw std::runtime_error("bad tile transform size"); //TODO
 
-        LOG(INFO) << "Joining starting (" << rows() << 'x' << columns() << ')';
+        LOG(INFO) << "Joining starting (" << rows() << " rows x " << columns() << " columns)";
 
         while (!decoders_[0]->frame_queue().isComplete()) {
             std::vector<Frame> decodedFrames, processedFrames;
@@ -67,15 +75,14 @@ public:
             for(auto &session: decodeSessions)
                 decodedFrames.emplace_back(session->decode());
 
-            try {
             for (auto i = 0u; i <= dropOrDuplicate; i++, framesEncoded++) {
-                encoderSession.Encode(decodedFrames, [this](EncodeBuffer &buffer, Frame &frame, size_t index) {
+                encoderSession.Encode(decodedFrames,
+                                      [tileTransforms, joinedTransform, this](
+                                              EncodeBuffer &buffer, Frame &frame, size_t index) {
                     auto row = index / columns(), column = index % columns();
-                    buffer.copy(lock_, frame, 0, 0, row * frame.height(), column * frame.width());
-                });
-            }
-            } catch(const std::exception& e) {
-                LOG(INFO) << "foo" << e.what();
+                    buffer.copy(lock_, tileTransforms[index](lock_, frame),
+                                0, 0, row * frame.height(), column * frame.width());
+                }, joinedTransform);
             }
         }
 
@@ -111,13 +118,11 @@ private:
             const std::vector<std::shared_ptr<CUVIDFrameQueue>> frameQueues,
             VideoLock &lock, size_t count) {
         std::vector<std::shared_ptr<CudaDecoder>> decoders;
+        auto i = 0u;
 
-        decoders.reserve(count);
-        for(auto i = 0u; i < count; i++)
-            decoders.emplace_back(std::make_shared<CudaDecoder>(configurations[i], *frameQueues[i], lock));
-        //std::generate_n(std::back_inserter(decoders), count,
-        //                [&configurations, &frameQueues, &lock, i]() mutable {
-        //                    return std::make_shared<CudaDecoder>(configurations[i], *frameQueues[i++], lock); });
+        std::generate_n(std::back_inserter(decoders), count,
+                        [&configurations, &frameQueues, &lock, i]() mutable {
+                            return std::make_shared<CudaDecoder>(configurations[i++], *frameQueues[i], lock); });
 
         return decoders;
     }

@@ -7,7 +7,7 @@
 #define ASSERT_USECS(f, usecs) { \
     auto start = std::chrono::high_resolution_clock::now(); \
     { f; }; \
-    auto elapsed = std::chrono::high_resolution_clock::now() - start; \
+    std::chrono::duration elapsed{std::chrono::high_resolution_clock::now() - start}; \
     auto ticks = std::chrono::duration_cast<std::chrono::microseconds>(elapsed).count(); \
     if(ticks > usecs) { \
         FAIL() << "Performance violation (" << ticks << " > " << usecs << " microseconds) for "#f; \

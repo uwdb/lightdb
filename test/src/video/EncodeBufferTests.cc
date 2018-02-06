@@ -21,8 +21,6 @@ protected:
 };
 
 TEST_F(EncodeBufferTestFixture, testBuffer) {
-  //ASSERT_EQ(configuration.deviceID, deviceId);
-
   ASSERT_NO_THROW(EncodeBuffer(encoder, 1024*1024));
 }
 

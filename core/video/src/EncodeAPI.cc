@@ -1300,7 +1300,7 @@ NVENCSTATUS EncodeAPI::NvEncEncodeFrame(EncodeBuffer *pEncodeBuffer, NvEncPictur
     encPicParams.inputHeight = pEncodeBuffer->encoder.configuration().height;
     encPicParams.outputBitstream = pEncodeBuffer->output_buffer.bitstreamBuffer;
     encPicParams.completionEvent = pEncodeBuffer->output_buffer.outputEvent;
-    encPicParams.inputTimeStamp = m_EncodeIdx;
+    encPicParams.inputTimeStamp = m_EncodeIdx; //TODO think about this, should be a sane PTS
     encPicParams.pictureStruct = ePicStruct;
     encPicParams.qpDeltaMap = qpDeltaMapArray;
     encPicParams.qpDeltaMapSize = qpDeltaMapArraySize;
