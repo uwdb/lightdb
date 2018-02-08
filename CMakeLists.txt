@@ -1,4 +1,4 @@
-project(VisualCloud)
+project(LightDB)
 cmake_minimum_required(VERSION 3.8)
 SET(BOOST_MIN_VERSION "1.64.0")
 
@@ -33,16 +33,16 @@ set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -fvisibility=hidden -Wall")
 set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG --coverage -g3 -Wall")
 
 # Find required library dependencies
-set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} cuda nvcuvid dl pthread glog gflags stdc++fs)
+set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} cuda nvcuvid dl pthread glog gflags stdc++fs)
 
 #TODO add FindLLV.cmake; clean this up
 find_package(OpenCV REQUIRED)
-set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} ${OPENCV_LIBS} opencv_features2d)
-set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} lfv)
+set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${OPENCV_LIBS} opencv_features2d)
+set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} lfv)
 
 
 find_package(NVENC REQUIRED)
-set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} ${NVENC_LIBRARIES})
+set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${NVENC_LIBRARIES})
 
 find_package(NvidiaSDK REQUIRED)
 include_directories(${NVIDIASDK_INCLUDE_DIR})
@@ -57,7 +57,7 @@ include_directories(${Boost_INCLUDE_DIR})
 find_package(FFmpeg REQUIRED COMPONENTS AVCODEC AVFORMAT AVUTIL SWSCALE)
 include_directories(${FFMPEG_INCLUDE_DIRS})
 
-set(VISUALCLOUD_LIB_DEPENDENCIES ${VISUALCLOUD_LIB_DEPENDENCIES} ${FFMPEG_LIBRARIES})
+set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${FFMPEG_LIBRARIES})
 
 find_package(GTest)
 find_package (Glog REQUIRED)
@@ -66,7 +66,7 @@ find_package (Glog REQUIRED)
 # Enable testing
 enable_testing()
 
-# Build VisualCloud library
+# Build LightDB library
 add_subdirectory(core)
 
 # Build unit tests
@@ -90,5 +90,5 @@ add_custom_target(
    uninstall
    COMMAND eval "${CMD}"
    COMMAND xargs rm -f < install_manifest.txt
-   COMMAND echo "VisualCloud uninstalled"
+   COMMAND echo "LightDB uninstalled"
 )
