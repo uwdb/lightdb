@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 using namespace lightdb;
+using namespace lightdb::logical;
 
 class LightFieldTestFixture : public testing::Test {
 public:

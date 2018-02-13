@@ -56,7 +56,7 @@ namespace lightdb {
                const AngularRange &phi = AngularRange::PhiMax)
         //: Decode(std::ifstream{filename})
                 : field_(std::shared_ptr<LightField>(
-                new PanoramicVideoLightField(filename, theta, phi))) {}
+                new logical::PanoramicVideoLightField(filename, theta, phi))) {}
 
         Decode(const bool forceLightField,
                const std::string &filename,
@@ -64,7 +64,7 @@ namespace lightdb {
                const AngularRange &phi = AngularRange::PhiMax)
         //: Decode(std::ifstream{filename})
                 : field_(std::shared_ptr<LightField>(
-                      new PlanarTiledVideoLightField(filename,
+                      new logical::PlanarTiledVideoLightField(filename,
                                                     Volume{{0,
                                                             1},
                                                            {0,
@@ -106,7 +106,7 @@ namespace lightdb {
     template<typename ColorSpace>
     class Scan : public Operator {
         LightField &&scan(std::string name) {
-            return ConstantLightField(YUVColor::Green); //TODO
+            return logical::ConstantLightField(YUVColor::Green); //TODO
         }
     };
 
@@ -142,7 +142,7 @@ namespace lightdb {
                 : mergeType_(mergeType) {}
 
         LightFieldReference apply(const LightFieldReference left, const LightFieldReference right) const {
-            return LightFieldReference::make<CompositeLightField>(
+            return LightFieldReference::make<logical::CompositeLightField>(
                     std::vector<LightFieldReference>{left, right});
         }
 
@@ -156,7 +156,7 @@ namespace lightdb {
                 : volume_(volume) {}
 
         LightFieldReference apply(const LightFieldReference &field) const override {
-            return LightFieldReference::make<SubsetLightField>(field, volume_);
+            return LightFieldReference::make<logical::SubsetLightField>(field, volume_);
         }
 
     private:
@@ -169,7 +169,7 @@ namespace lightdb {
                 : theta_(theta), phi_(phi) {}
 
         LightFieldReference apply(const LightFieldReference &field) const override {
-            return LightFieldReference::make<RotatedLightField>(field, theta_, phi_);
+            return LightFieldReference::make<logical::RotatedLightField>(field, theta_, phi_);
         }
 
     private:
@@ -186,7 +186,7 @@ namespace lightdb {
         lightdb::rational interval() const { return interval_; }
 
         LightFieldReference apply(const LightFieldReference &field) const override {
-            return LightFieldReference::make<PartitionedLightField>(
+            return LightFieldReference::make<logical::PartitionedLightField>(
                     field, dimension(), interval());
 //                PartitionedLightField<YUVColorSpace>(field, dimension(), delta());
         }
@@ -217,7 +217,7 @@ namespace lightdb {
                 decodes.emplace_back(Decode(filename, encoded->volume().components()[i].theta, encoded->volume().components()[i].phi).apply());
             }
 
-            return LightFieldReference::make<CompositeLightField>(decodes);
+            return LightFieldReference::make<logical::CompositeLightField>(decodes);
         }
 
     private:
@@ -230,7 +230,7 @@ namespace lightdb {
                 : dimension_(dimension), interpolator_(interpolator) {}
 
         LightFieldReference apply(const LightFieldReference &field) const override {
-            return LightFieldReference::make<InterpolatedLightField>(
+            return LightFieldReference::make<logical::InterpolatedLightField>(
                     field, dimension_, interpolator_);
         }
 
@@ -251,7 +251,7 @@ namespace lightdb {
                 : geometry_(geometry) {}
 
         LightFieldReference apply(const LightFieldReference &field) const override {
-            return LightFieldReference::make<DiscretizedLightField>(field, geometry_);
+            return LightFieldReference::make<logical::DiscretizedLightField>(field, geometry_);
         }
 
     private:
@@ -267,7 +267,7 @@ namespace lightdb {
                 : functor_(functor) {}
 
         LightFieldReference apply(const LightFieldReference &field) const override {
-            return LightFieldReference::make<TransformedLightField>(field, functor_);
+            return LightFieldReference::make<logical::TransformedLightField>(field, functor_);
         }
 
     private:

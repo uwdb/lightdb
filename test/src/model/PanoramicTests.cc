@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 
 using namespace lightdb;
+using namespace lightdb::logical;
 
 class PanoramicTestFixture : public testing::Test {
 public:

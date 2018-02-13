@@ -44,7 +44,7 @@ namespace lightdb {
 
 
         private:
-            using metadata = std::tuple<size_t, size_t, size_t, PanoramicVideoLightField&>;
+            using metadata = std::tuple<size_t, size_t, size_t, logical::PanoramicVideoLightField&>;
 
             EquirectangularTiledLightField(LightFieldReference &field, const metadata data)
                 : field_(field), rows_(std::get<0>(data)), columns_(std::get<1>(data)), time_(std::get<2>(data)), video_((std::get<3>(data)))
@@ -52,11 +52,11 @@ namespace lightdb {
             { }
 
             static metadata get_dimensions(LightField* field, size_t rows=1, size_t columns=1, size_t time=0) {
-                auto *partitioner = dynamic_cast<const PartitionedLightField*>(field);
-                auto *video = dynamic_cast<PanoramicVideoLightField*>(field);
+                auto *partitioner = dynamic_cast<const logical::PartitionedLightField*>(field);
+                auto *video = dynamic_cast<logical::PanoramicVideoLightField*>(field);
                 auto *child = field->parents().size() == 1 ? &*field->parents().at(0) : nullptr;
                 // Don't cast for every prohibited type
-                auto *discrete = dynamic_cast<DiscreteLightField*>(field);
+                auto *discrete = dynamic_cast<logical::DiscreteLightField*>(field);
 
                 if(video != nullptr) {
                     if(rows > 1 || columns > 1)
@@ -84,7 +84,7 @@ namespace lightdb {
             LightFieldReference field_;
             const unsigned int rows_, columns_;
             const double time_;
-            const PanoramicVideoLightField& video_;
+            const logical::PanoramicVideoLightField& video_;
         };
 
         template<typename ColorSpace>
@@ -104,13 +104,13 @@ namespace lightdb {
 
         private:
             StitchedLightField(const LightFieldReference &field,
-                               const std::pair<std::vector<PanoramicVideoLightField*>, std::vector<Volume>> &pair)
+                               const std::pair<std::vector<logical::PanoramicVideoLightField*>, std::vector<Volume>> &pair)
                     : field_(field), videos_(pair.first), volumes_(pair.second)
             { }
 
-            static std::pair<std::vector<PanoramicVideoLightField*>, std::vector<Volume>> get_tiles(const LightFieldReference& field) {
-                auto *composite = dynamic_cast<const CompositeLightField*>(&*field);
-                std::vector<PanoramicVideoLightField*> videos;
+            static std::pair<std::vector<logical::PanoramicVideoLightField*>, std::vector<Volume>> get_tiles(const LightFieldReference& field) {
+                auto *composite = dynamic_cast<const logical::CompositeLightField*>(&*field);
+                std::vector<logical::PanoramicVideoLightField*> videos;
                 std::vector<Volume> volumes;
 
                 if(composite == nullptr)
@@ -118,10 +118,10 @@ namespace lightdb {
 
                 for(auto &child: field->parents()) {
                     LightField *cf = &*child;
-                    auto *video = dynamic_cast<PanoramicVideoLightField*>(cf);
-                    auto *rotation = dynamic_cast<RotatedLightField*>(cf);
+                    auto *video = dynamic_cast<logical::PanoramicVideoLightField*>(cf);
+                    auto *rotation = dynamic_cast<logical::RotatedLightField*>(cf);
                     if(rotation != nullptr)
-                        video = dynamic_cast<PanoramicVideoLightField*>(&*rotation->parents()[0]);
+                        video = dynamic_cast<logical::PanoramicVideoLightField*>(&*rotation->parents()[0]);
 
                     if(video == nullptr)
                         throw std::invalid_argument("Composite child was not a video.");
@@ -136,7 +136,7 @@ namespace lightdb {
             }
 
             const LightFieldReference field_;
-            const std::vector<PanoramicVideoLightField*> videos_;
+            const std::vector<logical::PanoramicVideoLightField*> videos_;
             const std::vector<Volume> volumes_;
         };
 
@@ -156,14 +156,14 @@ namespace lightdb {
 
         private:
             NaiveStitchedLightField(const LightFieldReference &field,
-                                    const std::pair<std::vector<PanoramicVideoLightField*>,
+                                    const std::pair<std::vector<logical::PanoramicVideoLightField*>,
                                             std::vector<Volume>> &pair)
                     : field_(field), videos_(pair.first), volumes_(pair.second)
             { }
 
-            static std::pair<std::vector<PanoramicVideoLightField*>, std::vector<Volume>> get_tiles(const LightFieldReference& field) {
-                auto *composite = dynamic_cast<const CompositeLightField*>(&*field);
-                std::vector<PanoramicVideoLightField*> videos;
+            static std::pair<std::vector<logical::PanoramicVideoLightField*>, std::vector<Volume>> get_tiles(const LightFieldReference& field) {
+                auto *composite = dynamic_cast<const logical::CompositeLightField*>(&*field);
+                std::vector<logical::PanoramicVideoLightField*> videos;
                 std::vector<Volume> volumes;
 
                 if(composite == nullptr)
@@ -171,10 +171,10 @@ namespace lightdb {
 
                 for(auto &child: field->parents()) {
                     LightField *cf = &*child;
-                    auto *video = dynamic_cast<PanoramicVideoLightField*>(cf);
-                    auto *rotation = dynamic_cast<RotatedLightField*>(cf);
+                    auto *video = dynamic_cast<logical::PanoramicVideoLightField*>(cf);
+                    auto *rotation = dynamic_cast<logical::RotatedLightField*>(cf);
                     if(rotation != nullptr)
-                        video = dynamic_cast<PanoramicVideoLightField*>(&*rotation->parents()[0]);
+                        video = dynamic_cast<logical::PanoramicVideoLightField*>(&*rotation->parents()[0]);
 
                     if(video == nullptr)
                         throw std::invalid_argument("Composite child was not a video.");
@@ -187,14 +187,14 @@ namespace lightdb {
             }
 
             const LightFieldReference field_;
-            const std::vector<PanoramicVideoLightField*> videos_;
+            const std::vector<logical::PanoramicVideoLightField*> videos_;
             const std::vector<Volume> volumes_;
         };
 
         template<typename ColorSpace>
         class EquirectangularCroppedLightField: public LightField {
         public:
-            EquirectangularCroppedLightField(const PanoramicVideoLightField &video, AngularRange theta, AngularRange phi, TemporalRange t)
+            EquirectangularCroppedLightField(const logical::PanoramicVideoLightField &video, AngularRange theta, AngularRange phi, TemporalRange t)
                     : video_(video), theta_(theta), phi_(phi), t(t)
             { }
 
@@ -206,7 +206,7 @@ namespace lightdb {
             EncodedLightField apply(const std::string &format);
 
         private:
-            const PanoramicVideoLightField& video_;
+            const logical::PanoramicVideoLightField& video_;
             const AngularRange theta_, phi_;
             const TemporalRange t;
         };
@@ -214,8 +214,8 @@ namespace lightdb {
         template<typename ColorSpace>
         class EquirectangularTranscodedLightField: public LightField {
         public:
-            EquirectangularTranscodedLightField(const PanoramicVideoLightField &video,
-                                                const lightdb::functor<ColorSpace> &functor)
+            EquirectangularTranscodedLightField(const logical::PanoramicVideoLightField &video,
+                                                const functor<ColorSpace> &functor)
                     : video_(video), functor_(functor)
             { }
 
@@ -229,13 +229,13 @@ namespace lightdb {
             EncodedLightField apply(const std::string &format);
 
         private:
-            const PanoramicVideoLightField& video_;
+            const logical::PanoramicVideoLightField& video_;
             const lightdb::functor<ColorSpace> &functor_;
         };
 
         class PlanarTiledToVideoLightField: public LightField {
         public:
-            PlanarTiledToVideoLightField(const PlanarTiledVideoLightField &video,
+            PlanarTiledToVideoLightField(const logical::PlanarTiledVideoLightField &video,
                                          const double x, const double y, const AngularRange &theta, const AngularRange &phi)
                     : video_(video), x_(x), y_(y), theta_(theta), phi_(phi)
             { }
@@ -250,7 +250,7 @@ namespace lightdb {
             EncodedLightField apply(const std::string &format);
 
         private:
-            const PlanarTiledVideoLightField& video_;
+            const logical::PlanarTiledVideoLightField& video_;
             const double x_, y_;
             const AngularRange theta_, phi_;
         };
@@ -259,8 +259,8 @@ namespace lightdb {
         class TemporalPartitionedEquirectangularTranscodedLightField: public LightField {
         public:
             TemporalPartitionedEquirectangularTranscodedLightField(
-                    const PartitionedLightField &partitioning,
-                    const PanoramicVideoLightField &video,
+                    const logical::PartitionedLightField &partitioning,
+                    const logical::PanoramicVideoLightField &video,
                     const lightdb::functor<ColorSpace> &functor)
                     : partitioning_(partitioning), video_(video), functor_(functor)
             { }
@@ -275,16 +275,16 @@ namespace lightdb {
             EncodedLightField apply(const std::string &format);
 
         private:
-            const PartitionedLightField& partitioning_;
-            const PanoramicVideoLightField& video_;
+            const logical::PartitionedLightField& partitioning_;
+            const logical::PanoramicVideoLightField& video_;
             const lightdb::functor<ColorSpace> &functor_;
         };
 
         template<typename ColorSpace>
         class BinaryUnionTranscodedLightField: public LightField {
         public:
-            BinaryUnionTranscodedLightField(const PanoramicVideoLightField &left,
-                                            const PanoramicVideoLightField &right,
+            BinaryUnionTranscodedLightField(const logical::PanoramicVideoLightField &left,
+                                            const logical::PanoramicVideoLightField &right,
                                             const naryfunctor<ColorSpace> &functor)
                     : left_(left), right_(right), functor_(functor)
             { }
@@ -299,7 +299,7 @@ namespace lightdb {
             EncodedLightField apply(const std::string &format);
 
         private:
-            const PanoramicVideoLightField& left_, right_;
+            const logical::PanoramicVideoLightField& left_, right_;
             const naryfunctor<ColorSpace> &functor_;
         };
 

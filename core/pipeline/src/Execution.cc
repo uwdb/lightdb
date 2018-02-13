@@ -20,9 +20,9 @@ namespace lightdb {
                 return {lightdb::physical::StitchedLightField<YUVColorSpace>(lightfield).apply(temporalInterval)};
             } catch(std::invalid_argument) {
                 //TODO just name these things, rather than relying on dynamic casting
-                auto *partitioning = dynamic_cast<const PartitionedLightField*>(&*lightfield);
-                auto *discrete = dynamic_cast<const DiscretizedLightField*>(&*lightfield);
-                auto *interpolated = dynamic_cast<const InterpolatedLightField*>(&*lightfield);
+                auto *partitioning = dynamic_cast<const logical::PartitionedLightField*>(&*lightfield);
+                auto *discrete = dynamic_cast<const logical::DiscretizedLightField*>(&*lightfield);
+                auto *interpolated = dynamic_cast<const logical::InterpolatedLightField*>(&*lightfield);
 
                 if(partitioning != nullptr && partitioning->dimension() == Dimension::Time &&
                         lightfield->parents().size() == 1)
@@ -42,9 +42,9 @@ namespace lightdb {
                 return {lightdb::physical::StitchedLightField<YUVColorSpace>(lightfield).apply(temporalInterval)};
             } catch(std::invalid_argument) {
                 //TODO just name these things, rather than relying on dynamic casting
-                auto *partitioning = dynamic_cast<const PartitionedLightField*>(&*lightfield);
-                auto *discrete = dynamic_cast<const DiscretizedLightField*>(&*lightfield);
-                auto *interpolated = dynamic_cast<const InterpolatedLightField*>(&*lightfield);
+                auto *partitioning = dynamic_cast<const logical::PartitionedLightField*>(&*lightfield);
+                auto *discrete = dynamic_cast<const logical::DiscretizedLightField*>(&*lightfield);
+                auto *interpolated = dynamic_cast<const logical::InterpolatedLightField*>(&*lightfield);
 
                 if(partitioning != nullptr && partitioning->dimension() == Dimension::Time &&
                         lightfield->parents().size() == 1)
@@ -60,12 +60,12 @@ namespace lightdb {
         //TODO what is this, it's just a copy of the applyStitchingFunction?  Probably remove(?)
         //template<typename ColorSpace>
         static std::optional<EncodedLightField> applyBinaryOverlayUnion(LightFieldReference lightfield, const std::string format) {
-            auto *composite = dynamic_cast<const CompositeLightField*>(&*lightfield);
+            auto *composite = dynamic_cast<const logical::CompositeLightField*>(&*lightfield);
             if(composite == nullptr || composite->parents().size() != 2)
                 return {};
 
-            auto *left = dynamic_cast<const PanoramicVideoLightField*>(&*composite->parents()[0]);
-            auto *right = dynamic_cast<const PanoramicVideoLightField*>(&*composite->parents()[1]);
+            auto *left = dynamic_cast<const logical::PanoramicVideoLightField*>(&*composite->parents()[0]);
+            auto *right = dynamic_cast<const logical::PanoramicVideoLightField*>(&*composite->parents()[1]);
 
             if(left != nullptr && right != nullptr &&
                     left->volume().bounding() == right->volume().bounding()) {
@@ -78,12 +78,12 @@ namespace lightdb {
 
         //template<typename ColorSpace>
         static std::optional<EncodedLightField> applySelfUnion(LightFieldReference lightfield, const std::string &format) {
-            auto *composite = dynamic_cast<const CompositeLightField*>(&*lightfield);
+            auto *composite = dynamic_cast<const logical::CompositeLightField*>(&*lightfield);
             if(composite == nullptr || composite->parents().size() != 2)
                 return {};
 
-            auto *left = dynamic_cast<PanoramicVideoLightField*>(&*composite->parents()[0]);
-            auto *right = dynamic_cast<PanoramicVideoLightField*>(&*composite->parents()[1]);
+            auto *left = dynamic_cast<logical::PanoramicVideoLightField*>(&*composite->parents()[0]);
+            auto *right = dynamic_cast<logical::PanoramicVideoLightField*>(&*composite->parents()[1]);
 
             if(left != nullptr && right != nullptr &&
                left->volume().bounding() == right->volume().bounding() &&
@@ -91,7 +91,7 @@ namespace lightdb {
                left->metadata().codec == format) {
                 auto lf = composite->parents()[0];
                 auto sp = static_cast<const std::shared_ptr<LightField>>(lf);
-                auto vlf = std::static_pointer_cast<PanoramicVideoLightField>(sp);
+                auto vlf = std::static_pointer_cast<logical::PanoramicVideoLightField>(sp);
                 auto elf = std::static_pointer_cast<EncodedLightFieldData>(vlf);
 
                 return elf;
@@ -102,8 +102,8 @@ namespace lightdb {
 
         //template<typename ColorSpace>
         static std::optional<EncodedLightField> applyIdentitySelectTranscode(LightFieldReference lightfield, const std::string &format) {
-            auto *subset = dynamic_cast<SubsetLightField*>(&*lightfield);
-            auto *video = subset != nullptr ? dynamic_cast<PanoramicVideoLightField*>(&*lightfield->parents()[0]) : nullptr;
+            auto *subset = dynamic_cast<logical::SubsetLightField*>(&*lightfield);
+            auto *video = subset != nullptr ? dynamic_cast<logical::PanoramicVideoLightField*>(&*lightfield->parents()[0]) : nullptr;
 
             if(subset != nullptr && video != nullptr &&
                     subset->volume().components().size() == 1 &&
@@ -111,7 +111,7 @@ namespace lightdb {
                     video->metadata().codec == format) {
                 auto lf = lightfield->parents()[0];
                 auto sp = static_cast<const std::shared_ptr<LightField>>(lf);
-                auto vlf = std::static_pointer_cast<PanoramicVideoLightField>(sp);
+                auto vlf = std::static_pointer_cast<logical::PanoramicVideoLightField>(sp);
                 auto elf = std::static_pointer_cast<EncodedLightFieldData>(vlf);
 
                 return elf;
@@ -122,10 +122,10 @@ namespace lightdb {
 
         //template<typename ColorSpace>
         static std::optional<EncodedLightField> applyIdentityTranscode(LightFieldReference lightfield, const std::string &format) {
-            auto *video = dynamic_cast<PanoramicVideoLightField*>(&*lightfield);
+            auto *video = dynamic_cast<logical::PanoramicVideoLightField*>(&*lightfield);
             if(video != nullptr && video->metadata().codec == format) {
                 auto sp = static_cast<const std::shared_ptr<LightField>>(lightfield);
-                auto vlf = std::static_pointer_cast<PanoramicVideoLightField>(sp);
+                auto vlf = std::static_pointer_cast<logical::PanoramicVideoLightField>(sp);
                 auto elf = std::static_pointer_cast<EncodedLightFieldData>(vlf);
 
                 return elf;
@@ -135,7 +135,7 @@ namespace lightdb {
         }
 
         static std::optional<EncodedLightField> applyColorFromPointConstantTranscode(LightFieldReference lightfield, const std::string &format) {
-            auto *constant = dynamic_cast<ConstantLightField*>(&*lightfield);
+            auto *constant = dynamic_cast<logical::ConstantLightField*>(&*lightfield);
             if(constant != nullptr && format == "YUV" && constant->volume().components().size() == 1 && constant->volume().components()[0].is_point()) {
                 auto data = std::make_shared<bytestring>(constant->color());
                 return SingletonMemoryEncodedLightField::create(data, constant->volume().components()[0]);
@@ -146,7 +146,7 @@ namespace lightdb {
 
         //template<typename ColorSpace>
         static std::optional<EncodedLightField> applyTranscode(LightFieldReference lightfield, const std::string &format) {
-            auto *video = dynamic_cast<PanoramicVideoLightField*>(&*lightfield);
+            auto *video = dynamic_cast<logical::PanoramicVideoLightField*>(&*lightfield);
             if(video != nullptr && video->metadata().codec != format)
                 return std::optional<EncodedLightField>{lightdb::physical::EquirectangularTranscodedLightField<YUVColorSpace>(*video, Identity()).apply(format)};
             else
@@ -155,8 +155,8 @@ namespace lightdb {
 
         //template<typename ColorSpace>
         static std::optional<EncodedLightField> applyTemporalPartitonedTranscode(LightFieldReference lightfield, const std::string &format) {
-            auto *partitioning = dynamic_cast<const PartitionedLightField*>(&*lightfield);
-            auto *video = partitioning != nullptr && partitioning->parents().size() == 1 ? dynamic_cast<PanoramicVideoLightField*>(&*partitioning->parents()[0]) : nullptr;
+            auto *partitioning = dynamic_cast<const logical::PartitionedLightField*>(&*lightfield);
+            auto *video = partitioning != nullptr && partitioning->parents().size() == 1 ? dynamic_cast<logical::PanoramicVideoLightField*>(&*partitioning->parents()[0]) : nullptr;
 
             if(partitioning != nullptr && video != nullptr && video->metadata().codec != format && video->volume().components().size() > 0)
                 return {lightdb::physical::TemporalPartitionedEquirectangularTranscodedLightField<YUVColorSpace>(*partitioning, *video, Identity()).apply(format)};
@@ -169,8 +169,8 @@ namespace lightdb {
             if(lightfield->parents().size() != 1)
                 return {};
 
-            auto *transform = dynamic_cast<TransformedLightField*>(&*lightfield);
-            auto *video = dynamic_cast<PanoramicVideoLightField*>(&*lightfield->parents()[0]);
+            auto *transform = dynamic_cast<logical::TransformedLightField*>(&*lightfield);
+            auto *video = dynamic_cast<logical::PanoramicVideoLightField*>(&*lightfield->parents()[0]);
             if(transform != nullptr && video != nullptr &&
                transform->functor().hasFrameTransform())
                 return {lightdb::physical::EquirectangularTranscodedLightField<YUVColorSpace>(*video, transform->functor()).apply(format)};
@@ -255,8 +255,8 @@ namespace lightdb {
             if(lightfield->parents().size() != 1)
                 return {};
 
-            auto *subset = dynamic_cast<SubsetLightField*>(&*lightfield);
-            auto *video = dynamic_cast<PanoramicVideoLightField*>(&*lightfield->parents()[0]);
+            auto *subset = dynamic_cast<logical::SubsetLightField*>(&*lightfield);
+            auto *video = dynamic_cast<logical::PanoramicVideoLightField*>(&*lightfield->parents()[0]);
             if(subset != nullptr && video != nullptr &&
                     subset->volume().components().size() == 1 &&
                     subset->volume().components()[0].x.Empty() &&
@@ -274,8 +274,8 @@ namespace lightdb {
             if(lightfield->parents().size() != 1)
                 return {};
 
-            auto *subset = dynamic_cast<SubsetLightField*>(&*lightfield);
-            auto *planar = dynamic_cast<PlanarTiledVideoLightField*>(&*lightfield->parents()[0]);
+            auto *subset = dynamic_cast<logical::SubsetLightField*>(&*lightfield);
+            auto *planar = dynamic_cast<logical::PlanarTiledVideoLightField*>(&*lightfield->parents()[0]);
             if(subset != nullptr && planar != nullptr &&
                subset->volume().components().size() == 1 &&
                subset->volume().components()[0].x.Empty() &&

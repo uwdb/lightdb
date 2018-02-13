@@ -4,6 +4,7 @@
 #include <AssertVideo.h>
 
 using namespace lightdb;
+using namespace lightdb::logical;
 
 class OperatorTestFixture : public testing::Test {
 public:
