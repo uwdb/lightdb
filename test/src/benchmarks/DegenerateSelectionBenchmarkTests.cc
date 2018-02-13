@@ -26,9 +26,9 @@ public:
 
         auto start = steady_clock::now();
 
-        Decode<EquirectangularGeometry>(source)
+        Decode(source)
                 >> Select(Point3D::Zero.ToVolume({0, 20}, AngularRange::ThetaMax, AngularRange::PhiMax))
-                >> Encode<YUVColorSpace>("h264")
+                >> Encode("h264")
                 >> Store(name);
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
