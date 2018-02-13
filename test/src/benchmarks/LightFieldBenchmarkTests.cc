@@ -18,9 +18,9 @@ public:
         auto source = std::string("../../benchmark/datasets/cats/cats.h264");
         auto start = steady_clock::now();
 
-        Decode<EquirectangularGeometry>(true, source)
+        Decode(true, source)
                 >> Select({{0.5, 0.5}, {0.5, 0.5}, {0, 0}, TemporalRange::TemporalMax, AngularRange::ThetaMax, AngularRange::PhiMax})
-                >> Encode<YUVColorSpace>("hevc")
+                >> Encode("hevc")
                 >> Store(name);
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
@@ -35,11 +35,11 @@ public:
         auto source = std::string("resources/test-lightfield.h265");
         auto start = steady_clock::now();
 
-        auto field = Decode<EquirectangularGeometry>(true, source);
+        auto field = Decode(true, source);
         auto left =  field >> Select({{0.25, 0.25}, {0.5, 0.5}, {0, 0}});
         auto right = field >> Select({{0.75, 0.75}, {0.5, 0.5}, {0, 0}});
 
-        (left | right) >> Encode<YUVColorSpace>("hevc");
+        (left | right) >> Encode("hevc");
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
 

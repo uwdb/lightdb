@@ -19,9 +19,9 @@ public:
 
         auto start = steady_clock::now();
 
-        Decode<EquirectangularGeometry>(source)
+        Decode(source)
                 >> Map(lightdb::Greyscale())
-                >> Encode<YUVColorSpace>()
+                >> Encode()
                 >> Store(name);
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
@@ -37,9 +37,9 @@ public:
 
         auto start = steady_clock::now();
 
-        Decode<EquirectangularGeometry>(source)
+        Decode(source)
                 >> Map(lightdb::GaussianBlur())
-                >> Encode<YUVColorSpace>()
+                >> Encode()
                 >> Store(name);
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";

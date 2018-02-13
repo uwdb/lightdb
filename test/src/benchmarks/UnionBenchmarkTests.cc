@@ -33,18 +33,18 @@ public:
         auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + 'K';
 
         LOG(INFO) << "Creating stitchable HEVC input";
-        Decode<EquirectangularGeometry, YUVColorSpace>(source + ".h264")
-                >> Encode<YUVColorSpace>("hevc")
+        Decode(source + ".h264")
+                >> Encode("hevc")
                 >> Store(source + ".hevc");
 
         auto start = steady_clock::now();
 
-        auto left = Decode<EquirectangularGeometry>(source + ".hevc", {0, temptodouble(pi)}).apply();
-        auto right = Decode<EquirectangularGeometry>(source + ".hevc", {0, temptodouble(pi)}).apply()
+        auto left = Decode(source + ".hevc", {0, temptodouble(pi)}).apply();
+        auto right = Decode(source + ".hevc", {0, temptodouble(pi)}).apply()
                 >> Rotate(temptodouble(pi), 0);
 
         auto result = (left | right)
-                >> Encode<YUVColorSpace>()
+                >> Encode()
                 >> Store(name);
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
@@ -62,11 +62,11 @@ public:
 
         auto start = steady_clock::now();
 
-        auto left = Decode<EquirectangularGeometry>(source1, {0, temptodouble(pi)}).apply();
-        auto right = Decode<EquirectangularGeometry>(source2, {0, temptodouble(pi)}).apply();
+        auto left = Decode(source1, {0, temptodouble(pi)}).apply();
+        auto right = Decode(source2, {0, temptodouble(pi)}).apply();
 
         auto result = (left | right)
-                >> Encode<YUVColorSpace>()
+                >> Encode()
                 >> Store(name);
 
         LOG(INFO) << source1 << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
@@ -83,11 +83,11 @@ public:
 
         auto start = steady_clock::now();
 
-        auto left = Decode<EquirectangularGeometry>(source).apply();
-        auto right = Decode<EquirectangularGeometry>(source).apply();
+        auto left = Decode(source).apply();
+        auto right = Decode(source).apply();
 
         auto result = (left | right)
-                >> Encode<YUVColorSpace>("h264")
+                >> Encode("h264")
                 >> Store(name);
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";

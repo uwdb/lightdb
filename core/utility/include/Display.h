@@ -6,9 +6,8 @@
 
 namespace lightdb {
 
-template<typename ColorSpace>
-void print_plan(const LightFieldReference<ColorSpace> lightField) {
-    std::deque<std::pair<LightFieldReference<ColorSpace>, int>> queue{{{lightField, 0u}}};
+void print_plan(const LightFieldReference lightField) {
+    std::deque<std::pair<LightFieldReference, unsigned int>> queue{{{lightField, 0u}}};
 
     while(!queue.empty()) {
         auto current = queue.front();
@@ -18,7 +17,7 @@ void print_plan(const LightFieldReference<ColorSpace> lightField) {
                current.second + static_cast<int>(strlen(typeid(*current.first).name())),
                typeid(*current.first).name());
 
-        for(const auto &field: current.first->provenance())
+        for(const auto &field: current.first->parents())
             queue.push_front({field, current.second + 4});
     }
 }

@@ -37,9 +37,9 @@ public:
 
         auto start = steady_clock::now();
 
-        Decode<EquirectangularGeometry>(source)
+        Decode(source)
                 >> Select(Point3D::Zero.ToVolume(TemporalRange::TemporalMax, theta, phi))
-                >> Encode<YUVColorSpace>()
+                >> Encode()
                 >> Store(name);
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
@@ -59,9 +59,9 @@ public:
 
         auto start = steady_clock::now();
 
-        Decode<EquirectangularGeometry>(source)
+        Decode(source)
                 >> Select(Point3D::Zero.ToVolume(range, AngularRange::ThetaMax, AngularRange::PhiMax))
-                >> Encode<YUVColorSpace>()
+                >> Encode()
                 >> Store(name);
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";

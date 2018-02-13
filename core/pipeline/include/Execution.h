@@ -5,8 +5,7 @@
 #include "Encoding.h"
 
 namespace lightdb::pipeline {
-    template<typename ColorSpace>
-    lightdb::EncodedLightField execute(LightFieldReference<ColorSpace>, const std::string&);
+    lightdb::EncodedLightField execute(LightFieldReference, const std::string&);
 }
 
 #endif //LIGHTDB_EXECUTION_H

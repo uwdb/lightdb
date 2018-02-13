@@ -43,7 +43,7 @@ public:
         } else
             throw new std::runtime_error("Row/col combination not hardcoded");
 
-        Decode<EquirectangularGeometry>(source)
+        Decode(source)
                 >> Select(Point3D::Zero)
                 >> Partition(Dimension::Time, 1)
                 >> Partition(Dimension::Phi, phi)
@@ -52,7 +52,7 @@ public:
                 >> Interpolate(Dimension::Time, interpolation::NearestNeighbor)
                 >> Discretize(Dimension::Time, rational(1, 60))
                 >> Partition(Dimension::Time, 1)
-                >> Encode<YUVColorSpace>()
+                >> Encode()
                 >> Store(name);
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";

@@ -1,9 +1,11 @@
 #ifndef LIGHTDB_FUNCTOR_H
 #define LIGHTDB_FUNCTOR_H
 
-#include "Color.h"
+#include "LightField.h"
 #include "Frame.h"
 #include <optional>
+
+class LightField;
 
 namespace lightdb {
     template<typename ColorSpace>
@@ -11,9 +13,9 @@ namespace lightdb {
     public:
         virtual ~functor() { }
 
-        virtual const typename ColorSpace::Color operator()(const LightField<ColorSpace> &field,
+        virtual const typename ColorSpace::Color operator()(const LightField &field,
                                                             const Point6D &point) const = 0;
-        virtual const typename ColorSpace::Color operator()(const LightFieldReference<ColorSpace> &field,
+        virtual const typename ColorSpace::Color operator()(const LightFieldReference &field,
                                                             const Point6D &point) const {
             return this->operator()(*field, point);
         }
@@ -26,7 +28,7 @@ namespace lightdb {
     public:
         virtual ~naryfunctor() { }
 
-        virtual const typename ColorSpace::Color operator()(const std::vector<LightFieldReference<ColorSpace>> &fields,
+        virtual const typename ColorSpace::Color operator()(const std::vector<LightFieldReference> &fields,
                                                             const Point6D &point) = 0;
         virtual operator const NaryFrameTransform() const { throw std::bad_cast(); }
         virtual bool hasFrameTransform() const { return false; }
@@ -37,7 +39,7 @@ namespace lightdb {
     public:
         ~Identity() { }
 
-        const YUVColorSpace::Color operator()(const LightField<YUVColorSpace> &field,
+        const YUVColorSpace::Color operator()(const LightField &field,
                                               const Point6D &point) const override;
         operator const FrameTransform() const override;
         bool hasFrameTransform() const override { return true; }
@@ -47,7 +49,7 @@ namespace lightdb {
     public:
         ~Greyscale() { }
 
-        const YUVColorSpace::Color operator()(const LightField<YUVColorSpace> &field,
+        const YUVColorSpace::Color operator()(const LightField &field,
                                               const Point6D &point) const override;
 
         operator const FrameTransform() const override;
@@ -59,7 +61,7 @@ namespace lightdb {
         GaussianBlur();
         ~GaussianBlur() { }
 
-        const YUVColorSpace::Color operator()(const LightField<YUVColorSpace> &field,
+        const YUVColorSpace::Color operator()(const LightField &field,
                                               const Point6D &point) const override;
 
         operator const FrameTransform() const override;
@@ -74,7 +76,7 @@ namespace lightdb {
     public:
         ~DepthmapCPU() { }
 
-        const YUVColorSpace::Color operator()(const LightField<YUVColorSpace> &field,
+        const YUVColorSpace::Color operator()(const LightField &field,
                                               const Point6D &point) const override {
             throw new std::runtime_error("Not implemented");
         }
@@ -88,7 +90,7 @@ namespace lightdb {
         DepthmapGPU() : module_(nullptr), function_(nullptr) { }
         ~DepthmapGPU() { }
 
-        const YUVColorSpace::Color operator()(const LightField<YUVColorSpace> &field,
+        const YUVColorSpace::Color operator()(const LightField &field,
                                               const Point6D &point) const override {
             throw new std::runtime_error("Not implemented");
         }
@@ -105,7 +107,7 @@ namespace lightdb {
     public:
         ~DepthmapFPGA() { }
 
-        const YUVColorSpace::Color operator()(const LightField<YUVColorSpace> &field,
+        const YUVColorSpace::Color operator()(const LightField &field,
                                               const Point6D &point) const override {
             throw new std::runtime_error("Not implemented");
         }
@@ -118,7 +120,7 @@ namespace lightdb {
     public:
         ~Left() { }
 
-        const YUVColorSpace::Color operator()(const std::vector<LightFieldReference<YUVColorSpace>> &fields,
+        const YUVColorSpace::Color operator()(const std::vector<LightFieldReference> &fields,
                                               const Point6D &point) override {
             throw std::runtime_error("Not implemented");
         }
@@ -132,7 +134,7 @@ namespace lightdb {
         Overlay(YUVColorSpace::Color transparent) : transparent_(transparent) { }
         ~Overlay() { }
 
-        const YUVColorSpace::Color operator()(const std::vector<LightFieldReference<YUVColorSpace>> &fields,
+        const YUVColorSpace::Color operator()(const std::vector<LightFieldReference> &fields,
                                               const Point6D &point) override {
             throw std::runtime_error("Not implemented");
         }

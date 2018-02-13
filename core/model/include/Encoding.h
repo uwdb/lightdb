@@ -17,7 +17,7 @@ namespace lightdb {
 
         //TODO combine these into a single struct
         virtual const std::vector<std::shared_ptr<bytestring>> segments() = 0;
-        virtual const std::vector<Volume> volumes() const = 0;
+        virtual const CompositeVolume volume() const = 0;
 
         virtual const std::shared_ptr<bytestring> bytes() = 0;
         virtual void write(const std::string &filename) = 0;
@@ -59,7 +59,7 @@ namespace lightdb {
             //fout.write(bytes()->data(), bytes()->size());
         }
 
-        const std::vector<Volume> volumes() const override {
+        const CompositeVolume volume() const override {
             return {volume_};
         }
 
@@ -71,14 +71,14 @@ namespace lightdb {
     private:
         std::string filename_;
         std::vector<std::shared_ptr<bytestring>> data_;
-        const Volume volume_;
+        const CompositeVolume volume_;
     };
 
     class CompositeMemoryEncodedLightField: public EncodedLightFieldData {
     public:
         //TODO should just take a vector of bytestrings
-        static EncodedLightField create(std::vector<std::shared_ptr<bytestring>> &encodings, const std::vector<Volume> &volumes) {
-            return std::shared_ptr<CompositeMemoryEncodedLightField>(new CompositeMemoryEncodedLightField(encodings, volumes));
+        static EncodedLightField create(std::vector<std::shared_ptr<bytestring>> &encodings, const CompositeVolume &volume) {
+            return std::shared_ptr<CompositeMemoryEncodedLightField>(new CompositeMemoryEncodedLightField(encodings, volume));
         }
 
         ~CompositeMemoryEncodedLightField() { }
@@ -96,8 +96,8 @@ namespace lightdb {
             }
         }
 
-        const std::vector<Volume> volumes() const override {
-            return volumes_;
+        const CompositeVolume volume() const override {
+            return volume_;
         }
 
         void write(const std::string &filename) override {
@@ -119,19 +119,19 @@ namespace lightdb {
 
     protected:
         explicit CompositeMemoryEncodedLightField(const std::vector<std::shared_ptr<bytestring>> &data,
-                                                  const std::vector<Volume> &volumes)
-                : data_(data), volumes_(volumes)
+                                                  const CompositeVolume &volume)
+                : data_(data), volume_(volume)
         { }
 
     private:
         std::vector<std::shared_ptr<bytestring>> data_;
-        const std::vector<Volume> volumes_;
+        const CompositeVolume volume_;
     };
 
     class SingletonMemoryEncodedLightField: public EncodedLightFieldData {
     public:
         //TODO should just take a vector of bytestrings
-        static EncodedLightField create(std::shared_ptr<bytestring> &encoding, const Volume &volume) {
+        static EncodedLightField create(std::shared_ptr<bytestring> &encoding, const CompositeVolume &volume) {
             return std::shared_ptr<SingletonMemoryEncodedLightField>(new SingletonMemoryEncodedLightField(encoding, volume));
         }
 
@@ -150,7 +150,7 @@ namespace lightdb {
             }
         }
 
-        const std::vector<Volume> volumes() const override {
+        const CompositeVolume volume() const override {
             return {volume_};
         }
 
@@ -161,13 +161,13 @@ namespace lightdb {
         }
 
     protected:
-        explicit SingletonMemoryEncodedLightField(const std::shared_ptr<bytestring> &data, const Volume &volume)
+        explicit SingletonMemoryEncodedLightField(const std::shared_ptr<bytestring> &data, const CompositeVolume &volume)
             : data_({data}), volume_(volume)
         { }
 
     private:
         std::vector<std::shared_ptr<bytestring>> data_;
-        const Volume volume_;
+        const CompositeVolume volume_;
     };
 };
 

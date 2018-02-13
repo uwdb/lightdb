@@ -78,7 +78,7 @@ namespace lightdb {
             for(auto i = 0u; i < rows_ * columns_; i++) {
                 //decodes.emplace_back(bytestring{});
                 decodes.emplace_back(std::make_shared<bytestring>(dynamic_cast<SegmentedMemoryEncodeWriter *>(writers[i].get())->buffer()));
-                volumes.push_back({video_.volume().x, video_.volume().y, video_.volume().z, video_.volume().t,
+                volumes.push_back({video_.volume().bounding().x, video_.volume().bounding().y, video_.volume().bounding().z, video_.volume().bounding().t,
                                       {(i % columns()) * AngularRange::ThetaMax.end / columns(), ((i % columns()) + 1) * AngularRange::ThetaMax.end / columns()},
                                       {(i / columns()) * AngularRange::PhiMax.end / columns(), ((i / columns()) + 1) * AngularRange::PhiMax.end / columns()}});
                 //decodes.emplace_back(std::make_unique<std::ifstream>(std::string("out") + std::to_string(i)));
@@ -202,7 +202,7 @@ namespace lightdb {
             system(command.c_str());
 
             return SingletonFileEncodedLightField::create("stitched.hevc",
-                                                          {videos_[0]->volumes()[0].x, videos_[0]->volumes()[0].y, videos_[0]->volumes()[0].z, videos_[0]->volumes()[0].t, theta_range, phi_range});
+                                                          {videos_[0]->volume().components()[0].x, videos_[0]->volume().components()[0].y, videos_[0]->volume().components()[0].z, videos_[0]->volume().components()[0].t, theta_range, phi_range});
         }
 
         template<typename ColorSpace>
@@ -232,7 +232,7 @@ namespace lightdb {
 
 
             return SingletonFileEncodedLightField::create("stitched.hevc",
-                                                          {videos_[0]->volumes()[0].x, videos_[0]->volumes()[0].y, videos_[0]->volumes()[0].z, videos_[0]->volumes()[0].t, theta_range, phi_range});
+                                                          {videos_[0]->volume().components()[0].x, videos_[0]->volume().components()[0].y, videos_[0]->volume().components()[0].z, videos_[0]->volume().components()[0].t, theta_range, phi_range});
         }
 
         template<typename ColorSpace>
@@ -271,7 +271,7 @@ namespace lightdb {
 
             auto decode = std::make_shared<bytestring>(writer.buffer());
 
-            return SingletonMemoryEncodedLightField::create(decode, {video_.volumes()[0].x, video_.volumes()[0].y, video_.volumes()[0].z, video_.volumes()[0].t, theta_, phi_});
+            return SingletonMemoryEncodedLightField::create(decode, Volume{video_.volume().components()[0].x, video_.volume().components()[0].y, video_.volume().components()[0].z, video_.volume().components()[0].t, theta_, phi_});
         }
 
         template<typename ColorSpace>
@@ -302,7 +302,7 @@ namespace lightdb {
 
             auto decode = std::make_shared<bytestring>(writer.buffer());
 
-            return SingletonMemoryEncodedLightField::create(decode, video_.volumes()[0]);
+            return SingletonMemoryEncodedLightField::create(decode, video_.volume().components()[0]);
         }
 
         //TODO think this can be rolled into the above
@@ -330,8 +330,8 @@ namespace lightdb {
             std::vector<SegmentedMemoryEncodeWriter> writers;
             FileDecodeReader reader(video_.filename());
 
-            printf("*** %lu\n", partitioning_.volumes().size());
-            for(auto &volume: partitioning_.volumes())
+            printf("*** %lu\n", partitioning_.volume().components().size());
+            for(auto &volume: partitioning_.volume().components())
             {
                 if(reader.isComplete()) //TODO this shouldn't happen, but TLFs have hardcoded duration...
                     break;
@@ -346,7 +346,7 @@ namespace lightdb {
             for(auto &writer: writers)
                 decodes.emplace_back(std::make_shared<bytestring>(writer.buffer()));
 
-            return CompositeMemoryEncodedLightField::create(decodes, video_.volumes());
+            return CompositeMemoryEncodedLightField::create(decodes, video_.volume());
         }
 
         template<typename ColorSpace>
@@ -357,7 +357,7 @@ namespace lightdb {
             assert(left_.metadata().framerate.denominator() == right_.metadata().framerate.denominator());
             assert(left_.metadata().width == right_.metadata().width);
             assert(left_.metadata().height == right_.metadata().height);
-            assert(left_.volume() == right_.volume());
+            assert(left_.volume().bounding() == right_.volume().bounding());
 
             auto gop = left_.metadata().framerate.numerator() / left_.metadata().framerate.denominator();
             auto bitrate = 500u*1024;
@@ -390,7 +390,7 @@ namespace lightdb {
             return SingletonMemoryEncodedLightField::create(decode, left_.volume());
         }
 
-        template class PlanarTiledToVideoLightField<YUVColorSpace>;
+        //template class PlanarTiledToVideoLightField;
         template class EquirectangularTiledLightField<YUVColorSpace>;
         template class EquirectangularTranscodedLightField<YUVColorSpace>;
         template class StitchedLightField<YUVColorSpace>;

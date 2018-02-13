@@ -1,6 +1,6 @@
-#include <mutex>
+#include "Functor.h"
 #include <dynlink_builtin_types.h>
-#include "LightField.h"
+#include <mutex>
 
 //#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -9,9 +9,10 @@ using namespace std::chrono;
 
 
 namespace lightdb {
-    const YUVColorSpace::Color Greyscale::operator()(const LightField<YUVColorSpace> &field,
+    const YUVColorSpace::Color Greyscale::operator()(const LightField &field,
                                                      const Point6D &point) const {
-        return YUVColor{field.value(point).y(), 0, 0};
+        throw std::runtime_error("Encode(YUV) and extra yuv bytes");
+        //return YUVColor{field.value(point).y(), 0, 0};
     }
 
     Greyscale::operator const FrameTransform() const {
@@ -33,7 +34,7 @@ namespace lightdb {
     GaussianBlur::GaussianBlur() : module_(nullptr), function_(nullptr) {
     }
 
-    const YUVColorSpace::Color GaussianBlur::operator()(const LightField<YUVColorSpace> &field,
+    const YUVColorSpace::Color GaussianBlur::operator()(const LightField &field,
                                                         const Point6D &point) const {
         throw new std::runtime_error("Not implemented");
     }
@@ -62,9 +63,10 @@ namespace lightdb {
         };
     };
 
-    const YUVColorSpace::Color Identity::operator()(const LightField<YUVColorSpace> &field,
+    const YUVColorSpace::Color Identity::operator()(const LightField &field,
                                                      const Point6D &point) const {
-        return field.value(point);
+        throw std::runtime_error("Encode(YUV) and extra yuv bytes");
+        //return field.value(point);
     }
 
     Identity::operator const FrameTransform() const {

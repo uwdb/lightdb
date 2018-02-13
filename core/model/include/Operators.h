@@ -18,31 +18,27 @@ namespace lightdb {
 
     };
 
-    template<typename InColorSpace, typename OutColorSpace>
     class UnaryOperator : public Operator {
     public:
-        virtual LightFieldReference<OutColorSpace> apply(const LightFieldReference<InColorSpace> &) const = 0;
+        virtual LightFieldReference apply(const LightFieldReference&) const = 0;
     };
 
-    template<typename LeftColorSpace, typename RightColorSpace, typename OutColorSpace>
     class BinaryOperator : public Operator {
     public:
-        virtual LightFieldReference<OutColorSpace> apply(const LightFieldReference<LeftColorSpace>,
-                                                         const LightFieldReference<RightColorSpace>) const = 0;
+        virtual LightFieldReference apply(const LightFieldReference, const LightFieldReference) const = 0;
     };
 
 
-    template<typename ColorSpace>
     class Encode : public Operator {
     public:
         //TODO string as a format is horrible, fix
         Encode()
                 : format_("hevc") {}
 
-        Encode(std::string &&format)
+        explicit Encode(std::string &&format)
                 : format_(format) {}
 
-        lightdb::EncodedLightField apply(const LightFieldReference<ColorSpace> &lightField) const { //TODO ostream
+        EncodedLightField apply(const LightFieldReference &lightField) const { //TODO ostream
             return lightdb::pipeline::execute(lightField, format_);
         }
 
@@ -51,7 +47,6 @@ namespace lightdb {
     };
 
 
-    template<typename Geometry, typename ColorSpace=YUVColorSpace>
     class Decode : public Operator {
     public:
         //TODO constructors should accept EncodedLightFields, not string/streams
@@ -60,64 +55,67 @@ namespace lightdb {
                const AngularRange &theta = AngularRange::ThetaMax,
                const AngularRange &phi = AngularRange::PhiMax)
         //: Decode(std::ifstream{filename})
-                : field_(std::shared_ptr<LightField<ColorSpace>>(
-                new PanoramicVideoLightField<Geometry, ColorSpace>(filename, theta, phi))) {}
+                : field_(std::shared_ptr<LightField>(
+                new PanoramicVideoLightField(filename, theta, phi))) {}
 
         Decode(const bool forceLightField,
                const std::string &filename,
                const AngularRange &theta = AngularRange::ThetaMax,
                const AngularRange &phi = AngularRange::PhiMax)
         //: Decode(std::ifstream{filename})
-                : field_(std::shared_ptr<LightField<ColorSpace>>(new PlanarTiledVideoLightField<ColorSpace>(filename,
-                                                                                                            Volume{{0,
-                                                                                                                    1},
-                                                                                                                   {0,
-                                                                                                                    1},
-                                                                                                                   {0,
-                                                                                                                    0},
-                                                                                                                   TemporalRange::TemporalMax,
-                                                                                                                   theta,
-                                                                                                                   phi},
-                                                                                                            3, 3))) {}
+                : field_(std::shared_ptr<LightField>(
+                      new PlanarTiledVideoLightField(filename,
+                                                    Volume{{0,
+                                                            1},
+                                                           {0,
+                                                            1},
+                                                           {0,
+                                                            0},
+                                                           TemporalRange::TemporalMax,
+                                                           theta,
+                                                           phi},
+                                                    3, 3))) {}
 
-        Decode(std::istream &&stream)
-                : field_(std::shared_ptr<LightField<ColorSpace>>(
-                new PanoramicVideoLightField<Geometry, ColorSpace>(std::move(stream)))) {}
+        //TODO Decode(std::istream &&stream)
+               // : field_(std::shared_ptr<LightField>(
+                //new PanoramicVideoLightField(std::move(stream)))) {}
 
-        operator const LightFieldReference<ColorSpace>() const {
+        operator const LightFieldReference() const {
             return field_;
         }
 
-        LightFieldReference<ColorSpace> apply() const {
+        LightFieldReference apply() const {
             return field_;
         }
 
-        const LightFieldReference<ColorSpace> operator>>(const UnaryOperator<ColorSpace, ColorSpace> &op) const {
-            return field_ >> op;
+        const LightFieldReference operator>>(const UnaryOperator &op) const {
+            return op.apply(field_);
+            //return field_ >> op;
         }
 
-        const lightdb::EncodedLightField operator>>(const Encode<ColorSpace> &op) const {
-            return field_ >> op;
+        const EncodedLightField operator>>(const Encode &op) const {
+            return op.apply(field_);
+            //return field_ >> op;
         }
 
     private:
-        const LightFieldReference<ColorSpace> field_;
+        const LightFieldReference field_;
     };
 
 
     template<typename ColorSpace>
     class Scan : public Operator {
-        LightField<ColorSpace> &&scan(std::string name) {
-            return ConstantLightField<YUVColorSpace>(YUVColor::Green); //TODO
+        LightField &&scan(std::string name) {
+            return ConstantLightField(YUVColor::Green); //TODO
         }
     };
 
     class Store : public Operator {
     public:
-        Store(const std::string &name)
+        explicit Store(const std::string &name)
                 : name_(name) {}
 
-        lightdb::EncodedLightField apply(const lightdb::EncodedLightField &encoded) const {
+        lightdb::EncodedLightField apply(const EncodedLightField &encoded) const {
             encoded->write(name_);
             return encoded;
         }
@@ -129,7 +127,7 @@ namespace lightdb {
     };
 
 //template<typename LeftColorSpace, typename RightColorSpace, typename OutColorSpace>
-    class Union : public BinaryOperator<YUVColorSpace, YUVColorSpace, YUVColorSpace> { //TODO
+    class Union : public BinaryOperator { //TODO
 //class Union: public BinaryOperator<LeftColorSpace, RightColorSpace, OutColorSpace> {
     public:
         enum MergeType {
@@ -140,56 +138,55 @@ namespace lightdb {
         Union()
                 : Union(MergeType::Left) {}
 
-        Union(const MergeType mergeType)
+        explicit Union(const MergeType mergeType)
                 : mergeType_(mergeType) {}
 
-        LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace> left,
-                                                 const LightFieldReference<YUVColorSpace> right) const {
-            return LightFieldReference<YUVColorSpace>::make<CompositeLightField<YUVColorSpace>>(
-                    std::vector<LightFieldReference<YUVColorSpace>>{left, right});
+        LightFieldReference apply(const LightFieldReference left, const LightFieldReference right) const {
+            return LightFieldReference::make<CompositeLightField>(
+                    std::vector<LightFieldReference>{left, right});
         }
 
     private:
         const MergeType mergeType_;
     };
 
-    class Select : public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
+    class Select : public UnaryOperator { //TODO
     public:
         explicit Select(const Volume &volume)
                 : volume_(volume) {}
 
-        LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace> &field) const override {
-            return LightFieldReference<YUVColorSpace>::make<SubsetLightField<YUVColorSpace>>(field, volume_);
+        LightFieldReference apply(const LightFieldReference &field) const override {
+            return LightFieldReference::make<SubsetLightField>(field, volume_);
         }
 
     private:
         const Volume volume_;
     };
 
-    class Rotate : public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
+    class Rotate : public UnaryOperator { //TODO
     public:
-        explicit Rotate(const angle theta, const angle phi)
+        Rotate(const angle theta, const angle phi)
                 : theta_(theta), phi_(phi) {}
 
-        LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace> &field) const override {
-            return LightFieldReference<YUVColorSpace>::make<RotatedLightField<YUVColorSpace>>(field, theta_, phi_);
+        LightFieldReference apply(const LightFieldReference &field) const override {
+            return LightFieldReference::make<RotatedLightField>(field, theta_, phi_);
         }
 
     private:
         const angle theta_, phi_;
     };
 
-    class Partition : public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
+    class Partition : public UnaryOperator { //TODO
     public:
-        Partition(const Dimension &dimension, const lightdb::rational interval)
-                : dimension_(dimension), interval_(interval) {}
+        Partition(const Dimension &dimension, const rational interval)
+            : dimension_(dimension), interval_(interval) { }
 
         Dimension dimension() const { return dimension_; }
 
         lightdb::rational interval() const { return interval_; }
 
-        LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace> &field) const override {
-            return LightFieldReference<YUVColorSpace>::make<PartitionedLightField<YUVColorSpace>>(
+        LightFieldReference apply(const LightFieldReference &field) const override {
+            return LightFieldReference::make<PartitionedLightField>(
                     field, dimension(), interval());
 //                PartitionedLightField<YUVColorSpace>(field, dimension(), delta());
         }
@@ -202,48 +199,47 @@ namespace lightdb {
 
     using bitrate = unsigned int;
 
-    class Transcode : public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
+    class Transcode : public UnaryOperator { //TODO
     public:
         explicit Transcode(const std::function<bitrate(Volume &)> &bitrater)
-                : bitrater_(bitrater) {}
+            : bitrater_(bitrater) {}
 
-        LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace> &field) const override {
+        LightFieldReference apply(const LightFieldReference &field) const override {
             //TODO clean this up, should be able to decode from memory
-            auto encoded = Encode<YUVColorSpace>("hevc").apply(field);
+            auto encoded = Encode("hevc").apply(field);
 
             encoded->write("out*");
 
-            std::vector<LightFieldReference<YUVColorSpace>> decodes;
+            std::vector<LightFieldReference> decodes;
             for (auto i = 0u; i < encoded->segments().size(); i++) {
                 auto filename = std::string("out") + std::to_string(i); //+ ".hevc";
 
-                decodes.emplace_back(Decode<EquirectangularGeometry>(filename, encoded->volumes()[i].theta,
-                                                                     encoded->volumes()[i].phi).apply());
+                decodes.emplace_back(Decode(filename, encoded->volume().components()[i].theta, encoded->volume().components()[i].phi).apply());
             }
 
-            return LightFieldReference<YUVColorSpace>::make<CompositeLightField<YUVColorSpace>>(decodes);
+            return LightFieldReference::make<CompositeLightField>(decodes);
         }
 
     private:
         const std::function<bitrate(Volume &)> bitrater_;
     };
 
-    class Interpolate : public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
+    class Interpolate : public UnaryOperator { //TODO
     public:
-        explicit Interpolate(const Dimension dimension, const lightdb::interpolator<YUVColorSpace> &interpolator)
+        explicit Interpolate(const Dimension dimension, const interpolation::interpolator<YUVColorSpace> &interpolator)
                 : dimension_(dimension), interpolator_(interpolator) {}
 
-        LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace> &field) const override {
-            return LightFieldReference<YUVColorSpace>::make<InterpolatedLightField<YUVColorSpace>>(
+        LightFieldReference apply(const LightFieldReference &field) const override {
+            return LightFieldReference::make<InterpolatedLightField>(
                     field, dimension_, interpolator_);
         }
 
     private:
         const Dimension dimension_;
-        const lightdb::interpolator<YUVColorSpace> &interpolator_;
+        const interpolation::interpolator<YUVColorSpace> &interpolator_;
     };
 
-    class Discretize : public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
+    class Discretize : public UnaryOperator { //TODO
     public:
         Discretize(const Dimension &dimension, lightdb::rational &&interval)
                 : Discretize(IntervalGeometry(dimension, interval)) {}
@@ -254,15 +250,15 @@ namespace lightdb {
         Discretize(const Geometry &&geometry)
                 : geometry_(geometry) {}
 
-        LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace> &field) const override {
-            return LightFieldReference<YUVColorSpace>::make<DiscretizedLightField<YUVColorSpace>>(field, geometry_);
+        LightFieldReference apply(const LightFieldReference &field) const override {
+            return LightFieldReference::make<DiscretizedLightField>(field, geometry_);
         }
 
     private:
         const Geometry &geometry_;
     };
 
-    class Map : public UnaryOperator<YUVColorSpace, YUVColorSpace> { //TODO
+    class Map : public UnaryOperator { //TODO
     public:
         Map(lightdb::functor<YUVColorSpace> &functor)
                 : functor_(functor) {}
@@ -270,41 +266,42 @@ namespace lightdb {
         Map(lightdb::functor<YUVColorSpace> &&functor)
                 : functor_(functor) {}
 
-        LightFieldReference<YUVColorSpace> apply(const LightFieldReference<YUVColorSpace> &field) const override {
-            return LightFieldReference<YUVColorSpace>::make<TransformedLightField<YUVColorSpace>>(field, functor_);
+        LightFieldReference apply(const LightFieldReference &field) const override {
+            return LightFieldReference::make<TransformedLightField>(field, functor_);
         }
 
     private:
         const lightdb::functor<YUVColorSpace> &functor_;
     };
 
-    template<typename InColorSpace, typename OutColorSpace>
-    inline LightFieldReference<OutColorSpace> operator>>(const LightFieldReference<InColorSpace> &input,
-                                                         const UnaryOperator<InColorSpace, OutColorSpace> &op) {
+//    template<typename InColorSpace, typename OutColorSpace>
+    inline LightFieldReference operator>>(const LightFieldReference &input,
+                                          const UnaryOperator &op) {
         return op.apply(input);
     }
 
-    template<typename InColorSpace, typename OutColorSpace>
-    inline LightFieldReference<OutColorSpace> operator>>(LightField<InColorSpace> &input,
-                                                         const UnaryOperator<InColorSpace, OutColorSpace> &op) {
-        return op.apply(LightFieldReference<InColorSpace>(input));
+//   template<typename InColorSpace, typename OutColorSpace>
+    inline LightFieldReference operator>>(LightField &input,
+                                          const UnaryOperator &op) {
+        throw std::runtime_error("Used to be implemented, but then removed with color spaces");
+        //return op.apply(LightFieldReference(input));
     }
 
-    template<typename ColorSpace>
-    inline lightdb::EncodedLightField operator>>(const LightFieldReference<ColorSpace> &input,
-                                                 const Encode<ColorSpace> &encoder) {
-        return encoder.apply(LightFieldReference<ColorSpace>(input));
+//    template<typename ColorSpace>
+    inline lightdb::EncodedLightField operator>>(const LightFieldReference &input,
+                                                 const Encode &encoder) {
+        return encoder.apply(LightFieldReference(input));
     }
 
-    template<typename ColorSpace>
-    inline lightdb::EncodedLightField operator>>(const LightFieldReference<ColorSpace> &&input,
-                                                 const Encode<ColorSpace> &encoder) {
-        return encoder.apply(LightFieldReference<ColorSpace>(input));
+   // template<typename ColorSpace>
+    inline lightdb::EncodedLightField operator>>(const LightFieldReference &&input,
+                                                 const Encode &encoder) {
+        return encoder.apply(LightFieldReference(input));
     }
 
-    template<typename ColorSpace>
-    inline LightFieldReference<ColorSpace> operator|(const LightFieldReference<ColorSpace> &left,
-                                                     const LightFieldReference<ColorSpace> &right) {
+//    template<typename ColorSpace>
+    inline LightFieldReference operator|(const LightFieldReference &left,
+                                         const LightFieldReference &right) {
         return Union().apply(left, right);
     }
 

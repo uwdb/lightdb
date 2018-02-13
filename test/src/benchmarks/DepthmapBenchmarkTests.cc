@@ -24,9 +24,9 @@ public:
 TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_CPU) {
     auto start = steady_clock::now();
 
-    Decode<EquirectangularGeometry>(source)
+    Decode(source)
             >> Map(lightdb::DepthmapCPU())
-            >> Encode<YUVColorSpace>()
+            >> Encode()
             >> Store(name);
 
     LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
@@ -40,9 +40,9 @@ TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_CPU) {
 TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_GPU) {
     auto start = steady_clock::now();
 
-    Decode<EquirectangularGeometry>(source)
+    Decode(source)
             >> Map(lightdb::DepthmapGPU())
-            >> Encode<YUVColorSpace>()
+            >> Encode()
             >> Store(name);
 
     LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
@@ -56,9 +56,9 @@ TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_GPU) {
 TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_FPGA) {
     auto start = steady_clock::now();
 
-    Decode<EquirectangularGeometry>(source)
+    Decode(source)
             >> Map(lightdb::DepthmapFPGA())
-            >> Encode<YUVColorSpace>()
+            >> Encode()
             >> Store(name);
 
     LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";

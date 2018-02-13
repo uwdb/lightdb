@@ -2,9 +2,12 @@
 #define LIGHTDB_GEOMETRY_H
 
 #include "rational.h"
+#include <utility>
 #include <vector>
 #include <stdexcept>
 #include <cmath>
+#include <errors.h>
+#include <numeric>
 
 enum Dimension {
     X,
@@ -111,7 +114,31 @@ public:
     Volume translate(const Point6D &delta) const;
 };
 
-inline Volume operator|(const Volume& left, const Volume &right) {
+class CompositeVolume {
+public:
+    CompositeVolume(const Volume volume)
+        : components_({volume}), bounding_(volume)
+    { }
+    CompositeVolume(std::vector<Volume> volumes)
+        : components_(std::move(lightdb::errors::CHECK_NONEMPTY(volumes))),
+          bounding_(std::accumulate(volumes.begin() + 1, volumes.end(), volumes[0],
+                                    [](auto &result, auto &current) { return current | result; }))
+    { }
+
+    explicit operator const Volume&() const {
+        return bounding_;
+    }
+
+    const Volume bounding() const { return bounding_; }
+    const std::vector<Volume> components() const { return components_; }
+
+private:
+    const Volume bounding_;
+    const std::vector<Volume> components_;
+};
+
+inline Volume operator|(const Volume& left, const Volume &right)
+{
     double start;
 
     //TODO add some helpers to clean this nonsense up
@@ -195,7 +222,7 @@ public:
     double theta;
     double phi;
 
-    operator Volume() {
+    operator Volume() const {
         return Volume{{x, x}, {y, y}, {z, z}, {t, t}, {theta, theta}, {phi, phi}};
     }
 

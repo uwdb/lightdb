@@ -21,9 +21,9 @@ public:
         auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + "K.h264";
         auto start = steady_clock::now();
 
-        Decode<EquirectangularGeometry>(source)
+        Decode(source)
                 >> Partition(Dimension::Theta, pi_div_2)
-                >> Encode<YUVColorSpace>()
+                >> Encode()
                 >> Store(name);
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
@@ -38,9 +38,9 @@ public:
         auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + "K.h264";
         auto start = steady_clock::now();
 
-        Decode<EquirectangularGeometry>(source)
+        Decode(source)
                 >> Partition(Dimension::Phi, pi_div_4)
-                >> Encode<YUVColorSpace>()
+                >> Encode()
                 >> Store(name);
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
@@ -55,9 +55,9 @@ public:
         auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + "K.h264";
         auto start = steady_clock::now();
 
-        Decode<EquirectangularGeometry>(source)
+        Decode(source)
                 >> Partition(Dimension::Time, rational(3, 2))
-                >> Encode<YUVColorSpace>()
+                >> Encode()
                 >> Store(name);
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
