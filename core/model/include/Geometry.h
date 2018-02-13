@@ -2,11 +2,11 @@
 #define LIGHTDB_GEOMETRY_H
 
 #include "rational.h"
+#include "asserts.h"
 #include <utility>
 #include <vector>
 #include <stdexcept>
 #include <cmath>
-#include <errors.h>
 #include <numeric>
 
 namespace lightdb {
@@ -124,7 +124,7 @@ namespace lightdb {
                 : components_({volume}), bounding_(volume) {}
 
         CompositeVolume(std::vector<Volume> volumes)
-                : components_(std::move(lightdb::errors::CHECK_NONEMPTY(volumes))),
+                : components_(std::move(asserts::CHECK_NONEMPTY(volumes))),
                   bounding_(std::accumulate(volumes.begin() + 1, volumes.end(), volumes[0],
                                             [](auto &result, auto &current) { return current | result; })) {}
 

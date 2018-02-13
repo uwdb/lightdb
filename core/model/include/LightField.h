@@ -5,8 +5,10 @@
 #include "Color.h"
 #include "Interpolation.h"
 #include "Encoding.h"
+#include "Catalog.h"
 #include "Ffmpeg.h"
 #include "functional.h"
+#include "assert.h"
 #include <memory>
 #include <utility>
 #include <vector>
@@ -104,7 +106,7 @@ namespace lightdb {
         public:
             //TODO ensure that lightfields don't overlap
             explicit CompositeLightField(std::vector<LightFieldReference> lightfields)
-                    : lightfields_(std::move(errors::CHECK_NONEMPTY(lightfields))) {}
+                    : lightfields_(std::move(asserts::CHECK_NONOVERLAPPING(asserts::CHECK_NONEMPTY(lightfields)))) {}
 
             const std::vector<LightFieldReference> parents() const override { return lightfields_; }
 
@@ -269,6 +271,37 @@ namespace lightdb {
             const lightdb::functor<YUVColorSpace> &functor_;
         };
 
+        class ScannedLightField : public LightField {
+        public:
+            explicit ScannedLightField(const catalog::Catalog::Metadata &metadata)
+                : metadata_(metadata) { }
+
+            const std::vector<LightFieldReference> parents() const override { return {}; }
+            const CompositeVolume volume() const override { return metadata_.volume(); }
+            const ColorSpace colorSpace() const override { return metadata_.colorSpace(); }
+
+        private:
+            const catalog::Catalog::Metadata &metadata_;
+        };
+
+        class ExternalLightField : public LightField {
+        public:
+            ExternalLightField(std::string uri, const Volume &volume,
+                               const ColorSpace &colorSpace, const Geometry &geometry)
+                    : uri_(std::move(uri)), volume_(volume), colorSpace_(colorSpace), geometry_(geometry) { }
+
+            const std::vector<LightFieldReference> parents() const override { return {}; }
+            const CompositeVolume volume() const override { return volume_; }
+            const ColorSpace colorSpace() const override { return colorSpace_; }
+
+        private:
+            const std::string uri_;
+            const Volume volume_;
+            const ColorSpace &colorSpace_;
+            const Geometry &geometry_;
+        };
+
+        //TODO These all moved to physical algebra, obvs
         //TODO think now that I've moved geometry to physical algebra, this whole class should die
         class PanoramicLightField : public DiscreteLightField {
         public:
