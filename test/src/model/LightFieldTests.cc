@@ -2,6 +2,8 @@
 #include <fstream>
 #include <gtest/gtest.h>
 
+using namespace lightdb;
+
 class LightFieldTestFixture : public testing::Test {
 public:
     LightFieldTestFixture()

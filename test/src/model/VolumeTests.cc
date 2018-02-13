@@ -1,6 +1,8 @@
 #include "LightField.h"
 #include <gtest/gtest.h>
 
+using namespace lightdb;
+
 class VolumeTestFixture : public testing::Test {
 public:
     VolumeTestFixture()

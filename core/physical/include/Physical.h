@@ -19,7 +19,7 @@ namespace lightdb {
             { }
 
             const std::vector<LightFieldReference> parents() const override { return {field_}; }
-            const ::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
+            const lightdb::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
             const CompositeVolume volume() const override { return field_->volume(); }
             const unsigned int rows() const { return rows_; }
             const unsigned int columns() const { return columns_; }
@@ -95,7 +95,7 @@ namespace lightdb {
             { }
 
             const std::vector<LightFieldReference> parents() const override { return {field_}; }
-            const ::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
+            const lightdb::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
             const CompositeVolume volume() const override { return field_->volume(); }
 //            inline const YUVColor value(const Point6D &point) const override { return field_->value(point); }
 
@@ -199,7 +199,7 @@ namespace lightdb {
             { }
 
             const std::vector<LightFieldReference> parents() const override { return {}; } //TODO incorrect
-            const ::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
+            const lightdb::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
             const CompositeVolume volume() const override { return video_.volume(); }
 //            inline const typename ColorSpace::Color value(const Point6D &point) const override { return video_.value(point); }
 
@@ -220,7 +220,7 @@ namespace lightdb {
             { }
 
             const std::vector<LightFieldReference> parents() const override { return video_.parents(); } //TODO incorrect
-            const ::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
+            const lightdb::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
             const CompositeVolume volume() const override { return video_.volume(); }
 /*            inline const YUVColor value(const Point6D &point) const override {
                 return functor_(video_, point);
@@ -266,7 +266,7 @@ namespace lightdb {
             { }
 
             const std::vector<LightFieldReference> parents() const override { return video_.parents(); } //TODO incorrect
-            const ::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
+            const lightdb::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
             const CompositeVolume volume() const override { return video_.volume(); }
 /*            inline const typename ColorSpace::Color value(const Point6D &point) const override {
                 return functor_(video_, point);
@@ -290,7 +290,7 @@ namespace lightdb {
             { }
 
             const std::vector<LightFieldReference> parents() const override { return left_.parents(); } //TODO incorrect
-            const ::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
+            const lightdb::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
             const CompositeVolume volume() const override { return left_.volume(); } //TODO incorrect
 /*            inline const YUVColor value(const Point6D &point) const override {
                 return left_.value(point); //TOOD incorrect

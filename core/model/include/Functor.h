@@ -5,8 +5,6 @@
 #include "Frame.h"
 #include <optional>
 
-class LightField;
-
 namespace lightdb {
     template<typename ColorSpace>
     class functor {
