@@ -25,9 +25,9 @@ DepthmapGPU::operator const FrameTransform() const {
     CUresult result;
 
     if(module_ == nullptr && (result = cuModuleLoad(&module_, kernel_path)) != CUDA_SUCCESS)
-        throw std::runtime_error(std::string("Failure loading module ") + std::to_string(result));
+        throw GpuCudaRuntimeError(std::string("Failure loading module ") + kernel_path, result);
     else if(function_ == nullptr && (result = cuModuleGetFunction(&function_, module_, kernel_name)) != CUDA_SUCCESS)
-        throw std::runtime_error(std::string("Failure loading kernel ") + std::to_string(result));
+        throw GpuCudaRuntimeError(std::string("Failure loading kernel ") + kernel_name, result);
     else
         return [this](VideoLock& lock, Frame& frame) -> Frame& {
             std::scoped_lock{lock};

@@ -54,9 +54,9 @@ public:
               format_(GetVideoSourceFormat(source)),
               decoded_bytes_(0) {
         if(format().codec != cudaVideoCodec_H264 && format().codec != cudaVideoCodec_HEVC)
-            throw std::runtime_error("Reader only supports H264/HEVC input video"); //TODO
+            throw GpuRuntimeError("FileDecodeReader only supports H264/HEVC input video");
         else if(format().chroma_format != cudaVideoChromaFormat_420)
-            throw std::runtime_error("Reader only supports 4:2:0 chroma"); // TODO
+            throw GpuRuntimeError("FileDecodeReader only supports 4:2:0 chroma");
     }
 
     CUVIDEOFORMAT format() const override { return format_; }
@@ -117,9 +117,9 @@ private:
         };
 
         if((status = cuvidCreateVideoSource(&source, filename, &videoSourceParameters)) != CUDA_SUCCESS)
-            throw std::runtime_error(std::to_string(status) + "DecodeReader.cuvidCreateVideoSource"); //TODO
+            throw GpuCudaRuntimeError("Call to cuvidCreateVideoSource failed", status);
         else if((status = cuvidSetVideoSourceState(source, cudaVideoState_Started)) != CUDA_SUCCESS)
-            throw std::runtime_error(std::to_string(status) + "DecodeReader.cuvidSetVideoSourceState"); //TODO
+            throw GpuCudaRuntimeError("Call to cuvidSetVideoSourceState failed", status);
 
         return source;
     }
@@ -129,7 +129,7 @@ private:
         CUVIDEOFORMAT format;
 
         if((status = cuvidGetSourceVideoFormat(source, &format, 0)) != CUDA_SUCCESS)
-            throw std::runtime_error(std::to_string(status) + "DecodeReader.GetVideoSourceFormat"); //TODO
+            throw GpuCudaRuntimeError("Call to cuvidGetSourceVideoFormat failed", status);
         return format;
     }
 

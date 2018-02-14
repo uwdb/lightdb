@@ -500,7 +500,7 @@ NVENCSTATUS EncodeAPI::ResetEncoder()
     //parameters.reInitEncodeParams.frameRateDen *= 2;
     auto result = m_pEncodeAPI->nvEncReconfigureEncoder(encodeSessionHandle, &parameters);
     if(result != NV_ENC_SUCCESS)
-        throw std::runtime_error("reconfigure");
+        throw GpuEncodeRuntimeError("Call to api.nvEncReconfigureEncoder failed", result);
     return result;
 }
 
@@ -634,6 +634,7 @@ NVENCSTATUS EncodeAPI::NvEncReconfigureEncoder(const NvEncPictureCommand *pEncPi
 EncodeAPI::EncodeAPI(void* device, NV_ENC_DEVICE_TYPE deviceType)
     : frameEncodedHandler(nullptr), motionEstimationEncodedHandler(nullptr), encodeSessionHandle(nullptr)
 {
+    NVENCSTATUS status;
     m_bEncoderInitialized = false;
     m_pEncodeAPI = NULL;
     m_hinstLib = NULL;
@@ -650,8 +651,8 @@ EncodeAPI::EncodeAPI(void* device, NV_ENC_DEVICE_TYPE deviceType)
     memset(&m_stEncodeConfig, 0, sizeof(m_stEncodeConfig));
     SET_VER(m_stEncodeConfig, NV_ENC_CONFIG);
 
-    if(Initialize(device, deviceType) != NV_ENC_SUCCESS)
-        throw std::runtime_error("TODO throw\n"); //TODO throw
+    if((status = Initialize(device, deviceType)) != NV_ENC_SUCCESS)
+        throw GpuEncodeRuntimeError("Call to api.Initialize failed", status);
 }
 
 EncodeAPI::~EncodeAPI()

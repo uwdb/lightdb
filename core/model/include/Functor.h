@@ -9,7 +9,7 @@ namespace lightdb {
     template<typename ColorSpace>
     class functor {
     public:
-        virtual ~functor() { }
+        virtual ~functor() = default;
 
         virtual const typename ColorSpace::Color operator()(const LightField &field,
                                                             const Point6D &point) const = 0;
@@ -17,26 +17,24 @@ namespace lightdb {
                                                             const Point6D &point) const {
             return this->operator()(*field, point);
         }
-        virtual operator const FrameTransform() const { throw std::bad_cast(); }
+        virtual operator const FrameTransform() const { throw BadCastError(); }
         virtual bool hasFrameTransform() const { return false; }
     };
 
     template<typename ColorSpace>
     class naryfunctor {
     public:
-        virtual ~naryfunctor() { }
+        virtual ~naryfunctor() = default;
 
         virtual const typename ColorSpace::Color operator()(const std::vector<LightFieldReference> &fields,
                                                             const Point6D &point) = 0;
-        virtual operator const NaryFrameTransform() const { throw std::bad_cast(); }
+        virtual operator const NaryFrameTransform() const { throw BadCastError(); }
         virtual bool hasFrameTransform() const { return false; }
     };
 
     //TODO functor namespace
     class Identity: public functor<YUVColorSpace> {
     public:
-        ~Identity() { }
-
         const YUVColorSpace::Color operator()(const LightField &field,
                                               const Point6D &point) const override;
         operator const FrameTransform() const override;
@@ -45,8 +43,6 @@ namespace lightdb {
 
     class Greyscale: public functor<YUVColorSpace> {
     public:
-        ~Greyscale() { }
-
         const YUVColorSpace::Color operator()(const LightField &field,
                                               const Point6D &point) const override;
 
@@ -57,7 +53,6 @@ namespace lightdb {
     class GaussianBlur: public functor<YUVColorSpace> {
     public:
         GaussianBlur();
-        ~GaussianBlur() { }
 
         const YUVColorSpace::Color operator()(const LightField &field,
                                               const Point6D &point) const override;
@@ -72,11 +67,9 @@ namespace lightdb {
 
     class DepthmapCPU: public functor<YUVColorSpace> {
     public:
-        ~DepthmapCPU() { }
-
         const YUVColorSpace::Color operator()(const LightField &field,
                                               const Point6D &point) const override {
-            throw new std::runtime_error("Not implemented");
+            throw std::runtime_error("Not implemented");
         }
 
         operator const FrameTransform() const override;
@@ -86,11 +79,10 @@ namespace lightdb {
     class DepthmapGPU: public functor<YUVColorSpace> {
     public:
         DepthmapGPU() : module_(nullptr), function_(nullptr) { }
-        ~DepthmapGPU() { }
 
         const YUVColorSpace::Color operator()(const LightField &field,
                                               const Point6D &point) const override {
-            throw new std::runtime_error("Not implemented");
+            throw std::runtime_error("Not implemented");
         }
 
         operator const FrameTransform() const override;
@@ -103,11 +95,9 @@ namespace lightdb {
 
     class DepthmapFPGA: public functor<YUVColorSpace> {
     public:
-        ~DepthmapFPGA() { }
-
         const YUVColorSpace::Color operator()(const LightField &field,
                                               const Point6D &point) const override {
-            throw new std::runtime_error("Not implemented");
+            throw  std::runtime_error("Not implemented");
         }
 
         operator const FrameTransform() const override;
@@ -116,28 +106,27 @@ namespace lightdb {
 
     class Left: public naryfunctor<YUVColorSpace> {
     public:
-        ~Left() { }
-
         const YUVColorSpace::Color operator()(const std::vector<LightFieldReference> &fields,
                                               const Point6D &point) override {
             throw std::runtime_error("Not implemented");
         }
 
-        operator const NaryFrameTransform() const override;
+        //operator const NaryFrameTransform() const override;
         bool hasFrameTransform() const override { return true; }
     };
 
     class Overlay: public naryfunctor<YUVColorSpace> {
     public:
-        Overlay(YUVColorSpace::Color transparent) : transparent_(transparent) { }
-        ~Overlay() { }
+        explicit Overlay(const YUVColorSpace::Color &transparent)
+            : transparent_(transparent), module_(0), function_(0)
+        { }
 
         const YUVColorSpace::Color operator()(const std::vector<LightFieldReference> &fields,
                                               const Point6D &point) override {
             throw std::runtime_error("Not implemented");
         }
 
-        operator const NaryFrameTransform() const override;
+        explicit operator const NaryFrameTransform() const override;
         bool hasFrameTransform() const override { return true; }
 
     private:

@@ -266,9 +266,9 @@ struct DecodeConfiguration: public Configuration {
         assert(width < SHRT_MAX);
         assert(height < SHRT_MAX);
         if(left > width)
-            throw std::runtime_error("bad value"); //TODO
-        if(top > height)
-            throw std::runtime_error("bad value"); //TODO
+            throw InvalidArgumentError("Left must be less than frame width", "left");
+        else if(top > height)
+            throw InvalidArgumentError("Top must be less than frame height", "top");
         else
             return {
                     .ulWidth = width,

@@ -19,7 +19,7 @@ public:
             encoderHandle_(VideoEncoderHandle(context, api_, configuration)),
             buffers(CreateBuffers(minimumBufferCount())) {
       if(api().ValidatePresetGUID(configuration) != NV_ENC_SUCCESS)
-          throw std::runtime_error("invalid preset guid");
+          throw InvalidArgumentError("Invalid preset guid", "configuration");
   }
 
   EncodeAPI &api() { return api_; }
@@ -39,7 +39,7 @@ private:
             NVENCSTATUS status;
 
             if((status = api_.CreateEncoder(&configuration_)) != NV_ENC_SUCCESS)
-                throw std::runtime_error(std::to_string(status) + "VideoEncoderHandle.CreateEncoder"); //TODO
+                throw GpuEncodeRuntimeError("Call to api.CreateEncoder failed", status);
         }
 
         ~VideoEncoderHandle() {
@@ -61,7 +61,7 @@ private:
   size_t minimumBufferCount() const { return configuration().numB + 4; }
 
 private:
-  std::vector<std::shared_ptr<EncodeBuffer>> CreateBuffers(const size_t size);
+  std::vector<std::shared_ptr<EncodeBuffer>> CreateBuffers(size_t size);
 };
 
 #endif // LIGHTDB_VIDEOENCODER_H

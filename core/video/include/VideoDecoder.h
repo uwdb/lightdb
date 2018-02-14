@@ -1,6 +1,7 @@
 #ifndef LIGHTDB_VIDEODECODER_H
 #define LIGHTDB_VIDEODECODER_H
 
+#include <errors.h>
 #include "Configuration.h"
 #include "FrameQueue.h"
 #include "VideoLock.h"
@@ -33,8 +34,7 @@ public:
       auto decoderCreateInfo = configuration.AsCuvidCreateInfo(lock);
 
       if((result = cuvidCreateDecoder(&handle_, &decoderCreateInfo)) != CUDA_SUCCESS) {
-          LOG(ERROR) << "cuvidCreateDecoder";
-          throw std::runtime_error(std::to_string(result) + "CudaDecoder.cuvidCreateDecoder");
+          throw GpuCudaRuntimeError("Call to cuvidCreateDecoder failed", result);
       }
   }
 

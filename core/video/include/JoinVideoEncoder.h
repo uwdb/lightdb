@@ -26,10 +26,12 @@ public:
               encoder_(context, encodeConfiguration, lock_),
               rows_(rows), columns_(columns)
     {
-        if(rows == 0 || columns == 0)
-            throw std::runtime_error("bad rows/col"); //TODO
+        if(rows == 0)
+            throw InvalidArgumentError("Number of rows must be positive", "rows");
+        else if(columns == 0)
+            throw InvalidArgumentError("Number of columns must be positive", "columns");
         else if(rows * columns != decodeConfigurations_.size())
-            throw std::runtime_error("bad #decode configurations"); //TODO
+            throw InvalidArgumentError("Number of decode configurations must be rows*columns", "decodeConfigurations");
     }
 
     NVENCSTATUS join(const std::vector<std::shared_ptr<DecodeReader>> &readers, EncodeWriter &writer) {
@@ -61,9 +63,10 @@ public:
         FrameRateAlignment alignment(encoder_.configuration().framerate, decoders_[0]->configuration().framerate);
 
         if(readers.size() != decoders_.size())
-            throw std::runtime_error("bad readers size"); //TODO
+            throw InvalidArgumentError("Number of readers must match number of decoders", "readers");
         else if(tileTransforms.size() != decoders_.size())
-            throw std::runtime_error("bad tile transform size"); //TODO
+            throw InvalidArgumentError("Number of tile transforms must be equal to the number of decoders",
+                                       "tileTransforms");
 
         LOG(INFO) << "Joining starting (" << rows() << " rows x " << columns() << " columns)";
 

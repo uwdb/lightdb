@@ -41,8 +41,7 @@ protected:
             packet = reader.ReadPacket();
             if (packet.has_value()) {
                 if ((status = cuvidParseVideoData(parser, &*packet)) != CUDA_SUCCESS) {
-                    LOG(ERROR) << "cuvidParseVideoData failed with code " << status;
-                    //throw std::runtime_error(std::to_string(status) + "DecodeAll"); //TODO
+                    throw GpuCudaRuntimeError("Call to cuvidParseVideoData failed", status);
                 }
             }
         } while (!decoder_.frame_queue().isEndOfDecode() && packet.has_value());
@@ -71,8 +70,7 @@ private:
         decoder.frame_queue().reset();
 
         if ((status = cuvidCreateVideoParser(&parser, &parameters)) != CUDA_SUCCESS) {
-            LOG(INFO) << "cuvidCreateVideoParser";
-            throw std::runtime_error(std::to_string(status) + "CreateParser"); // TODO
+            throw GpuCudaRuntimeError("Call to cuvidCreateVideoParser failed", status);
         }
 
         return parser;
@@ -94,8 +92,7 @@ private:
             (format->coded_width < session->decoder_.configuration().width) ||
             (format->coded_height < session->decoder_.configuration().height) ||
             (format->chroma_format != session->decoder_.configuration().chroma_format)) {
-            LOG(ERROR) << "Video format changed but not currently supported";
-            throw std::runtime_error("Video format changed but not currently supported"); //TODO
+            throw GpuRuntimeError("Video format changed but not currently supported");
         }
 
         return 1;

@@ -1,5 +1,6 @@
 #include "Catalog.h"
 #include "LightField.h"
+#include "errors.h"
 
 namespace lightdb::catalog {
 
@@ -8,7 +9,7 @@ namespace lightdb::catalog {
         auto metadataFile = path_ / name;
 
         if(!std::experimental::filesystem::exists(metadataFile))
-            throw std::runtime_error("catalog file does not exist");
+            throw CatalogError("Catalog does not exist", name);
         else
             return LightFieldReference::make<logical::ScannedLightField>(Metadata{*this, metadataFile});
     }

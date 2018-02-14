@@ -1,6 +1,7 @@
 #ifndef LIGHTDB_VIDEOENCODERSESSION_H
 #define LIGHTDB_VIDEOENCODERSESSION_H
 
+#include <errors.h>
 #include "Frame.h"
 #include "VideoEncoder.h"
 #include "EncodeWriter.h"
@@ -63,7 +64,7 @@ public:
             std::this_thread::yield();
 
         if((status = encoder_.api().NvEncFlushEncoderQueue(nullptr)) != NV_ENC_SUCCESS)
-            throw std::runtime_error(std::to_string(status) + "flush"); //TODO
+            throw GpuEncodeRuntimeError("Encoder session failed to flush", status);
 
         writer.Flush();
     }
@@ -126,15 +127,15 @@ private:
             buffer->get()->input_buffer.input_surface = nullptr;
         }
 
-        return buffer;
+        return {buffer};
     }
 
     void Encode(EncodeBuffer &buffer, NV_ENC_PIC_STRUCT type) {
         NVENCSTATUS status;
 
-        std::scoped_lock{buffer};
+        std::scoped_lock lock{buffer};
         if ((status = encoder_.api().NvEncEncodeFrame(&buffer, nullptr, type, frameCount() == 0)) != NV_ENC_SUCCESS)
-            throw std::runtime_error(std::to_string(status) + "encode"); //TODO
+            throw GpuEncodeRuntimeError("Encoder session failed to encode input buffer", status);
 
         frameCount_++;
     }

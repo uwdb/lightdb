@@ -1,6 +1,7 @@
 #ifndef LIGHTDB_ASSERT_H
 #define LIGHTDB_ASSERT_H
 
+#include "errors.h"
 #include <vector>
 #include <stdexcept>
 
@@ -8,7 +9,7 @@ namespace lightdb::asserts {
     template<typename T>
     std::vector<T> &CHECK_NONEMPTY(std::vector<T> &volumes) {
         if (volumes.empty())
-            throw std::runtime_error("empty"); //TODO
+            throw InvalidArgumentError("Expected nonempty vector", "volumes");
         else
             return volumes;
     }

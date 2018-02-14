@@ -1,6 +1,7 @@
 #ifndef LIGHTDB_COLOR_H
 #define LIGHTDB_COLOR_H
 
+#include "errors.h"
 #include <optional>
 #include <memory>
 #include <utility>
@@ -141,7 +142,7 @@ namespace lightdb
         static unsigned char first_element_and_check_size(const bytestring &bytes)
         {
             if(bytes.size() != 3)
-                throw std::runtime_error("wrong length"); //TODO
+                throw InvalidArgumentError("Expected length 3", "bytes"); //TODO
             else
                 return static_cast<unsigned char>(bytes[0]);
         }

@@ -37,10 +37,12 @@ public:
               rows_(rows), columns_(columns),
               pool(context, rows * columns)
     {
-      if(rows == 0 || columns == 0)
-        throw std::runtime_error("bad rows/col"); //TODO
+      if(rows == 0)
+        throw InvalidArgumentError("Number of rows must be positive", "rows");
+      else if(columns == 0)
+        throw InvalidArgumentError("Number of columns must be positive", "columns");
       else if(rows * columns != encodeConfigurations_.size())
-            throw std::runtime_error("bad #encode configurations"); //TODO
+          throw InvalidArgumentError("Number of encode configurations must be rows*columns", "encodeConfigurations");
     }
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers) {
@@ -65,7 +67,7 @@ public:
       FrameRateAlignment alignment(encoders()[0]->configuration().framerate, decoder_.configuration().framerate);
 
       if(writers.size() != encoders().size())
-        throw std::runtime_error("bad size"); //TODO
+        throw InvalidArgumentError("Number of writers must match number of encoders", "writers");
 
       LOG(INFO) << "Tiling starting (" << rows() << 'x' << columns() << ')';
 

@@ -1,8 +1,9 @@
 #ifndef LIGHTDB_FRAME_H
 #define LIGHTDB_FRAME_H
 
-#include "dynlink_nvcuvid.h"
 #include "VideoDecoder.h"
+#include "errors.h"
+#include "dynlink_nvcuvid.h"
 
 class Frame {
 public:
@@ -27,12 +28,12 @@ public:
             : handle_(handle), pitch_(pitch), height_(height), width_(width), type_(type)
     { }
 
-    virtual ~Frame() { }
+    virtual ~Frame() = default;
 
     CUdeviceptr handle() const { return handle_; }
     unsigned int pitch() const { return pitch_; }
-    unsigned int height() const { return height_; }
-    unsigned int width() const { return width_; }
+    virtual unsigned int height() const { return height_; }
+    virtual unsigned int width() const { return width_; }
     NV_ENC_PIC_STRUCT type() const { return type_; }
 
 protected:
@@ -48,7 +49,7 @@ public:
         : Frame(frame), decoder_(frame.decoder()), parameters_(frame.parameters())
     { }
 
-    DecodedFrame(const CudaDecoder& decoder, const std::shared_ptr<CUVIDPARSERDISPINFO> parameters)
+    DecodedFrame(const CudaDecoder& decoder, const std::shared_ptr<CUVIDPARSERDISPINFO> &parameters)
         : Frame(decoder.configuration(), extract_type(parameters)),
           decoder_(decoder), parameters_(parameters)
     {
@@ -61,18 +62,18 @@ public:
 
         if((result = cuvidMapVideoFrame(decoder_.handle(), parameters->picture_index,
                                         &handle_, &pitch_, &mapParameters)) != CUDA_SUCCESS)
-            throw std::runtime_error(std::to_string(result) + "DecodedFrame.cuvidMapVideoFrame"); //TODO
+            throw GpuCudaRuntimeError("Call to cuvidMapVideoFrame failed", result);
     }
 
-    ~DecodedFrame() {
+    ~DecodedFrame() override {
         if(handle())
             cuvidUnmapVideoFrame(decoder_.handle(), handle());
     }
 
     const CudaDecoder &decoder() const { return decoder_; }
     const std::shared_ptr<CUVIDPARSERDISPINFO> parameters() const { return parameters_; }
-    virtual unsigned int height() const { return decoder_.configuration().height; }
-    virtual unsigned int width() const { return decoder_.configuration().width; }
+    unsigned int height() const override { return decoder_.configuration().height; }
+    unsigned int width() const override { return decoder_.configuration().width; }
 
 private:
     static NV_ENC_PIC_STRUCT extract_type(const std::shared_ptr<CUVIDPARSERDISPINFO> &parameters) {
@@ -94,10 +95,11 @@ public:
         : height_(frame.height()), width_(frame.width()), data_(frame.data_)
     { }
 
-    LocalFrame(const Frame &source)
+    explicit LocalFrame(const Frame &source)
         : height_(source.height()), width_(source.width()),
           data_(std::make_shared<std::vector<unsigned char>>(width() * height() * 3 / 2))
     {
+        CUresult status;
         auto params = CUDA_MEMCPY2D {
             .srcXInBytes = 0,
             .srcY = 0,
@@ -120,8 +122,8 @@ public:
             .Height = height() * 3 / 2
         };
 
-        if(cuMemcpy2D(&params) != CUDA_SUCCESS)
-            throw std::runtime_error("LocalFrame"); //TODO
+        if((status = cuMemcpy2D(&params)) != CUDA_SUCCESS)
+            throw GpuCudaRuntimeError("Call to cuMemcpy2D failed", status);
     }
 
     virtual unsigned int height() const { return height_; }
@@ -130,7 +132,7 @@ public:
     unsigned char operator()(size_t x, size_t y) const { return data_->at(x + y * width()); }
 
 private:
-    const size_t height_, width_;
+    const unsigned int height_, width_;
     const std::shared_ptr<std::vector<unsigned char>> data_;
 };
 

@@ -13,35 +13,32 @@ public:
         CUresult result;
 
         if ((result = cuvidCtxLockCreate(&lock_, context.get())) != CUDA_SUCCESS) {
-            LOG(ERROR) << "cuvidCtxLockCreate";
-            throw std::runtime_error(std::to_string(result) + "VideoLock"); // TODO
+            throw GpuCudaRuntimeError("Call to cuvidCtxLockCreate failed", result);
         }
     }
     ~VideoLock() {
         cuvidCtxLockDestroy(lock_);
     }
 
-    GPUContext &context() { return context_; }
+    const GPUContext &context() const { return context_; }
     CUvideoctxlock get() const { return lock_; }
 
     void lock() {
         CUresult result;
         if ((result = cuvidCtxLock(get(), 0)) != CUDA_SUCCESS) {
-            LOG(ERROR) << "cuvidCtxLock";
-            throw std::runtime_error(std::to_string(result) + "lock"); //TODO
+            throw GpuCudaRuntimeError("Call to cuvidCtxLock failed", result);
         }
     }
 
     void unlock() {
         CUresult result;
         if ((result = cuvidCtxUnlock(get(), 0)) != CUDA_SUCCESS) {
-            LOG(ERROR) << "cuvidCtxUnlock";
-            throw std::runtime_error(std::to_string(result) + "unlock"); //TODO
+            throw GpuCudaRuntimeError("Call to cuvidCtxUnlock failed", result);
         }
     }
 
 private:
-    /*TODO const */ GPUContext& context_;
+    const GPUContext& context_;
     CUvideoctxlock lock_ = nullptr;
 };
 

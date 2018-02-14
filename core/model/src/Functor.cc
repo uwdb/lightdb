@@ -43,9 +43,9 @@ namespace lightdb {
         CUresult result;
         //TODO hardcoded path; cannot call in constructor
         if(module_ == nullptr && (result = cuModuleLoad(&module_, "/home/bhaynes/projects/visualcloud/core/model/src/kernels.cubin")) != CUDA_SUCCESS)
-            throw new std::runtime_error(std::string("Failure loading module") + std::to_string(result));
+            throw GpuCudaRuntimeError("Failure loading module", result);
         else if(function_ == nullptr && (result = cuModuleGetFunction(&function_, module_, "blur")) != CUDA_SUCCESS)
-            throw new std::runtime_error(std::string("Failure loading kernel") + std::to_string(result));
+            throw GpuCudaRuntimeError("Failure loading kernel blur", result);
 
         return [this](VideoLock& lock, Frame& frame) -> Frame& {
             std::scoped_lock{lock};
@@ -79,9 +79,9 @@ namespace lightdb {
         CUresult result;
         //TODO hardcoded path; cannot call in constructor
         if(module_ == nullptr && (result = cuModuleLoad(&module_, "/home/bhaynes/projects/visualcloud/core/model/src/kernels.cubin")) != CUDA_SUCCESS)
-            throw new std::runtime_error(std::string("Failure loading module") + std::to_string(result));
+            throw GpuCudaRuntimeError("Failure loading module", result);
         else if(function_ == nullptr && (result = cuModuleGetFunction(&function_, module_, "overlay")) != CUDA_SUCCESS)
-            throw new std::runtime_error(std::string("Failure loading kernel") + std::to_string(result));
+            throw GpuCudaRuntimeError("Failure loading kernel blur", result);
 
         return [this](VideoLock& lock, const std::vector<Frame>& frames) -> const Frame& {
             std::scoped_lock{lock};

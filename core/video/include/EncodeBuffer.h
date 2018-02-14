@@ -47,30 +47,31 @@ struct EncodeBuffer
     { }
 
     // TODO is this size reasonable?
-    EncodeBuffer(VideoEncoder &encoder, size_t size=4*1024*1024)
+    explicit EncodeBuffer(VideoEncoder &encoder, size_t size=4*1024*1024)
             : output_buffer{0}, input_buffer{0}, encoder(encoder), size(size) {
         NVENCSTATUS status;
+        CUresult result;
 
         if(encoder.configuration().height % 2 != 0)
-            throw std::runtime_error("Buffer height must be even"); //TODO
+            throw InvalidArgumentError("Buffer height must be even", "configuration.height");
         else if(encoder.configuration().width % 2 != 0)
-            throw std::runtime_error("Buffer width must be even"); //TODO
+            throw InvalidArgumentError("Buffer width must be even", "configuration.width");
         else if(!encoder.api().encoderCreated())
-            throw std::runtime_error("encoder not created"); //TODO
-        else if(cuMemAllocPitch(&input_buffer.NV12devPtr,
-                           (size_t*)&input_buffer.NV12Stride,
-                           encoder.configuration().width,
-                           encoder.configuration().height * 3 / 2,
-                           16) != CUDA_SUCCESS)
-            throw std::runtime_error("NV_ENC_ERR_OUT_OF_MEMORY"); //tODO
+            throw GpuRuntimeError("Encoder not created in API");
+        else if((result = cuMemAllocPitch(&input_buffer.NV12devPtr,
+                                          (size_t*)&input_buffer.NV12Stride,
+                                          encoder.configuration().width,
+                                          encoder.configuration().height * 3 / 2,
+                                          16)) != CUDA_SUCCESS)
+            throw GpuCudaRuntimeError("Call to cuMemAllocPitch failed", result);
         else if((status = encoder.api().NvEncRegisterResource(
                 NV_ENC_INPUT_RESOURCE_TYPE_CUDADEVICEPTR, (void *)input_buffer.NV12devPtr,
                 encoder.configuration().width, encoder.configuration().height,
                 input_buffer.NV12Stride, &input_buffer.registered_resource)) != NV_ENC_SUCCESS)
-            throw std::runtime_error(std::to_string(status) + "EncodeBuffer.NvEncRegisterResource"); //TODO
+            throw GpuEncodeRuntimeError("Call to api.NvEncRegisterResource failed", status);
         else if((status = encoder.api().NvEncCreateBitstreamBuffer(
                 size, &output_buffer.bitstreamBuffer)) != NV_ENC_SUCCESS)
-            throw std::runtime_error("EncodeBuffer.997"); //TODO
+            throw GpuEncodeRuntimeError("Call to api.NvEncCreateBitstreamBuffer failed", status);
 
         input_buffer.buffer_format = NV_ENC_BUFFER_FORMAT_NV12_PL;
         input_buffer.width = encoder.configuration().width;
@@ -93,8 +94,7 @@ struct EncodeBuffer
     void copy(VideoLock &lock, const Frame &frame) {
         if(frame.width() != input_buffer.width ||
            frame.height() != input_buffer.height) {
-            LOG(ERROR) << "frame size does not match buffer size";
-            throw std::runtime_error("frame size does not match buffer size"); //TODO
+            throw InvalidArgumentError("Frame size does not match buffer size", "frame");
         }
 
         copy(lock, {
@@ -170,19 +170,19 @@ struct EncodeBuffer
 
     void copy(VideoLock &lock, const CUDA_MEMCPY2D &parameters) {
         CUresult result;
-        std::scoped_lock{lock};
+        std::scoped_lock l{lock};
 
         if ((result = cuMemcpy2D(&parameters)) != CUDA_SUCCESS) {
-            throw std::runtime_error(std::to_string(result) + "EncodeBuffer.copy"); //TODO
+            throw GpuCudaRuntimeError("Call to cuMemcpy2D failed", result);
         }
     }
 
     void copy(VideoLock &lock, const std::vector<CUDA_MEMCPY2D> &parameters) {
-        std::scoped_lock{lock};
+        std::scoped_lock l{lock};
         std::for_each(parameters.begin(), parameters.end(), [](const CUDA_MEMCPY2D &parameters) {
             CUresult result;
             if ((result = cuMemcpy2D(&parameters)) != CUDA_SUCCESS) {
-                throw std::runtime_error(std::to_string(result) + "EncodeBuffer.copy"); //TODO
+                throw GpuCudaRuntimeError("Call to cuMemcpy2D failed", result);
             }
         });
     }
@@ -191,13 +191,13 @@ struct EncodeBuffer
         NVENCSTATUS status;
         if((status = encoder.api().NvEncMapInputResource(input_buffer.registered_resource,
                                                          &input_buffer.input_surface)) != NV_ENC_SUCCESS)
-            throw std::runtime_error(std::to_string(status) + "EncodeBuffer.lock"); //TODO
+            throw GpuEncodeRuntimeError("Call to api.NvEncMapInputResource failed", status);
     }
 
     void unlock() {
         NVENCSTATUS status;
         if((status = encoder.api().NvEncUnmapInputResource(input_buffer.input_surface)) != NV_ENC_SUCCESS)
-            throw std::runtime_error(std::to_string(status) + "EncodeBuffer.unlock"); //TODO
+            throw GpuEncodeRuntimeError("Call to api.NvEncUnmapInputResource failed", status);
     }
 };
 

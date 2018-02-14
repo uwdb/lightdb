@@ -191,7 +191,7 @@ namespace lightdb {
                 case Dimension::Z:
                     return z;
                 default:
-                    throw std::invalid_argument("Invalid dimension"); //TODO
+                    throw InvalidArgumentError("Invalid dimension", "dimension");
             }
         }
 

@@ -267,17 +267,17 @@ namespace lightdb::utility {
         }
 
         if(context->nb_streams < index + 1)
-            throw std::runtime_error("Index is larger than number of streams"); //TODO
+            throw InvalidArgumentError("Index is larger than number of streams", "index");
         else if(context->streams[0]->codecpar->height <= 0 ||
                 context->streams[0]->codecpar->width <= 0)
-            throw std::runtime_error("Frame size not detected"); //TODO
+            throw FfmpegRuntimeError("Frame size not detected");
         else if(context->streams[0]->nb_frames < 0)
-            throw std::runtime_error("No frames detected"); //TODO
+            throw FfmpegRuntimeError("No frames detected");
         else if(context->bit_rate < 0)
-            throw std::runtime_error("No bitrate detected"); //TODO
+            throw FfmpegRuntimeError("No bitrate detected");
         else if(context->streams[index]->codecpar->codec_id != AV_CODEC_ID_H264 &&
                 context->streams[index]->codecpar->codec_id != AV_CODEC_ID_HEVC)
-            throw std::runtime_error("Hardcoded support only for H264 and HEVC"); //TODO
+            throw FfmpegRuntimeError("Hardcoded support only for H264 and HEVC");
 
         codec =  context->streams[index]->codecpar->codec_id == AV_CODEC_ID_H264 ? "h264" : "hevc";
         height = static_cast<unsigned int>(context->streams[index]->codecpar->height);
