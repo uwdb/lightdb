@@ -60,15 +60,15 @@ namespace lightdb
         Color() = default;
     };
 
-    /*
     class ColorReference {
+    public:
         explicit ColorReference(std::shared_ptr<Color> color)
             : pointer_(std::move(color))
         { }
 
-        / *ColorReference(Color &&color)
+        /*ColorReference(Color &&color)
             : pointer_(std::make_shared<Color>(std::move(color))), direct_(pointer_.get())
-        { }* /
+        { }*/
 
         ColorReference(const ColorReference &reference)
             : pointer_(reference.pointer_)
@@ -99,7 +99,6 @@ namespace lightdb
     private:
         const std::shared_ptr<Color> pointer_;
     };
-    */
 
     class YUVColor: public Color {
     public:

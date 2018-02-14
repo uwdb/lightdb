@@ -11,6 +11,7 @@
 #include <functional>
 #include <fstream>
 #include <iterator>
+#include <utility>
 
 namespace lightdb {
 
@@ -25,7 +26,7 @@ namespace lightdb {
 
     class BinaryOperator : public Operator {
     public:
-        virtual LightFieldReference apply(const LightFieldReference, const LightFieldReference) const = 0;
+        virtual LightFieldReference apply(LightFieldReference, LightFieldReference) const = 0;
     };
 
 
@@ -51,9 +52,9 @@ namespace lightdb {
     public:
         //TODO constructors should accept EncodedLightFields, not string/streams
         //TODO theta and phi should be drawn from the container, not explicitly parameterized
-        Decode(const std::string &filename,
-               const AngularRange &theta = AngularRange::ThetaMax,
-               const AngularRange &phi = AngularRange::PhiMax)
+        explicit Decode(const std::string &filename,
+                        const AngularRange &theta = AngularRange::ThetaMax,
+                        const AngularRange &phi = AngularRange::PhiMax)
         //: Decode(std::ifstream{filename})
                 : field_(std::shared_ptr<LightField>(
                 new logical::PanoramicVideoLightField(filename, theta, phi))) {}
@@ -80,7 +81,7 @@ namespace lightdb {
                // : field_(std::shared_ptr<LightField>(
                 //new PanoramicVideoLightField(std::move(stream)))) {}
 
-        operator const LightFieldReference() const {
+        explicit operator const LightFieldReference() const {
             return field_;
         }
 
@@ -103,7 +104,7 @@ namespace lightdb {
     };
 
 
-    template<typename ColorSpace>
+    //template<typename ColorSpace>
     class Scan : public Operator {
         LightField &&scan(std::string name) {
             return logical::ConstantLightField(YUVColor::Green); //TODO
@@ -112,8 +113,8 @@ namespace lightdb {
 
     class Store : public Operator {
     public:
-        explicit Store(const std::string &name)
-                : name_(name) {}
+        explicit Store(std::string name)
+                : name_(std::move(name)) {}
 
         lightdb::EncodedLightField apply(const EncodedLightField &encoded) const {
             encoded->write(name_);
@@ -141,7 +142,7 @@ namespace lightdb {
         explicit Union(const MergeType mergeType)
                 : mergeType_(mergeType) {}
 
-        LightFieldReference apply(const LightFieldReference left, const LightFieldReference right) const {
+        LightFieldReference apply(const LightFieldReference left, const LightFieldReference right) const override {
             return LightFieldReference::make<logical::CompositeLightField>(
                     std::vector<LightFieldReference>{left, right});
         }
@@ -201,8 +202,8 @@ namespace lightdb {
 
     class Transcode : public UnaryOperator { //TODO
     public:
-        explicit Transcode(const std::function<bitrate(Volume &)> &bitrater)
-            : bitrater_(bitrater) {}
+        explicit Transcode(std::function<bitrate(Volume &)> bitrater)
+            : bitrater_(std::move(bitrater)) {}
 
         LightFieldReference apply(const LightFieldReference &field) const override {
             //TODO clean this up, should be able to decode from memory
@@ -226,7 +227,7 @@ namespace lightdb {
 
     class Interpolate : public UnaryOperator { //TODO
     public:
-        explicit Interpolate(const Dimension dimension, const interpolation::interpolator<YUVColorSpace> &interpolator)
+        explicit Interpolate(const Dimension dimension, const interpolation::interpolator &interpolator)
                 : dimension_(dimension), interpolator_(interpolator) {}
 
         LightFieldReference apply(const LightFieldReference &field) const override {
@@ -236,7 +237,7 @@ namespace lightdb {
 
     private:
         const Dimension dimension_;
-        const interpolation::interpolator<YUVColorSpace> &interpolator_;
+        const interpolation::interpolator &interpolator_;
     };
 
     class Discretize : public UnaryOperator { //TODO
@@ -247,7 +248,7 @@ namespace lightdb {
         Discretize(const Dimension &dimension, lightdb::rational &interval)
                 : Discretize(IntervalGeometry(dimension, interval)) {}
 
-        Discretize(const Geometry &&geometry)
+        explicit Discretize(const Geometry &&geometry)
                 : geometry_(geometry) {}
 
         LightFieldReference apply(const LightFieldReference &field) const override {
@@ -260,10 +261,10 @@ namespace lightdb {
 
     class Map : public UnaryOperator { //TODO
     public:
-        Map(lightdb::functor<YUVColorSpace> &functor)
+        explicit Map(functor &functor)
                 : functor_(functor) {}
 
-        Map(lightdb::functor<YUVColorSpace> &&functor)
+        explicit Map(functor &&functor)
                 : functor_(functor) {}
 
         LightFieldReference apply(const LightFieldReference &field) const override {
@@ -271,7 +272,7 @@ namespace lightdb {
         }
 
     private:
-        const lightdb::functor<YUVColorSpace> &functor_;
+        const lightdb::functor &functor_;
     };
 
 //    template<typename InColorSpace, typename OutColorSpace>

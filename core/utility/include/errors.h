@@ -11,6 +11,8 @@
     ::lightdb::errors::_InvalidArgument(message, argument, __FILE__, __LINE__, __func__)
 #define BadCastError() \
     ::lightdb::errors::_BadCast(__FILE__, __LINE__, __func__)
+#define NotImplementedError() \
+    ::lightdb::errors::_NotImplemented(__FILE__, __LINE__, __func__)
 
 #define CatalogError(message, name) \
     ::lightdb::errors::_CatalogError(message, name, __FILE__, __LINE__, __func__)
@@ -79,6 +81,14 @@ namespace lightdb::errors {
         const std::string argument_;
     };
 
+    class _NotImplemented: public LightDBError<std::runtime_error> {
+    public:
+        _NotImplemented(const char* file, int line, const char* function)
+                : LightDBError("Not implemented", file, line, function)
+        {  }
+    };
+
+
     class _CatalogError: public LightDBError<std::runtime_error> {
     public:
         _CatalogError(const std::string &message, std::string name, const char* file, int line, const char* function)
@@ -96,12 +106,14 @@ namespace lightdb::errors {
         const std::string name_;
     };
 
+
     class _FfmpegRuntimeError: public LightDBError<std::runtime_error> {
     public:
         _FfmpegRuntimeError(const std::string &message, const char* file, int line, const char* function)
                 : LightDBError(message, file, line, function)
         { }
     };
+
 
     class _GpuRuntimeError: public LightDBError<std::runtime_error> {
     public:

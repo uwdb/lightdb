@@ -215,7 +215,7 @@ namespace lightdb {
         class EquirectangularTranscodedLightField: public LightField {
         public:
             EquirectangularTranscodedLightField(const logical::PanoramicVideoLightField &video,
-                                                const functor<ColorSpace> &functor)
+                                                const functor &functor)
                     : video_(video), functor_(functor)
             { }
 
@@ -230,7 +230,7 @@ namespace lightdb {
 
         private:
             const logical::PanoramicVideoLightField& video_;
-            const lightdb::functor<ColorSpace> &functor_;
+            const functor &functor_;
         };
 
         class PlanarTiledToVideoLightField: public LightField {
@@ -261,7 +261,7 @@ namespace lightdb {
             TemporalPartitionedEquirectangularTranscodedLightField(
                     const logical::PartitionedLightField &partitioning,
                     const logical::PanoramicVideoLightField &video,
-                    const lightdb::functor<ColorSpace> &functor)
+                    const functor &functor)
                     : partitioning_(partitioning), video_(video), functor_(functor)
             { }
 
@@ -277,20 +277,19 @@ namespace lightdb {
         private:
             const logical::PartitionedLightField& partitioning_;
             const logical::PanoramicVideoLightField& video_;
-            const lightdb::functor<ColorSpace> &functor_;
+            const functor &functor_;
         };
 
-        template<typename ColorSpace>
         class BinaryUnionTranscodedLightField: public LightField {
         public:
             BinaryUnionTranscodedLightField(const logical::PanoramicVideoLightField &left,
                                             const logical::PanoramicVideoLightField &right,
-                                            const naryfunctor<ColorSpace> &functor)
+                                            const naryfunctor &functor)
                     : left_(left), right_(right), functor_(functor)
             { }
 
             const std::vector<LightFieldReference> parents() const override { return left_.parents(); } //TODO incorrect
-            const lightdb::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
+            const lightdb::ColorSpace colorSpace() const override { return YUVColorSpace::Instance; }
             const CompositeVolume volume() const override { return left_.volume(); } //TODO incorrect
 /*            inline const YUVColor value(const Point6D &point) const override {
                 return left_.value(point); //TOOD incorrect
@@ -300,7 +299,7 @@ namespace lightdb {
 
         private:
             const logical::PanoramicVideoLightField& left_, right_;
-            const naryfunctor<ColorSpace> &functor_;
+            const naryfunctor &functor_;
         };
 
         //TODO hacks

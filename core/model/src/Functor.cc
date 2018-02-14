@@ -9,11 +9,16 @@ using namespace std::chrono;
 
 
 namespace lightdb {
-    const YUVColorSpace::Color Greyscale::operator()(const LightField &field,
-                                                     const Point6D &point) const {
+    const ColorReference Greyscale::operator()(const ColorSpace&, const LightFieldReference&, const Point6D&) const {
         throw std::runtime_error("Encode(YUV) and extra yuv bytes");
         //return YUVColor{field.value(point).y(), 0, 0};
     }
+
+/*    const YUVColorSpace::Color Greyscale::operator()(const LightField &field,
+                                                     const Point6D &point) const {
+        throw std::runtime_error("Encode(YUV) and extra yuv bytes");
+        //return YUVColor{field.value(point).y(), 0, 0};
+    }*/
 
     Greyscale::operator const FrameTransform() const {
         return [](VideoLock& lock, Frame& frame) -> Frame& {
@@ -34,10 +39,14 @@ namespace lightdb {
     GaussianBlur::GaussianBlur() : module_(nullptr), function_(nullptr) {
     }
 
-    const YUVColorSpace::Color GaussianBlur::operator()(const LightField &field,
-                                                        const Point6D &point) const {
+    const ColorReference GaussianBlur::operator()(const ColorSpace&, const LightFieldReference&, const Point6D&) const {
         throw new std::runtime_error("Not implemented");
     }
+
+/*    const YUVColorSpace::Color GaussianBlur::operator()(const LightField &field,
+                                                        const Point6D &point) const {
+        throw new std::runtime_error("Not implemented");
+    }*/
 
     GaussianBlur::operator const FrameTransform() const {
         CUresult result;
@@ -63,11 +72,16 @@ namespace lightdb {
         };
     };
 
-    const YUVColorSpace::Color Identity::operator()(const LightField &field,
-                                                     const Point6D &point) const {
+    const ColorReference Identity::operator()(const ColorSpace&, const LightFieldReference&, const Point6D&) const {
         throw std::runtime_error("Encode(YUV) and extra yuv bytes");
         //return field.value(point);
     }
+
+/*    const YUVColorSpace::Color Identity::operator()(const LightField &field,
+                                                     const Point6D &point) const {
+        throw std::runtime_error("Encode(YUV) and extra yuv bytes");
+        //return field.value(point);
+    }*/
 
     Identity::operator const FrameTransform() const {
         return [](VideoLock&, Frame& frame) -> Frame& {

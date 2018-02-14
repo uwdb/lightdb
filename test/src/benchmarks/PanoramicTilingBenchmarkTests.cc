@@ -49,7 +49,7 @@ public:
                 >> Partition(Dimension::Phi, phi)
                 >> Partition(Dimension::Theta, theta)
                 >> Transcode([this](auto&) mutable { return bitrates[i++]; })
-                >> Interpolate(Dimension::Time, interpolation::NearestNeighbor)
+                >> Interpolate(Dimension::Time, interpolation::NearestNeighbor())
                 >> Discretize(Dimension::Time, rational(1, 60))
                 >> Partition(Dimension::Time, 1)
                 >> Encode()

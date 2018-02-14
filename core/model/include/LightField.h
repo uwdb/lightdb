@@ -1,6 +1,7 @@
 #ifndef LIGHTDB_LIGHTFIELD_H
 #define LIGHTDB_LIGHTFIELD_H
 
+#include "Algebra.h"
 #include "Geometry.h"
 #include "Color.h"
 #include "Interpolation.h"
@@ -8,7 +9,6 @@
 #include "Catalog.h"
 #include "Ffmpeg.h"
 #include "functional.h"
-#include "assert.h"
 #include <memory>
 #include <utility>
 #include <vector>
@@ -17,7 +17,6 @@
 #include <stdexcept>
 
 namespace lightdb {
-    template<typename ColorSpace>
     class functor;
 
     class LightFieldReference;
@@ -38,13 +37,13 @@ namespace lightdb {
         inline std::string type() const { return typeid(*this).name(); }
     };
 
-    class LightFieldReference {
+    class LightFieldReference: public logical::Algebra {
     public:
         LightFieldReference(std::shared_ptr<LightField> lightfield)
-                : pointer_(std::move(lightfield)), direct_(pointer_.get()) {}
+                : Algebra(*this), pointer_(std::move(lightfield)), direct_(pointer_.get()) {}
 
         LightFieldReference(const LightFieldReference &reference)
-                : pointer_(reference.pointer_), direct_(pointer_.get()) {}
+                : Algebra(*this), pointer_(reference.pointer_), direct_(pointer_.get()) {}
 
         inline operator const LightField &() const {
             return *pointer_;
@@ -237,8 +236,8 @@ namespace lightdb {
         public:
             InterpolatedLightField(const LightFieldReference &source,
                                    const Dimension dimension,
-                                   interpolation::interpolator<YUVColorSpace> interpolator)
-                    : source_(source), interpolator_(std::move(interpolator)) {}
+                                   const interpolation::interpolator &interpolator)
+                    : source_(source), interpolator_(interpolator) {}
 
             const std::vector<LightFieldReference> parents() const override { return {source_}; }
 
@@ -248,16 +247,16 @@ namespace lightdb {
 
         private:
             const LightFieldReference source_;
-            const interpolation::interpolator<YUVColorSpace> interpolator_;
+            const interpolation::interpolator &interpolator_;
         };
 
         class TransformedLightField : public LightField {
         public:
             TransformedLightField(const LightFieldReference &source,
-                                  const functor<YUVColorSpace> &functor)
+                                  const functor &functor)
                     : source_(source), functor_(functor) {}
 
-            const lightdb::functor<YUVColorSpace> &functor() const { return functor_; };
+            const lightdb::functor &functor() const { return functor_; };
 
             //TODO just add a DecoratedLightField class that does all of this, rather than repeating it over and over
             const std::vector<LightFieldReference> parents() const override { return {source_}; }
@@ -268,7 +267,7 @@ namespace lightdb {
 
         private:
             const LightFieldReference source_;
-            const lightdb::functor<YUVColorSpace> &functor_;
+            const lightdb::functor &functor_;
         };
 
         class ScannedLightField : public LightField {

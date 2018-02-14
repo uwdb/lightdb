@@ -349,8 +349,7 @@ namespace lightdb {
             return CompositeMemoryEncodedLightField::create(decodes, video_.volume());
         }
 
-        template<typename ColorSpace>
-        EncodedLightField BinaryUnionTranscodedLightField<ColorSpace>::apply(const std::string &format) {
+        EncodedLightField BinaryUnionTranscodedLightField::apply(const std::string &format) {
             LOG(INFO) << "Executing binary union physical operator";
 
             assert(left_.metadata().framerate.numerator() == right_.metadata().framerate.numerator());
@@ -396,7 +395,7 @@ namespace lightdb {
         template class StitchedLightField<YUVColorSpace>;
         template class EquirectangularCroppedLightField<YUVColorSpace>;
         template class TemporalPartitionedEquirectangularTranscodedLightField<YUVColorSpace>;
-        template class BinaryUnionTranscodedLightField<YUVColorSpace>;
+        //template class BinaryUnionTranscodedLightField<YUVColorSpace>;
     } // namespace physical
 } // namespace lightdb
 

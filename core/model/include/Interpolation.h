@@ -7,15 +7,25 @@
 
 class LightFieldReference;
 
-namespace lightdb {
-namespace interpolation {
-    template<typename ColorSpace>
-    using interpolator = std::function<typename ColorSpace::Color(
-            const LightFieldReference&, const Point6D &point)>;
+namespace lightdb::interpolation {
+    class interpolator {
+    public:
+        template<typename ColorSpace=YUVColorSpace>
+        typename ColorSpace::Color operator()(const LightFieldReference& lightField, const Point6D& point) const {
+            return operator()(ColorSpace::Instance, lightField, point);
+        }
 
-    //TODO
-    static interpolator<YUVColorSpace> NearestNeighbor = [](auto&, auto&) { return YUVColor::Green; };
-} // namespace interpolation
-} // namespace lightdb
+    protected:
+        //TODO not happy about doing one heap allocation per interpolation
+        virtual const ColorReference operator()(const ColorSpace&, const LightFieldReference&, const Point6D&) const = 0;
+    };
+
+    class NearestNeighbor: public interpolator {
+    protected:
+        const ColorReference operator()(const ColorSpace &colorSpace, const LightFieldReference&, const Point6D&) const override {
+            return ColorReference::make<YUVColor>(YUVColor::Green); //TODO
+        }
+    };
+} // namespace lightdb::interpolation
 
 #endif //LIGHTDB_INTERPOLATION_H
