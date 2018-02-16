@@ -20,7 +20,7 @@ namespace lightdb {
 
             const std::vector<LightFieldReference> parents() const override { return {field_}; }
             const lightdb::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
-            const CompositeVolume volume() const override { return field_->volume(); }
+            //const CompositeVolume volume() const override { return field_->volume(); }
             const unsigned int rows() const { return rows_; }
             const unsigned int columns() const { return columns_; }
 //            inline const YUVColor value(const Point6D &point) const override { return field_->value(point); }
@@ -47,7 +47,8 @@ namespace lightdb {
             using metadata = std::tuple<size_t, size_t, size_t, logical::PanoramicVideoLightField&>;
 
             EquirectangularTiledLightField(LightFieldReference &field, const metadata data)
-                : field_(field), rows_(std::get<0>(data)), columns_(std::get<1>(data)), time_(std::get<2>(data)), video_((std::get<3>(data)))
+                : LightField(field->volume()),
+                  field_(field), rows_(std::get<0>(data)), columns_(std::get<1>(data)), time_(std::get<2>(data)), video_((std::get<3>(data)))
                   //context_(0) //TODO context
             { }
 
@@ -96,7 +97,7 @@ namespace lightdb {
 
             const std::vector<LightFieldReference> parents() const override { return {field_}; }
             const lightdb::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
-            const CompositeVolume volume() const override { return field_->volume(); }
+            //const CompositeVolume volume() const override { return field_->volume(); }
 //            inline const YUVColor value(const Point6D &point) const override { return field_->value(point); }
 
             EncodedLightField apply();
@@ -105,7 +106,8 @@ namespace lightdb {
         private:
             StitchedLightField(const LightFieldReference &field,
                                const std::pair<std::vector<logical::PanoramicVideoLightField*>, std::vector<Volume>> &pair)
-                    : field_(field), videos_(pair.first), volumes_(pair.second)
+                    : LightField(field->volume()),
+                      field_(field), videos_(pair.first), volumes_(pair.second)
             { }
 
             static std::pair<std::vector<logical::PanoramicVideoLightField*>, std::vector<Volume>> get_tiles(const LightFieldReference& field) {
@@ -129,7 +131,7 @@ namespace lightdb {
                         throw std::invalid_argument("Input video was not HEVC encoded.");
 
                     videos.push_back(video);
-                    volumes.push_back(rotation != nullptr ? rotation->volume().components()[0] : video->volume().components()[0]);
+                    volumes.push_back(rotation != nullptr ? rotation->volume().components()[0] : static_cast<EncodedLightField>(video)->volume().components()[0]);
                 }
 
                 return std::make_pair(videos, volumes);
@@ -180,7 +182,7 @@ namespace lightdb {
                         throw std::invalid_argument("Composite child was not a video.");
 
                     videos.push_back(video);
-                    volumes.push_back(rotation != nullptr ? rotation->volume().components()[0] : video->volume().components()[0]);
+                    volumes.push_back(rotation != nullptr ? rotation->volume().components()[0] : static_cast<EncodedLightField>(video)->volume().components()[0]);
                 }
 
                 return std::make_pair(videos, volumes);
@@ -195,12 +197,13 @@ namespace lightdb {
         class EquirectangularCroppedLightField: public LightField {
         public:
             EquirectangularCroppedLightField(const logical::PanoramicVideoLightField &video, AngularRange theta, AngularRange phi, TemporalRange t)
-                    : video_(video), theta_(theta), phi_(phi), t(t)
+                    : LightField(static_cast<const LightField&>(video).volume()),
+                      video_(video), theta_(theta), phi_(phi), t(t)
             { }
 
             const std::vector<LightFieldReference> parents() const override { return {}; } //TODO incorrect
             const lightdb::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
-            const CompositeVolume volume() const override { return video_.volume(); }
+            //const CompositeVolume volume() const override { return video_.volume(); }
 //            inline const typename ColorSpace::Color value(const Point6D &point) const override { return video_.value(point); }
 
             EncodedLightField apply(const std::string &format);
@@ -216,12 +219,13 @@ namespace lightdb {
         public:
             EquirectangularTranscodedLightField(const logical::PanoramicVideoLightField &video,
                                                 const functor &functor)
-                    : video_(video), functor_(functor)
+                    : LightField(static_cast<const LightField&>(video).volume()),
+                      video_(video), functor_(functor)
             { }
 
             const std::vector<LightFieldReference> parents() const override { return video_.parents(); } //TODO incorrect
             const lightdb::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
-            const CompositeVolume volume() const override { return video_.volume(); }
+            //const CompositeVolume volume() const override { return video_.volume(); }
 /*            inline const YUVColor value(const Point6D &point) const override {
                 return functor_(video_, point);
             }*/
@@ -237,12 +241,13 @@ namespace lightdb {
         public:
             PlanarTiledToVideoLightField(const logical::PlanarTiledVideoLightField &video,
                                          const double x, const double y, const AngularRange &theta, const AngularRange &phi)
-                    : video_(video), x_(x), y_(y), theta_(theta), phi_(phi)
+                    : LightField(static_cast<const LightField&>(video).volume()),
+                      video_(video), x_(x), y_(y), theta_(theta), phi_(phi)
             { }
 
             const std::vector<LightFieldReference> parents() const override { return video_.parents(); } //TODO incorrect
             const ColorSpace colorSpace() const override { return YUVColorSpace::Instance; }
-            const CompositeVolume volume() const override { return video_.volume(); }
+            //const CompositeVolume volume() const override { return video_.volume(); }
 /*            inline const YUVColor value(const Point6D &point) const override {
                 return video_.value(point);
             }*/
@@ -262,12 +267,13 @@ namespace lightdb {
                     const logical::PartitionedLightField &partitioning,
                     const logical::PanoramicVideoLightField &video,
                     const functor &functor)
-                    : partitioning_(partitioning), video_(video), functor_(functor)
+                    : LightField(static_cast<const LightField&>(video).volume()),
+                      partitioning_(partitioning), video_(video), functor_(functor)
             { }
 
             const std::vector<LightFieldReference> parents() const override { return video_.parents(); } //TODO incorrect
             const lightdb::ColorSpace colorSpace() const override { return ColorSpace::Instance; }
-            const CompositeVolume volume() const override { return video_.volume(); }
+            //const CompositeVolume volume() const override { return video_.volume(); }
 /*            inline const typename ColorSpace::Color value(const Point6D &point) const override {
                 return functor_(video_, point);
             }*/
@@ -285,12 +291,13 @@ namespace lightdb {
             BinaryUnionTranscodedLightField(const logical::PanoramicVideoLightField &left,
                                             const logical::PanoramicVideoLightField &right,
                                             const naryfunctor &functor)
-                    : left_(left), right_(right), functor_(functor)
+                    : LightField(static_cast<const LightField&>(left).volume()),
+                      left_(left), right_(right), functor_(functor)
             { }
 
             const std::vector<LightFieldReference> parents() const override { return left_.parents(); } //TODO incorrect
             const lightdb::ColorSpace colorSpace() const override { return YUVColorSpace::Instance; }
-            const CompositeVolume volume() const override { return left_.volume(); } //TODO incorrect
+            //const CompositeVolume volume() const override { return left_.volume(); } //TODO incorrect
 /*            inline const YUVColor value(const Point6D &point) const override {
                 return left_.value(point); //TOOD incorrect
             }*/
