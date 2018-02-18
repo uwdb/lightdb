@@ -1,6 +1,7 @@
 #ifndef LIGHTDB_ALGEBRA_H
 #define LIGHTDB_ALGEBRA_H
 
+#include "Catalog.h"
 #include "Geometry.h"
 #include "Functor.h"
 #include "Interpolation.h"
@@ -9,21 +10,26 @@ namespace lightdb {
     class LightFieldReference;
 
     namespace logical {
+        LightFieldReference Scan(const std::string &name);
+        LightFieldReference Scan(const catalog::Catalog&, const std::string &name);
 
         class Algebra {
         public:
-            //TODO Scan, Encode, Decode, Transcode
+            //TODO Encode, Decode, Transcode
 
-            void Store(const std::string &name);
+            //LightFieldReference Load(const std::string &uri);
             LightFieldReference Select(const Volume&);
+            LightFieldReference Select(SpatiotemporalDimension, const SpatiotemporalRange&);
+            LightFieldReference Select(AngularDimension, const AngularRange&);
             LightFieldReference Union(const std::vector<LightFieldReference>&); //TODO needs merge function
-            LightFieldReference Union(const LightFieldReference); //TODO needs merge function
-            LightFieldReference Rotate(const angle theta, const angle phi);
-            LightFieldReference Partition(const Dimension, const rational);
-            LightFieldReference Interpolate(const Dimension, const interpolation::interpolator&);
-            LightFieldReference Discretize(const Geometry&);
-            LightFieldReference Discretize(const Dimension, const rational);
-            LightFieldReference Map(functor&);
+            LightFieldReference Union(LightFieldReference); //TODO needs merge function
+            LightFieldReference Rotate(angle theta, angle phi);
+            LightFieldReference Partition(Dimension, rational);
+            LightFieldReference Interpolate(Dimension, const interpolation::interpolator&);
+            LightFieldReference Discretize(const GeometryReference&);
+            LightFieldReference Discretize(Dimension, rational);
+            LightFieldReference Map(FunctorReference);
+            void Store(const std::string &name);
 
         protected:
             explicit Algebra(LightFieldReference &lightField) : this_(lightField) { }

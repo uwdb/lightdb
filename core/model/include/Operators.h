@@ -105,7 +105,7 @@ namespace lightdb {
 
 
     //template<typename ColorSpace>
-    class Scan : public Operator {
+    class _Scan : public Operator {
         LightField &&scan(std::string name) {
             return logical::ConstantLightField(YUVColor::Green); //TODO
         }
@@ -243,28 +243,28 @@ namespace lightdb {
     class Discretize : public UnaryOperator { //TODO
     public:
         Discretize(const Dimension &dimension, lightdb::rational &&interval)
-                : Discretize(IntervalGeometry(dimension, interval)) {}
+            : Discretize(GeometryReference::make<IntervalGeometry>(dimension, interval)) {}
 
         Discretize(const Dimension &dimension, lightdb::rational &interval)
-                : Discretize(IntervalGeometry(dimension, interval)) {}
+            : Discretize(GeometryReference::make<IntervalGeometry>(dimension, interval)) {}
 
-        explicit Discretize(const Geometry &&geometry)
-                : geometry_(geometry) {}
+        explicit Discretize(const GeometryReference &&geometry)
+            : geometry_(geometry) {}
 
         LightFieldReference apply(const LightFieldReference &field) const override {
             return LightFieldReference::make<logical::DiscretizedLightField>(field, geometry_);
         }
 
     private:
-        const Geometry &geometry_;
+        const GeometryReference geometry_;
     };
 
     class Map : public UnaryOperator { //TODO
     public:
-        explicit Map(functor &functor)
+        explicit Map(FunctorReference &functor)
                 : functor_(functor) {}
 
-        explicit Map(functor &&functor)
+        explicit Map(FunctorReference &&functor)
                 : functor_(functor) {}
 
         LightFieldReference apply(const LightFieldReference &field) const override {
@@ -272,7 +272,7 @@ namespace lightdb {
         }
 
     private:
-        const lightdb::functor &functor_;
+        const FunctorReference &functor_;
     };
 
 //    template<typename InColorSpace, typename OutColorSpace>

@@ -2,6 +2,7 @@
 #define LIGHTDB_COLOR_H
 
 #include "errors.h"
+#include "reference.h"
 #include <optional>
 #include <memory>
 #include <utility>
@@ -60,45 +61,7 @@ namespace lightdb
         Color() = default;
     };
 
-    class ColorReference {
-    public:
-        explicit ColorReference(std::shared_ptr<Color> color)
-            : pointer_(std::move(color))
-        { }
-
-        /*ColorReference(Color &&color)
-            : pointer_(std::make_shared<Color>(std::move(color))), direct_(pointer_.get())
-        { }*/
-
-        ColorReference(const ColorReference &reference)
-            : pointer_(reference.pointer_)
-        { }
-
-        explicit inline operator Color&() const {
-            return *pointer_;
-        }
-
-        inline Color* operator->() const {
-            return pointer_.get();
-        }
-
-        inline Color& operator*() const {
-            return *pointer_;
-        }
-
-        explicit operator const std::shared_ptr<Color>() const {
-            return pointer_;
-        }
-
-        template<typename T, typename... _Args>
-        inline static ColorReference
-        make(_Args&&... args) {
-            return ColorReference{static_cast<std::shared_ptr<Color>>(std::make_shared<T>(args...))};
-        }
-
-    private:
-        const std::shared_ptr<Color> pointer_;
-    };
+    using ColorReference = shared_reference<Color>;
 
     class YUVColor: public Color {
     public:

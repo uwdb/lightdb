@@ -1,9 +1,33 @@
 #include "Algebra.h"
 #include "LightField.h"
 
+using namespace lightdb::catalog;
+
 namespace lightdb::logical {
+    LightFieldReference Scan(const std::string &name) {
+        return Scan(Catalog::instance(), name);
+    }
+
+    LightFieldReference Scan(const catalog::Catalog &catalog, const std::string &name) {
+        return catalog.get(name);
+    }
+
     LightFieldReference Algebra::Select(const Volume &volume)
     {
+        return LightFieldReference::make<SubsetLightField>(this_, volume);
+    }
+
+    LightFieldReference Algebra::Select(const SpatiotemporalDimension dimension, const SpatiotemporalRange &range)
+    {
+        Volume volume(this_->volume().bounding());
+        volume = {dimension, range};
+        return LightFieldReference::make<SubsetLightField>(this_, volume);
+    }
+
+    LightFieldReference Algebra::Select(const AngularDimension dimension, const AngularRange &range)
+    {
+        Volume volume(this_->volume().bounding());
+        volume = {dimension, range};
         return LightFieldReference::make<SubsetLightField>(this_, volume);
     }
 
@@ -36,15 +60,15 @@ namespace lightdb::logical {
         return LightFieldReference::make<logical::InterpolatedLightField>(this_, dimension, interpolator);
     }
 
-    LightFieldReference Algebra::Discretize(const Geometry &geometry) {
+    LightFieldReference Algebra::Discretize(const GeometryReference &geometry) {
         return LightFieldReference::make<logical::DiscretizedLightField>(this_, geometry);
     }
 
     LightFieldReference Algebra::Discretize(const Dimension dimension, const rational interval) {
-        return Discretize(IntervalGeometry(dimension, interval));
+        return Discretize(GeometryReference::make<IntervalGeometry>(dimension, interval));
     }
 
-    LightFieldReference Algebra::Map(functor& functor) {
+    LightFieldReference Algebra::Map(FunctorReference functor) {
         return LightFieldReference::make<logical::TransformedLightField>(this_, functor);
     }
 

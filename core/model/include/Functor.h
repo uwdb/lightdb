@@ -28,6 +28,8 @@ namespace lightdb {
         virtual const ColorReference operator()(const ColorSpace&, const LightFieldReference&, const Point6D&) const = 0;
     };
 
+    using FunctorReference = shared_reference<functor>;
+
     //TODO use vardaic template to lock number of arguments (e.g., naryfunctor<2>)) and drop vector
     class naryfunctor {
     public:

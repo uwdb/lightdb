@@ -9,6 +9,7 @@
 #include "Catalog.h"
 #include "Ffmpeg.h"
 #include "functional.h"
+#include "reference.h"
 #include <memory>
 #include <utility>
 #include <vector>
@@ -18,37 +19,71 @@
 
 namespace lightdb {
     class functor;
+    class LightField;
 
     class LightFieldReference;
 
     class LightField {
     protected:
-        LightField() = default;
+        explicit LightField(const LightFieldReference &parent);
+        explicit LightField(std::vector<LightFieldReference> &parents, const ColorSpace&);
+        explicit LightField(const LightFieldReference &parent, const CompositeVolume&);
+        explicit LightField(const LightFieldReference &parent, const CompositeVolume&, const ColorSpace&);
+        explicit LightField(std::vector<LightFieldReference> parents, CompositeVolume volume,
+                            const ColorSpace& colorSpace)
+            : parents_(std::move(parents)), volume_(std::move(volume)), colorSpace_(colorSpace)
+        { }
 
         virtual ~LightField() = default;
 
     public:
-        virtual const std::vector<LightFieldReference> parents() const = 0;
+        template<typename T>
+        inline const T& downcast() const {
+            return dynamic_cast<const T&>(*this);
+        }
 
-        virtual const ColorSpace colorSpace() const = 0;
+        template<typename T>
+        inline bool is() const {
+            return dynamic_cast<const T*>(this) != nullptr;
+        }
 
-        virtual const CompositeVolume volume() const = 0;
+        template<typename T>
+        inline const std::optional<std::reference_wrapper<const T>> try_downcast() const {
+            return {dynamic_cast<const T&>(*this)};
+        }
+
+        virtual const std::vector<LightFieldReference> parents() const { return parents_; }
+
+        virtual const ColorSpace colorSpace() const { return colorSpace_; }
+
+        virtual const CompositeVolume& volume() const { return volume_; }
 
         inline std::string type() const { return typeid(*this).name(); }
+
+    private:
+        const std::vector<LightFieldReference> parents_;
+        const CompositeVolume volume_;
+        const ColorSpace colorSpace_;
     };
 
+    //TODO using LightFieldReference = ::lightdb::shared_reference<LightField, logical::Algebra>;
     class LightFieldReference: public logical::Algebra {
     public:
         LightFieldReference(std::shared_ptr<LightField> lightfield)
-                : Algebra(*this), pointer_(std::move(lightfield)), direct_(pointer_.get()) {}
+            : Algebra(*this), pointer_(std::move(lightfield)), direct_(pointer_.get()) {}
 
         LightFieldReference(const LightFieldReference &reference)
-                : Algebra(*this), pointer_(reference.pointer_), direct_(pointer_.get()) {}
+            : Algebra(*this), pointer_(reference.pointer_), direct_(pointer_.get()) {}
 
         inline operator const LightField &() const {
             return *pointer_;
         }
 
+        inline LightField *operator->() const {
+            return pointer_.get();
+        }
+
+        template<typename LightField>
         inline LightField *operator->() const {
             return pointer_.get();
         }
@@ -84,73 +119,52 @@ namespace lightdb {
                 return std::shared_ptr<LightField>(new ConstantLightField(color, volume));
             }
 
-            const std::vector<LightFieldReference> parents() const override { return {}; }
-
-            const CompositeVolume volume() const override { return volume_; }
-
             const Color &color() const { return color_; }
-
-            const ColorSpace colorSpace() const override { return color().colorSpace(); }
 
         protected:
             ConstantLightField(const Color &color, const Volume &volume)
-                    : color_(color), volume_(volume) {}
+                : LightField({}, volume, color.colorSpace()), color_(color) { }
 
         private:
             const Color &color_;
-            const Volume volume_;
         };
 
         class CompositeLightField : public LightField {
         public:
-            //TODO ensure that lightfields don't overlap
-            explicit CompositeLightField(std::vector<LightFieldReference> lightfields)
-                    : lightfields_(std::move(asserts::CHECK_NONOVERLAPPING(asserts::CHECK_NONEMPTY(lightfields)))) {}
-
-            const std::vector<LightFieldReference> parents() const override { return lightfields_; }
-
-            const ColorSpace colorSpace() const override {
-                return std::all_of(lightfields_.begin(), lightfields_.end(),
-                                   [this](auto &l) { return l->colorSpace() == lightfields_[0]->colorSpace(); })
-                       ? lightfields_[0]->colorSpace()
-                       : UnknownColorSpace::Instance;
-            }
-
-            const CompositeVolume volume() const override {
-                return {functional::flatmap<std::vector<Volume>>(
-                        lightfields_.begin(),
-                        lightfields_.end(),
-                        [](auto &l) { return l->volume().components(); })};
-            }
-
-        private:
-            const std::vector<LightFieldReference> lightfields_;
+            explicit CompositeLightField(const std::vector<LightFieldReference> &lightfields)
+                    : LightField(asserts::CHECK_NONOVERLAPPING(asserts::CHECK_NONEMPTY(lightfields)),
+                                 CompositeVolume{functional::flatmap<std::vector<Volume>>(
+                                                  lightfields.begin(),
+                                                  lightfields.end(),
+                                                  [](const auto &l) {
+                                                      return l->volume().components(); })},
+                                 std::all_of(lightfields.begin(),
+                                             lightfields.end(),
+                                             [this, lightfields](auto &l) {
+                                                 return l->colorSpace() == lightfields[0]->colorSpace(); })
+                                 ? lightfields[0]->colorSpace()
+                                 : UnknownColorSpace::Instance)
+            { }
         };
 
         class PartitionedLightField : public LightField {
         public:
+            //TODO should we just have a positive_rational class?
             PartitionedLightField(const LightFieldReference &source,
                                   const Dimension dimension,
                                   const rational &interval)
-                    : source_(source), dimension_(dimension), interval_(interval) {}
-
-            const std::vector<LightFieldReference> parents() const override { return {source_}; }
-
-            const ColorSpace colorSpace() const override { return source_->colorSpace(); }
-
-            const CompositeVolume volume() const override {
-                return {functional::flatmap<std::vector<Volume>>(
-                        source_->volume().components().begin(),
-                        source_->volume().components().end(),
-                        [this](auto &volume) { return volume.partition(dimension_, interval_); })};
-            }
+                    : LightField(source,
+                                 CompositeVolume{functional::flatmap<std::vector<Volume>>(
+                                     source->volume().components().begin(),
+                                     source->volume().components().end(),
+                                     [dimension, interval](auto &volume) {
+                                         return volume.partition(dimension, asserts::CHECK_POSITIVE(interval)); })}),
+                      dimension_(dimension), interval_(asserts::CHECK_POSITIVE(interval)) { }
 
             Dimension dimension() const { return dimension_; }
-
             rational interval() const { return interval_; }
 
         private:
-            const LightFieldReference source_;
             const Dimension dimension_;
             const rational interval_;
         };
@@ -158,78 +172,65 @@ namespace lightdb {
         class SubsetLightField : public LightField {
         public:
             SubsetLightField(const LightFieldReference &lightfield, const Volume &volume)
-                    : lightfield_(lightfield), volume_(volume | lightfield->volume().bounding()) {}
-
-            const std::vector<LightFieldReference> parents() const override { return {lightfield_}; }
-
-            const ColorSpace colorSpace() const override { return lightfield_->colorSpace(); }
-
-            const CompositeVolume volume() const override {
-                return CompositeVolume{
-                        functional::transform_if<Volume>(
-                                lightfield_->volume().components().begin(),
-                                lightfield_->volume().components().end(),
-                                [this](auto &v) { return v | volume_; },
-                                [](auto &v) { return !v.is_point(); })
-                };
-            }
-
-        private:
-            const LightFieldReference lightfield_;
-            const Volume volume_;
+                    : LightField(lightfield,
+                                 CompositeVolume{functional::transform_if<Volume>(
+                                     lightfield->volume().components().begin(),
+                                     lightfield->volume().components().end(),
+                                     [volume](auto &v) { return v | volume; },
+                                     [](auto &v) { return !v.is_point(); })})
+            { }
         };
 
         class RotatedLightField : public LightField {
         public:
             RotatedLightField(const LightFieldReference &lightfield, const angle &theta, const angle &phi)
-                    : lightfield_(lightfield), offset_{0, 0, 0, 0, theta, phi} {}
+                    : LightField(lightfield,
+                                 CompositeVolume{functional::transform<Volume>(
+                                     lightfield->volume().components().begin(),
+                                     lightfield->volume().components().end(),
+                                     [this](auto &v) {
+                                         return v.translate(offset_); })}),
+                      offset_{0, 0, 0, 0, theta, phi} {}
 
-            const std::vector<LightFieldReference> parents() const override { return {lightfield_}; }
-
-            const ColorSpace colorSpace() const override { return lightfield_->colorSpace(); }
-
-            const CompositeVolume volume() const override {
-                return {functional::transform<Volume>(
-                        lightfield_->volume().components().begin(),
-                        lightfield_->volume().components().end(),
-                        [this](auto &v) { return v.translate(offset_); })};
-            }
+            const Point6D& offset() const { return offset_; }
 
         private:
-            const LightFieldReference lightfield_;
             const Point6D offset_;
         };
 
         class DiscreteLightField : public LightField {
         public:
-            explicit DiscreteLightField(const Geometry &geometry)
-                    : DiscreteLightField(std::bind(&Geometry::defined_at, &geometry, std::placeholders::_1)) {}
-
-            explicit DiscreteLightField(std::function<bool(const Point6D &)> predicate)
-                    : predicate_(std::move(predicate)) {}
+            const GeometryReference& geometry() const { return geometry_; }
 
         protected:
+            explicit DiscreteLightField(const LightFieldReference &source,
+                                        const GeometryReference &geometry)
+                    : DiscreteLightField(source, source->volume(), geometry)
+            { }
+            explicit DiscreteLightField(const LightFieldReference &source,
+                                        const CompositeVolume &volume,
+                                        const GeometryReference &geometry)
+                : LightField(source), geometry_(geometry)
+            { }
+            explicit DiscreteLightField(const CompositeVolume &volume,
+                                        const ColorSpace &colorSpace,
+                                        const GeometryReference &geometry)
+                    : LightField({}, volume, colorSpace), geometry_(geometry)
+            { }
+
             virtual bool defined_at(const Point6D &point) const {
-                return predicate_(point);
+                return geometry_->defined_at(point);
             }
 
         private:
-            const std::function<bool(const Point6D &)> predicate_;
+            const GeometryReference geometry_;
         };
 
         class DiscretizedLightField : public DiscreteLightField {
         public:
-            DiscretizedLightField(const LightFieldReference &source, const Geometry &geometry)
-                    : DiscreteLightField(geometry), source_(source) {}
-
-            const std::vector<LightFieldReference> parents() const override { return {source_}; }
-
-            const CompositeVolume volume() const override { return source_->volume(); }
-
-            const ColorSpace colorSpace() const override { return source_->colorSpace(); }
-
-        private:
-            const LightFieldReference source_;
+            DiscretizedLightField(const LightFieldReference &source, const GeometryReference &geometry)
+                : DiscreteLightField(source, geometry)
+            { }
         };
 
         class InterpolatedLightField : public LightField {
@@ -237,65 +238,46 @@ namespace lightdb {
             InterpolatedLightField(const LightFieldReference &source,
                                    const Dimension dimension,
                                    const interpolation::interpolator &interpolator)
-                    : source_(source), interpolator_(interpolator) {}
+                    : LightField(source),
+                      interpolator_(interpolator) {}
 
-            const std::vector<LightFieldReference> parents() const override { return {source_}; }
-
-            const CompositeVolume volume() const override { return source_->volume(); }
-
-            const ColorSpace colorSpace() const override { return source_->colorSpace(); }
+            const interpolation::interpolator& interpolator() const { return interpolator_; }
 
         private:
-            const LightFieldReference source_;
             const interpolation::interpolator &interpolator_;
         };
 
         class TransformedLightField : public LightField {
         public:
             TransformedLightField(const LightFieldReference &source,
-                                  const functor &functor)
-                    : source_(source), functor_(functor) {}
+                                  const FunctorReference &functor)
+                    : LightField(source), functor_(functor)
+            { }
 
-            const lightdb::functor &functor() const { return functor_; };
-
-            //TODO just add a DecoratedLightField class that does all of this, rather than repeating it over and over
-            const std::vector<LightFieldReference> parents() const override { return {source_}; }
-
-            const CompositeVolume volume() const override { return source_->volume(); }
-
-            const ColorSpace colorSpace() const override { return source_->colorSpace(); }
+            const FunctorReference& functor() const { return functor_; };
 
         private:
-            const LightFieldReference source_;
-            const lightdb::functor &functor_;
+            const FunctorReference functor_;
         };
 
         class ScannedLightField : public LightField {
         public:
-            explicit ScannedLightField(const catalog::Catalog::Metadata &metadata)
-                : metadata_(metadata) { }
-
-            const std::vector<LightFieldReference> parents() const override { return {}; }
-            const CompositeVolume volume() const override { return metadata_.volume(); }
-            const ColorSpace colorSpace() const override { return metadata_.colorSpace(); }
+            explicit ScannedLightField(catalog::Catalog::Metadata metadata)
+                : LightField({}, metadata.volume(), metadata.colorSpace()), metadata_(std::move(metadata)) { }
 
         private:
-            const catalog::Catalog::Metadata &metadata_;
+            const catalog::Catalog::Metadata metadata_;
         };
 
         class ExternalLightField : public LightField {
         public:
             ExternalLightField(std::string uri, const Volume &volume,
                                const ColorSpace &colorSpace, const Geometry &geometry)
-                    : uri_(std::move(uri)), volume_(volume), colorSpace_(colorSpace), geometry_(geometry) { }
-
-            const std::vector<LightFieldReference> parents() const override { return {}; }
-            const CompositeVolume volume() const override { return volume_; }
-            const ColorSpace colorSpace() const override { return colorSpace_; }
+                    : LightField({}, volume, colorSpace),
+                      uri_(std::move(uri)), colorSpace_(colorSpace), geometry_(geometry) { }
 
         private:
             const std::string uri_;
-            const Volume volume_;
             const ColorSpace &colorSpace_;
             const Geometry &geometry_;
         };
@@ -308,22 +290,23 @@ namespace lightdb {
                                 const TemporalRange &range,
                                 const AngularRange &theta = AngularRange::ThetaMax,
                                 const AngularRange &phi = AngularRange::PhiMax)
-                    : DiscreteLightField(EquirectangularGeometry::Instance),
-                      point_(point), volume_{point.ToVolume(range, theta, phi)} {}
-
+                : DiscreteLightField(point.ToVolume(range, theta, phi), YUVColorSpace::Instance,
+                                     GeometryReference::make<EquirectangularGeometry>()),
+                  point_(point)
+ //                   : DiscreteLightField(EquirectangularGeometry::Instance, point.ToVolume(range, theta, phi)),
+   //                   point_(point)
+            //, volume_{point.ToVolume(range, theta, phi)} {}
+            { }
             explicit PanoramicLightField(const TemporalRange &range)
                     : PanoramicLightField(Point3D{0, 0, 0}, range) {}
 
-            const CompositeVolume volume() const override { return volume_; }
-
         protected:
             bool defined_at(const Point6D &point) const override {
-                return volume_.Contains(point) && EquirectangularGeometry::Instance.defined_at(point);
+                return volume().bounding().Contains(point) && EquirectangularGeometry::Instance.defined_at(point);
             }
 
         private:
             const Point3D point_;
-            const Volume volume_;
         };
 
         class PanoramicVideoLightField : public PanoramicLightField, public SingletonFileEncodedLightField {
@@ -342,11 +325,9 @@ namespace lightdb {
                                                      (Volume) PanoramicLightField::volume()), //TODO no need to duplicate filename here and in singleton
                       geometry_(Dimension::Time, framerate()) {}
 
-            const CompositeVolume volume() const override { return PanoramicLightField::volume(); }
+            //const std::vector<LightFieldReference> parents() const override { return {}; }
 
-            const std::vector<LightFieldReference> parents() const override { return {}; }
-
-            const ColorSpace colorSpace() const override { return YUVColorSpace::Instance; } //TODO pull from file
+            //const ColorSpace colorSpace() const override { return YUVColorSpace::Instance; } //TODO pull from file
             //TODO remove both of these
             inline rational framerate() const { return rational(30, 1); } //TODO hardcoded...
 
@@ -375,17 +356,16 @@ namespace lightdb {
             PlanarTiledVideoLightField(const std::string &filename,
                                        const Volume &volume,
                                        const size_t rows, const size_t columns)
-                    : DiscreteLightField(IntervalGeometry(Dimension::Time, framerate())),
+                    : DiscreteLightField(volume, YUVColorSpace::Instance,
+                                         GeometryReference::make<IntervalGeometry>(Dimension::Time, framerate())),
                       SingletonFileEncodedLightField(filename,
                                                      volume), //TODO no need to duplicate filename here and in singleton
-                      volume_(volume),
+                      //volume_(volume),
                       rows_(rows), columns_(columns) {}
 
-            const CompositeVolume volume() const override { return volume_; }
+            //const std::vector<LightFieldReference> parents() const override { return {}; }
 
-            const std::vector<LightFieldReference> parents() const override { return {}; }
-
-            const ColorSpace colorSpace() const override { return YUVColorSpace::Instance; } //TODO pull from file
+            //const ColorSpace colorSpace() const override { return YUVColorSpace::Instance; } //TODO pull from file
             //TODO remove both of these
             inline rational framerate() const { return rational(30, 1); } //TODO hardcoded...
 
@@ -399,7 +379,7 @@ namespace lightdb {
         private:
             //TODO drop filename after adding StreamDecodeReader in Physical.cc
             // Can make SingletonEncodedLightField be a replacement for this class; one for in-memory, one for on-disk, one for streaming
-            const Volume volume_;
+            //const Volume volume_;
             const size_t rows_, columns_;
             mutable std::optional<utility::StreamMetadata> metadata_;
         };

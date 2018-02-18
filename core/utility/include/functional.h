@@ -8,7 +8,8 @@ namespace lightdb::functional {
     std::vector<T> transform(InputIterator begin, InputIterator end, UnaryFunction f)
     {
         std::vector<T> values;
-        std::transform(begin, end, values.begin(), f);
+        values.reserve(end - begin);
+        std::transform(begin, end, std::back_inserter(values), f);
         return values;
     };
 
@@ -33,18 +34,18 @@ namespace lightdb::functional {
     OutIterator flatmap(InIterator begin, InIterator end, Function f)
     {
         OutIterator values;
-        flatmap(begin, end, values.begin(), f);
+        flatmap(begin, end, std::back_inserter(values), f);
         return values;
     }
 
     template<typename T, typename InputIterator, typename OutputIterator, typename UnaryFunction, typename Predicate>
     OutputIterator transform_if(
-            InputIterator begin, InputIterator end, OutputIterator output,
-            UnaryFunction f, Predicate p)
+            InputIterator begin, const InputIterator end, OutputIterator output,
+            const UnaryFunction f, const Predicate p)
     {
         for (; begin != end; ++begin)
             if(p(*begin))
-                *++output = f(*begin);
+                *output++ = f(*begin);
         return output;
 
 /*
@@ -54,10 +55,12 @@ namespace lightdb::functional {
     };
 
     template<typename T, typename InputIterator, typename UnaryFunction, typename Predicate>
-    std::vector<T> transform_if(InputIterator begin, InputIterator end, UnaryFunction f, Predicate p)
+    std::vector<T> transform_if(const InputIterator begin, const InputIterator end,
+                                const UnaryFunction f, const Predicate p)
     {
         std::vector<T> values;
-        transform_if<T>(begin, end, values.begin(), f, p);
+        values.reserve(end - begin);
+        transform_if<T>(begin, end, std::back_inserter(values), f, p);
         return values;
     };
 } // namespace lightdb::functional

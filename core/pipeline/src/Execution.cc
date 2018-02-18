@@ -68,7 +68,7 @@ namespace lightdb {
             auto *right = dynamic_cast<const logical::PanoramicVideoLightField*>(&*composite->parents()[1]);
 
             if(left != nullptr && right != nullptr &&
-                    left->volume().bounding() == right->volume().bounding()) {
+                    static_cast<const LightField*>(left)->volume().bounding() == static_cast<const LightField*>(right)->volume().bounding()) {
                 //TODO this is just broken, need a binary union transcoder
                 return {lightdb::physical::BinaryUnionTranscodedLightField(*left, *right, Overlay(YUVColor::Red)).apply(format)};
             }
@@ -86,7 +86,7 @@ namespace lightdb {
             auto *right = dynamic_cast<logical::PanoramicVideoLightField*>(&*composite->parents()[1]);
 
             if(left != nullptr && right != nullptr &&
-               left->volume().bounding() == right->volume().bounding() &&
+                    static_cast<const LightField*>(left)->volume().bounding() == static_cast<const LightField*>(right)->volume().bounding() &&
                left->filename() == right->filename() &&
                left->metadata().codec == format) {
                 auto lf = composite->parents()[0];
@@ -107,7 +107,7 @@ namespace lightdb {
 
             if(subset != nullptr && video != nullptr &&
                     subset->volume().components().size() == 1 &&
-                    subset->volume().components()[0] == video->volume().bounding() &&
+                    subset->volume().components()[0] == static_cast<const LightField*>(video)->volume().bounding() &&
                     video->metadata().codec == format) {
                 auto lf = lightfield->parents()[0];
                 auto sp = static_cast<const std::shared_ptr<LightField>>(lf);
@@ -158,7 +158,7 @@ namespace lightdb {
             auto *partitioning = dynamic_cast<const logical::PartitionedLightField*>(&*lightfield);
             auto *video = partitioning != nullptr && partitioning->parents().size() == 1 ? dynamic_cast<logical::PanoramicVideoLightField*>(&*partitioning->parents()[0]) : nullptr;
 
-            if(partitioning != nullptr && video != nullptr && video->metadata().codec != format && video->volume().components().size() > 0)
+            if(partitioning != nullptr && video != nullptr && video->metadata().codec != format && static_cast<LightField*>(video)->volume().components().size() > 0)
                 return {lightdb::physical::TemporalPartitionedEquirectangularTranscodedLightField<YUVColorSpace>(*partitioning, *video, Identity()).apply(format)};
             else
                 return {};
@@ -172,8 +172,8 @@ namespace lightdb {
             auto *transform = dynamic_cast<logical::TransformedLightField*>(&*lightfield);
             auto *video = dynamic_cast<logical::PanoramicVideoLightField*>(&*lightfield->parents()[0]);
             if(transform != nullptr && video != nullptr &&
-               transform->functor().hasFrameTransform())
-                return {lightdb::physical::EquirectangularTranscodedLightField<YUVColorSpace>(*video, transform->functor()).apply(format)};
+               transform->functor()->hasFrameTransform())
+                return {lightdb::physical::EquirectangularTranscodedLightField<YUVColorSpace>(*video, *transform->functor()).apply(format)};
             else
                 return {};
         }

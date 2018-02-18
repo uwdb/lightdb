@@ -47,7 +47,7 @@ namespace lightdb {
             using metadata = std::tuple<size_t, size_t, size_t, logical::PanoramicVideoLightField&>;
 
             EquirectangularTiledLightField(LightFieldReference &field, const metadata data)
-                : LightField(field->volume()),
+                : LightField(field), //, field->volume()),
                   field_(field), rows_(std::get<0>(data)), columns_(std::get<1>(data)), time_(std::get<2>(data)), video_((std::get<3>(data)))
                   //context_(0) //TODO context
             { }
@@ -106,7 +106,7 @@ namespace lightdb {
         private:
             StitchedLightField(const LightFieldReference &field,
                                const std::pair<std::vector<logical::PanoramicVideoLightField*>, std::vector<Volume>> &pair)
-                    : LightField(field->volume()),
+                    : LightField(field), //field->volume()),
                       field_(field), videos_(pair.first), volumes_(pair.second)
             { }
 
@@ -197,7 +197,7 @@ namespace lightdb {
         class EquirectangularCroppedLightField: public LightField {
         public:
             EquirectangularCroppedLightField(const logical::PanoramicVideoLightField &video, AngularRange theta, AngularRange phi, TemporalRange t)
-                    : LightField(static_cast<const LightField&>(video).volume()),
+                    : LightField({}, static_cast<const LightField&>(video).volume(), video.colorSpace()), //TODO parents is incorrect
                       video_(video), theta_(theta), phi_(phi), t(t)
             { }
 
@@ -219,7 +219,7 @@ namespace lightdb {
         public:
             EquirectangularTranscodedLightField(const logical::PanoramicVideoLightField &video,
                                                 const functor &functor)
-                    : LightField(static_cast<const LightField&>(video).volume()),
+                    : LightField({}, static_cast<const LightField&>(video).volume(), video.colorSpace()), //TODO parents is incorrect
                       video_(video), functor_(functor)
             { }
 
@@ -241,7 +241,7 @@ namespace lightdb {
         public:
             PlanarTiledToVideoLightField(const logical::PlanarTiledVideoLightField &video,
                                          const double x, const double y, const AngularRange &theta, const AngularRange &phi)
-                    : LightField(static_cast<const LightField&>(video).volume()),
+                    : LightField({}, static_cast<const LightField&>(video).volume(), video.colorSpace()), //TODO parents is incorrect
                       video_(video), x_(x), y_(y), theta_(theta), phi_(phi)
             { }
 
@@ -267,7 +267,7 @@ namespace lightdb {
                     const logical::PartitionedLightField &partitioning,
                     const logical::PanoramicVideoLightField &video,
                     const functor &functor)
-                    : LightField(static_cast<const LightField&>(video).volume()),
+                    : LightField({}, static_cast<const LightField&>(video).volume(), video.colorSpace()), //TODO parents is incorrect
                       partitioning_(partitioning), video_(video), functor_(functor)
             { }
 
@@ -291,7 +291,7 @@ namespace lightdb {
             BinaryUnionTranscodedLightField(const logical::PanoramicVideoLightField &left,
                                             const logical::PanoramicVideoLightField &right,
                                             const naryfunctor &functor)
-                    : LightField(static_cast<const LightField&>(left).volume()),
+                    : LightField({}, static_cast<const LightField&>(left).volume(), left.colorSpace()), //TODO parents+colorspace is incorrect
                       left_(left), right_(right), functor_(functor)
             { }
 

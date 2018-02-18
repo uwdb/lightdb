@@ -12,9 +12,27 @@ namespace lightdb {
     namespace catalog {
         class Catalog {
         public:
+            Catalog(const Catalog &catalog) = default;
             explicit Catalog(std::experimental::filesystem::path path)
-                : path_(std::move(path))
+                    : path_(std::move(asserts::CHECK_NONEMPTY(path)))
             { }
+
+            //TODO these overloads are superfluous, but cause issues with syntax highlighting
+            explicit Catalog(const char *path)
+                : Catalog(std::experimental::filesystem::path(path))
+            { }
+            explicit Catalog(const std::string &path)
+                : Catalog(std::experimental::filesystem::path(path))
+            { }
+
+            static const Catalog &instance()
+            {
+                if(instance_.has_value())
+                    return instance_.value();
+                else
+                    throw CatalogError("No ambient catalog specified", "instance");
+            }
+            static const Catalog &instance(Catalog catalog) { return instance_.emplace(catalog); }
 
             LightFieldReference get(const std::string &name) const;
 
@@ -24,7 +42,8 @@ namespace lightdb {
                 Metadata(const Catalog &catalog, std::experimental::filesystem::path path)
                         : catalog_(catalog), path_(std::move(path)),
                         //TODO grab boxes and load volume/geometry, detect colorspace
-                          volume_(Volume::VolumeMax), colorSpace_(YUVColorSpace::Instance),
+                          volume_({{0, 0}, {0, 0}, {0, 0}, {0, 10}, AngularRange::ThetaMax, AngularRange::PhiMax}),
+                          colorSpace_(YUVColorSpace::Instance),
                           geometry_(EquirectangularGeometry::Instance)
                 { }
 
@@ -42,8 +61,11 @@ namespace lightdb {
             };
 
         private:
-            const std::experimental::filesystem::path path_;
+            Catalog() : path_("") { }
 
+            const std::experimental::filesystem::path path_;
+            static constexpr const char *metadataFilename_ = "metadata.mp4";
+            static std::optional<Catalog> instance_;
         };
     } //namespace catalog
 } //namespace lightdb

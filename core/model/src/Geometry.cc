@@ -31,37 +31,72 @@ namespace lightdb
         double span = (double)interval.numerator() / interval.denominator(); //TODO horrible!
         double current;
 
-        assert(span > 0);
+        asserts::CHECK_POSITIVE(span);
 
         //TODO add a base class for all dimensions and drop switch
         switch(dimension) {
-            case X:
+            case Dimension::X:
+                assert(x != VolumeMax.x);
                 for(current = x.start; current < x.end; current += span)
                     result.push_back(Volume{{current, std::min(x.end, current + span)}, y, z, t, theta, phi});
                 break;
-            case Y:
+            case Dimension::Y:
+                assert(y != VolumeMax.y);
                 for(current = y.start; current < y.end; current += span)
                     result.push_back(Volume{x, {current, std::min(y.end, current + span)}, z, t, theta, phi});
                 break;
-            case Z:
+            case Dimension::Z:
+                assert(z != VolumeMax.z);
                 for(current = z.start; current < z.end; current += span)
                     result.push_back(Volume{x, y, {current, std::min(z.end, current + span)}, t, theta, phi});
                 break;
-            case Time:
+            case Dimension::Time:
+                assert(t != VolumeMax.t);
                 for(current = t.start; current < t.end; current += span)
                     result.push_back(Volume{x, y, z, {current, std::min(t.end, current + span)}, theta, phi});
                 break;
-            case Theta:
+            case Dimension::Theta:
                 for(current = theta.start; current < theta.end; current += span)
                     result.push_back(Volume{x, y, z, t, {current, std::min(theta.end, current + span)}, phi});
                 break;
-            case Phi:
+            case Dimension::Phi:
                 for(current = phi.start; current < phi.end; current += span)
                     result.push_back(Volume{x, y, z, t, theta, {current, std::min(phi.end, current + span)}});
                 break;
         }
 
         return result;
+    }
+
+    Volume& Volume::operator=(const std::pair<SpatiotemporalDimension, SpatiotemporalRange> value)
+    {
+        switch(value.first) {
+            case SpatiotemporalDimension::X:
+                x = value.second;
+                break;
+            case SpatiotemporalDimension::Y:
+                y = value.second;
+                break;
+            case SpatiotemporalDimension::Z:
+                z = value.second;
+                break;
+            case SpatiotemporalDimension::Time:
+                t = value.second;
+                break;
+        }
+        return *this;
+    }
+    Volume& Volume::operator=(const std::pair<AngularDimension, AngularRange> value)
+    {
+        switch(value.first) {
+            case AngularDimension::Theta:
+                theta = value.second;
+                break;
+            case AngularDimension::Phi:
+                phi = value.second;
+                break;
+        }
+        return *this;
     }
 
     Volume Volume::translate(const Point6D &delta) const{

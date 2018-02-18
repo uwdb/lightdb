@@ -78,13 +78,14 @@ namespace lightdb {
             for(auto i = 0u; i < rows_ * columns_; i++) {
                 //decodes.emplace_back(bytestring{});
                 decodes.emplace_back(std::make_shared<bytestring>(dynamic_cast<SegmentedMemoryEncodeWriter *>(writers[i].get())->buffer()));
-                volumes.push_back({video_.volume().bounding().x, video_.volume().bounding().y, video_.volume().bounding().z, video_.volume().bounding().t,
-                                      {(i % columns()) * AngularRange::ThetaMax.end / columns(), ((i % columns()) + 1) * AngularRange::ThetaMax.end / columns()},
-                                      {(i / columns()) * AngularRange::PhiMax.end / columns(), ((i / columns()) + 1) * AngularRange::PhiMax.end / columns()}});
+                auto v = static_cast<const LightField&>(video_).volume();
+                volumes.push_back({v.bounding().x, v.bounding().y, v.bounding().z, v.bounding().t,
+                              {(i % columns()) * AngularRange::ThetaMax.end / columns(), ((i % columns()) + 1) * AngularRange::ThetaMax.end / columns()},
+                              {(i / columns()) * AngularRange::PhiMax.end / columns(), ((i / columns()) + 1) * AngularRange::PhiMax.end / columns()}});
                 //decodes.emplace_back(std::make_unique<std::ifstream>(std::string("out") + std::to_string(i)));
             }
 
-            return CompositeMemoryEncodedLightField::create(decodes, volumes);
+            return CompositeMemoryEncodedLightField::create(decodes, CompositeVolume{volumes});
 /*
 
 
@@ -201,8 +202,9 @@ namespace lightdb {
                 command += ' ' + v->filename();
             system(command.c_str());
 
+            auto v = static_cast<const LightField*>(videos_[0])->volume();
             return SingletonFileEncodedLightField::create("stitched.hevc",
-                                                          {videos_[0]->volume().components()[0].x, videos_[0]->volume().components()[0].y, videos_[0]->volume().components()[0].z, videos_[0]->volume().components()[0].t, theta_range, phi_range});
+                                                          {v.components()[0].x, v.components()[0].y, v.components()[0].z, v.components()[0].t, theta_range, phi_range});
         }
 
         template<typename ColorSpace>
@@ -231,8 +233,9 @@ namespace lightdb {
             }
 
 
+            auto v = static_cast<const LightField&>(videos_[0]).volume();
             return SingletonFileEncodedLightField::create("stitched.hevc",
-                                                          {videos_[0]->volume().components()[0].x, videos_[0]->volume().components()[0].y, videos_[0]->volume().components()[0].z, videos_[0]->volume().components()[0].t, theta_range, phi_range});
+                                                          {v.components()[0].x, v.components()[0].y, v.components()[0].z, v.components()[0].t, theta_range, phi_range});
         }
 
         template<typename ColorSpace>
@@ -271,7 +274,8 @@ namespace lightdb {
 
             auto decode = std::make_shared<bytestring>(writer.buffer());
 
-            return SingletonMemoryEncodedLightField::create(decode, Volume{video_.volume().components()[0].x, video_.volume().components()[0].y, video_.volume().components()[0].z, video_.volume().components()[0].t, theta_, phi_});
+            auto v = static_cast<const LightField&>(video_).volume();
+            return SingletonMemoryEncodedLightField::create(decode, Volume{v.components()[0].x, v.components()[0].y, v.components()[0].z, v.components()[0].t, theta_, phi_});
         }
 
         template<typename ColorSpace>
@@ -302,7 +306,8 @@ namespace lightdb {
 
             auto decode = std::make_shared<bytestring>(writer.buffer());
 
-            return SingletonMemoryEncodedLightField::create(decode, video_.volume().components()[0]);
+            auto v = static_cast<const LightField&>(video_).volume();
+            return SingletonMemoryEncodedLightField::create(decode, v.components()[0]);
         }
 
         //TODO think this can be rolled into the above
@@ -346,7 +351,8 @@ namespace lightdb {
             for(auto &writer: writers)
                 decodes.emplace_back(std::make_shared<bytestring>(writer.buffer()));
 
-            return CompositeMemoryEncodedLightField::create(decodes, video_.volume());
+            auto v = static_cast<const LightField&>(video_).volume();
+            return CompositeMemoryEncodedLightField::create(decodes, v);
         }
 
         EncodedLightField BinaryUnionTranscodedLightField::apply(const std::string &format) {
@@ -356,7 +362,7 @@ namespace lightdb {
             assert(left_.metadata().framerate.denominator() == right_.metadata().framerate.denominator());
             assert(left_.metadata().width == right_.metadata().width);
             assert(left_.metadata().height == right_.metadata().height);
-            assert(left_.volume().bounding() == right_.volume().bounding());
+            assert(static_cast<const LightField&>(left_).volume().bounding() == static_cast<const LightField&>(right_).volume().bounding());
 
             auto gop = left_.metadata().framerate.numerator() / left_.metadata().framerate.denominator();
             auto bitrate = 500u*1024;
@@ -386,7 +392,7 @@ namespace lightdb {
 
             auto decode = std::make_shared<bytestring>(writer.buffer());
 
-            return SingletonMemoryEncodedLightField::create(decode, left_.volume());
+            return SingletonMemoryEncodedLightField::create(decode, static_cast<const LightField&>(left_).volume());
         }
 
         //template class PlanarTiledToVideoLightField;

@@ -4,6 +4,7 @@
 #include "errors.h"
 #include <vector>
 #include <stdexcept>
+#include <experimental/filesystem>
 
 namespace lightdb::asserts {
     template<typename T>
@@ -15,8 +16,45 @@ namespace lightdb::asserts {
     }
 
     template<typename T>
+    const std::vector<T> &CHECK_NONEMPTY(const std::vector<T> &volumes) {
+        if (volumes.empty())
+            throw InvalidArgumentError("Expected nonempty vector", "volumes");
+        else
+            return std::move(volumes);
+    }
+
+    inline std::string& CHECK_NONEMPTY(std::string &value) {
+        if (value.empty())
+            throw InvalidArgumentError("Expected nonempty value", "value");
+        else
+            return value;
+    }
+
+    inline std::experimental::filesystem::path& CHECK_NONEMPTY(std::experimental::filesystem::path& path) {
+        if (path.empty())
+            throw InvalidArgumentError("Expected nonempty value", "value");
+        else
+            return path;
+    }
+
+    template<typename T>
     std::vector<T> &CHECK_NONOVERLAPPING(std::vector<T> &volumes) {
-        return volumes; //TODO not implemented...
+        LOG(WARNING) << "Non-overlapping check not implemented"; //TODO
+        return volumes;
+    }
+
+    template<typename T>
+    const std::vector<T> &CHECK_NONOVERLAPPING(const std::vector<T> &volumes) {
+        LOG(WARNING) << "Non-overlapping check not implemented"; //TODO
+        return volumes;
+    }
+
+    template<typename T>
+    const T &CHECK_POSITIVE(const T &value) {
+        if(value > 0)
+            return value;
+        else
+            throw InvalidArgumentError("Expected positive value", "value");
     }
 } // namespace lightdb::assert
 

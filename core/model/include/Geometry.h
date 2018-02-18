@@ -8,14 +8,27 @@
 #include <stdexcept>
 #include <cmath>
 #include <numeric>
+#include <reference.h>
 
 namespace lightdb {
 
-    enum Dimension {
+    enum class Dimension {
         X,
         Y,
         Z,
         Time,
+        Theta,
+        Phi
+    };
+
+    enum class SpatiotemporalDimension {
+        X,
+        Y,
+        Z,
+        Time,
+    };
+
+    enum class AngularDimension {
         Theta,
         Phi
     };
@@ -91,10 +104,11 @@ namespace lightdb {
 
         static const Volume VolumeMax;
 
-
         bool Contains(const Point6D &point) const;
 
-        std::vector<Volume> partition(const Dimension, const lightdb::rational &) const;
+        std::vector<Volume> partition(Dimension, const lightdb::rational &) const;
+        Volume& operator=(std::pair<SpatiotemporalDimension, SpatiotemporalRange>);
+        Volume& operator=(std::pair<AngularDimension, AngularRange>);
 
         inline bool is_point() const {
             return x.start == x.end &&
@@ -123,10 +137,11 @@ namespace lightdb {
         CompositeVolume(const Volume volume)
                 : components_({volume}), bounding_(volume) {}
 
-        CompositeVolume(std::vector<Volume> volumes)
-                : components_(std::move(asserts::CHECK_NONEMPTY(volumes))),
+        explicit CompositeVolume(const std::vector<Volume> &volumes)
+                : components_(asserts::CHECK_NONEMPTY(volumes)),
                   bounding_(std::accumulate(volumes.begin() + 1, volumes.end(), volumes[0],
-                                            [](auto &result, auto &current) { return current | result; })) {}
+                                           [](auto &result, auto &current) { return current | result; }))
+        { }
 
         explicit operator const Volume &() const {
             return bounding_;
@@ -134,7 +149,7 @@ namespace lightdb {
 
         const Volume bounding() const { return bounding_; }
 
-        const std::vector<Volume> components() const { return components_; }
+        const std::vector<Volume>& components() const { return components_; }
 
     private:
         const std::vector<Volume> components_;
@@ -260,6 +275,8 @@ namespace lightdb {
     public:
         virtual bool defined_at(const Point6D &point) const = 0;
     };
+
+    using GeometryReference = shared_reference<Geometry>;
 
     class MeshGeometry : public Geometry {
     public:
