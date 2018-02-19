@@ -70,7 +70,7 @@ namespace lightdb {
             if(left != nullptr && right != nullptr &&
                     static_cast<const LightField*>(left)->volume().bounding() == static_cast<const LightField*>(right)->volume().bounding()) {
                 //TODO this is just broken, need a binary union transcoder
-                return {lightdb::physical::BinaryUnionTranscodedLightField(*left, *right, Overlay(YUVColor::Red)).apply(format)};
+                return {lightdb::physical::BinaryUnionTranscodedLightField(*left, *right, Overlay(YUVColor::red())).apply(format)};
             }
             else
                 return {};

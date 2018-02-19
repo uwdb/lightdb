@@ -37,13 +37,6 @@ namespace lightdb {
         template<typename TDerived, typename Value>
         class Range {
         public:
-            constexpr Range(const Value start, const Value end)
-                    : start_(start), end_(end)  {
-                assert(end >= start);
-                assert(start >= TDerived::limits().start());
-                assert(end <= TDerived::limits().end());
-            }
-
             inline constexpr double start() const { return start_; }
             inline constexpr double end() const { return end_; }
 
@@ -66,6 +59,14 @@ namespace lightdb {
 
             bool operator!=(const TDerived &other) const {
                 return !operator==(other);
+            }
+
+        protected:
+            constexpr Range(const Value start, const Value end)
+                    : start_(start), end_(end)  {
+                assert(end >= start);
+                assert(start >= TDerived::limits().start());
+                assert(end <= TDerived::limits().end());
             }
 
         private:

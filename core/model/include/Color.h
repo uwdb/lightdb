@@ -23,7 +23,7 @@ namespace lightdb
     public:
         typedef YUVColor Color;
 
-        static const YUVColorSpace Instance;
+        static constexpr const YUVColorSpace instance() { return {}; }
 
     protected:
         YUVColorSpace() = default;
@@ -65,7 +65,7 @@ namespace lightdb
 
     class YUVColor: public Color {
     public:
-        YUVColor(unsigned char y, unsigned char u, unsigned char v)
+        constexpr YUVColor(const unsigned char y, const unsigned char u, const unsigned char v)
             : y_(y), u_(u), v_(v)
         { }
         YUVColor(const YUVColor &color)
@@ -77,7 +77,7 @@ namespace lightdb
               v_(static_cast<unsigned char>(bytes[2]))
         { }
 
-        const ColorSpace colorSpace() const override { return YUVColorSpace::Instance; }
+        constexpr const ColorSpace colorSpace() const override { return YUVColorSpace::instance(); }
 
         explicit operator YUVColor() const override { return *this; }
         explicit operator bytestring() const override {
@@ -86,17 +86,15 @@ namespace lightdb
 
         bool operator !=(const YUVColor& other) const { return !(*this == other); }
         bool operator ==(const YUVColor& other) const {
-            return y() == other.y() && u() == other.u() && v() == other.v() && this != &Null;
+            return y() == other.y() && u() == other.u() && v() == other.v();
         }
 
-        unsigned char y() const { return y_; }
-        unsigned char u() const { return u_; }
-        unsigned char v() const { return v_; }
+        constexpr unsigned char y() const { return y_; }
+        constexpr unsigned char u() const { return u_; }
+        constexpr unsigned char v() const { return v_; }
 
-        static const YUVColor Null;
-        static const YUVColor Green;
-        static const YUVColor Red;
-        static const YUVColor Purple;
+        static constexpr const YUVColor green() { return {149, 43, 21}; }
+        static constexpr const YUVColor red() { return {76, 84, 255}; }
 
     private:
         const unsigned char y_, u_, v_;

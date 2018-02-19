@@ -287,7 +287,7 @@ namespace lightdb {
                                 const TemporalRange &time,
                                 const ThetaRange &theta = ThetaRange::limits(),
                                 const PhiRange &phi = PhiRange::limits())
-                : DiscreteLightField(Volume{point, time, theta, phi}/*.ToVolume(range, theta, phi)*/, YUVColorSpace::Instance,
+                : DiscreteLightField(Volume{point, time, theta, phi}/*.ToVolume(range, theta, phi)*/, YUVColorSpace::instance(),
                                      GeometryReference::make<EquirectangularGeometry>()),
                   point_(point)
  //                   : DiscreteLightField(EquirectangularGeometry::Instance, point.ToVolume(range, theta, phi)),
@@ -353,7 +353,7 @@ namespace lightdb {
             PlanarTiledVideoLightField(const std::string &filename,
                                        const Volume &volume,
                                        const size_t rows, const size_t columns)
-                    : DiscreteLightField(volume, YUVColorSpace::Instance,
+                    : DiscreteLightField(volume, YUVColorSpace::instance(),
                                          GeometryReference::make<IntervalGeometry>(Dimension::Time, framerate())),
                       SingletonFileEncodedLightField(filename,
                                                      volume), //TODO no need to duplicate filename here and in singleton

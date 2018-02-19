@@ -27,7 +27,7 @@ protected:
 class NearestNeighbor: public interpolator {
 protected:
     const ColorReference operator()(const ColorSpace &colorSpace, const lightdb::LightFieldReference&, const Point6D&) const override {
-        return ColorReference::make<YUVColor>(YUVColor::Green); //TODO
+        return ColorReference::make<YUVColor>(YUVColor::green()); //TODO
     }
 };
 

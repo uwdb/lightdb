@@ -38,7 +38,7 @@ TEST_F(PanoramicTestFixture, testPanoramicValue) {
 */
 
 TEST_F(PanoramicTestFixture, testConstantEncode) {
-    auto color = YUVColor::Green;
+    auto color = YUVColor::green();
     auto result = ConstantLightField::create(color, Volume{Point6D::zero()}) >> Encode("YUV");
 
     ASSERT_EQ(YUVColor(*result->bytes()), color);

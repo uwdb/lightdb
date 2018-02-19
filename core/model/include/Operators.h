@@ -107,7 +107,7 @@ namespace lightdb {
     //template<typename ColorSpace>
     class _Scan : public Operator {
         LightField &&scan(std::string name) {
-            return logical::ConstantLightField(YUVColor::Green); //TODO
+            return logical::ConstantLightField(YUVColor::green()); //TODO
         }
     };
 

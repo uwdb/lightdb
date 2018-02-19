@@ -43,7 +43,7 @@ namespace lightdb {
                         : catalog_(catalog), path_(std::move(path)),
                         //TODO grab boxes and load volume/geometry, detect colorspace
                           volume_({{0, 0}, {0, 0}, {0, 0}, {0, 10}, ThetaRange::limits(), PhiRange::limits()}),
-                          colorSpace_(YUVColorSpace::Instance),
+                          colorSpace_(YUVColorSpace::instance()),
                           geometry_(EquirectangularGeometry::instance())
                 { }
 

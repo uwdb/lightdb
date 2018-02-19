@@ -30,7 +30,7 @@ TEST_F(OperatorTestFixture, testDecode) {
 
 TEST_F(OperatorTestFixture, testUnion) {
     auto red = Decode("resources/red10.h264").apply();
-    auto green = ConstantLightField::create(YUVColor::Green);
+    auto green = ConstantLightField::create(YUVColor::green());
 
     //TODO
     /*ASSERT_EQ(green->value({0, 0, 0,  0, 0, 0}), YUVColor::Green);
@@ -45,7 +45,7 @@ TEST_F(OperatorTestFixture, testUnion) {
 }
 
 TEST_F(OperatorTestFixture, testSelect) {
-    auto green = ConstantLightField::create(YUVColor::Green);
+    auto green = ConstantLightField::create(YUVColor::green());
 
     //TODO
     /*ASSERT_EQ(green->value({0, 0, 0,  0, 0, 0}), YUVColor::Green);
@@ -89,7 +89,7 @@ TEST_F(OperatorTestFixture, testIdentityEncode) {
 
 TEST_F(OperatorTestFixture, testUnionSelect) {
     auto red = Decode("resources/red10.h264").apply();
-    auto green = ConstantLightField::create(YUVColor::Green);
+    auto green = ConstantLightField::create(YUVColor::green());
 
     //TODO
     /*ASSERT_EQ(red->value(  {0, 0, 0,  0, 0, 0}), YUVColor::Red);
