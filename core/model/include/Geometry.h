@@ -33,8 +33,28 @@ namespace lightdb {
         Phi
     };
 
+    typedef double angle; //TODO change to union double/rational/inf-precision type, also add to Spatiotemporal range
+
     namespace internal {
-        template<typename TDerived, typename Value>
+        namespace limits {
+            class spatial {
+            public:
+                static constexpr const double minimum = -std::numeric_limits<double>::max();
+                static constexpr const double maximum = std::numeric_limits<double>::max();
+            };
+            class theta {
+            public:
+                static constexpr const angle minimum = 0;
+                static constexpr const angle maximum = 2*M_PI;
+            };
+            class phi {
+            public:
+                static constexpr const angle minimum = 0;
+                static constexpr const angle maximum = M_PI;
+            };
+        }
+
+        template<typename TDerived, typename Value, typename Limits>
         class Range {
         public:
             inline constexpr double start() const { return start_; }
@@ -45,6 +65,8 @@ namespace lightdb {
             inline bool contains(double value) const { return start() <= value && value <= end(); }
 
             bool empty() const { return start() == end(); }
+
+            static constexpr const TDerived limits() { return {Limits::minimum, Limits::maximum}; }
 
             inline TDerived operator|(const TDerived &other) const {
                 auto max_start = std::max(start(), other.start());
@@ -61,12 +83,12 @@ namespace lightdb {
                 return !operator==(other);
             }
 
-        protected:
+        public:
             constexpr Range(const Value start, const Value end)
                     : start_(start), end_(end)  {
                 assert(end >= start);
-                assert(start >= TDerived::limits().start());
-                assert(end <= TDerived::limits().end());
+                assert(start >= Limits::minimum);
+                assert(end <= Limits::maximum);
             }
 
         private:
@@ -75,28 +97,18 @@ namespace lightdb {
         };
     }
 
-    class SpatiotemporalRange: public internal::Range<SpatiotemporalRange, double>
-    {
-    public:
-        constexpr SpatiotemporalRange(const double start, const double end) : Range(start, end)  { }
-        static constexpr const SpatiotemporalRange limits() { return {-std::numeric_limits<double>::max(),
-                                                                      std::numeric_limits<double>::max()}; }
+    class SpatiotemporalRange: public internal::Range<SpatiotemporalRange, double, internal::limits::spatial>     {
+        using internal::Range<SpatiotemporalRange, double, internal::limits::spatial>::Range;
+    };
+    class ThetaRange: public internal::Range<ThetaRange, angle, internal::limits::theta> {
+        using internal::Range<ThetaRange, angle, internal::limits::theta>::Range;
+    };
+    class PhiRange: public internal::Range<PhiRange, angle, internal::limits::phi> {
+        using internal::Range<PhiRange, angle, internal::limits::phi>::Range;
     };
 
     using SpatialRange = SpatiotemporalRange;
     using TemporalRange = SpatiotemporalRange;
-    typedef double angle; //TODO change to union double/rational/inf-precision type, also add to Spatiotemporal range
-
-    class ThetaRange: public internal::Range<ThetaRange, angle> {
-    public:
-        constexpr ThetaRange(const angle start, const angle end) : Range(start, end)  { }
-        static constexpr const ThetaRange limits() { return {0, 2*M_PI}; }
-    };
-    class PhiRange: public internal::Range<PhiRange, angle> {
-    public:
-        constexpr PhiRange(const angle start, const angle end) : Range(start, end)  { }
-        static constexpr const PhiRange limits() { return {0, M_PI}; }
-    };
 
     class Point3D;
     class Point4D;
@@ -354,7 +366,6 @@ namespace lightdb {
         const Dimension dimension_;
         const lightdb::rational interval_;
     };
-
 } // namespace lightdb
 
 #endif //LIGHTDB_GEOMETRY_H
