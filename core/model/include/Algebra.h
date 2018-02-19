@@ -20,7 +20,8 @@ namespace lightdb {
             //LightFieldReference Load(const std::string &uri);
             LightFieldReference Select(const Volume&);
             LightFieldReference Select(SpatiotemporalDimension, const SpatiotemporalRange&);
-            LightFieldReference Select(AngularDimension, const AngularRange&);
+            LightFieldReference Select(const ThetaRange&);
+            LightFieldReference Select(const PhiRange&);
             LightFieldReference Union(const std::vector<LightFieldReference>&); //TODO needs merge function
             LightFieldReference Union(LightFieldReference); //TODO needs merge function
             LightFieldReference Rotate(angle theta, angle phi);

@@ -19,7 +19,7 @@ public:
         auto start = steady_clock::now();
 
         Decode(true, source)
-                >> Select({{0.5, 0.5}, {0.5, 0.5}, {0, 0}, TemporalRange::TemporalMax, AngularRange::ThetaMax, AngularRange::PhiMax})
+                >> Select({{0.5, 0.5}, {0.5, 0.5}, {0, 0}, TemporalRange::limits(), ThetaRange::limits(), PhiRange::limits()})
                 >> Encode("hevc")
                 >> Store(name);
 

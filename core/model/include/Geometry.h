@@ -33,112 +33,165 @@ namespace lightdb {
         Phi
     };
 
-    struct SpatiotemporalRange {
-        double start;
-        double end;
+    namespace internal {
+        template<typename TDerived, typename Value>
+        class Range {
+        public:
+            constexpr Range(const Value start, const Value end)
+                    : start_(start), end_(end)  {
+                assert(end >= start);
+                assert(start >= TDerived::limits().start());
+                assert(end <= TDerived::limits().end());
+            }
 
-        //TODO guard against end < start
+            inline constexpr double start() const { return start_; }
+            inline constexpr double end() const { return end_; }
 
-        double magnitude() const { return end - start; }
+            inline double magnitude() const { return end() - start(); }
 
-        bool Contains(double value) const {
-            return start <= value && value <= end;
-        }
+            inline bool contains(double value) const { return start() <= value && value <= end(); }
 
-        bool Empty() const { return start == end; }
+            bool empty() const { return start() == end(); }
 
-        bool operator==(const SpatiotemporalRange &other) const {
-            static double epsilon = 0.000001; //TODO ugh
-            return this == &other ||
-                   (std::abs(start - other.start) < epsilon && std::abs(end - other.end) < epsilon);
-        }
+            inline TDerived operator|(const TDerived &other) const {
+                auto max_start = std::max(start(), other.start());
+                return {max_start, std::max(max_start, std::min(end(), other.end()))};
+            }
 
-        bool operator!=(const SpatiotemporalRange &other) const {
-            return !operator==(other);
-        }
+            bool operator==(const TDerived &other) const {
+                static double epsilon = 0.000001; //TODO ugh
+                return this == &other ||
+                       (std::abs(start() - other.start()) < epsilon && std::abs(end() - other.end()) < epsilon);
+            }
 
-        static const SpatiotemporalRange SpatialMax;
-        static const SpatiotemporalRange TemporalMax;
-    };
+            bool operator!=(const TDerived &other) const {
+                return !operator==(other);
+            }
 
-    typedef struct SpatiotemporalRange SpatialRange;
-    typedef struct SpatiotemporalRange TemporalRange;
-    typedef double angle; //TODO add some range guards?, change to union double/rational/inf-precision type
+        private:
+            Value start_;
+            Value end_;
+        };
+    }
 
-    class AngularRange {
+    class SpatiotemporalRange: public internal::Range<SpatiotemporalRange, double>
+    {
     public:
-        AngularRange(const angle start, const angle end)
-            : start_(start), end_(end)  {
-            assert(end >= start);
-        }
-
-        inline angle start() const { return start_; }
-        inline angle end() const { return end_; }
-
-        double magnitude() const {
-            return end() - start();
-        }
-
-        bool Contains(const double angle) const {
-            return start() <= angle && angle <= end();
-        }
-
-        bool operator==(const AngularRange &other) const {
-            static double epsilon = 0.000001; //TODO ugh
-            return this == &other ||
-                   (std::abs(start() - other.start()) < epsilon && std::abs(end() - other.end()) < epsilon);
-        }
-
-        bool operator!=(const AngularRange &other) const {
-            return !operator==(other);
-        }
-
-        static const AngularRange ThetaMax;
-        static const AngularRange PhiMax;
-
-    private:
-        angle start_;
-        angle end_;
+        constexpr SpatiotemporalRange(const double start, const double end) : Range(start, end)  { }
+        static constexpr const SpatiotemporalRange limits() { return {-std::numeric_limits<double>::max(),
+                                                                      std::numeric_limits<double>::max()}; }
     };
 
-    struct Point6D;
+    using SpatialRange = SpatiotemporalRange;
+    using TemporalRange = SpatiotemporalRange;
+    typedef double angle; //TODO change to union double/rational/inf-precision type, also add to Spatiotemporal range
+
+    class ThetaRange: public internal::Range<ThetaRange, angle> {
+    public:
+        constexpr ThetaRange(const angle start, const angle end) : Range(start, end)  { }
+        static constexpr const ThetaRange limits() { return {0, 2*M_PI}; }
+    };
+    class PhiRange: public internal::Range<PhiRange, angle> {
+    public:
+        constexpr PhiRange(const angle start, const angle end) : Range(start, end)  { }
+        static constexpr const PhiRange limits() { return {0, M_PI}; }
+    };
+
+    class Point3D;
+    class Point4D;
+    class Point6D;
 
     class Volume {
     public:
-        SpatialRange x;
-        SpatialRange y;
-        SpatialRange z;
-        TemporalRange t;
-        AngularRange theta;
-        AngularRange phi;
+        constexpr Volume(const SpatialRange &x, const SpatialRange &y, const SpatialRange &z)
+            : Volume(x, y, z, TemporalRange::limits())
+        { }
 
-        static const Volume VolumeMax;
+        constexpr Volume(const SpatialRange &x, const SpatialRange &y, const SpatialRange &z, const TemporalRange &t)
+            : Volume(x, y, z, t, ThetaRange::limits(), PhiRange::limits())
+        { }
 
-        bool Contains(const Point6D &point) const;
+        constexpr Volume(const SpatialRange x, const SpatialRange y, const SpatialRange z, const TemporalRange t,
+                         const ThetaRange theta, const PhiRange phi)
+            : x_(x), y_(y), z_(z), t_(t), theta_(theta), phi_(phi)
+        { }
 
+        Volume(const Point3D&, const TemporalRange&, const ThetaRange&, const PhiRange&);
+        Volume(const Point4D&, const ThetaRange&, const PhiRange&);
+        Volume(const Point6D&);
+
+        inline const SpatialRange& x() const { return x_; }
+        inline const SpatialRange& y() const { return y_; }
+        inline const SpatialRange& z() const { return z_; }
+        inline const TemporalRange& t() const { return t_; }
+        inline const ThetaRange& theta() const { return theta_; }
+        inline const PhiRange& phi() const { return phi_; }
+
+        inline const SpatialRange& x(const SpatialRange& value) { return x_ = value; }
+        inline const SpatialRange& y(const SpatialRange& value) { return y_ = value; }
+        inline const SpatialRange& z(const SpatialRange& value) { return z_ = value; }
+        inline const TemporalRange& t(const TemporalRange& value) { return t_ = value; }
+        inline const ThetaRange& theta(const ThetaRange& value) { return theta_ = value; }
+        inline const PhiRange& phi(const PhiRange& value) { return phi_ = value; }
+
+        static constexpr const Volume limits() { return {
+                    SpatialRange::limits(), SpatialRange::limits(), SpatialRange::limits(),
+                    TemporalRange::limits(),
+                    ThetaRange::limits(), PhiRange::limits()}; }
+
+        bool contains(const Point6D &point) const;
         std::vector<Volume> partition(Dimension, const rational&) const;
         Volume translate(const Point6D&) const;
-        inline Volume& operator=(std::pair<SpatiotemporalDimension, SpatiotemporalRange>);
-        inline Volume& operator=(std::pair<AngularDimension, AngularRange>);
+        inline const SpatiotemporalRange& set(const SpatiotemporalDimension dimension, const SpatiotemporalRange &range)
+        {
+            switch(dimension) {
+                case SpatiotemporalDimension::X:
+                    x_ = range;
+                    break;
+                case SpatiotemporalDimension::Y:
+                    y_ = range;
+                    break;
+                case SpatiotemporalDimension::Z:
+                    z_ = range;
+                    break;
+                case SpatiotemporalDimension::Time:
+                    t_ = range;
+                    break;
+            }
+            return range;
+        }
 
         inline bool is_point() const {
-            return x.start == x.end &&
-                   y.start == y.end &&
-                   z.start == z.end &&
-                   t.start == t.end &&
-                   theta.start() == theta.end() &&
-                   phi.start() == phi.end();
+            return x().start() == x().end() &&
+                   y().start() == y().end() &&
+                   z().start() == z().end() &&
+                   t().start() == t().end() &&
+                   theta().start() == theta().end() &&
+                   phi().start() == phi().end();
+        }
+
+        inline Volume operator|(const Volume &other) const {
+            return {x() | other.x(), y() | other.y(), z() | other.z(), t() | other.t(),
+                    theta() | other.theta(), phi() | other.phi()};
         }
 
         bool operator==(const Volume &other) const {
             return this == &other ||
-                   (x == other.x && y == other.y && z == other.z && t == other.t &&
-                    theta == other.theta && phi == other.phi);
+                   (x() == other.x() && y() == other.y() && z() == other.z() && t() == other.t() &&
+                    theta() == other.theta() && phi() == other.phi());
         }
 
         bool operator!=(const Volume &other) const {
             return !operator==(other);
         }
+
+    private:
+        SpatialRange x_;
+        SpatialRange y_;
+        SpatialRange z_;
+        TemporalRange t_;
+        ThetaRange theta_;
+        PhiRange phi_;
     };
 
     class CompositeVolume {
@@ -157,7 +210,6 @@ namespace lightdb {
         }
 
         const Volume bounding() const { return bounding_; }
-
         const std::vector<Volume>& components() const { return components_; }
 
     private:
@@ -165,119 +217,89 @@ namespace lightdb {
         const Volume bounding_;
     };
 
-    inline Volume operator|(const Volume &left, const Volume &right) {
-        double start;
-
-        //TODO add some helpers to clean this nonsense up
-        start = std::max(left.x.start, right.x.start);
-        SpatialRange x{start, std::max(start, std::min(left.x.end, right.x.end))};
-
-        start = std::max(left.y.start, right.y.start);
-        SpatialRange y{start, std::max(start, std::min(left.y.end, right.y.end))};
-
-        start = std::max(left.z.start, right.z.start);
-        SpatialRange z{start, std::max(start, std::min(left.z.end, right.z.end))};
-
-        start = std::max(left.t.start, right.t.start);
-        TemporalRange t{start, std::max(start, std::min(left.t.end, right.t.end))};
-
-        start = std::max(left.theta.start(), right.theta.start());
-        AngularRange theta{start, std::max(start, std::min(left.theta.end(), right.theta.end()))};
-
-        start = std::max(left.phi.start(), right.phi.start());
-        AngularRange phi{start, std::max(start, std::min(left.phi.end(), right.phi.end()))};
-
-        return {x, y, z, t, theta, phi};
-    }
-
-    struct Point3D {
+    class Point3D {
     public:
-        double x;
-        double y;
-        double z;
+        constexpr Point3D(const double x, const double y, const double z)
+            : x_(x), y_(y), z_(z)
+        { }
 
-        inline operator Volume() const {
-            return Volume{{x, x}, {y, y}, {z, z}, TemporalRange::TemporalMax, AngularRange::ThetaMax,
-                          AngularRange::PhiMax};
-        }
+        inline constexpr double x() const { return x_; }
+        inline constexpr double y() const { return y_; }
+        inline constexpr double z() const { return z_; }
 
-        inline Volume ToVolume(TemporalRange timeRange, AngularRange thetaRange = AngularRange::ThetaMax,
-                               AngularRange phiRange = AngularRange::PhiMax) const {
-            return Volume{{x, x}, {y, y}, {z, z}, timeRange, thetaRange, phiRange};
-        }
-
-        inline double get(Dimension dimension) const {
+        virtual inline double get(Dimension dimension) const {
             switch (dimension) {
                 case Dimension::X:
-                    return x;
+                    return x();
                 case Dimension::Y:
-                    return y;
+                    return y();
                 case Dimension::Z:
-                    return z;
+                    return z();
                 default:
                     throw InvalidArgumentError("Invalid dimension", "dimension");
             }
         }
 
-        static const Point3D Zero;
+        static constexpr const Point3D zero() { return {0, 0, 0}; };
+
+    private:
+        double x_, y_, z_;
     };
 
-    struct Point4D : Point3D {
+    class Point4D : public Point3D {
     public:
-        double t;
+        constexpr Point4D(const double x, const double y, const double z, const double t)
+            : Point3D(x, y, z), t_(t)
+        { }
 
-        operator Volume() {
-            return Volume{{x, x}, {y, y}, {z, z}, {t, t}, AngularRange::ThetaMax, AngularRange::PhiMax};
-        }
+        inline constexpr double t() const { return t_; }
 
-        inline Volume ToVolume(AngularRange thetaRange, AngularRange phiRange) const {
-            return Volume{{x, x}, {y, y}, {z, z}, {t, t}, thetaRange, phiRange};
-        }
-
-        inline double get(Dimension dimension) const {
+        inline double get(Dimension dimension) const override {
             switch (dimension) {
                 case Dimension::Time:
-                    return t;
+                    return t();
                 default:
                     return Point3D::get(dimension);
             }
         }
 
-        static const Point4D Zero;
+        static constexpr const Point4D zero() { return {0, 0, 0, 0}; };
+
+    private:
+        double t_;
     };
 
-    struct Point6D : Point4D {
+    class Point6D : public Point4D {
     public:
-        double theta;
-        double phi;
+        constexpr Point6D(const double x, const double y, const double z, const double t,
+                          const angle theta, const angle phi)
+            : Point4D(x, y, z, t), theta_(theta), phi_(phi)
+        { }
 
-        operator Volume() const {
-            return Volume{{x,     x},
-                          {y,     y},
-                          {z,     z},
-                          {t,     t},
-                          {theta, theta},
-                          {phi,   phi}};
-        }
+        inline constexpr angle theta() const { return theta_; }
+        inline constexpr angle phi() const { return phi_; }
 
         Point6D operator+(const Point6D &other) const {
-            return {x + other.x, y + other.y, z + other.z,
-                    t + other.t,
-                    theta + other.theta, phi + other.phi};
+            return {x() + other.x(), y() + other.y(), z() + other.z(),
+                    t() + other.t(),
+                    theta() + other.theta(), phi() + other.phi()};
         }
 
-        inline double get(Dimension dimension) const {
+        inline double get(Dimension dimension) const override {
             switch (dimension) {
                 case Dimension::Theta:
-                    return theta;
+                    return theta();
                 case Dimension::Phi:
-                    return phi;
+                    return phi();
                 default:
                     return Point4D::get(dimension);
             }
         }
 
-        static const Point6D Zero;
+        static constexpr const Point6D zero() { return {0, 0, 0, 0, 0, 0}; }
+
+    private:
+        double theta_, phi_;
     };
 
     class Geometry {
@@ -289,9 +311,9 @@ namespace lightdb {
 
     class MeshGeometry : public Geometry {
     public:
-        virtual double u(const double theta, const double phi) const = 0;
+        virtual double u(angle theta, angle phi) const = 0;
 
-        virtual double v(const double theta, const double phi) const = 0;
+        virtual double v(angle theta, angle phi) const = 0;
 
         bool defined_at(const Point6D &point) const override {
             return true; //TODO
@@ -300,20 +322,20 @@ namespace lightdb {
 
     class EquirectangularGeometry : public MeshGeometry {
     public:
-        double u(const double theta, const double phi) const override { return 0; }
+        double u(const angle theta, const angle phi) const override { return 0; }
 
-        double v(const double theta, const double phi) const override { return 0; }
+        double v(const angle theta, const angle phi) const override { return 0; }
 
         bool defined_at(const Point6D &point) const override {
             return true; //TODO
         }
 
-        static const EquirectangularGeometry Instance;
+        static constexpr const EquirectangularGeometry instance() { return EquirectangularGeometry(); }
     };
 
     class IntervalGeometry : public Geometry {
     public:
-        IntervalGeometry(const Dimension dimension, const lightdb::rational interval)
+        constexpr IntervalGeometry(const Dimension dimension, const lightdb::rational &interval)
                 : dimension_(dimension), interval_(interval) {}
 
         bool defined_at(const Point6D &point) const override {
@@ -321,12 +343,11 @@ namespace lightdb {
             //TODO add rational overloads for value() and Volume::contains()
             return std::remainder(
                     point.get(dimension()),
-                    this->interval().numerator() / (double) this->interval().denominator()) <= 0.000001l;
+                    interval().numerator() / (double)interval().denominator()) <= 0.000001l;
         }
 
-        inline const Dimension dimension() const { return dimension_; }
-
-        inline const lightdb::rational interval() const { return interval_; }
+        inline constexpr const Dimension dimension() const { return dimension_; }
+        inline constexpr const lightdb::rational interval() const { return interval_; }
 
     private:
         const Dimension dimension_;

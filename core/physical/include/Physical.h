@@ -67,9 +67,9 @@ namespace lightdb {
                         throw std::invalid_argument("Attempt to perform 1x1 tiling; ignore (or use transcode if format changed) instead");
                     }
                 } else if(partitioner != nullptr && partitioner->dimension() == Dimension::Theta)
-                    return get_dimensions(child, rows, hack_divide(AngularRange::ThetaMax.end(), partitioner->interval()), time);
+                    return get_dimensions(child, rows, hack_divide(ThetaRange::limits().end(), partitioner->interval()), time);
                 else if(partitioner != nullptr && partitioner->dimension() == Dimension::Phi)
-                    return get_dimensions(child, hack_divide(AngularRange::PhiMax.end(), partitioner->interval()), columns, time);
+                    return get_dimensions(child, hack_divide(PhiRange::limits().end(), partitioner->interval()), columns, time);
                 else if(partitioner != nullptr && partitioner->dimension() == Dimension::Time)
                     return get_dimensions(child, rows, columns, (double)partitioner->interval().numerator() / partitioner->interval().denominator());
                 // TODO prohibit other intermediating field types...
@@ -196,7 +196,7 @@ namespace lightdb {
         template<typename ColorSpace>
         class EquirectangularCroppedLightField: public LightField {
         public:
-            EquirectangularCroppedLightField(const logical::PanoramicVideoLightField &video, AngularRange theta, AngularRange phi, TemporalRange t)
+            EquirectangularCroppedLightField(const logical::PanoramicVideoLightField &video, ThetaRange theta, PhiRange phi, TemporalRange t)
                     : LightField({}, static_cast<const LightField&>(video).volume(), video.colorSpace()), //TODO parents is incorrect
                       video_(video), theta_(theta), phi_(phi), t(t)
             { }
@@ -210,7 +210,8 @@ namespace lightdb {
 
         private:
             const logical::PanoramicVideoLightField& video_;
-            const AngularRange theta_, phi_;
+            const ThetaRange theta_;
+            const PhiRange phi_;
             const TemporalRange t;
         };
 
@@ -240,7 +241,7 @@ namespace lightdb {
         class PlanarTiledToVideoLightField: public LightField {
         public:
             PlanarTiledToVideoLightField(const logical::PlanarTiledVideoLightField &video,
-                                         const double x, const double y, const AngularRange &theta, const AngularRange &phi)
+                                         const double x, const double y, const ThetaRange &theta, const PhiRange &phi)
                     : LightField({}, static_cast<const LightField&>(video).volume(), video.colorSpace()), //TODO parents is incorrect
                       video_(video), x_(x), y_(y), theta_(theta), phi_(phi)
             { }
@@ -257,7 +258,8 @@ namespace lightdb {
         private:
             const logical::PlanarTiledVideoLightField& video_;
             const double x_, y_;
-            const AngularRange theta_, phi_;
+            const ThetaRange theta_;
+            const PhiRange phi_;
         };
 
         template<typename ColorSpace>

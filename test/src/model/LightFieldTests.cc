@@ -13,15 +13,15 @@ public:
 
 TEST_F(LightFieldTestFixture, testPanoramicConstructor) {
     PlanarTiledVideoLightField("resources/test-lightfield.h265",
-                               Volume{{0, 1}, {0, 1}, {0, 0}, TemporalRange::TemporalMax,
-                                      AngularRange::ThetaMax, AngularRange::PhiMax},
+                               Volume{{0, 1}, {0, 1}, {0, 0}, TemporalRange::limits(),
+                                      ThetaRange::limits(), PhiRange::limits()},
                                3, 3);
 }
 
 TEST_F(LightFieldTestFixture, testValueOutOfVolume) {
     auto field = PlanarTiledVideoLightField("resources/test-lightfield.h265",
-                                            Volume{{0, 1}, {0, 1}, {0, 0}, TemporalRange::TemporalMax,
-                                                   AngularRange::ThetaMax, AngularRange::PhiMax},
+                                            Volume{{0, 1}, {0, 1}, {0, 0}, TemporalRange::limits(),
+                                                   ThetaRange::limits(), PhiRange::limits()},
                                             3, 3);
 
 /*    ASSERT_EQ(field.value({-1,  0,  0,  0,  0,  0}), YUVColor::Null);

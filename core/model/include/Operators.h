@@ -53,16 +53,16 @@ namespace lightdb {
         //TODO constructors should accept EncodedLightFields, not string/streams
         //TODO theta and phi should be drawn from the container, not explicitly parameterized
         explicit Decode(const std::string &filename,
-                        const AngularRange &theta = AngularRange::ThetaMax,
-                        const AngularRange &phi = AngularRange::PhiMax)
+                        const ThetaRange &theta = ThetaRange::limits(),
+                        const PhiRange &phi = PhiRange::limits())
         //: Decode(std::ifstream{filename})
                 : field_(std::shared_ptr<LightField>(
                 new logical::PanoramicVideoLightField(filename, theta, phi))) {}
 
         Decode(const bool forceLightField,
                const std::string &filename,
-               const AngularRange &theta = AngularRange::ThetaMax,
-               const AngularRange &phi = AngularRange::PhiMax)
+               const ThetaRange &theta = ThetaRange::limits(),
+               const PhiRange &phi = PhiRange::limits())
         //: Decode(std::ifstream{filename})
                 : field_(std::shared_ptr<LightField>(
                       new logical::PlanarTiledVideoLightField(filename,
@@ -72,7 +72,7 @@ namespace lightdb {
                                                             1},
                                                            {0,
                                                             0},
-                                                           TemporalRange::TemporalMax,
+                                                           TemporalRange::limits(),
                                                            theta,
                                                            phi},
                                                     3, 3))) {}
@@ -215,7 +215,7 @@ namespace lightdb {
             for (auto i = 0u; i < encoded->segments().size(); i++) {
                 auto filename = std::string("out") + std::to_string(i); //+ ".hevc";
 
-                decodes.emplace_back(Decode(filename, encoded->volume().components()[i].theta, encoded->volume().components()[i].phi).apply());
+                decodes.emplace_back(Decode(filename, encoded->volume().components()[i].theta(), encoded->volume().components()[i].phi()).apply());
             }
 
             return LightFieldReference::make<logical::CompositeLightField>(decodes);

@@ -22,8 +22,8 @@ TEST_F(AlgebraTestFixture, testScanAmbient) {
 
     ASSERT_TYPE(*l, ScannedLightField);
     ASSERT_EQ(l->volume().components().size(), 1);
-    ASSERT_EQ(l->volume().bounding().theta, AngularRange::ThetaMax);
-    ASSERT_EQ(l->volume().bounding().phi, AngularRange::PhiMax);
+    ASSERT_EQ(l->volume().bounding().theta(), ThetaRange::limits());
+    ASSERT_EQ(l->volume().bounding().phi(), PhiRange::limits());
 }
 
 TEST_F(AlgebraTestFixture, testScanExplicit) {
@@ -32,8 +32,8 @@ TEST_F(AlgebraTestFixture, testScanExplicit) {
 
     ASSERT_TYPE(*l, ScannedLightField);
     ASSERT_EQ(l->volume().components().size(), 1);
-    ASSERT_EQ(l->volume().bounding().theta, AngularRange::ThetaMax);
-    ASSERT_EQ(l->volume().bounding().phi, AngularRange::PhiMax);
+    ASSERT_EQ(l->volume().bounding().theta(), ThetaRange::limits());
+    ASSERT_EQ(l->volume().bounding().phi(), PhiRange::limits());
 }
 
 TEST_F(AlgebraTestFixture, testScanInvalid) {
@@ -41,11 +41,11 @@ TEST_F(AlgebraTestFixture, testScanInvalid) {
 }
 
 TEST_F(AlgebraTestFixture, testSelect) {
-    auto l = Scan("red10").Select(Point6D::Zero);
+    auto l = Scan("red10").Select(Point6D::zero());
 
     ASSERT_TYPE(*l, SubsetLightField);
     ASSERT_EQ(l->volume().components().size(), 1);
-    ASSERT_EQ(l->volume().bounding(), Point6D::Zero);
+    ASSERT_EQ(l->volume().bounding(), Point6D::zero());
 }
 
 TEST_F(AlgebraTestFixture, testUnion) {
@@ -83,8 +83,8 @@ TEST_F(AlgebraTestFixture, testRotate) {
     auto l = Scan("red10").Rotate(1, 2);
 
     ASSERT_TYPE(*l, RotatedLightField);
-    ASSERT_EQ(l->downcast<RotatedLightField>().offset().theta, 1);
-    ASSERT_EQ(l->downcast<RotatedLightField>().offset().phi, 2);
+    ASSERT_EQ(l->downcast<RotatedLightField>().offset().theta(), 1);
+    ASSERT_EQ(l->downcast<RotatedLightField>().offset().phi(), 2);
     ASSERT_EQ(l->volume().components().size(), 1);
 }
 

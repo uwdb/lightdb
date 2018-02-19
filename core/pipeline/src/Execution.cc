@@ -259,10 +259,10 @@ namespace lightdb {
             auto *video = dynamic_cast<logical::PanoramicVideoLightField*>(&*lightfield->parents()[0]);
             if(subset != nullptr && video != nullptr &&
                     subset->volume().components().size() == 1 &&
-                    subset->volume().components()[0].x.Empty() &&
-                    subset->volume().components()[0].y.Empty() &&
-                    subset->volume().components()[0].z.Empty()) {
-                auto elf = lightdb::physical::EquirectangularCroppedLightField<YUVColorSpace>(*video, subset->volume().components()[0].theta, subset->volume().components()[0].phi, subset->volume().components()[0].t).apply(format);
+                    subset->volume().components()[0].x().empty() &&
+                    subset->volume().components()[0].y().empty() &&
+                    subset->volume().components()[0].z().empty()) {
+                auto elf = lightdb::physical::EquirectangularCroppedLightField<YUVColorSpace>(*video, subset->volume().components()[0].theta(), subset->volume().components()[0].phi(), subset->volume().components()[0].t()).apply(format);
                 return elf;
             }
             else
@@ -278,11 +278,11 @@ namespace lightdb {
             auto *planar = dynamic_cast<logical::PlanarTiledVideoLightField*>(&*lightfield->parents()[0]);
             if(subset != nullptr && planar != nullptr &&
                subset->volume().components().size() == 1 &&
-               subset->volume().components()[0].x.Empty() &&
-               subset->volume().components()[0].y.Empty() &&
-               subset->volume().components()[0].z.Empty() &&
-                    subset->volume().components()[0].z.start == 0) {
-                auto elf = lightdb::physical::PlanarTiledToVideoLightField(*planar, subset->volume().components()[0].x.start, subset->volume().components()[0].y.start, subset->volume().components()[0].theta, subset->volume().components()[0].phi).apply(format);
+               subset->volume().components()[0].x().empty() &&
+               subset->volume().components()[0].y().empty() &&
+               subset->volume().components()[0].z().empty() &&
+                    subset->volume().components()[0].z().start() == 0) {
+                auto elf = lightdb::physical::PlanarTiledToVideoLightField(*planar, subset->volume().components()[0].x().start(), subset->volume().components()[0].y().start(), subset->volume().components()[0].theta(), subset->volume().components()[0].phi()).apply(format);
                 return elf;
             }
             else

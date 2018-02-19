@@ -51,7 +51,7 @@ TEST_F(OperatorTestFixture, testSelect) {
     /*ASSERT_EQ(green->value({0, 0, 0,  0, 0, 0}), YUVColor::Green);
     ASSERT_EQ(green->value({0, 0, 0, 99, 0, 0}), YUVColor::Green);*/
 
-    auto selected = green >> Select(Point3D::Zero.ToVolume({0, 1}));
+    auto selected = green >> Select(Volume{Point3D::zero(), {0, 1}, ThetaRange::limits(), PhiRange::limits()});
 
     //TODO
     /*ASSERT_EQ(selected->value({0, 0, 0, 0, 0, 0}), YUVColor::Green);
@@ -71,7 +71,7 @@ TEST_F(OperatorTestFixture, testUnionEncode) {
     auto result = (red | green) >> Encode();
 
     ASSERT_GT(result->bytes()->size(), 0);
-    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10-green10.h264", Volume::VolumeMax)->bytes());
+    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10-green10.h264", Volume::limits())->bytes());
 }
 
 TEST_F(OperatorTestFixture, testIdentityEncode) {
@@ -84,7 +84,7 @@ TEST_F(OperatorTestFixture, testIdentityEncode) {
     auto result = video >> Encode("h264");
 
     ASSERT_GT(result->bytes()->size(), 0);
-    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10.h264", Volume::VolumeMax)->bytes());
+    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10.h264", Volume::limits())->bytes());
 }
 
 TEST_F(OperatorTestFixture, testUnionSelect) {
@@ -97,9 +97,9 @@ TEST_F(OperatorTestFixture, testUnionSelect) {
     ASSERT_EQ(green->value({0, 0, 0,  0, 0, 0}), YUVColor::Green);*/
 
     auto result = (red | green)
-            >> Select(Point3D::Zero.ToVolume({0, 20}))
+            >> Select({Point3D::zero(), {0, 20}, ThetaRange::limits(), PhiRange::limits()})
             >> Encode();
 
     ASSERT_GT(result->bytes()->size(), 0);
-    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10-green10.h264", Volume::VolumeMax)->bytes());
+    ASSERT_EQ(*result->bytes(), *SingletonFileEncodedLightField::create("resources/red10-green10.h264", Volume::limits())->bytes());
 }

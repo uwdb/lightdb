@@ -20,14 +20,21 @@ namespace lightdb::logical {
     LightFieldReference Algebra::Select(const SpatiotemporalDimension dimension, const SpatiotemporalRange &range)
     {
         Volume volume(this_->volume().bounding());
-        volume = {dimension, range};
+        volume.set(dimension, range);
         return LightFieldReference::make<SubsetLightField>(this_, volume);
     }
 
-    LightFieldReference Algebra::Select(const AngularDimension dimension, const AngularRange &range)
+    LightFieldReference Algebra::Select(const ThetaRange &range)
     {
         Volume volume(this_->volume().bounding());
-        volume = {dimension, range};
+        volume.theta(range);
+        return LightFieldReference::make<SubsetLightField>(this_, volume);
+    }
+
+    LightFieldReference Algebra::Select(const PhiRange &range)
+    {
+        Volume volume(this_->volume().bounding());
+        volume.phi(range);
         return LightFieldReference::make<SubsetLightField>(this_, volume);
     }
 

@@ -112,7 +112,7 @@ namespace lightdb {
         class ConstantLightField : public LightField {
         public:
             static LightFieldReference create(const Color &color,
-                                              const Volume &volume = Volume::VolumeMax) {
+                                              const Volume &volume = Volume::limits()) {
                 return std::shared_ptr<LightField>(new ConstantLightField(color, volume));
             }
 
@@ -284,10 +284,10 @@ namespace lightdb {
         class PanoramicLightField : public DiscreteLightField {
         public:
             PanoramicLightField(const Point3D &point,
-                                const TemporalRange &range,
-                                const AngularRange &theta = AngularRange::ThetaMax,
-                                const AngularRange &phi = AngularRange::PhiMax)
-                : DiscreteLightField(point.ToVolume(range, theta, phi), YUVColorSpace::Instance,
+                                const TemporalRange &time,
+                                const ThetaRange &theta = ThetaRange::limits(),
+                                const PhiRange &phi = PhiRange::limits())
+                : DiscreteLightField(Volume{point, time, theta, phi}/*.ToVolume(range, theta, phi)*/, YUVColorSpace::Instance,
                                      GeometryReference::make<EquirectangularGeometry>()),
                   point_(point)
  //                   : DiscreteLightField(EquirectangularGeometry::Instance, point.ToVolume(range, theta, phi)),
@@ -299,7 +299,7 @@ namespace lightdb {
 
         protected:
             bool defined_at(const Point6D &point) const override {
-                return volume().bounding().Contains(point) && EquirectangularGeometry::Instance.defined_at(point);
+                return volume().bounding().contains(point) && EquirectangularGeometry::instance().defined_at(point);
             }
 
         private:
@@ -309,14 +309,14 @@ namespace lightdb {
         class PanoramicVideoLightField : public PanoramicLightField, public SingletonFileEncodedLightField {
         public:
             explicit PanoramicVideoLightField(const std::string &filename,
-                                              const AngularRange &theta = AngularRange::ThetaMax,
-                                              const AngularRange &phi = AngularRange::PhiMax) //TODO drop filename; see below
-                    : PanoramicVideoLightField(filename, Point3D::Zero, theta, phi) {}
+                                              const ThetaRange &theta = ThetaRange::limits(),
+                                              const PhiRange &phi = PhiRange::limits()) //TODO drop filename; see below
+                    : PanoramicVideoLightField(filename, Point3D::zero(), theta, phi) {}
 
             PanoramicVideoLightField(const std::string &filename,
                                      const Point3D &point,
-                                     const AngularRange &theta = AngularRange::ThetaMax,
-                                     const AngularRange &phi = AngularRange::PhiMax) //TODO drop filename; see below
+                                     const ThetaRange &theta = ThetaRange::limits(),
+                                     const PhiRange &phi = PhiRange::limits()) //TODO drop filename; see below
                     : PanoramicLightField(point, {0, duration()}, theta, phi),
                       SingletonFileEncodedLightField(filename,
                                                      (Volume) PanoramicLightField::volume()), //TODO no need to duplicate filename here and in singleton

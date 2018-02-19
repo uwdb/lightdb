@@ -6,6 +6,7 @@
 // Alias for boost:rational
 
 namespace lightdb {
+    //TODO change to std::ratio
     using rational = boost::rational<unsigned int>;
 }
 

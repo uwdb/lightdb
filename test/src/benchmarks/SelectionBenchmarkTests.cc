@@ -26,19 +26,19 @@ public:
     void testSelect(std::string dataset,
                     size_t size, size_t frames,
                     size_t height, size_t width,
-                    AngularRange phi, AngularRange theta) {
+                    ThetaRange theta, PhiRange phi) {
         //auto source = std::string("resources/test-") + std::to_string(size) + "K-" + std::to_string(duration) + "s.h264";
         auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + "K.h264";
-        auto left = std::lround((theta.start / AngularRange::ThetaMax.end) * width),
-             top = std::lround((phi.start / AngularRange::PhiMax.end) * height),
-             expected_width = std::lround(((theta.end - theta.start) / AngularRange::ThetaMax.end) * width),
-             expected_height = std::lround(((phi.end - phi.start) / AngularRange::PhiMax.end) * height);
+        auto left = std::lround((theta.start() / ThetaRange::limits().end()) * width),
+             top = std::lround((phi.start() / PhiRange::limits().end()) * height),
+             expected_width = std::lround(((theta.end() - theta.start()) / ThetaRange::limits().end()) * width),
+             expected_height = std::lround(((phi.end() - phi.start()) / PhiRange::limits().end()) * height);
         LOG(INFO) << "Cropping at " << top << 'x' << left << " to " << expected_height << 'x' << expected_width;
 
         auto start = steady_clock::now();
 
         Decode(source)
-                >> Select(Point3D::Zero.ToVolume(TemporalRange::TemporalMax, theta, phi))
+                >> Select(Volume{Point3D::zero(), TemporalRange::limits(), theta, phi})
                 >> Encode()
                 >> Store(name);
 
@@ -55,12 +55,12 @@ public:
                             size_t height, size_t width,
                             TemporalRange range) {
         auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + "K.h264";
-        LOG(INFO) << "Temporal fragment from " << range.start << " to " << range.end;
+        LOG(INFO) << "Temporal fragment from " << range.start() << " to " << range.end();
 
         auto start = steady_clock::now();
 
         Decode(source)
-                >> Select(Point3D::Zero.ToVolume(range, AngularRange::ThetaMax, AngularRange::PhiMax))
+                >> Select({Point3D::zero(), range, ThetaRange::limits(), PhiRange::limits()})
                 >> Encode()
                 >> Store(name);
 
@@ -90,7 +90,7 @@ TEST_F(SelectionBenchmarkTestFixture, testSelect_2K) {
 }
 
 TEST_F(SelectionBenchmarkTestFixture, testSelect_4K) {
-    testSelect("timelapse", 4, 2701, 2048, 3840, {temptodouble(pi_div_2), temptodouble(pi)}, AngularRange::PhiMax);
+    testSelect("timelapse", 4, 2701, 2048, 3840, {temptodouble(pi_div_2), temptodouble(pi)}, PhiRange::limits());
 
     testSelect("timelapse", 4, 2701, 2048, 3840, {0, temptodouble(pi_div_2)}, {0, temptodouble(pi_div_2)});
     testSelect("timelapse", 4, 2701, 2048, 3840, {0, temptodouble(pi_div_4)}, {0, temptodouble(pi_div_4)});

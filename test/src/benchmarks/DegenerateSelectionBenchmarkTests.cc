@@ -27,7 +27,7 @@ public:
         auto start = steady_clock::now();
 
         Decode(source)
-                >> Select(Point3D::Zero.ToVolume({0, 20}, AngularRange::ThetaMax, AngularRange::PhiMax))
+                >> Select(Volume{Point3D::zero(), {0, 20}, ThetaRange::limits(), PhiRange::limits()})
                 >> Encode("h264")
                 >> Store(name);
 

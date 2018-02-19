@@ -42,9 +42,9 @@ namespace lightdb {
                 Metadata(const Catalog &catalog, std::experimental::filesystem::path path)
                         : catalog_(catalog), path_(std::move(path)),
                         //TODO grab boxes and load volume/geometry, detect colorspace
-                          volume_({{0, 0}, {0, 0}, {0, 0}, {0, 10}, AngularRange::ThetaMax, AngularRange::PhiMax}),
+                          volume_({{0, 0}, {0, 0}, {0, 0}, {0, 10}, ThetaRange::limits(), PhiRange::limits()}),
                           colorSpace_(YUVColorSpace::Instance),
-                          geometry_(EquirectangularGeometry::Instance)
+                          geometry_(EquirectangularGeometry::instance())
                 { }
 
             public:

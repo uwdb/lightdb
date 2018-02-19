@@ -44,7 +44,7 @@ public:
             throw new std::runtime_error("Row/col combination not hardcoded");
 
         Decode(source)
-                >> Select(Point3D::Zero)
+                >> Select({Point3D::zero(), TemporalRange::limits(), ThetaRange::limits(), PhiRange::limits()})
                 >> Partition(Dimension::Time, 1)
                 >> Partition(Dimension::Phi, phi)
                 >> Partition(Dimension::Theta, theta)

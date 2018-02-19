@@ -79,9 +79,9 @@ namespace lightdb {
                 //decodes.emplace_back(bytestring{});
                 decodes.emplace_back(std::make_shared<bytestring>(dynamic_cast<SegmentedMemoryEncodeWriter *>(writers[i].get())->buffer()));
                 auto v = static_cast<const LightField&>(video_).volume();
-                volumes.push_back({v.bounding().x, v.bounding().y, v.bounding().z, v.bounding().t,
-                              {(i % columns()) * AngularRange::ThetaMax.end() / columns(), ((i % columns()) + 1) * AngularRange::ThetaMax.end() / columns()},
-                              {(i / columns()) * AngularRange::PhiMax.end() / columns(), ((i / columns()) + 1) * AngularRange::PhiMax.end() / columns()}});
+                volumes.push_back({v.bounding().x(), v.bounding().y(), v.bounding().z(), v.bounding().t(),
+                              {(i % columns()) * ThetaRange::limits().end() / columns(), ((i % columns()) + 1) * ThetaRange::limits().end() / columns()},
+                              {(i / columns()) * PhiRange::limits().end() / columns(), ((i / columns()) + 1) * PhiRange::limits().end() / columns()}});
                 //decodes.emplace_back(std::make_unique<std::ifstream>(std::string("out") + std::to_string(i)));
             }
 
@@ -169,29 +169,30 @@ namespace lightdb {
 
             //TODO this only applies to equirectanguler format
             //TODO make sure no angles overlap
-            auto theta_range = AngularRange::ThetaMax, phi_range = AngularRange::PhiMax;
-            auto columns = std::lround(AngularRange::ThetaMax.magnitude() / volumes_[0].theta.magnitude()),
-                 rows = std::lround(AngularRange::PhiMax.magnitude() / volumes_[0].phi.magnitude());
-            auto width = std::lround(videos_[0]->metadata().width / (volumes_[0].theta.magnitude() / AngularRange::ThetaMax.magnitude())),
-                 height = std::lround(videos_[0]->metadata().height / (volumes_[0].phi.magnitude() / AngularRange::PhiMax.magnitude()));
+            auto theta_range = ThetaRange::limits();
+            auto phi_range = PhiRange::limits();
+            auto columns = std::lround(ThetaRange::limits().magnitude() / volumes_[0].theta().magnitude()),
+                 rows = std::lround(PhiRange::limits().magnitude() / volumes_[0].phi().magnitude());
+            auto width = std::lround(videos_[0]->metadata().width / (volumes_[0].theta().magnitude() / ThetaRange::limits().magnitude())),
+                 height = std::lround(videos_[0]->metadata().height / (volumes_[0].phi().magnitude() / PhiRange::limits().magnitude()));
 
             for(auto i = 0u; i < videos_.size(); i++) {
-                assert(width == std::lround(videos_[i]->metadata().width / (volumes_[i].theta.magnitude() / AngularRange::ThetaMax.magnitude())));
-                assert(height == std::lround(videos_[i]->metadata().height / (volumes_[i].phi.magnitude() / AngularRange::PhiMax.magnitude())));
-                assert(columns == std::lround(AngularRange::ThetaMax.magnitude() / volumes_[i].theta.magnitude()));
-                assert(rows == std::lround(AngularRange::PhiMax.magnitude() / volumes_[i].phi.magnitude()));
+                assert(width == std::lround(videos_[i]->metadata().width / (volumes_[i].theta().magnitude() / ThetaRange::limits().magnitude())));
+                assert(height == std::lround(videos_[i]->metadata().height / (volumes_[i].phi().magnitude() / PhiRange::limits().magnitude())));
+                assert(columns == std::lround(ThetaRange::limits().magnitude() / volumes_[i].theta().magnitude()));
+                assert(rows == std::lround(PhiRange::limits().magnitude() / volumes_[i].phi().magnitude()));
 
-                if(volumes_[i].theta.start() < theta_range.start())
-                    theta_range = {volumes_[i].theta.start(), theta_range.end()};
+                if(volumes_[i].theta().start() < theta_range.start())
+                    theta_range = {volumes_[i].theta().start(), theta_range.end()};
                     //theta_range.start = volumes_[i].theta.start();
-                if(volumes_[i].theta.end() > theta_range.end())
-                    theta_range = {theta_range.end(), volumes_[i].theta.end()};
+                if(volumes_[i].theta().end() > theta_range.end())
+                    theta_range = {theta_range.end(), volumes_[i].theta().end()};
                     //theta_range.end = volumes_[i].theta.end();
-                if(volumes_[i].phi.start() < phi_range.start())
-                    phi_range = {volumes_[i].phi.start(), phi_range.end()};
+                if(volumes_[i].phi().start() < phi_range.start())
+                    phi_range = {volumes_[i].phi().start(), phi_range.end()};
                     //theta_range.start = volumes_[i].phi.start();
-                if(volumes_[i].phi.end() > phi_range.end())
-                    phi_range = {phi_range.start(), volumes_[i].phi.end()};
+                if(volumes_[i].phi().end() > phi_range.end())
+                    phi_range = {phi_range.start(), volumes_[i].phi().end()};
                     //phi_range.end = volumes_[i].phi.end();
             }
 
@@ -208,42 +209,43 @@ namespace lightdb {
 
             auto v = static_cast<const LightField*>(videos_[0])->volume();
             return SingletonFileEncodedLightField::create("stitched.hevc",
-                                                          {v.components()[0].x, v.components()[0].y, v.components()[0].z, v.components()[0].t, theta_range, phi_range});
+                                                          {v.components()[0].x(), v.components()[0].y(), v.components()[0].z(), v.components()[0].t(), theta_range, phi_range});
         }
 
         template<typename ColorSpace>
         EncodedLightField NaiveStitchedLightField<ColorSpace>::apply() {
             //TODO make sure no angles overlap
-            auto theta_range = AngularRange::ThetaMax, phi_range = AngularRange::PhiMax;
-            auto columns = std::lround(AngularRange::ThetaMax.magnitude() / volumes_[0].theta.magnitude()),
-                    rows = std::lround(AngularRange::PhiMax.magnitude() / volumes_[0].phi.magnitude());
-            auto width = std::lround(videos_[0]->metadata().width / (volumes_[0].theta.magnitude() / AngularRange::ThetaMax.magnitude())),
-                    height = std::lround(videos_[0]->metadata().height / (volumes_[0].phi.magnitude() / AngularRange::PhiMax.magnitude()));
+            auto theta_range = ThetaRange::limits();
+            auto phi_range = PhiRange::limits();
+            auto columns = std::lround(ThetaRange::limits().magnitude() / volumes_[0].theta().magnitude()),
+                    rows = std::lround(PhiRange::limits().magnitude() / volumes_[0].phi().magnitude());
+            auto width = std::lround(videos_[0]->metadata().width / (volumes_[0].theta().magnitude() / ThetaRange::limits().magnitude())),
+                    height = std::lround(videos_[0]->metadata().height / (volumes_[0].phi().magnitude() / PhiRange::limits().magnitude()));
 
             for(auto i = 0; i < videos_.size(); i++) {
-                assert(width == std::lround(videos_[i]->metadata().width / (volumes_[i].theta.magnitude() / AngularRange::ThetaMax.magnitude())));
-                assert(height == std::lround(videos_[i]->metadata().height / (volumes_[i].phi.magnitude() / AngularRange::PhiMax.magnitude())));
-                assert(columns == std::lround(AngularRange::ThetaMax.magnitude() / volumes_[i].theta.magnitude()));
-                assert(rows == std::lround(AngularRange::PhiMax.magnitude() / volumes_[i].phi.magnitude()));
+                assert(width == std::lround(videos_[i]->metadata().width / (volumes_[i].theta().magnitude() / ThetaRange::limits().magnitude())));
+                assert(height == std::lround(videos_[i]->metadata().height / (volumes_[i].phi().magnitude() / PhiRange::limits().magnitude())));
+                assert(columns == std::lround(ThetaRange::limits().magnitude() / volumes_[i].theta().magnitude()));
+                assert(rows == std::lround(PhiRange::limits().magnitude() / volumes_[i].phi().magnitude()));
 
-                if(volumes_[i].theta.start() < theta_range.start())
-                    theta_range = {volumes_[i].theta.start(), theta_range.end()};
+                if(volumes_[i].theta().start() < theta_range.start())
+                    theta_range = {volumes_[i].theta().start(), theta_range.end()};
                     //theta_range.start = volumes_[i].theta.start;
-                if(volumes_[i].theta.end() > theta_range.end())
-                    theta_range = {theta_range.start(), volumes_[i].theta.end()};
+                if(volumes_[i].theta().end() > theta_range.end())
+                    theta_range = {theta_range.start(), volumes_[i].theta().end()};
                     //theta_range.end = volumes_[i].theta.end;
-                if(volumes_[i].phi.start() < phi_range.start())
-                    phi_range = {volumes_[i].phi.start(), phi_range.end()};
+                if(volumes_[i].phi().start() < phi_range.start())
+                    phi_range = {volumes_[i].phi().start(), phi_range.end()};
                     //phi_range.start = volumes_[i].phi.start;
-                if(volumes_[i].phi.end() > phi_range.end())
-                    phi_range = {phi_range.start(), volumes_[i].phi.end()};
+                if(volumes_[i].phi().end() > phi_range.end())
+                    phi_range = {phi_range.start(), volumes_[i].phi().end()};
                     //phi_range.end = volumes_[i].phi.end;
             }
 
 
             auto v = static_cast<const LightField&>(videos_[0]).volume();
             return SingletonFileEncodedLightField::create("stitched.hevc",
-                                                          {v.components()[0].x, v.components()[0].y, v.components()[0].z, v.components()[0].t, theta_range, phi_range});
+                                                          {v.components()[0].x(), v.components()[0].y(), v.components()[0].z(), v.components()[0].t(), theta_range, phi_range});
         }
 
         template<typename ColorSpace>
@@ -255,11 +257,11 @@ namespace lightdb {
             //auto encodeCodec = format == "h264" ? NV_ENC_H264 : NV_ENC_HEVC; //TODO what about others?
             //auto phiratio = phi_.end / AngularRange::PhiMax.end;
             //auto thetaratio = theta_.end / AngularRange::ThetaMax.end;
-            auto top = static_cast<unsigned int>(std::lround((phi_.start() / AngularRange::PhiMax.end()) * video_.metadata().height)),
-                 bottom = static_cast<unsigned int>(std::lround((phi_.end() / AngularRange::PhiMax.end()) * video_.metadata().height)),
-                 left = static_cast<unsigned int>(std::lround((theta_.start() / AngularRange::ThetaMax.end()) * video_.metadata().width)),
-                 right = static_cast<unsigned int>(std::lround((theta_.end() / AngularRange::ThetaMax.end()) * video_.metadata().width));
-            auto frame_count = t.end * (video_.metadata().framerate.numerator() / video_.metadata().framerate.denominator());
+            auto top = static_cast<unsigned int>(std::lround((phi_.start() / PhiRange::limits().end()) * video_.metadata().height)),
+                 bottom = static_cast<unsigned int>(std::lround((phi_.end() / PhiRange::limits().end()) * video_.metadata().height)),
+                 left = static_cast<unsigned int>(std::lround((theta_.start() / ThetaRange::limits().end()) * video_.metadata().width)),
+                 right = static_cast<unsigned int>(std::lround((theta_.end() / ThetaRange::limits().end()) * video_.metadata().width));
+            auto frame_count = t.end() * (video_.metadata().framerate.numerator() / video_.metadata().framerate.denominator());
 
             auto start = std::chrono::steady_clock::now();
             GPUContext context(0);
@@ -283,7 +285,7 @@ namespace lightdb {
             auto decode = std::make_shared<bytestring>(writer.buffer());
 
             auto v = static_cast<const LightField&>(video_).volume();
-            return SingletonMemoryEncodedLightField::create(decode, Volume{v.components()[0].x, v.components()[0].y, v.components()[0].z, v.components()[0].t, theta_, phi_});
+            return SingletonMemoryEncodedLightField::create(decode, Volume{v.components()[0].x(), v.components()[0].y(), v.components()[0].z(), v.components()[0].t(), theta_, phi_});
         }
 
         template<typename ColorSpace>
@@ -349,7 +351,7 @@ namespace lightdb {
                 if(reader.isComplete()) //TODO this shouldn't happen, but TLFs have hardcoded duration...
                     break;
 
-                auto frames = volume.t.magnitude() * gop;
+                auto frames = volume.t().magnitude() * gop;
                 writers.emplace_back(transcoder.encoder().api(), encodeConfiguration);
 
                 transcoder.transcode(reader, writers.back(), static_cast<const FrameTransform>(functor_), frames);
