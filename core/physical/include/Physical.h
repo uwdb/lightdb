@@ -218,7 +218,7 @@ namespace lightdb {
         class EquirectangularTranscodedLightField: public LightField {
         public:
             EquirectangularTranscodedLightField(const logical::PanoramicVideoLightField &video,
-                                                const functor &functor)
+                                                const unaryfunctor &functor)
                     : LightField({}, static_cast<const LightField&>(video).volume(), video.colorSpace()), //TODO parents is incorrect
                       video_(video), functor_(functor)
             { }
@@ -234,7 +234,7 @@ namespace lightdb {
 
         private:
             const logical::PanoramicVideoLightField& video_;
-            const functor &functor_;
+            const unaryfunctor &functor_;
         };
 
         class PlanarTiledToVideoLightField: public LightField {
@@ -266,7 +266,7 @@ namespace lightdb {
             TemporalPartitionedEquirectangularTranscodedLightField(
                     const logical::PartitionedLightField &partitioning,
                     const logical::PanoramicVideoLightField &video,
-                    const functor &functor)
+                    const unaryfunctor &functor)
                     : LightField({}, static_cast<const LightField&>(video).volume(), video.colorSpace()), //TODO parents is incorrect
                       partitioning_(partitioning), video_(video), functor_(functor)
             { }
@@ -283,14 +283,14 @@ namespace lightdb {
         private:
             const logical::PartitionedLightField& partitioning_;
             const logical::PanoramicVideoLightField& video_;
-            const functor &functor_;
+            const unaryfunctor &functor_;
         };
 
         class BinaryUnionTranscodedLightField: public LightField {
         public:
             BinaryUnionTranscodedLightField(const logical::PanoramicVideoLightField &left,
                                             const logical::PanoramicVideoLightField &right,
-                                            const naryfunctor &functor)
+                                            const binaryfunctor &functor)
                     : LightField({}, static_cast<const LightField&>(left).volume(), left.colorSpace()), //TODO parents+colorspace is incorrect
                       left_(left), right_(right), functor_(functor)
             { }
@@ -306,7 +306,7 @@ namespace lightdb {
 
         private:
             const logical::PanoramicVideoLightField& left_, right_;
-            const naryfunctor &functor_;
+            const binaryfunctor &functor_;
         };
 
         //TODO hacks

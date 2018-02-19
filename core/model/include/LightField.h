@@ -18,9 +18,6 @@
 #include <stdexcept>
 
 namespace lightdb {
-    class functor;
-    class LightField;
-
     class LightFieldReference;
 
     class LightField {

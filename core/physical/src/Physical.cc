@@ -302,7 +302,7 @@ namespace lightdb {
             FileDecodeReader reader(video_.filename());
             SegmentedMemoryEncodeWriter writer{transcoder.encoder().api(), encodeConfiguration};
 
-            transcoder.transcode(reader, writer, static_cast<const FrameTransform&>(functor_));
+            transcoder.transcode(reader, writer, static_cast<const FrameTransform>(functor_));
 
             auto decode = std::make_shared<bytestring>(writer.buffer());
 
@@ -344,7 +344,7 @@ namespace lightdb {
                 auto frames = volume.t.magnitude() * gop;
                 writers.emplace_back(transcoder.encoder().api(), encodeConfiguration);
 
-                transcoder.transcode(reader, writers.back(), static_cast<const FrameTransform&>(functor_), frames);
+                transcoder.transcode(reader, writers.back(), static_cast<const FrameTransform>(functor_), frames);
             }
 
             std::vector<std::shared_ptr<bytestring>> decodes;

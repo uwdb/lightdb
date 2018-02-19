@@ -9,7 +9,7 @@ using namespace std::chrono;
 
 
 namespace lightdb {
-    const ColorReference Greyscale::operator()(const ColorSpace&, const LightFieldReference&, const Point6D&) const {
+    const ColorReference Greyscale::operator()(const ColorSpace&, const Point6D&, const LightFieldReference&) const {
         throw std::runtime_error("Encode(YUV) and extra yuv bytes");
         //return YUVColor{field.value(point).y(), 0, 0};
     }
@@ -39,7 +39,7 @@ namespace lightdb {
     GaussianBlur::GaussianBlur() : module_(nullptr), function_(nullptr) {
     }
 
-    const ColorReference GaussianBlur::operator()(const ColorSpace&, const LightFieldReference&, const Point6D&) const {
+    const ColorReference GaussianBlur::operator()(const ColorSpace&, const Point6D&, const LightFieldReference&) const {
         throw new std::runtime_error("Not implemented");
     }
 
@@ -72,7 +72,7 @@ namespace lightdb {
         };
     };
 
-    const ColorReference Identity::operator()(const ColorSpace&, const LightFieldReference&, const Point6D&) const {
+    const ColorReference Identity::operator()(const ColorSpace&, const Point6D&, const LightFieldReference&) const {
         throw std::runtime_error("Encode(YUV) and extra yuv bytes");
         //return field.value(point);
     }
