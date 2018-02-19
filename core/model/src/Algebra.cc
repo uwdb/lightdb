@@ -40,7 +40,7 @@ namespace lightdb::logical {
 
     void Algebra::Store(const std::string &name)
     {
-        throw NotImplementedError();
+        throw NotImplementedError(); //TODO
     }
 
     LightFieldReference Algebra::Union(const LightFieldReference other) {
