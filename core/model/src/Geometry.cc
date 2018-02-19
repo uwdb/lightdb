@@ -56,12 +56,12 @@ namespace lightdb
                     result.push_back(Volume{x, y, z, {current, std::min(t.end, current + span)}, theta, phi});
                 break;
             case Dimension::Theta:
-                for(current = theta.start; current < theta.end; current += span)
-                    result.push_back(Volume{x, y, z, t, {current, std::min(theta.end, current + span)}, phi});
+                for(current = theta.start(); current < theta.end(); current += span)
+                    result.push_back(Volume{x, y, z, t, {current, std::min(theta.end(), current + span)}, phi});
                 break;
             case Dimension::Phi:
-                for(current = phi.start; current < phi.end; current += span)
-                    result.push_back(Volume{x, y, z, t, theta, {current, std::min(phi.end, current + span)}});
+                for(current = phi.start(); current < phi.end(); current += span)
+                    result.push_back(Volume{x, y, z, t, theta, {current, std::min(phi.end(), current + span)}});
                 break;
         }
 
@@ -104,8 +104,8 @@ namespace lightdb
                 {y.start + delta.y,         y.end + delta.y},
                 {z.start + delta.z,         z.end + delta.z},
                 {t.start + delta.t,         t.end + delta.t},
-                {theta.start + delta.theta, theta.end + delta.theta},
-                {phi.start + delta.phi,     phi.end + delta.phi}};
+                {theta.start() + delta.theta, theta.end() + delta.theta},
+                {phi.start() + delta.phi,     phi.end() + delta.phi}};
     }
 
 } // namespace lightdb

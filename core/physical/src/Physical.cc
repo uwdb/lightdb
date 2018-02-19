@@ -80,8 +80,8 @@ namespace lightdb {
                 decodes.emplace_back(std::make_shared<bytestring>(dynamic_cast<SegmentedMemoryEncodeWriter *>(writers[i].get())->buffer()));
                 auto v = static_cast<const LightField&>(video_).volume();
                 volumes.push_back({v.bounding().x, v.bounding().y, v.bounding().z, v.bounding().t,
-                              {(i % columns()) * AngularRange::ThetaMax.end / columns(), ((i % columns()) + 1) * AngularRange::ThetaMax.end / columns()},
-                              {(i / columns()) * AngularRange::PhiMax.end / columns(), ((i / columns()) + 1) * AngularRange::PhiMax.end / columns()}});
+                              {(i % columns()) * AngularRange::ThetaMax.end() / columns(), ((i % columns()) + 1) * AngularRange::ThetaMax.end() / columns()},
+                              {(i / columns()) * AngularRange::PhiMax.end() / columns(), ((i / columns()) + 1) * AngularRange::PhiMax.end() / columns()}});
                 //decodes.emplace_back(std::make_unique<std::ifstream>(std::string("out") + std::to_string(i)));
             }
 
@@ -181,14 +181,18 @@ namespace lightdb {
                 assert(columns == std::lround(AngularRange::ThetaMax.magnitude() / volumes_[i].theta.magnitude()));
                 assert(rows == std::lround(AngularRange::PhiMax.magnitude() / volumes_[i].phi.magnitude()));
 
-                if(volumes_[i].theta.start < theta_range.start)
-                    theta_range.start = volumes_[i].theta.start;
-                if(volumes_[i].theta.end > theta_range.end)
-                    theta_range.end = volumes_[i].theta.end;
-                if(volumes_[i].phi.start < phi_range.start)
-                    theta_range.start = volumes_[i].phi.start;
-                if(volumes_[i].phi.end > phi_range.end)
-                    phi_range.end = volumes_[i].phi.end;
+                if(volumes_[i].theta.start() < theta_range.start())
+                    theta_range = {volumes_[i].theta.start(), theta_range.end()};
+                    //theta_range.start = volumes_[i].theta.start();
+                if(volumes_[i].theta.end() > theta_range.end())
+                    theta_range = {theta_range.end(), volumes_[i].theta.end()};
+                    //theta_range.end = volumes_[i].theta.end();
+                if(volumes_[i].phi.start() < phi_range.start())
+                    phi_range = {volumes_[i].phi.start(), phi_range.end()};
+                    //theta_range.start = volumes_[i].phi.start();
+                if(volumes_[i].phi.end() > phi_range.end())
+                    phi_range = {phi_range.start(), volumes_[i].phi.end()};
+                    //phi_range.end = volumes_[i].phi.end();
             }
 
             LOG(INFO) << "Wonky GOP/time interval splitting";
@@ -222,14 +226,18 @@ namespace lightdb {
                 assert(columns == std::lround(AngularRange::ThetaMax.magnitude() / volumes_[i].theta.magnitude()));
                 assert(rows == std::lround(AngularRange::PhiMax.magnitude() / volumes_[i].phi.magnitude()));
 
-                if(volumes_[i].theta.start < theta_range.start)
-                    theta_range.start = volumes_[i].theta.start;
-                if(volumes_[i].theta.end > theta_range.end)
-                    theta_range.end = volumes_[i].theta.end;
-                if(volumes_[i].phi.start < phi_range.start)
-                    theta_range.start = volumes_[i].phi.start;
-                if(volumes_[i].phi.end > phi_range.end)
-                    phi_range.end = volumes_[i].phi.end;
+                if(volumes_[i].theta.start() < theta_range.start())
+                    theta_range = {volumes_[i].theta.start(), theta_range.end()};
+                    //theta_range.start = volumes_[i].theta.start;
+                if(volumes_[i].theta.end() > theta_range.end())
+                    theta_range = {theta_range.start(), volumes_[i].theta.end()};
+                    //theta_range.end = volumes_[i].theta.end;
+                if(volumes_[i].phi.start() < phi_range.start())
+                    phi_range = {volumes_[i].phi.start(), phi_range.end()};
+                    //phi_range.start = volumes_[i].phi.start;
+                if(volumes_[i].phi.end() > phi_range.end())
+                    phi_range = {phi_range.start(), volumes_[i].phi.end()};
+                    //phi_range.end = volumes_[i].phi.end;
             }
 
 
@@ -247,10 +255,10 @@ namespace lightdb {
             //auto encodeCodec = format == "h264" ? NV_ENC_H264 : NV_ENC_HEVC; //TODO what about others?
             //auto phiratio = phi_.end / AngularRange::PhiMax.end;
             //auto thetaratio = theta_.end / AngularRange::ThetaMax.end;
-            auto top = static_cast<unsigned int>(std::lround((phi_.start / AngularRange::PhiMax.end) * video_.metadata().height)),
-                 bottom = static_cast<unsigned int>(std::lround((phi_.end / AngularRange::PhiMax.end) * video_.metadata().height)),
-                 left = static_cast<unsigned int>(std::lround((theta_.start / AngularRange::ThetaMax.end) * video_.metadata().width)),
-                 right = static_cast<unsigned int>(std::lround((theta_.end / AngularRange::ThetaMax.end) * video_.metadata().width));
+            auto top = static_cast<unsigned int>(std::lround((phi_.start() / AngularRange::PhiMax.end()) * video_.metadata().height)),
+                 bottom = static_cast<unsigned int>(std::lround((phi_.end() / AngularRange::PhiMax.end()) * video_.metadata().height)),
+                 left = static_cast<unsigned int>(std::lround((theta_.start() / AngularRange::ThetaMax.end()) * video_.metadata().width)),
+                 right = static_cast<unsigned int>(std::lround((theta_.end() / AngularRange::ThetaMax.end()) * video_.metadata().width));
             auto frame_count = t.end * (video_.metadata().framerate.numerator() / video_.metadata().framerate.denominator());
 
             auto start = std::chrono::steady_clock::now();

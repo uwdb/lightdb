@@ -67,9 +67,9 @@ namespace lightdb {
                         throw std::invalid_argument("Attempt to perform 1x1 tiling; ignore (or use transcode if format changed) instead");
                     }
                 } else if(partitioner != nullptr && partitioner->dimension() == Dimension::Theta)
-                    return get_dimensions(child, rows, hack_divide(AngularRange::ThetaMax.end, partitioner->interval()), time);
+                    return get_dimensions(child, rows, hack_divide(AngularRange::ThetaMax.end(), partitioner->interval()), time);
                 else if(partitioner != nullptr && partitioner->dimension() == Dimension::Phi)
-                    return get_dimensions(child, hack_divide(AngularRange::PhiMax.end, partitioner->interval()), columns, time);
+                    return get_dimensions(child, hack_divide(AngularRange::PhiMax.end(), partitioner->interval()), columns, time);
                 else if(partitioner != nullptr && partitioner->dimension() == Dimension::Time)
                     return get_dimensions(child, rows, columns, (double)partitioner->interval().numerator() / partitioner->interval().denominator());
                 // TODO prohibit other intermediating field types...

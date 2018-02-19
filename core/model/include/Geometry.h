@@ -63,24 +63,30 @@ namespace lightdb {
 
     typedef struct SpatiotemporalRange SpatialRange;
     typedef struct SpatiotemporalRange TemporalRange;
-    typedef double angle; //TODO add some range guards?
+    typedef double angle; //TODO add some range guards?, change to union double/rational/inf-precision type
 
-    struct AngularRange {
+    class AngularRange {
     public:
-        angle start;
-        angle end;
+        AngularRange(const angle start, const angle end)
+            : start_(start), end_(end)  {
+            assert(end >= start);
+        }
 
-        //TODO guard against end < start
-        double magnitude() const { return end - start; }
+        inline angle start() const { return start_; }
+        inline angle end() const { return end_; }
+
+        double magnitude() const {
+            return end() - start();
+        }
 
         bool Contains(const double angle) const {
-            return start <= angle && angle <= end;
+            return start() <= angle && angle <= end();
         }
 
         bool operator==(const AngularRange &other) const {
             static double epsilon = 0.000001; //TODO ugh
             return this == &other ||
-                   (std::abs(start - other.start) < epsilon && std::abs(end - other.end) < epsilon);
+                   (std::abs(start() - other.start()) < epsilon && std::abs(end() - other.end()) < epsilon);
         }
 
         bool operator!=(const AngularRange &other) const {
@@ -89,6 +95,10 @@ namespace lightdb {
 
         static const AngularRange ThetaMax;
         static const AngularRange PhiMax;
+
+    private:
+        angle start_;
+        angle end_;
     };
 
     struct Point6D;
@@ -106,17 +116,18 @@ namespace lightdb {
 
         bool Contains(const Point6D &point) const;
 
-        std::vector<Volume> partition(Dimension, const lightdb::rational &) const;
-        Volume& operator=(std::pair<SpatiotemporalDimension, SpatiotemporalRange>);
-        Volume& operator=(std::pair<AngularDimension, AngularRange>);
+        std::vector<Volume> partition(Dimension, const rational&) const;
+        Volume translate(const Point6D&) const;
+        inline Volume& operator=(std::pair<SpatiotemporalDimension, SpatiotemporalRange>);
+        inline Volume& operator=(std::pair<AngularDimension, AngularRange>);
 
         inline bool is_point() const {
             return x.start == x.end &&
                    y.start == y.end &&
                    z.start == z.end &&
                    t.start == t.end &&
-                   theta.start == theta.end &&
-                   phi.start == phi.end;
+                   theta.start() == theta.end() &&
+                   phi.start() == phi.end();
         }
 
         bool operator==(const Volume &other) const {
@@ -128,8 +139,6 @@ namespace lightdb {
         bool operator!=(const Volume &other) const {
             return !operator==(other);
         }
-
-        Volume translate(const Point6D &delta) const;
     };
 
     class CompositeVolume {
@@ -172,11 +181,11 @@ namespace lightdb {
         start = std::max(left.t.start, right.t.start);
         TemporalRange t{start, std::max(start, std::min(left.t.end, right.t.end))};
 
-        start = std::max(left.theta.start, right.theta.start);
-        AngularRange theta{start, std::max(start, std::min(left.theta.end, right.theta.end))};
+        start = std::max(left.theta.start(), right.theta.start());
+        AngularRange theta{start, std::max(start, std::min(left.theta.end(), right.theta.end()))};
 
-        start = std::max(left.phi.start, right.phi.start);
-        AngularRange phi{start, std::max(start, std::min(left.phi.end, right.phi.end))};
+        start = std::max(left.phi.start(), right.phi.start());
+        AngularRange phi{start, std::max(start, std::min(left.phi.end(), right.phi.end()))};
 
         return {x, y, z, t, theta, phi};
     }
