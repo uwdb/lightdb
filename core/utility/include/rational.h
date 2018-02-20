@@ -7,7 +7,12 @@
 
 namespace lightdb {
     //TODO change to std::ratio
-    using rational = boost::rational<unsigned int>;
+    class rational: public boost::rational<unsigned int> {
+    public:
+        using boost::rational<unsigned int>::rational;
+
+        explicit operator double() const { return numerator() / static_cast<double>(denominator()); }
+    };
 }
 
 #endif //LIGHTDB_RATIONAL_H

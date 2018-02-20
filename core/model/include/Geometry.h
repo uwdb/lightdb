@@ -35,6 +35,8 @@ namespace lightdb {
 
     typedef double angle; //TODO change to union double/rational/inf-precision type, also add to Spatiotemporal range
 
+    class UnknownRange;
+
     namespace internal {
         namespace limits {
             class spatial {
@@ -52,11 +54,20 @@ namespace lightdb {
                 static constexpr const angle minimum = 0;
                 static constexpr const angle maximum = M_PI;
             };
+            using none = spatial;
         }
 
         template<typename TDerived, typename Value, typename Limits>
         class Range {
         public:
+            constexpr Range(const Value start, const Value end)
+                    : start_(start), end_(end)  {
+                assert(end >= start);
+                assert(start >= Limits::minimum);
+                assert(end <= Limits::maximum);
+            }
+            Range(const UnknownRange &range);
+
             inline constexpr double start() const { return start_; }
             inline constexpr double end() const { return end_; }
 
@@ -67,6 +78,8 @@ namespace lightdb {
             bool empty() const { return start() == end(); }
 
             static constexpr const TDerived limits() { return {Limits::minimum, Limits::maximum}; }
+
+            operator UnknownRange() const;
 
             inline TDerived operator|(const TDerived &other) const {
                 auto max_start = std::max(start(), other.start());
@@ -83,20 +96,15 @@ namespace lightdb {
                 return !operator==(other);
             }
 
-        public:
-            constexpr Range(const Value start, const Value end)
-                    : start_(start), end_(end)  {
-                assert(end >= start);
-                assert(start >= Limits::minimum);
-                assert(end <= Limits::maximum);
-            }
-
         private:
             Value start_;
             Value end_;
         };
     }
 
+    class UnknownRange: public internal::Range<UnknownRange, double, internal::limits::none>     {
+        using internal::Range<UnknownRange, double, internal::limits::none>::Range;
+    };
     class SpatiotemporalRange: public internal::Range<SpatiotemporalRange, double, internal::limits::spatial>     {
         using internal::Range<SpatiotemporalRange, double, internal::limits::spatial>::Range;
     };
@@ -110,12 +118,25 @@ namespace lightdb {
     using SpatialRange = SpatiotemporalRange;
     using TemporalRange = SpatiotemporalRange;
 
+    template<typename TDerived, typename Value, typename Limits>
+    internal::Range<TDerived, Value, Limits>::operator UnknownRange() const {
+        return {start(), end()};
+    };
+    template<typename TDerived, typename Value, typename Limits>
+    internal::Range<TDerived, Value, Limits>::Range(const UnknownRange &range)
+            : Range(range.start(), range.end())
+    { }
+
+
     class Point3D;
     class Point4D;
     class Point6D;
 
     class Volume {
     public:
+        class iterable;
+        class iterator;
+
         constexpr Volume(const SpatialRange &x, const SpatialRange &y, const SpatialRange &z)
             : Volume(x, y, z, TemporalRange::limits())
         { }
@@ -147,32 +168,13 @@ namespace lightdb {
         inline const ThetaRange& theta(const ThetaRange& value) { return theta_ = value; }
         inline const PhiRange& phi(const PhiRange& value) { return phi_ = value; }
 
-        static constexpr const Volume limits() { return {
-                    SpatialRange::limits(), SpatialRange::limits(), SpatialRange::limits(),
-                    TemporalRange::limits(),
-                    ThetaRange::limits(), PhiRange::limits()}; }
+        UnknownRange get(Dimension dimension) const;
+        Volume& set(SpatiotemporalDimension dimension, const SpatiotemporalRange &range);
+        Volume& set(Dimension dimension, const UnknownRange &range);
 
         bool contains(const Point6D &point) const;
-        std::vector<Volume> partition(Dimension, const rational&) const;
+        iterable partition(Dimension, const double&) const;
         Volume translate(const Point6D&) const;
-        inline const SpatiotemporalRange& set(const SpatiotemporalDimension dimension, const SpatiotemporalRange &range)
-        {
-            switch(dimension) {
-                case SpatiotemporalDimension::X:
-                    x_ = range;
-                    break;
-                case SpatiotemporalDimension::Y:
-                    y_ = range;
-                    break;
-                case SpatiotemporalDimension::Z:
-                    z_ = range;
-                    break;
-                case SpatiotemporalDimension::Time:
-                    t_ = range;
-                    break;
-            }
-            return range;
-        }
 
         inline bool is_point() const {
             return x().start() == x().end() &&
@@ -198,6 +200,11 @@ namespace lightdb {
             return !operator==(other);
         }
 
+        static constexpr const Volume limits() { return {
+                    SpatialRange::limits(), SpatialRange::limits(), SpatialRange::limits(),
+                    TemporalRange::limits(),
+                    ThetaRange::limits(), PhiRange::limits()}; }
+
     private:
         SpatialRange x_;
         SpatialRange y_;
@@ -205,6 +212,56 @@ namespace lightdb {
         TemporalRange t_;
         ThetaRange theta_;
         PhiRange phi_;
+    };
+
+    class Volume::iterator: public std::iterator<std::input_iterator_tag, Volume, void, Volume*, Volume&> {
+    public:
+        explicit iterator(Volume volume, const Dimension dimension, const double interval)
+            : volume_(volume), dimension_(dimension), interval_(interval)
+        { }
+
+        iterator& operator++() {
+            volume_.set(dimension_,
+                        {std::min(volume_.get(dimension_).start() + interval_, volume_.get(dimension_).end()),
+                         volume_.get(dimension_).end()});
+            return *this;
+        }
+
+        iterator operator++(int) {
+            auto result = *this;
+            ++(*this);
+            return result;
+        }
+
+        bool operator==(const iterator other) const {
+            return volume_.get(dimension_).start() >= other.volume_.get(dimension_).start(); }
+        bool operator!=(const iterator other) const { return !(*this == other); }
+
+        Volume operator*() const {
+            return Volume(volume_).set(dimension_, {volume_.get(dimension_).start(),
+                                                    std::min(volume_.get(dimension_).start() + interval_,
+                                                             volume_.get(dimension_).end())});
+        }
+    private:
+        Volume volume_;
+        const Dimension dimension_;
+        double interval_;
+    };
+
+    class Volume::iterable {
+    public:
+        iterable(const Volume model, const Dimension dimension, const double interval)
+                : model_(model), dimension_(dimension), interval_(interval)
+        { }
+
+        iterator begin() const;
+        iterator end() const;
+        explicit operator std::vector<Volume>() { return std::vector<Volume>{begin(), end()}; }
+
+    private:
+        const Volume model_;
+        const Dimension dimension_;
+        const double interval_;
     };
 
     class CompositeVolume {

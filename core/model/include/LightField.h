@@ -150,13 +150,14 @@ namespace lightdb {
             PartitionedLightField(const LightFieldReference &source,
                                   const Dimension dimension,
                                   const rational &interval)
-                    : LightField(source,
-                                 CompositeVolume{functional::flatmap<std::vector<Volume>>(
-                                     source->volume().components().begin(),
-                                     source->volume().components().end(),
-                                     [dimension, interval](auto &volume) {
-                                         return volume.partition(dimension, asserts::CHECK_POSITIVE(interval)); })}),
-                      dimension_(dimension), interval_(asserts::CHECK_POSITIVE(interval)) { }
+                : LightField(source,
+                             CompositeVolume{functional::flatmap<std::vector<Volume>>(
+                                 source->volume().components().begin(),
+                                 source->volume().components().end(),
+                                 [dimension, interval](auto &volume) {
+                                     return (std::vector<Volume>)volume.partition(
+                                             dimension, (double)asserts::CHECK_POSITIVE(interval)); })}),
+                  dimension_(dimension), interval_(asserts::CHECK_POSITIVE(interval)) { }
 
             Dimension dimension() const { return dimension_; }
             rational interval() const { return interval_; }

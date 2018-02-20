@@ -21,46 +21,62 @@ namespace lightdb
                theta().contains(point.theta()) && phi().contains(point.phi());
     }
 
-    std::vector<Volume> Volume::partition(const Dimension dimension, const lightdb::rational &interval) const {
-        std::vector<Volume> result; //TODO should return an iterator, not a materialized vector
-        double span = (double)interval.numerator() / interval.denominator(); //TODO horrible!
-        double current;
-
-        asserts::CHECK_POSITIVE(span);
-
-        //TODO add a base class for all dimensions and drop switch
+    Volume& Volume::set(const SpatiotemporalDimension dimension, const SpatiotemporalRange &range) {
         switch(dimension) {
-            case Dimension::X:
-                assert(x() != limits().x());
-                for(current = x().start(); current < x().end(); current += span)
-                    result.push_back(Volume{{current, std::min(x().end(), current + span)}, y(), z(), t(), theta(), phi()});
+            case SpatiotemporalDimension::X:
+                x_ = range;
                 break;
-            case Dimension::Y:
-                assert(y() != limits().y());
-                for(current = y().start(); current < y().end(); current += span)
-                    result.push_back(Volume{x(), {current, std::min(y().end(), current + span)}, z(), t(), theta(), phi()});
+            case SpatiotemporalDimension::Y:
+                y_ = range;
                 break;
-            case Dimension::Z:
-                assert(z() != limits().z());
-                for(current = z().start(); current < z().end(); current += span)
-                    result.push_back(Volume{x(), y(), {current, std::min(z().end(), current + span)}, t(), theta(), phi()});
+            case SpatiotemporalDimension::Z:
+                z_ = range;
                 break;
-            case Dimension::Time:
-                assert(t() != limits().t());
-                for(current = t().start(); current < t().end(); current += span)
-                    result.push_back(Volume{x(), y(), z(), {current, std::min(t().end(), current + span)}, theta(), phi()});
-                break;
-            case Dimension::Theta:
-                for(current = theta().start(); current < theta().end(); current += span)
-                    result.push_back(Volume{x(), y(), z(), t(), {current, std::min(theta().end(), current + span)}, phi()});
-                break;
-            case Dimension::Phi:
-                for(current = phi().start(); current < phi().end(); current += span)
-                    result.push_back(Volume{x(), y(), z(), t(), theta(), {current, std::min(phi().end(), current + span)}});
+            case SpatiotemporalDimension::Time:
+                t_ = range;
                 break;
         }
+        return *this;
+    }
+    Volume& Volume::set(const Dimension dimension, const UnknownRange &range) {
+        switch(dimension) {
+            case Dimension::X:
+            case Dimension::Y:
+            case Dimension::Z:
+            case Dimension::Time:
+                Volume::set((SpatiotemporalDimension)dimension, range);
+                break;
+            case Dimension::Theta:
+                theta(range);
+            case Dimension::Phi:
+                phi(range);
+        }
+        return *this;
+    };
+    UnknownRange Volume::get(const Dimension dimension) const {
+        switch(dimension) {
+            case Dimension::X:
+                return x();
+            case Dimension::Y:
+                return y();
+            case Dimension::Z:
+                return z();
+            case Dimension::Time:
+                return t();
+            case Dimension::Theta:
+                return theta();
+            case Dimension::Phi:
+                return phi();
+        }
+        throw InvalidArgumentError("Invalid dimension", "dimension");
+    };
 
-        return result;
+    Volume::iterator Volume::iterable::begin() const { return iterator(model_, dimension_, interval_); }
+    Volume::iterator Volume::iterable::end() const {
+        return iterator(Volume{model_}.set(dimension_, {model_.get(dimension_).end(),
+                                                        model_.get(dimension_).end()}), dimension_, interval_); }
+    Volume::iterable Volume::partition(const Dimension dimension, const double& interval) const {
+        return Volume::iterable(*this, dimension, interval);
     }
 
     Volume Volume::translate(const Point6D &delta) const{
