@@ -78,7 +78,7 @@ public:
             for(auto &session: decodeSessions)
                 decodedFrames.emplace_back(session->decode());
 
-            for (auto i = 0u; i <= dropOrDuplicate; i++, framesEncoded++) {
+            for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++) {
                 encoderSession.Encode(decodedFrames,
                                       [tileTransforms, joinedTransform, this](
                                               EncodeBuffer &buffer, Frame &frame, size_t index) {

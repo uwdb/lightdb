@@ -21,7 +21,6 @@ public:
 
     template<typename TDerived>
     shared_reference(const TDerived &value)
-        //: pointer_(std::static_cast<std::shared_ptr<T>>(std::make_shared<TDerived>(value)))
         : pointer_{static_cast<std::shared_ptr<T>>(std::make_shared<TDerived>(value))}
     { }
 

@@ -9,17 +9,17 @@ public:
         : FrameRateAlignment(encodeRate.fps() / decodeRate.fps())
     { }
 
-    explicit FrameRateAlignment(const double ratio)
+    explicit FrameRateAlignment(const lightdb::real_type ratio)
             : ratio(ratio)
     { }
 
-    unsigned int dropOrDuplicate(const size_t decodedFrames, const size_t encodedFrames) {
+    int dropOrDuplicate(const size_t decodedFrames, const size_t encodedFrames) {
         if (ratio < 1.f) {
             // Potentially need to drop frame
             return decodedFrames * ratio < (encodedFrames + 1) ? -1 : 0;
         } else if (ratio > 1.f) {
             // May need to duplicate frames
-            auto duplicate = 0;
+            auto duplicate = 0u;
             while(decodedFrames * ratio > encodedFrames + duplicate + 1)
                 duplicate++;
 
@@ -30,7 +30,7 @@ public:
     }
 
 private:
-    const double ratio;
+    const lightdb::real_type ratio;
 };
 
 #endif //LIGHTDB_FRAMERATEALIGNMENT_H

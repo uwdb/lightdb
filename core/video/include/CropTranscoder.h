@@ -22,12 +22,12 @@ public:
     { }
 
     void crop(DecodeReader &reader, EncodeWriter &writer, const size_t top, const size_t left,
-              const std::optional<size_t> frames) {
+              const std::optional<size_t> &frames) {
         crop(reader, writer, [](VideoLock&, Frame& frame) -> Frame& { return frame; }, top, left, frames);
     }
 
-    void crop(DecodeReader &reader, EncodeWriter &writer, std::vector<FrameTransform> transforms,
-              const size_t top, const size_t left, const std::optional<size_t> frames={}) {
+    void crop(DecodeReader &reader, EncodeWriter &writer, const std::vector<FrameTransform> &transforms,
+              const size_t top, const size_t left, const std::optional<size_t> &frames={}) {
         crop(reader, writer, [this, transforms](VideoLock&, Frame& frame) -> Frame& {
             return std::accumulate(
                 transforms.begin(), transforms.end(),
@@ -36,8 +36,8 @@ public:
         }, top, left, frames);
     }
 
-    void crop(DecodeReader &reader, EncodeWriter &writer, FrameTransform transform,
-              const size_t top, const size_t left, const std::optional<size_t> frames={}) {
+    void crop(DecodeReader &reader, EncodeWriter &writer, const FrameTransform &transform,
+              const size_t top, const size_t left, const std::optional<size_t> &frames={}) {
         VideoDecoderSession decodeSession(decoder_, reader);
         VideoEncoderSession encodeSession(encoder(), writer);
         FrameRateAlignment alignment(encoder().configuration().framerate, decoder().configuration().framerate);
@@ -48,7 +48,7 @@ public:
             auto decodedFrame = decodeSession.decode();
             auto processedFrame = transform(lock_, decodedFrame);
 
-            for (auto i = 0u; i <= dropOrDuplicate; i++, framesEncoded++)
+            for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++)
                 encodeSession.Encode(processedFrame, top, left);
         }
 

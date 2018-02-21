@@ -47,11 +47,6 @@ namespace lightdb::functional {
             if(p(*begin))
                 *output++ = f(*begin);
         return output;
-
-/*
-        std::vector<T> intermediate;
-        std::transform(begin, end, intermediate, f);
-        return std::copy_if(intermediate.begin(), intermediate.end(), output, p);*/
     };
 
     template<typename T, typename InputIterator, typename UnaryFunction, typename Predicate>

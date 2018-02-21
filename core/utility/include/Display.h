@@ -6,7 +6,7 @@
 
 namespace lightdb {
 
-void print_plan(const LightFieldReference lightField) {
+void print_plan(const LightFieldReference &lightField) {
     std::deque<std::pair<LightFieldReference, unsigned int>> queue{{{lightField, 0u}}};
 
     while(!queue.empty()) {
