@@ -8,10 +8,12 @@
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+using std::to_string;
+
 #define _FRAME_COMMAND(filename, frame_count) \
      (std::string("resources/assert-frames.sh ") + \
                      (filename) + ' ' + \
-                     std::to_string(frame_count))
+                     to_string(frame_count))
 
 #define ASSERT_VIDEO_FRAMES(filename, frame_count) { \
     auto command = _FRAME_COMMAND(filename, frame_count); \
@@ -43,8 +45,8 @@
 #define _RESOLUTION_COMMAND(filename, height, width) \
      (std::string("resources/assert-resolution.sh ") + \
                      (filename) + ' ' + \
-                     std::to_string(height) + ' ' + \
-                     std::to_string(width))
+                     to_string(height) + ' ' + \
+                     to_string(width))
 
 #define ASSERT_VIDEO_RESOLUTION(filename, height, width) { \
     auto command = _RESOLUTION_COMMAND(filename, height, width); \

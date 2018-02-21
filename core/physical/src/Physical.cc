@@ -41,7 +41,7 @@ namespace lightdb {
             LOG(INFO) << "Executing tiling physical operator with " << rows_ << " rows and " << columns_ << " columns";
 
             //auto framerate = 30u;
-            auto gop = static_cast<unsigned int>(std::lround(video_.metadata().framerate.numerator() * time_ / video_.metadata().framerate.denominator()));
+            auto gop = static_cast<unsigned int>(std::lround((long double)(number{video_.metadata().framerate.numerator()} * time_ / number{video_.metadata().framerate.denominator()})));
             if(gop == 0) //TODO temp in case there's no temporal partitioning
                 gop = 1024*1024;
             auto low_bitrate = 50u, high_bitrate = 5000u*1024;
@@ -164,23 +164,23 @@ namespace lightdb {
         }
 
         template<typename ColorSpace>
-        EncodedLightField StitchedLightField<ColorSpace>::apply(const lightdb::rational &interval) {
+        EncodedLightField StitchedLightField<ColorSpace>::apply(const number &interval) {
             //auto height = 0u, width = 0u;
 
             //TODO this only applies to equirectanguler format
             //TODO make sure no angles overlap
             auto theta_range = ThetaRange::limits();
             auto phi_range = PhiRange::limits();
-            auto columns = std::lround(ThetaRange::limits().magnitude() / volumes_[0].theta().magnitude()),
-                 rows = std::lround(PhiRange::limits().magnitude() / volumes_[0].phi().magnitude());
-            auto width = std::lround(videos_[0]->metadata().width / (volumes_[0].theta().magnitude() / ThetaRange::limits().magnitude())),
-                 height = std::lround(videos_[0]->metadata().height / (volumes_[0].phi().magnitude() / PhiRange::limits().magnitude()));
+            auto columns = round(ThetaRange::limits().magnitude() / volumes_[0].theta().magnitude()),
+                 rows = round(PhiRange::limits().magnitude() / volumes_[0].phi().magnitude());
+            auto width = round(videos_[0]->metadata().width / (volumes_[0].theta().magnitude() / ThetaRange::limits().magnitude())),
+                 height = round(videos_[0]->metadata().height / (volumes_[0].phi().magnitude() / PhiRange::limits().magnitude()));
 
             for(auto i = 0u; i < videos_.size(); i++) {
-                assert(width == std::lround(videos_[i]->metadata().width / (volumes_[i].theta().magnitude() / ThetaRange::limits().magnitude())));
-                assert(height == std::lround(videos_[i]->metadata().height / (volumes_[i].phi().magnitude() / PhiRange::limits().magnitude())));
-                assert(columns == std::lround(ThetaRange::limits().magnitude() / volumes_[i].theta().magnitude()));
-                assert(rows == std::lround(PhiRange::limits().magnitude() / volumes_[i].phi().magnitude()));
+                assert(width == round(videos_[i]->metadata().width / (volumes_[i].theta().magnitude() / ThetaRange::limits().magnitude())));
+                assert(height == round(videos_[i]->metadata().height / (volumes_[i].phi().magnitude() / PhiRange::limits().magnitude())));
+                assert(columns == round(ThetaRange::limits().magnitude() / volumes_[i].theta().magnitude()));
+                assert(rows == round(PhiRange::limits().magnitude() / volumes_[i].phi().magnitude()));
 
                 if(volumes_[i].theta().start() < theta_range.start())
                     theta_range = {volumes_[i].theta().start(), theta_range.end()};
@@ -199,10 +199,10 @@ namespace lightdb {
             LOG(INFO) << "Wonky GOP/time interval splitting";
             //auto columns = 4, rows = 4;
             //auto height = videos_[0]->metadata().height * rows, width = videos_[0]->metadata().width * columns;
-            auto dinterval = (double)interval.numerator() / interval.denominator();
+            auto dinterval = (long double)interval; //.numerator() / interval.denominator();
 
             std::string cwd = getcwd(nullptr, 0);
-            std::string command{std::string("/home/bhaynes/projects/visualcloud/stitch.sh '") + cwd + "' " + std::to_string(height) + " " + std::to_string(width) + " " + std::to_string(rows) + " " + std::to_string(columns) + " " + std::to_string(dinterval)};
+            std::string command{std::string("/home/bhaynes/projects/visualcloud/stitch.sh '") + cwd + "' " + height.to_string() + " " + width.to_string() + " " + rows.to_string() + " " + columns.to_string() + " " + std::to_string(dinterval)};
             for(auto &v: videos_)
                 command += ' ' + v->filename();
             system(command.c_str());
@@ -217,16 +217,16 @@ namespace lightdb {
             //TODO make sure no angles overlap
             auto theta_range = ThetaRange::limits();
             auto phi_range = PhiRange::limits();
-            auto columns = std::lround(ThetaRange::limits().magnitude() / volumes_[0].theta().magnitude()),
-                    rows = std::lround(PhiRange::limits().magnitude() / volumes_[0].phi().magnitude());
-            auto width = std::lround(videos_[0]->metadata().width / (volumes_[0].theta().magnitude() / ThetaRange::limits().magnitude())),
-                    height = std::lround(videos_[0]->metadata().height / (volumes_[0].phi().magnitude() / PhiRange::limits().magnitude()));
+            auto columns = round(ThetaRange::limits().magnitude() / volumes_[0].theta().magnitude()),
+                    rows = round(PhiRange::limits().magnitude() / volumes_[0].phi().magnitude());
+            auto width = round(videos_[0]->metadata().width / (volumes_[0].theta().magnitude() / ThetaRange::limits().magnitude())),
+                    height = round(videos_[0]->metadata().height / (volumes_[0].phi().magnitude() / PhiRange::limits().magnitude()));
 
             for(auto i = 0; i < videos_.size(); i++) {
-                assert(width == std::lround(videos_[i]->metadata().width / (volumes_[i].theta().magnitude() / ThetaRange::limits().magnitude())));
-                assert(height == std::lround(videos_[i]->metadata().height / (volumes_[i].phi().magnitude() / PhiRange::limits().magnitude())));
-                assert(columns == std::lround(ThetaRange::limits().magnitude() / volumes_[i].theta().magnitude()));
-                assert(rows == std::lround(PhiRange::limits().magnitude() / volumes_[i].phi().magnitude()));
+                assert(width == round(videos_[i]->metadata().width / (volumes_[i].theta().magnitude() / ThetaRange::limits().magnitude())));
+                assert(height == round(videos_[i]->metadata().height / (volumes_[i].phi().magnitude() / PhiRange::limits().magnitude())));
+                assert(columns == round(ThetaRange::limits().magnitude() / volumes_[i].theta().magnitude()));
+                assert(rows == round(PhiRange::limits().magnitude() / volumes_[i].phi().magnitude()));
 
                 if(volumes_[i].theta().start() < theta_range.start())
                     theta_range = {volumes_[i].theta().start(), theta_range.end()};
@@ -257,10 +257,10 @@ namespace lightdb {
             //auto encodeCodec = format == "h264" ? NV_ENC_H264 : NV_ENC_HEVC; //TODO what about others?
             //auto phiratio = phi_.end / AngularRange::PhiMax.end;
             //auto thetaratio = theta_.end / AngularRange::ThetaMax.end;
-            auto top = static_cast<unsigned int>(std::lround((phi_.start() / PhiRange::limits().end()) * video_.metadata().height)),
-                 bottom = static_cast<unsigned int>(std::lround((phi_.end() / PhiRange::limits().end()) * video_.metadata().height)),
-                 left = static_cast<unsigned int>(std::lround((theta_.start() / ThetaRange::limits().end()) * video_.metadata().width)),
-                 right = static_cast<unsigned int>(std::lround((theta_.end() / ThetaRange::limits().end()) * video_.metadata().width));
+            auto top = static_cast<unsigned int>(round((phi_.start() / PhiRange::limits().end()) * video_.metadata().height)),
+                 bottom = static_cast<unsigned int>(round((phi_.end() / PhiRange::limits().end()) * video_.metadata().height)),
+                 left = static_cast<unsigned int>(round((theta_.start() / ThetaRange::limits().end()) * video_.metadata().width)),
+                 right = static_cast<unsigned int>(round((theta_.end() / ThetaRange::limits().end()) * video_.metadata().width));
             auto frame_count = t.end() * (video_.metadata().framerate.numerator() / video_.metadata().framerate.denominator());
 
             auto start = std::chrono::steady_clock::now();
@@ -280,7 +280,7 @@ namespace lightdb {
             FileDecodeReader reader(video_.filename());
             SegmentedMemoryEncodeWriter writer{cropper.encoder().api(), encodeConfiguration};
 
-            cropper.crop(reader, writer, top, left, frame_count);
+            cropper.crop(reader, writer, top, left, (size_t)frame_count);
 
             auto decode = std::make_shared<bytestring>(writer.buffer());
 
@@ -302,7 +302,7 @@ namespace lightdb {
             DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
             //TODO why CBR?
             EncodeConfiguration encodeConfiguration{video_.metadata().height, video_.metadata().width,
-                                                    NV_ENC_HEVC, video_.metadata().framerate, gop, bitrate, NV_ENC_PARAMS_RC_CBR};
+                                                    NV_ENC_HEVC, video_.metadata().framerate, (unsigned int)gop, bitrate, NV_ENC_PARAMS_RC_CBR};
 
             Transcoder transcoder(context, decodeConfiguration, encodeConfiguration);
 
@@ -335,7 +335,7 @@ namespace lightdb {
             DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
             //TODO why CBR?
             EncodeConfiguration encodeConfiguration{video_.metadata().height, video_.metadata().width,
-                                                    NV_ENC_HEVC, video_.metadata().framerate, gop, bitrate, NV_ENC_PARAMS_RC_CBR};
+                                                    NV_ENC_HEVC, video_.metadata().framerate, (unsigned int)gop, bitrate, NV_ENC_PARAMS_RC_CBR};
 
             Transcoder transcoder(context, decodeConfiguration, encodeConfiguration);
 
@@ -351,7 +351,7 @@ namespace lightdb {
                 if(reader.isComplete()) //TODO this shouldn't happen, but TLFs have hardcoded duration...
                     break;
 
-                auto frames = volume.t().magnitude() * gop;
+                size_t frames = volume.t().magnitude() * gop;
                 writers.emplace_back(transcoder.encoder().api(), encodeConfiguration);
 
                 transcoder.transcode(reader, writers.back(), static_cast<const FrameTransform>(functor_), frames);
@@ -386,7 +386,7 @@ namespace lightdb {
             std::vector<DecodeConfiguration> decodeConfigurations{leftDecodeConfiguration, rightDecodeConfiguration};
             //TODO why CBR?
             EncodeConfiguration encodeConfiguration{left_.metadata().height, left_.metadata().width,
-                                                    NV_ENC_HEVC, left_.metadata().framerate, gop, bitrate, NV_ENC_PARAMS_RC_CBR};
+                                                    NV_ENC_HEVC, left_.metadata().framerate, (unsigned int)gop, bitrate, NV_ENC_PARAMS_RC_CBR};
 
             UnionTranscoder transcoder(context, decodeConfigurations, encodeConfiguration);
 

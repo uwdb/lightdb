@@ -25,10 +25,10 @@ namespace lightdb {
             LightFieldReference Union(const std::vector<LightFieldReference>&); //TODO needs merge function
             LightFieldReference Union(LightFieldReference); //TODO needs merge function
             LightFieldReference Rotate(angle theta, angle phi);
-            LightFieldReference Partition(Dimension, rational);
+            LightFieldReference Partition(Dimension, number);
             LightFieldReference Interpolate(Dimension, const interpolation::interpolator&);
             LightFieldReference Discretize(const GeometryReference&);
-            LightFieldReference Discretize(Dimension, rational);
+            LightFieldReference Discretize(Dimension, number);
             LightFieldReference Map(FunctorReference);
             void Store(const std::string &name);
 

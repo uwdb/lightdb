@@ -33,6 +33,14 @@ namespace lightdb {
                 //TODO oh noes...
                 return left / ((double)right.numerator() / (double)right.denominator()) + 0.5;
             }
+            static double hack_divide(const double left, const double &right) {
+                //TODO oh noes...
+                return left / right + 0.5;
+            }
+            static long double hack_divide(const number &left, const number &right) {
+                //TODO oh noes...
+                return (long double)(left / right + 0.5);
+            }
             static unsigned int gop, max_bitrate; //framerate, height, width; //, rows, columns;
             static std::shared_ptr<EncodeConfiguration> encodeConfiguration;
             static std::shared_ptr<DecodeConfiguration> decodeConfiguration;
@@ -71,7 +79,7 @@ namespace lightdb {
                 else if(partitioner != nullptr && partitioner->dimension() == Dimension::Phi)
                     return get_dimensions(child, hack_divide(PhiRange::limits().end(), partitioner->interval()), columns, time);
                 else if(partitioner != nullptr && partitioner->dimension() == Dimension::Time)
-                    return get_dimensions(child, rows, columns, (double)partitioner->interval().numerator() / partitioner->interval().denominator());
+                    return get_dimensions(child, rows, columns, (unsigned int)partitioner->interval());
                 // TODO prohibit other intermediating field types...
                 // TODO volume may not be pointwise spatial...
                 else if(child != nullptr && discrete == nullptr)
@@ -84,7 +92,7 @@ namespace lightdb {
  
             LightFieldReference field_;
             const unsigned int rows_, columns_;
-            const double time_;
+            const number time_;
             const logical::PanoramicVideoLightField& video_;
         };
 
@@ -101,7 +109,7 @@ namespace lightdb {
 //            inline const YUVColor value(const Point6D &point) const override { return field_->value(point); }
 
             EncodedLightField apply();
-            EncodedLightField apply(const lightdb::rational &temporalInterval);
+            EncodedLightField apply(const number &temporalInterval);
 
         private:
             StitchedLightField(const LightFieldReference &field,
@@ -241,7 +249,7 @@ namespace lightdb {
         class PlanarTiledToVideoLightField: public LightField {
         public:
             PlanarTiledToVideoLightField(const logical::PlanarTiledVideoLightField &video,
-                                         const double x, const double y, const ThetaRange &theta, const PhiRange &phi)
+                                         const number x, const number y, const ThetaRange &theta, const PhiRange &phi)
                     : LightField({}, static_cast<const LightField&>(video).volume(), video.colorSpace()), //TODO parents is incorrect
                       video_(video), x_(x), y_(y), theta_(theta), phi_(phi)
             { }
@@ -257,7 +265,7 @@ namespace lightdb {
 
         private:
             const logical::PlanarTiledVideoLightField& video_;
-            const double x_, y_;
+            const number x_, y_;
             const ThetaRange theta_;
             const PhiRange phi_;
         };

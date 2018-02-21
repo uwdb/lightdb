@@ -29,10 +29,10 @@ public:
                     ThetaRange theta, PhiRange phi) {
         //auto source = std::string("resources/test-") + std::to_string(size) + "K-" + std::to_string(duration) + "s.h264";
         auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + "K.h264";
-        auto left = std::lround((theta.start() / ThetaRange::limits().end()) * width),
-             top = std::lround((phi.start() / PhiRange::limits().end()) * height),
-             expected_width = std::lround(((theta.end() - theta.start()) / ThetaRange::limits().end()) * width),
-             expected_height = std::lround(((phi.end() - phi.start()) / PhiRange::limits().end()) * height);
+        auto left = round((theta.start() / ThetaRange::limits().end()) * width),
+             top = round((phi.start() / PhiRange::limits().end()) * height),
+             expected_width = round(((theta.end() - theta.start()) / ThetaRange::limits().end()) * width),
+             expected_height = round(((phi.end() - phi.start()) / PhiRange::limits().end()) * height);
         LOG(INFO) << "Cropping at " << top << 'x' << left << " to " << expected_height << 'x' << expected_width;
 
         auto start = steady_clock::now();

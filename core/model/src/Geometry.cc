@@ -75,7 +75,7 @@ namespace lightdb
     Volume::iterator Volume::iterable::end() const {
         return iterator(Volume{model_}.set(dimension_, {model_.get(dimension_).end(),
                                                         model_.get(dimension_).end()}), dimension_, interval_); }
-    Volume::iterable Volume::partition(const Dimension dimension, const double& interval) const {
+    Volume::iterable Volume::partition(const Dimension dimension, const number& interval) const {
         return Volume::iterable(*this, dimension, interval);
     }
 

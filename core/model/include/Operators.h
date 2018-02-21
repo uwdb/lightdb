@@ -106,8 +106,9 @@ namespace lightdb {
 
     //template<typename ColorSpace>
     class _Scan : public Operator {
-        LightField &&scan(std::string name) {
-            return logical::ConstantLightField(YUVColor::green()); //TODO
+        LightField &scan(std::string name) {
+            static logical::ConstantLightField green(YUVColor::green());
+            return green; //TODO
         }
     };
 
@@ -179,12 +180,12 @@ namespace lightdb {
 
     class Partition : public UnaryOperator { //TODO
     public:
-        Partition(const Dimension &dimension, const rational interval)
+        Partition(const Dimension &dimension, const number interval)
             : dimension_(dimension), interval_(interval) { }
 
         Dimension dimension() const { return dimension_; }
 
-        lightdb::rational interval() const { return interval_; }
+        number interval() const { return interval_; }
 
         LightFieldReference apply(const LightFieldReference &field) const override {
             return LightFieldReference::make<logical::PartitionedLightField>(
@@ -194,7 +195,7 @@ namespace lightdb {
 
     private:
         const Dimension dimension_;
-        const lightdb::rational interval_;
+        const number interval_;
     };
 
 
@@ -242,10 +243,10 @@ namespace lightdb {
 
     class Discretize : public UnaryOperator { //TODO
     public:
-        Discretize(const Dimension &dimension, lightdb::rational &&interval)
+        Discretize(const Dimension &dimension, number &&interval)
             : Discretize(GeometryReference::make<IntervalGeometry>(dimension, interval)) {}
 
-        Discretize(const Dimension &dimension, lightdb::rational &interval)
+        Discretize(const Dimension &dimension, number &interval)
             : Discretize(GeometryReference::make<IntervalGeometry>(dimension, interval)) {}
 
         explicit Discretize(const GeometryReference &&geometry)

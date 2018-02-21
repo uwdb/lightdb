@@ -33,7 +33,7 @@ namespace lightdb {
         Phi
     };
 
-    typedef double angle; //TODO change to union double/rational/inf-precision type, also add to Spatiotemporal range
+    typedef number angle; //TODO change to union double/rational/inf-precision type, also add to Spatiotemporal range
 
     class UnknownRange;
 
@@ -41,18 +41,18 @@ namespace lightdb {
         namespace limits {
             class spatial {
             public:
-                static constexpr const double minimum = -std::numeric_limits<double>::max();
-                static constexpr const double maximum = std::numeric_limits<double>::max();
+                static constexpr const double minimum{-std::numeric_limits<double>::max()};
+                static constexpr const double maximum{std::numeric_limits<double>::max()};
             };
             class theta {
             public:
-                static constexpr const angle minimum = 0;
-                static constexpr const angle maximum = 2*M_PI;
+                static constexpr const angle minimum{0};
+                static constexpr const angle maximum{2*M_PI};
             };
             class phi {
             public:
-                static constexpr const angle minimum = 0;
-                static constexpr const angle maximum = M_PI;
+                static constexpr const angle minimum{0};
+                static constexpr const angle maximum{M_PI};
             };
             using none = spatial;
         }
@@ -68,12 +68,12 @@ namespace lightdb {
             }
             Range(const UnknownRange &range);
 
-            inline constexpr double start() const { return start_; }
-            inline constexpr double end() const { return end_; }
+            inline constexpr number start() const { return start_; }
+            inline constexpr number end() const { return end_; }
 
-            inline double magnitude() const { return end() - start(); }
+            inline number magnitude() const { return end() - start(); }
 
-            inline bool contains(double value) const { return start() <= value && value <= end(); }
+            inline bool contains(number value) const { return start() <= value && value <= end(); }
 
             bool empty() const { return start() == end(); }
 
@@ -87,9 +87,8 @@ namespace lightdb {
             }
 
             bool operator==(const TDerived &other) const {
-                static double epsilon = 0.000001; //TODO ugh
                 return this == &other ||
-                       (std::abs(start() - other.start()) < epsilon && std::abs(end() - other.end()) < epsilon);
+                        (start().epsilon_equal(other.start()) && end().epsilon_equal(other.end()));
             }
 
             bool operator!=(const TDerived &other) const {
@@ -102,11 +101,11 @@ namespace lightdb {
         };
     }
 
-    class UnknownRange: public internal::Range<UnknownRange, double, internal::limits::none>     {
-        using internal::Range<UnknownRange, double, internal::limits::none>::Range;
+    class UnknownRange: public internal::Range<UnknownRange, number, internal::limits::none>     {
+        using internal::Range<UnknownRange, number, internal::limits::none>::Range;
     };
-    class SpatiotemporalRange: public internal::Range<SpatiotemporalRange, double, internal::limits::spatial>     {
-        using internal::Range<SpatiotemporalRange, double, internal::limits::spatial>::Range;
+    class SpatiotemporalRange: public internal::Range<SpatiotemporalRange, number, internal::limits::spatial>     {
+        using internal::Range<SpatiotemporalRange, number, internal::limits::spatial>::Range;
     };
     class ThetaRange: public internal::Range<ThetaRange, angle, internal::limits::theta> {
         using internal::Range<ThetaRange, angle, internal::limits::theta>::Range;
@@ -145,8 +144,8 @@ namespace lightdb {
             : Volume(x, y, z, t, ThetaRange::limits(), PhiRange::limits())
         { }
 
-        constexpr Volume(const SpatialRange x, const SpatialRange y, const SpatialRange z, const TemporalRange t,
-                         const ThetaRange theta, const PhiRange phi)
+        constexpr Volume(const SpatialRange &x, const SpatialRange &y, const SpatialRange &z, const TemporalRange &t,
+                         const ThetaRange &theta, const PhiRange &phi)
             : x_(x), y_(y), z_(z), t_(t), theta_(theta), phi_(phi)
         { }
 
@@ -173,7 +172,7 @@ namespace lightdb {
         Volume& set(Dimension dimension, const UnknownRange &range);
 
         bool contains(const Point6D &point) const;
-        iterable partition(Dimension, const double&) const;
+        iterable partition(Dimension, const number&) const;
         Volume translate(const Point6D&) const;
 
         inline bool is_point() const {
@@ -216,8 +215,8 @@ namespace lightdb {
 
     class Volume::iterator: public std::iterator<std::input_iterator_tag, Volume, void, Volume*, Volume&> {
     public:
-        explicit iterator(Volume volume, const Dimension dimension, const double interval)
-            : volume_(volume), dimension_(dimension), interval_(interval)
+        explicit iterator(Volume volume, const Dimension dimension, const number &interval)
+            : volume_(std::move(volume)), dimension_(dimension), interval_(interval)
         { }
 
         iterator& operator++() {
@@ -235,7 +234,7 @@ namespace lightdb {
 
         bool operator==(const iterator other) const {
             return volume_.get(dimension_).start() >= other.volume_.get(dimension_).start(); }
-        bool operator!=(const iterator other) const { return !(*this == other); }
+        bool operator!=(const iterator &other) const { return !(*this == other); }
 
         Volume operator*() const {
             return Volume(volume_).set(dimension_, {volume_.get(dimension_).start(),
@@ -245,12 +244,12 @@ namespace lightdb {
     private:
         Volume volume_;
         const Dimension dimension_;
-        double interval_;
+        number interval_;
     };
 
     class Volume::iterable {
     public:
-        iterable(const Volume model, const Dimension dimension, const double interval)
+        iterable(const Volume &model, const Dimension dimension, const number &interval)
                 : model_(model), dimension_(dimension), interval_(interval)
         { }
 
@@ -261,12 +260,12 @@ namespace lightdb {
     private:
         const Volume model_;
         const Dimension dimension_;
-        const double interval_;
+        const number interval_;
     };
 
     class CompositeVolume {
     public:
-        CompositeVolume(const Volume volume)
+        CompositeVolume(const Volume &volume)
                 : components_({volume}), bounding_(volume) {}
 
         explicit CompositeVolume(const std::vector<Volume> &volumes)
@@ -289,15 +288,15 @@ namespace lightdb {
 
     class Point3D {
     public:
-        constexpr Point3D(const double x, const double y, const double z)
+        constexpr Point3D(const number &x, const number &y, const number &z)
             : x_(x), y_(y), z_(z)
         { }
 
-        inline constexpr double x() const { return x_; }
-        inline constexpr double y() const { return y_; }
-        inline constexpr double z() const { return z_; }
+        inline constexpr number x() const { return x_; }
+        inline constexpr number y() const { return y_; }
+        inline constexpr number z() const { return z_; }
 
-        virtual inline double get(Dimension dimension) const {
+        virtual inline number get(Dimension dimension) const {
             switch (dimension) {
                 case Dimension::X:
                     return x();
@@ -313,18 +312,18 @@ namespace lightdb {
         static constexpr const Point3D zero() { return {0, 0, 0}; };
 
     private:
-        double x_, y_, z_;
+        number x_, y_, z_;
     };
 
     class Point4D : public Point3D {
     public:
-        constexpr Point4D(const double x, const double y, const double z, const double t)
+        constexpr Point4D(const number &x, const number &y, const number &z, const number &t)
             : Point3D(x, y, z), t_(t)
         { }
 
-        inline constexpr double t() const { return t_; }
+        inline constexpr number t() const { return t_; }
 
-        inline double get(Dimension dimension) const override {
+        inline number get(Dimension dimension) const override {
             switch (dimension) {
                 case Dimension::Time:
                     return t();
@@ -336,13 +335,13 @@ namespace lightdb {
         static constexpr const Point4D zero() { return {0, 0, 0, 0}; };
 
     private:
-        double t_;
+        number t_;
     };
 
     class Point6D : public Point4D {
     public:
-        constexpr Point6D(const double x, const double y, const double z, const double t,
-                          const angle theta, const angle phi)
+        constexpr Point6D(const number &x, const number &y, const number &z, const number &t,
+                          const angle &theta, const angle &phi)
             : Point4D(x, y, z, t), theta_(theta), phi_(phi)
         { }
 
@@ -355,7 +354,7 @@ namespace lightdb {
                     theta() + other.theta(), phi() + other.phi()};
         }
 
-        inline double get(Dimension dimension) const override {
+        inline number get(Dimension dimension) const override {
             switch (dimension) {
                 case Dimension::Theta:
                     return theta();
@@ -369,7 +368,7 @@ namespace lightdb {
         static constexpr const Point6D zero() { return {0, 0, 0, 0, 0, 0}; }
 
     private:
-        double theta_, phi_;
+        number theta_, phi_;
     };
 
     class Geometry {
@@ -405,24 +404,26 @@ namespace lightdb {
 
     class IntervalGeometry : public Geometry {
     public:
-        constexpr IntervalGeometry(const Dimension dimension, const lightdb::rational &interval)
-                : dimension_(dimension), interval_(interval) {}
+        constexpr IntervalGeometry(const Dimension dimension, const number &interval)
+                : dimension_(dimension), interval_(interval) { }
+
+        template<typename tolerance>
+        bool defined_at(const Point6D &point) const {
+            return point.get(dimension()).epsilon_equal<tolerance>(interval());
+        }
 
         bool defined_at(const Point6D &point) const override {
-            //TODO holy cow this is like the worst thing ever
-            //TODO add rational overloads for value() and Volume::contains()
-            return std::remainder(
-                    point.get(dimension()),
-                    interval().numerator() / (double)interval().denominator()) <= 0.000001l;
+            return this->defined_at<std::pico>(point);
         }
 
         inline constexpr const Dimension dimension() const { return dimension_; }
-        inline constexpr const lightdb::rational interval() const { return interval_; }
+        inline constexpr const number interval() const { return interval_; }
 
     private:
         const Dimension dimension_;
-        const lightdb::rational interval_;
+        const number interval_;
     };
+
 } // namespace lightdb
 
 #endif //LIGHTDB_GEOMETRY_H

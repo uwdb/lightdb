@@ -149,22 +149,22 @@ namespace lightdb {
             //TODO should we just have a positive_rational class?
             PartitionedLightField(const LightFieldReference &source,
                                   const Dimension dimension,
-                                  const rational &interval)
+                                  const number &interval)
                 : LightField(source,
                              CompositeVolume{functional::flatmap<std::vector<Volume>>(
                                  source->volume().components().begin(),
                                  source->volume().components().end(),
                                  [dimension, interval](auto &volume) {
                                      return (std::vector<Volume>)volume.partition(
-                                             dimension, (double)asserts::CHECK_POSITIVE(interval)); })}),
+                                             dimension, asserts::CHECK_POSITIVE(interval)); })}),
                   dimension_(dimension), interval_(asserts::CHECK_POSITIVE(interval)) { }
 
             Dimension dimension() const { return dimension_; }
-            rational interval() const { return interval_; }
+            number interval() const { return interval_; }
 
         private:
             const Dimension dimension_;
-            const rational interval_;
+            const number interval_;
         };
 
         class SubsetLightField : public LightField {
@@ -182,13 +182,9 @@ namespace lightdb {
         class RotatedLightField : public LightField {
         public:
             RotatedLightField(const LightFieldReference &lightfield, const angle &theta, const angle &phi)
-                    : LightField(lightfield,
-                                 CompositeVolume{functional::transform<Volume>(
-                                     lightfield->volume().components().begin(),
-                                     lightfield->volume().components().end(),
-                                     [this](auto &v) {
-                                         return v.translate(offset_); })}),
-                      offset_{0, 0, 0, 0, theta, phi} {}
+                    : LightField(lightfield),
+                      offset_{0, 0, 0, 0, theta, phi} 
+            { }
 
             const Point6D& offset() const { return offset_; }
 
@@ -318,7 +314,7 @@ namespace lightdb {
                                      const Point3D &point,
                                      const ThetaRange &theta = ThetaRange::limits(),
                                      const PhiRange &phi = PhiRange::limits()) //TODO drop filename; see below
-                    : PanoramicLightField(point, {0, duration()}, theta, phi),
+                    : PanoramicLightField(point, {number{0}, number{duration()}}, theta, phi),
                       SingletonFileEncodedLightField(filename,
                                                      (Volume) PanoramicLightField::volume()), //TODO no need to duplicate filename here and in singleton
                       geometry_(Dimension::Time, framerate()) {}
@@ -327,7 +323,7 @@ namespace lightdb {
 
             //const ColorSpace colorSpace() const override { return YUVColorSpace::Instance; } //TODO pull from file
             //TODO remove both of these
-            inline rational framerate() const { return rational(30, 1); } //TODO hardcoded...
+            inline number framerate() const { return {rational(30, 1)}; } //TODO hardcoded...
 
             inline size_t duration() const { return 99; } //TODO remove hardcoded value
             inline utility::StreamMetadata metadata() const {

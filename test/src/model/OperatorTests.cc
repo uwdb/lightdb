@@ -19,7 +19,7 @@ TEST_F(OperatorTestFixture, testDecode) {
     ASSERT_NE(discrete, nullptr);
 
     //TODO fix this after adding rational overloads
-    auto fps = (double)discrete->framerate().numerator() / discrete->framerate().denominator();
+    //auto fps = (long double)discrete->framerate(); //.numerator() / discrete->framerate().denominator();
 
     //TODO
     /*ASSERT_EQ(video->value({0, 0, 0, 0,     0, 0}), YUVColor::Red);

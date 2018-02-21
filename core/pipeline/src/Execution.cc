@@ -15,7 +15,7 @@ namespace lightdb {
         }
 
         //template<typename ColorSpace>
-        static std::optional<EncodedLightField> applyStitching(LightFieldReference lightfield, lightdb::rational temporalInterval=0) {
+        static std::optional<EncodedLightField> applyStitching(LightFieldReference lightfield, number temporalInterval=0) {
             try {
                 return {lightdb::physical::StitchedLightField<YUVColorSpace>(lightfield).apply(temporalInterval)};
             } catch(std::invalid_argument) {
@@ -37,7 +37,7 @@ namespace lightdb {
 
         //TODO what is this, it's just a copy of the applyStitchingFunction?  Probably remove(?)
         //template<typename ColorSpace>
-        static std::optional<EncodedLightField> applyNaiveStitching(LightFieldReference lightfield, lightdb::rational temporalInterval=0) {
+        static std::optional<EncodedLightField> applyNaiveStitching(LightFieldReference lightfield, number temporalInterval=0) {
             try {
                 return {lightdb::physical::StitchedLightField<YUVColorSpace>(lightfield).apply(temporalInterval)};
             } catch(std::invalid_argument) {
