@@ -46,7 +46,7 @@ public:
 
             auto processedFrame = transform(lock_, decodedFrames);
 
-            for (auto i = 0u; i <= dropOrDuplicate; i++, framesEncoded++)
+            for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++)
                 encodeSession.Encode(processedFrame);
         }
 

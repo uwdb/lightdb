@@ -18,8 +18,8 @@ namespace lightdb {
                 : EquirectangularTiledLightField(field_, get_dimensions(&*field))
             { }
 
-            const std::vector<LightFieldReference> parents() const override { return {field_}; }
-            const lightdb::ColorSpace colorSpace() const override { return ColorSpace::instance(); }
+            const std::vector<LightFieldReference>& parents() const noexcept override { return fieldvec; }
+            const lightdb::ColorSpace colorSpace() const noexcept override { return ColorSpace::instance(); }
             //const CompositeVolume volume() const override { return field_->volume(); }
             const unsigned int rows() const { return rows_; }
             const unsigned int columns() const { return columns_; }
@@ -50,13 +50,14 @@ namespace lightdb {
             static bool executed;
             //GPUContext context_; //TODO
 
+            void accept(LightFieldVisitor &visitor) override { }
 
         private:
             using metadata = std::tuple<size_t, size_t, size_t, logical::PanoramicVideoLightField&>;
 
             EquirectangularTiledLightField(LightFieldReference &field, const metadata data)
                 : LightField(field), //, field->volume()),
-                  field_(field), rows_(std::get<0>(data)), columns_(std::get<1>(data)), time_(std::get<2>(data)), video_((std::get<3>(data)))
+                  field_(field), rows_(std::get<0>(data)), columns_(std::get<1>(data)), time_(std::get<2>(data)), video_((std::get<3>(data))), fieldvec({field})
                   //context_(0) //TODO context
             { }
 
@@ -94,6 +95,7 @@ namespace lightdb {
             const unsigned int rows_, columns_;
             const number time_;
             const logical::PanoramicVideoLightField& video_;
+            std::vector<LightFieldReference> fieldvec;
         };
 
         template<typename ColorSpace>
@@ -103,19 +105,21 @@ namespace lightdb {
                     : StitchedLightField(field, get_tiles(field))
             { }
 
-            const std::vector<LightFieldReference> parents() const override { return {field_}; }
-            const lightdb::ColorSpace colorSpace() const override { return ColorSpace::instance(); }
+            const std::vector<LightFieldReference>& parents() const noexcept override { return v; }
+            const lightdb::ColorSpace colorSpace() const noexcept override { return ColorSpace::instance(); }
             //const CompositeVolume volume() const override { return field_->volume(); }
 //            inline const YUVColor value(const Point6D &point) const override { return field_->value(point); }
 
             EncodedLightField apply();
             EncodedLightField apply(const number &temporalInterval);
 
+            void accept(LightFieldVisitor &visitor) override { }
+
         private:
             StitchedLightField(const LightFieldReference &field,
                                const std::pair<std::vector<logical::PanoramicVideoLightField*>, std::vector<Volume>> &pair)
                     : LightField(field), //field->volume()),
-                      field_(field), videos_(pair.first), volumes_(pair.second)
+                      field_(field), videos_(pair.first), volumes_(pair.second), v({field})
             { }
 
             static std::pair<std::vector<logical::PanoramicVideoLightField*>, std::vector<Volume>> get_tiles(const LightFieldReference& field) {
@@ -148,6 +152,7 @@ namespace lightdb {
             const LightFieldReference field_;
             const std::vector<logical::PanoramicVideoLightField*> videos_;
             const std::vector<Volume> volumes_;
+            std::vector<LightFieldReference> v;
         };
 
         template<typename ColorSpace>
@@ -163,6 +168,8 @@ namespace lightdb {
 //            inline const typename ColorSpace::Color value(const Point6D &point) const override { return field_->value(point); }
 
             EncodedLightField apply();
+
+            void accept(LightFieldVisitor &visitor) override { }
 
         private:
             NaiveStitchedLightField(const LightFieldReference &field,
@@ -209,12 +216,16 @@ namespace lightdb {
                       video_(video), theta_(theta), phi_(phi), t(t)
             { }
 
-            const std::vector<LightFieldReference> parents() const override { return {}; } //TODO incorrect
-            const lightdb::ColorSpace colorSpace() const override { return ColorSpace::instance(); }
+            std::vector<LightFieldReference> empty;
+
+            const std::vector<LightFieldReference>& parents() const noexcept override { return empty; } //TODO incorrect
+            const lightdb::ColorSpace colorSpace() const noexcept override { return ColorSpace::instance(); }
             //const CompositeVolume volume() const override { return video_.volume(); }
 //            inline const typename ColorSpace::Color value(const Point6D &point) const override { return video_.value(point); }
 
             EncodedLightField apply(const std::string &format);
+
+            void accept(LightFieldVisitor &visitor) override { }
 
         private:
             const logical::PanoramicVideoLightField& video_;
@@ -232,14 +243,16 @@ namespace lightdb {
                       video_(video), functor_(functor)
             { }
 
-            const std::vector<LightFieldReference> parents() const override { return video_.parents(); } //TODO incorrect
-            const lightdb::ColorSpace colorSpace() const override { return ColorSpace::instance(); }
+            const std::vector<LightFieldReference>& parents() const noexcept override { return video_.parents(); } //TODO incorrect
+            const lightdb::ColorSpace colorSpace() const noexcept override { return ColorSpace::instance(); }
             //const CompositeVolume volume() const override { return video_.volume(); }
 /*            inline const YUVColor value(const Point6D &point) const override {
                 return functor_(video_, point);
             }*/
 
             EncodedLightField apply(const std::string &format);
+
+            void accept(LightFieldVisitor &visitor) override { }
 
         private:
             const logical::PanoramicVideoLightField& video_;
@@ -254,14 +267,16 @@ namespace lightdb {
                       video_(video), x_(x), y_(y), theta_(theta), phi_(phi)
             { }
 
-            const std::vector<LightFieldReference> parents() const override { return video_.parents(); } //TODO incorrect
-            const ColorSpace colorSpace() const override { return YUVColorSpace::instance(); }
+            const std::vector<LightFieldReference>& parents() const noexcept override { return video_.parents(); } //TODO incorrect
+            const ColorSpace colorSpace() const noexcept override { return YUVColorSpace::instance(); }
             //const CompositeVolume volume() const override { return video_.volume(); }
 /*            inline const YUVColor value(const Point6D &point) const override {
                 return video_.value(point);
             }*/
 
             EncodedLightField apply(const std::string &format);
+
+            void accept(LightFieldVisitor &visitor) override { }
 
         private:
             const logical::PlanarTiledVideoLightField& video_;
@@ -281,14 +296,16 @@ namespace lightdb {
                       partitioning_(partitioning), video_(video), functor_(functor)
             { }
 
-            const std::vector<LightFieldReference> parents() const override { return video_.parents(); } //TODO incorrect
-            const lightdb::ColorSpace colorSpace() const override { return ColorSpace::instance(); }
+            const std::vector<LightFieldReference>& parents() const noexcept override { return video_.parents(); } //TODO incorrect
+            const lightdb::ColorSpace colorSpace() const noexcept override { return ColorSpace::instance(); }
             //const CompositeVolume volume() const override { return video_.volume(); }
 /*            inline const typename ColorSpace::Color value(const Point6D &point) const override {
                 return functor_(video_, point);
             }*/
 
             EncodedLightField apply(const std::string &format);
+
+            void accept(LightFieldVisitor &visitor) override { }
 
         private:
             const logical::PartitionedLightField& partitioning_;
@@ -305,14 +322,16 @@ namespace lightdb {
                       left_(left), right_(right), functor_(functor)
             { }
 
-            const std::vector<LightFieldReference> parents() const override { return left_.parents(); } //TODO incorrect
-            const lightdb::ColorSpace colorSpace() const override { return YUVColorSpace::instance(); }
+            const std::vector<LightFieldReference>& parents() const noexcept override { return left_.parents(); } //TODO incorrect
+            const lightdb::ColorSpace colorSpace() const noexcept override { return YUVColorSpace::instance(); }
             //const CompositeVolume volume() const override { return left_.volume(); } //TODO incorrect
 /*            inline const YUVColor value(const Point6D &point) const override {
                 return left_.value(point); //TOOD incorrect
             }*/
 
             EncodedLightField apply(const std::string &format);
+
+            void accept(LightFieldVisitor &visitor) override { }
 
         private:
             const logical::PanoramicVideoLightField& left_, right_;

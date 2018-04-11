@@ -7,6 +7,7 @@
 #include "Interpolation.h"
 #include "Encoding.h"
 #include "Catalog.h"
+#include "Visitor.h"
 #include "Ffmpeg.h"
 #include "functional.h"
 #include "reference.h"
@@ -49,13 +50,25 @@ namespace lightdb {
             return {dynamic_cast<const T&>(*this)};
         }
 
-        virtual const std::vector<LightFieldReference> parents() const { return parents_; }
+        virtual inline const std::vector<LightFieldReference>& parents() const noexcept { return parents_; }
 
-        virtual const ColorSpace colorSpace() const { return colorSpace_; }
+        virtual inline const ColorSpace colorSpace() const noexcept { return colorSpace_; }
 
-        virtual const CompositeVolume& volume() const { return volume_; }
+        virtual inline const CompositeVolume& volume() const noexcept { return volume_; }
 
-        inline std::string type() const { return typeid(*this).name(); }
+        inline std::string type() const noexcept { return typeid(*this).name(); }
+
+        virtual void accept(LightFieldVisitor &visitor) = 0;
+
+    protected:
+        //TODO think we should have a LightField<T>:LightField that does this all automatically
+        //TODO same for LightFieldReference, then we can downcast without a dynamic call
+        template<typename T>
+        void accept(LightFieldVisitor &visitor) {
+            visitor.visit(static_cast<T&>(*this));
+            std::for_each(parents().begin(), parents().end(), [&visitor](auto parent) {
+                parent->accept(visitor); });
+        }
 
     private:
         const std::vector<LightFieldReference> parents_;
@@ -118,6 +131,8 @@ namespace lightdb {
 
             const Color &color() const { return color_; }
 
+            void accept(LightFieldVisitor &visitor) override { LightField::accept<ConstantLightField>(visitor); }
+
         protected:
             ConstantLightField(const Color &color, const Volume &volume)
                 : LightField({}, volume, color.colorSpace()), color_(color) { }
@@ -142,6 +157,8 @@ namespace lightdb {
                                  ? lightfields[0]->colorSpace()
                                  : UnknownColorSpace::Instance)
             { }
+
+            void accept(LightFieldVisitor &visitor) override { LightField::accept<CompositeLightField>(visitor); }
         };
 
         class PartitionedLightField : public LightField {
@@ -162,6 +179,8 @@ namespace lightdb {
             Dimension dimension() const { return dimension_; }
             number interval() const { return interval_; }
 
+            void accept(LightFieldVisitor &visitor) override { LightField::accept<PartitionedLightField>(visitor); }
+
         private:
             const Dimension dimension_;
             const number interval_;
@@ -177,6 +196,8 @@ namespace lightdb {
                                      [volume](auto &v) { return v | volume; },
                                      [](auto &v) { return !v.is_point(); })})
             { }
+
+            void accept(LightFieldVisitor &visitor) override { LightField::accept<SubsetLightField>(visitor); }
         };
 
         class RotatedLightField : public LightField {
@@ -187,6 +208,8 @@ namespace lightdb {
             { }
 
             const Point6D& offset() const { return offset_; }
+
+            void accept(LightFieldVisitor &visitor) override { LightField::accept<RotatedLightField>(visitor); }
 
         private:
             const Point6D offset_;
@@ -216,6 +239,8 @@ namespace lightdb {
                 return geometry_->defined_at(point);
             }
 
+            void accept(LightFieldVisitor &visitor) override { LightField::accept<DiscreteLightField>(visitor); }
+
         private:
             const GeometryReference geometry_;
         };
@@ -225,6 +250,8 @@ namespace lightdb {
             DiscretizedLightField(const LightFieldReference &source, const GeometryReference &geometry)
                 : DiscreteLightField(source, geometry)
             { }
+
+            void accept(LightFieldVisitor &visitor) override { LightField::accept<DiscretizedLightField>(visitor); }
         };
 
         class InterpolatedLightField : public LightField {
@@ -236,6 +263,8 @@ namespace lightdb {
                       interpolator_(interpolator) {}
 
             const interpolation::interpolator& interpolator() const { return interpolator_; }
+
+            void accept(LightFieldVisitor &visitor) override { LightField::accept<InterpolatedLightField>(visitor); }
 
         private:
             const interpolation::interpolator &interpolator_;
@@ -250,6 +279,8 @@ namespace lightdb {
 
             const FunctorReference& functor() const { return functor_; };
 
+            void accept(LightFieldVisitor &visitor) override { LightField::accept<TransformedLightField>(visitor); }
+
         private:
             const FunctorReference functor_;
         };
@@ -258,6 +289,8 @@ namespace lightdb {
         public:
             explicit ScannedLightField(catalog::Catalog::Metadata metadata)
                 : LightField({}, metadata.volume(), metadata.colorSpace()), metadata_(std::move(metadata)) { }
+
+            void accept(LightFieldVisitor &visitor) override { LightField::accept<ScannedLightField>(visitor); }
 
         private:
             const catalog::Catalog::Metadata metadata_;
@@ -269,6 +302,8 @@ namespace lightdb {
                                const ColorSpace &colorSpace, const Geometry &geometry)
                     : LightField({}, volume, colorSpace),
                       uri_(std::move(uri)), colorSpace_(colorSpace), geometry_(geometry) { }
+
+            void accept(LightFieldVisitor &visitor) override { LightField::accept<ExternalLightField>(visitor); }
 
         private:
             const std::string uri_;
@@ -293,6 +328,8 @@ namespace lightdb {
             { }
             explicit PanoramicLightField(const TemporalRange &range)
                     : PanoramicLightField(Point3D{0, 0, 0}, range) {}
+
+            void accept(LightFieldVisitor &visitor) override { LightField::accept<ConstantLightField>(visitor); }
 
         protected:
             bool defined_at(const Point6D &point) const override {
@@ -332,6 +369,8 @@ namespace lightdb {
                         : (metadata_ = utility::StreamMetadata(filename(), 0, true))).value();
             }
 
+            void accept(LightFieldVisitor &visitor) override { LightField::accept<ConstantLightField>(visitor); }
+
         protected:
             bool defined_at(const Point6D &point) const override {
                 return geometry_.defined_at(point) &&
@@ -369,6 +408,8 @@ namespace lightdb {
                         ? metadata_
                         : (metadata_ = utility::StreamMetadata(filename(), 0, true))).value();
             }
+
+            void accept(LightFieldVisitor &visitor) override { LightField::accept<ConstantLightField>(visitor); }
 
         private:
             //TODO drop filename after adding StreamDecodeReader in Physical.cc

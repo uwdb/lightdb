@@ -25,6 +25,7 @@ namespace lightdb::planning {
     };
      */
 
+    /*
     class Plan {
     public:
         explicit Plan(const LightFieldReference &root): root_(root) { }
@@ -32,7 +33,8 @@ namespace lightdb::planning {
     private:
         const LightFieldReference root_;
     };
-
+*/
+    /*
     template<typename T>
     class PlanNode {
     public:
@@ -45,7 +47,8 @@ namespace lightdb::planning {
     private:
         const LightFieldReference logical_;
     };
-
+*/
+    /*
     class LogicalDispatcher {
     public:
         virtual void dispatch(const LightFieldReference reference, const logical::ScannedLightField &lightField) { }
@@ -82,7 +85,7 @@ namespace lightdb::planning {
             printf("CompositeLightField\n");
         }
     };
-
+*/
     class ChooseDecoders: public PlanDispatcher {
     public:
         void dispatch(PlanNode<logical::ScannedLightField> node) override {
@@ -93,7 +96,39 @@ namespace lightdb::planning {
         }
     };
 
+    class PhysicalLightField {};
 
+    class ChooseDecodersTemp: public LightFieldVisitor {
+        void visit(const logical::ScannedLightField &f) override {
+            printf("%s\n", f.type().c_str());
+        }
+
+        void visit(const logical::CompositeLightField &f) override {
+            printf("%s\n", f.type().c_str());
+        }
+
+        void visit(const logical::ConstantLightField &f) override {
+            printf("%s\n", f.type().c_str());
+        }
+
+        class CreatePlan: public LightFieldVisitor {
+            CreatePlan() : plan_{} { }
+
+            void visit(const logical::ScannedLightField &f) override {
+                printf("%s\n", f.type().c_str());
+            }
+
+            void visit(const logical::CompositeLightField &f) override {
+                printf("%s\n", f.type().c_str());
+            }
+
+            void visit(const logical::ConstantLightField &f) override {
+                printf("%s\n", f.type().c_str());
+            }
+
+        private:
+            std::unordered_map<PhysicalLightField, PhysicalLightField> plan_;
+    };
 } // namespace lightdb
 
 #endif //LIGHTDB_PHYSICAL_H
