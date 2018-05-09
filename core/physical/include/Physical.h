@@ -63,31 +63,16 @@ namespace lightdb {
 
         template<typename T>
         class downcast_iterator {
-            //friend class PhysicalLightField;
-
         public:
             explicit downcast_iterator(iterator& iterator)
-                : iterator_(iterator) //, /*current_{(*iterator).downcast<T>()},*/ eos_(false)
+                : iterator_(iterator)
             { }
 
-            bool operator==(const downcast_iterator<T>& other) const { return //(eos_ && other.eos_) ||
-                                                                               iterator_ == other.iterator_; }// &&
-                                                                               //*current_ == *other.current_); }
+            bool operator==(const downcast_iterator<T>& other) const { return iterator_ == other.iterator_; }
             bool operator!=(const downcast_iterator<T>& other) const { return !(*this == other); }
-            void operator++()
-            {
+            void operator++() {
                 if(iterator_ != PhysicalLightField::eos)
-                {
                     ++iterator_;
-                    //return ((*iterator_)++).downcast<T>();
-                    //current_.emplace(((*iterator_)++).downcast<T>());
-                    //auto v = (*iterator_)++;
-                    //auto &vr = *v;
-                    //auto &&vd = v.downcast<T>();
-                    //current_.emplace(vd);
-                }
-                //else
-                  //  eos_ = true;
             }
             T operator++(int)
             {
@@ -95,22 +80,17 @@ namespace lightdb {
                 ++*this;
                 return value;
             }
-            T operator*() { return (*iterator_).downcast<T>(); } // { return current_.value(); }
+            T operator*() { return (*iterator_).downcast<T>(); }
 
             static const downcast_iterator<T> eos() { return downcast_iterator<T>(); };
 
         protected:
-/*            explicit xiterator(PhysicalLightField &physical)
-                    : physical_(&physical), current_({physical.read()}), eos_(false)
-            { }*/
             constexpr explicit downcast_iterator()
-                    : iterator_() //, /*current_(),*/ eos_(true)
+                    : iterator_()
             { }
 
         private:
             iterator iterator_;
-            //T *current_;
-            //bool eos_;
         };
 
 
