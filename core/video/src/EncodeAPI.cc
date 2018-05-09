@@ -657,25 +657,28 @@ EncodeAPI::EncodeAPI(void* device, NV_ENC_DEVICE_TYPE deviceType)
 
 EncodeAPI::~EncodeAPI()
 {
-    //TODO log error on failure
-    Deinitialize(); //TODO just remove init/deinit functions
-
-    // clean up encode API resources here
-    if (m_pEncodeAPI)
+    if(!moved_)
     {
-        delete m_pEncodeAPI;
-        m_pEncodeAPI = NULL;
-    }
+        //TODO log error on failure
+        Deinitialize(); //TODO just remove init/deinit functions
 
-    if (m_hinstLib)
-    {
+        // clean up encode API resources here
+        if (m_pEncodeAPI)
+        {
+            delete m_pEncodeAPI;
+            m_pEncodeAPI = NULL;
+        }
+
+        if (m_hinstLib)
+        {
 #if defined (NV_WINDOWS)
-        FreeLibrary(m_hinstLib);
+            FreeLibrary(m_hinstLib);
 #else
-        dlclose(m_hinstLib);
+            dlclose(m_hinstLib);
 #endif
 
-        m_hinstLib = NULL;
+            m_hinstLib = NULL;
+        }
     }
 }
 
@@ -1357,6 +1360,9 @@ NVENCSTATUS EncodeAPI::NvEncFlushEncoderQueue(void *hEOSEvent)
     SET_VER(encPicParams, NV_ENC_PIC_PARAMS);
     encPicParams.encodePicFlags = NV_ENC_PIC_FLAG_EOS;
     encPicParams.completionEvent = hEOSEvent;
+    if(!m_bEncoderInitialized)
+        throw GpuEncodeRuntimeError("Encoder not initialized, but attempting to flush", NV_ENC_ERR_INVALID_DEVICE);
+
     nvStatus = m_pEncodeAPI->nvEncEncodePicture(encodeSessionHandle, &encPicParams);
     if (nvStatus != NV_ENC_SUCCESS)
     {

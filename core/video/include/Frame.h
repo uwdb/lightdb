@@ -2,73 +2,44 @@
 #define LIGHTDB_FRAME_H
 
 #include "VideoDecoder.h"
+#include "lazy.h"
+#include "utility"
 #include "errors.h"
 #include "dynlink_nvcuvid.h"
 
 class Frame {
 public:
-    Frame(const Frame &frame)
-        : Frame(frame.handle(), frame.pitch(), frame.height(), frame.width(), frame.type())
-    { }
-
     Frame(unsigned int height, unsigned int width, NV_ENC_PIC_STRUCT type)
-        : Frame(0, 0, height, width, type)
+        : height_(height), width_(width), type_(type)
     { }
 
     Frame(const Configuration &configuration, NV_ENC_PIC_STRUCT type)
-        : Frame(0, 0, configuration, type)
+        : Frame(configuration.height, configuration.width, type)
     { }
 
-    Frame(CUdeviceptr handle, unsigned int pitch, const Configuration &configuration, NV_ENC_PIC_STRUCT type)
-        : Frame(handle, pitch, configuration.height, configuration.width, type)
-    { }
-
-    Frame(CUdeviceptr handle, unsigned int pitch, unsigned int height, unsigned int width,
-          NV_ENC_PIC_STRUCT type)
-            : handle_(handle), pitch_(pitch), height_(height), width_(width), type_(type)
-    { }
+    Frame(const Frame&) = default;
+    Frame(Frame &&) noexcept = default;
 
     virtual ~Frame() = default;
 
-    CUdeviceptr handle() const { return handle_; }
-    unsigned int pitch() const { return pitch_; }
     virtual unsigned int height() const { return height_; }
     virtual unsigned int width() const { return width_; }
+    //TODO move this to GPUFrame
     NV_ENC_PIC_STRUCT type() const { return type_; }
 
 protected:
-    CUdeviceptr handle_;
-    unsigned int pitch_;
-    unsigned int height_, width_;
+    const unsigned int height_, width_;
     NV_ENC_PIC_STRUCT type_;
 };
 
 class DecodedFrame : public Frame {
 public:
-    DecodedFrame(const DecodedFrame &frame)
-        : Frame(frame), decoder_(frame.decoder()), parameters_(frame.parameters())
+    DecodedFrame(const CudaDecoder& decoder, const std::shared_ptr<CUVIDPARSERDISPINFO> &parameters)
+        : Frame(decoder.configuration(), extract_type(parameters)), decoder_(decoder), parameters_(parameters)
     { }
 
-    DecodedFrame(const CudaDecoder& decoder, const std::shared_ptr<CUVIDPARSERDISPINFO> &parameters)
-        : Frame(decoder.configuration(), extract_type(parameters)),
-          decoder_(decoder), parameters_(parameters)
-    {
-        CUresult result;
-        CUVIDPROCPARAMS mapParameters{
-                .progressive_frame = parameters->progressive_frame,
-                .second_field = 0,
-                .top_field_first = parameters->top_field_first,
-                .unpaired_field = parameters->progressive_frame == 1 || parameters->repeat_first_field <= 1};
-
-        if((result = cuvidMapVideoFrame(decoder_.handle(), parameters->picture_index,
-                                        &handle_, &pitch_, &mapParameters)) != CUDA_SUCCESS)
-            throw GpuCudaRuntimeError("Call to cuvidMapVideoFrame failed", result);
-    }
-
-    ~DecodedFrame() override {
-        if(handle())
-            cuvidUnmapVideoFrame(decoder_.handle(), handle());
-    }
+    DecodedFrame(const DecodedFrame &frame) = default;
+    DecodedFrame(DecodedFrame &&other) noexcept = default;
 
     const CudaDecoder &decoder() const { return decoder_; }
     const std::shared_ptr<CUVIDPARSERDISPINFO> parameters() const { return parameters_; }
@@ -88,6 +59,74 @@ private:
     const std::shared_ptr<CUVIDPARSERDISPINFO> parameters_;
 };
 
+class CudaFrame: public Frame {
+public:
+    CudaFrame(const Frame &frame, const CUdeviceptr handle, const unsigned int pitch)
+            : Frame(frame), handle_(handle), pitch_(pitch)
+    { }
+
+    CudaFrame(const unsigned int height, const unsigned int width,
+              const NV_ENC_PIC_STRUCT type, const CUdeviceptr handle, const unsigned int pitch)
+            : Frame(height, width, type), handle_(handle), pitch_(pitch)
+    { }
+
+    virtual CUdeviceptr handle() const { return handle_; }
+    virtual unsigned int pitch() const { return pitch_; }
+
+protected:
+    CudaFrame(const Frame &frame, const std::pair<CUdeviceptr, unsigned int> pair)
+            : CudaFrame(frame, pair.first, pair.second)
+    { }
+
+private:
+    const CUdeviceptr handle_;
+    const unsigned int pitch_;
+};
+
+class CudaDecodedFrame: public DecodedFrame, public CudaFrame {
+public:
+    //TODO remove this overload after cleaning up hierarchy
+    explicit CudaDecodedFrame(const Frame &frame)
+            : CudaDecodedFrame(dynamic_cast<const DecodedFrame&>(frame))
+    { }
+
+    explicit CudaDecodedFrame(const DecodedFrame &frame)
+            : DecodedFrame(frame), CudaFrame(frame, map_frame(frame))
+    { }
+
+    CudaDecodedFrame(CudaDecodedFrame &) noexcept = delete;
+    CudaDecodedFrame(CudaDecodedFrame &&) noexcept = default;
+
+    ~CudaDecodedFrame() override {
+        CUresult result = cuvidUnmapVideoFrame(decoder().handle(), handle());
+        if(result != CUDA_SUCCESS)
+            LOG(WARNING) << "Ignoring error << " << result << " in cuvidUnmapVideoFrame destructor.";
+    }
+
+    unsigned int height() const override { return DecodedFrame::height(); }
+    unsigned int width() const override { return DecodedFrame::width(); }
+
+private:
+    static std::pair<CUdeviceptr, unsigned int> map_frame(const DecodedFrame &frame)
+    {
+        CUresult result;
+        CUdeviceptr handle;
+        unsigned int pitch;
+        CUVIDPROCPARAMS mapParameters{
+                .progressive_frame = frame.parameters()->progressive_frame,
+                .second_field = 0,
+                .top_field_first = frame.parameters()->top_field_first,
+                .unpaired_field = frame.parameters()->progressive_frame == 1 || frame.parameters()->repeat_first_field <= 1};
+
+        if((result = cuvidMapVideoFrame(frame.decoder().handle(), frame.parameters()->picture_index,
+                                        &handle, &pitch, &mapParameters)) != CUDA_SUCCESS)
+            throw GpuCudaRuntimeError("Call to cuvidMapVideoFrame failed", result);
+
+        return std::make_pair(handle, pitch);
+    }
+};
+
+
 //TODO really should have a base class Frame for host and GPU frames, and then change the current Frame class to GpuFrame
 class LocalFrame {
 public:
@@ -95,7 +134,7 @@ public:
         : height_(frame.height()), width_(frame.width()), data_(frame.data_)
     { }
 
-    explicit LocalFrame(const Frame &source)
+    explicit LocalFrame(const CudaFrame &source)
         : height_(source.height()), width_(source.width()),
           data_(std::make_shared<std::vector<unsigned char>>(width() * height() * 3 / 2))
     {
@@ -139,7 +178,7 @@ private:
 //TODO Make EncodeBuffer a "EncodableFrame" derived from Frame
 class EncodeBuffer;
 typedef std::function<EncodeBuffer&(VideoLock&, EncodeBuffer&)> EncodableFrameTransform;
-typedef std::function<Frame&(VideoLock&, Frame&)> FrameTransform;
+typedef std::function<const Frame&(VideoLock&, const Frame&)> FrameTransform;
 typedef std::function<const Frame&(VideoLock&, const std::vector<Frame>&)> NaryFrameTransform;
 
 #endif //LIGHTDB_FRAME_H

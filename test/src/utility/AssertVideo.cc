@@ -1,6 +1,6 @@
 #include "AssertVideo.h"
 
-Frame CREATE_BLACK_FRAME(const Configuration &configuration)
+CudaFrame CREATE_BLACK_FRAME(const Configuration &configuration)
 {
     CUdeviceptr handle;
     size_t pitch;
@@ -18,12 +18,15 @@ Frame CREATE_BLACK_FRAME(const Configuration &configuration)
     //   Luma plane
     EXPECT_EQ(cuMemsetD2D8(handle, pitch, 16, configuration.width, configuration.height), CUDA_SUCCESS);
 
-    return Frame(handle, static_cast<unsigned int>(pitch), configuration, NV_ENC_PIC_STRUCT_FRAME);
+    return CudaFrame(configuration.height, configuration.width,
+                     NV_ENC_PIC_STRUCT_FRAME,
+                     handle, static_cast<unsigned int>(pitch));
 }
 
-void ASSERT_BLACK_FRAME(const Frame &frame)
+void ASSERT_BLACK_FRAME(const DecodedFrame &frame)
 {
-    auto local = LocalFrame(frame);
+    auto cuda = CudaDecodedFrame(frame);
+    auto local = LocalFrame(cuda);
 
     for(auto y = 0u; y < local.height(); y++)
         for(auto x = 0u; x < local.width(); x++)

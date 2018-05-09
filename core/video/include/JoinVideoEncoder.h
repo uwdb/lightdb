@@ -9,6 +9,7 @@
 #include "EncodeWriter.h"
 #include "ThreadPool.h"
 #include "FrameRateAlignment.h"
+#include "utility"
 #include <vector>
 #include <numeric>
 
@@ -39,7 +40,7 @@ public:
     }
 
     NVENCSTATUS join(const std::vector<std::shared_ptr<DecodeReader>> &readers, EncodeWriter &writer,
-                     const std::vector<FrameTransform> tileTransforms) {
+                     const std::vector<FrameTransform> &tileTransforms) {
         return join(readers, writer, tileTransforms,
                     [](VideoLock&, EncodeBuffer& buffer) -> EncodeBuffer& { return buffer; });
     }
@@ -47,14 +48,14 @@ public:
     NVENCSTATUS join(const std::vector<std::shared_ptr<DecodeReader>> &readers, EncodeWriter &writer,
                      EncodableFrameTransform joinedTransform) {
         return join(readers, writer,
-                    std::vector<FrameTransform>{readers.size(), [](VideoLock&, Frame& frame) -> Frame& {
+                    std::vector<FrameTransform>{readers.size(), [](VideoLock&, const Frame& frame) -> const Frame& {
                         return frame; }},
                     joinedTransform);
     }
 
     NVENCSTATUS join(const std::vector<std::shared_ptr<DecodeReader>> &readers, EncodeWriter &writer,
-                     const std::vector<FrameTransform> tileTransforms,
-                     EncodableFrameTransform joinedTransform) {
+                     const std::vector<FrameTransform> &tileTransforms,
+                     const EncodableFrameTransform &joinedTransform) {
         auto decodeSessions = CreateDecodeSessions(readers);
         auto encoderSession = VideoEncoderSession(encoder_, writer);
         size_t framesDecoded = 0, framesEncoded = 0;
@@ -81,7 +82,7 @@ public:
             for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++) {
                 encoderSession.Encode(decodedFrames,
                                       [tileTransforms, joinedTransform, this](
-                                              EncodeBuffer &buffer, Frame &frame, size_t index) {
+                                              EncodeBuffer &buffer, const Frame &frame, size_t index) {
                     auto row = index / columns(), column = index % columns();
                     buffer.copy(lock_, tileTransforms[index](lock_, frame),
                                 0, 0, row * frame.height(), column * frame.width());
@@ -130,13 +131,13 @@ private:
         return decoders;
     }
 
-    const std::vector<std::shared_ptr<VideoDecoderSession>> CreateDecodeSessions(
+    const std::vector<std::shared_ptr<VideoDecoderSession<>>> CreateDecodeSessions(
             const std::vector<std::shared_ptr<DecodeReader>> &readers) {
-        std::vector<std::shared_ptr<VideoDecoderSession>> sessions;
+        std::vector<std::shared_ptr<VideoDecoderSession<>>> sessions;
 
         sessions.reserve(readers.size());
         for(auto i = 0u; i < readers.size(); i++)
-            sessions.emplace_back(std::make_shared<VideoDecoderSession>(*decoders_[i], *readers[i]));
+            sessions.emplace_back(std::make_shared<VideoDecoderSession<>>(*decoders_[i], readers[i]->begin(), readers[i]->end()));
 
         return std::move(sessions);
     }

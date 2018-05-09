@@ -30,6 +30,8 @@ namespace lightdb {
             LightFieldReference Discretize(const GeometryReference&);
             LightFieldReference Discretize(Dimension, number);
             LightFieldReference Map(FunctorReference);
+
+            LightFieldReference Encode(const std::string &codec="");
             void Store(const std::string &name);
 
         protected:

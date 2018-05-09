@@ -25,14 +25,14 @@ public:
 
     //TODO DecodeReaders should be shared_refs or something, not raw pointers
     void Union(std::vector<DecodeReader*> &readers, EncodeWriter &writer, const NaryFrameTransform &transform,
-               const std::optional<size_t> frames={}) {
-        std::vector<std::shared_ptr<VideoDecoderSession>> decodeSessions;
+               const std::optional<size_t> &frames={}) {
+        std::vector<std::shared_ptr<VideoDecoderSession<>>> decodeSessions;
         VideoEncoderSession encodeSession(encoder(), writer);
         FrameRateAlignment alignment(encoder().configuration().framerate, decoders()[0]->configuration().framerate);
         size_t framesDecoded = 0, framesEncoded = 0, remaining = frames.value_or(std::numeric_limits<size_t>::max());
 
         for(auto i = 0u; i < readers.size(); i++)
-            decodeSessions.emplace_back(std::make_shared<VideoDecoderSession>(*decoders_[i], *readers[i]));
+            decodeSessions.emplace_back(std::make_shared<VideoDecoderSession<>>(*decoders_[i], readers[i]->begin(), readers[i]->end()));
 
         while (!decoders_[0]->frame_queue().isComplete() &&
         //while (std::all_of(decoders_.begin(), decoders_.end(), [](auto &d) {return !d->frame_queue().isComplete(); }) &&

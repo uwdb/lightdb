@@ -1,34 +1,31 @@
 #ifndef LIGHTDB_DECODEREADER_H
 #define LIGHTDB_DECODEREADER_H
 
-#include <boost/lockfree/spsc_queue.hpp>
+#include "spsc_queue.h"
 #include "dynlink_cuda.h"
 #include "PThreadMutex.h"
 
 struct DecodeReaderPacket: public CUVIDSOURCEDATAPACKET {
 public:
-    DecodeReaderPacket() { }
+    DecodeReaderPacket() = default;
 
-    DecodeReaderPacket(const DecodeReaderPacket &packet)
-        : CUVIDSOURCEDATAPACKET{packet}, buffer_(packet.buffer_)
-    { }
+    DecodeReaderPacket(const DecodeReaderPacket &packet) = default;
 
-    DecodeReaderPacket(const CUVIDSOURCEDATAPACKET &packet)
+    explicit DecodeReaderPacket(const CUVIDSOURCEDATAPACKET &packet)
         : CUVIDSOURCEDATAPACKET{packet.flags, packet.payload_size, nullptr, packet.timestamp},
           buffer_(std::make_shared<std::vector<unsigned char>>())
     {
-        buffer_ = std::make_shared<std::vector<unsigned char>>();
         buffer_->reserve(payload_size);
         buffer_->insert(buffer_->begin(), packet.payload, packet.payload + payload_size);
         payload = buffer_->data();
     }
 
-    DecodeReaderPacket& operator=(const DecodeReaderPacket &packet) {
-        CUVIDSOURCEDATAPACKET::operator=(packet);
-        buffer_ = packet.buffer_;
-        payload = buffer_->data();
-
-        return *this;
+    DecodeReaderPacket& operator=(const DecodeReaderPacket &packet) = default;
+    bool operator==(const DecodeReaderPacket &packet) const noexcept {
+        return this->payload_size == packet.payload_size &&
+               this->flags == packet.flags &&
+               this->timestamp == packet.timestamp &&
+               this->buffer_ == packet.buffer_;
     }
 
 private:
@@ -37,21 +34,59 @@ private:
 
 class DecodeReader {
 public:
-    virtual std::optional<DecodeReaderPacket> ReadPacket() = 0;
+    class iterator {
+        friend class DecodeReader;
+
+    public:
+        bool operator==(const iterator& other) const { return (eos_ && other.eos_) ||
+                                                              (reader_ == other.reader_ &&
+                                                               *current_ == *other.current_); }
+        bool operator!=(const iterator& other) const { return !(*this == other); }
+        void operator++()
+        {
+            if (!(current_ = reader_->read()).has_value())
+                eos_ = true;
+        }
+        DecodeReaderPacket operator++(int)
+        {
+            auto value = **this;
+            ++*this;
+            return value;
+        }
+        DecodeReaderPacket operator*() { return current_.value(); }
+
+    protected:
+        explicit iterator(DecodeReader &reader)
+                : reader_(&reader), current_({reader.read()}), eos_(false)
+        { }
+        constexpr explicit iterator()
+                : reader_(nullptr), current_(), eos_(true)
+        { }
+
+    private:
+        DecodeReader *reader_;
+        std::optional<DecodeReaderPacket> current_;
+        bool eos_;
+    };
+
+    virtual iterator begin() { return iterator(*this); }
+    virtual iterator end() { return iterator(); }
+
+    virtual std::optional<DecodeReaderPacket> read() = 0;
     virtual CUVIDEOFORMAT format() const = 0;
     virtual bool isComplete() const = 0;
 };
 
 class FileDecodeReader: public DecodeReader {
 public:
-    FileDecodeReader(const std::string &filename)
+    explicit FileDecodeReader(const std::string &filename)
         : FileDecodeReader(filename.c_str()) { }
 
-    FileDecodeReader(const char *filename)
+    explicit FileDecodeReader(const char *filename)
             : filename_(filename),
-              packets(), // Must be initialized before source
-              source(CreateVideoSource(filename)),
-              format_(GetVideoSourceFormat(source)),
+              packets_(std::make_unique<lightdb::spsc_queue<DecodeReaderPacket>>(4096)), // Must be initialized before source
+              source_(CreateVideoSource(filename)),
+              format_(GetVideoSourceFormat(source_)),
               decoded_bytes_(0) {
         if(format().codec != cudaVideoCodec_H264 && format().codec != cudaVideoCodec_HEVC)
             throw GpuRuntimeError("FileDecodeReader only supports H264/HEVC input video");
@@ -59,17 +94,19 @@ public:
             throw GpuRuntimeError("FileDecodeReader only supports 4:2:0 chroma");
     }
 
+    FileDecodeReader(FileDecodeReader&& other) = default;
+
     CUVIDEOFORMAT format() const override { return format_; }
     const std::string &filename() const { return filename_; }
 
-    std::optional<DecodeReaderPacket> ReadPacket() override {
+    std::optional<DecodeReaderPacket> read() override {
         DecodeReaderPacket packet;
 
-        while (cuvidGetVideoSourceState(source) == cudaVideoState_Started &&
-                !packets.read_available())
+        while (cuvidGetVideoSourceState(source_) == cudaVideoState_Started &&
+                !packets_->read_available())
             std::this_thread::yield();
 
-        if(packets.pop(packet)) {
+        if(packets_->pop(packet)) {
             decoded_bytes_ += packet.payload_size;
             return packet;
         } else {
@@ -79,12 +116,12 @@ public:
     }
 
     bool isComplete() const override {
-        return !packets.read_available() && cuvidGetVideoSourceState(source) != cudaVideoState_Started;
+        return !packets_->read_available() && cuvidGetVideoSourceState(source_) != cudaVideoState_Started;
     }
 
 private:
     static int CUDAAPI HandleVideoData(void *userData, CUVIDSOURCEDATAPACKET *packet) {
-        FileDecodeReader *reader = static_cast<FileDecodeReader*>(userData);
+        auto *packets = static_cast<boost::lockfree::spsc_queue<DecodeReaderPacket>*>(userData);
 
         CUVIDSOURCEDATAPACKET *copy = new CUVIDSOURCEDATAPACKET{
                 .flags = packet->flags,
@@ -93,12 +130,10 @@ private:
                 new unsigned char[packet->payload_size],
                 .timestamp = packet->timestamp
         };
-        memcpy(const_cast<unsigned char*>(copy->payload), const_cast<unsigned char*>(packet->payload), packet->payload_size);
-        DecodeReaderPacket drp(*packet);
+        memcpy(const_cast<unsigned char*>(copy->payload), const_cast<unsigned char*>(packet->payload),
+               packet->payload_size);
 
-        while(!reader->packets.push(drp))
-        //while(!reader->packets.push(*copy))
-        //while(!reader->packets.push(*packet))
+        while(!packets->push(DecodeReaderPacket(*packet)))
             std::this_thread::yield();
 
         return 1;
@@ -110,7 +145,7 @@ private:
         CUVIDSOURCEPARAMS videoSourceParameters = {
                 .ulClockRate = 0,
                 .uReserved1 = {},
-                .pUserData = this,
+                .pUserData = packets_.get(),
                 .pfnVideoDataHandler = HandleVideoData,
                 .pfnAudioDataHandler = nullptr,
                 0
@@ -134,8 +169,8 @@ private:
     }
 
     std::string filename_;
-    boost::lockfree::spsc_queue<DecodeReaderPacket, boost::lockfree::capacity<4096>> packets;
-    CUvideosource source;
+    std::unique_ptr<lightdb::spsc_queue<DecodeReaderPacket>> packets_;
+    CUvideosource source_;
     CUVIDEOFORMAT format_;
     size_t decoded_bytes_;
 };

@@ -11,7 +11,10 @@
 #include <UnionTranscoder.h>
 
 namespace lightdb {
+    const PhysicalLightField::iterator PhysicalLightField::eos{};
+
     namespace physical {
+
         template<typename ColorSpace>
         void EquirectangularTiledLightField<ColorSpace>::hardcode_hack(const unsigned int framerate, const unsigned int gop, const unsigned int height, const unsigned int width, const unsigned int rows, const unsigned int columns, const unsigned int max_bitrate, const std::string &decode_format, const std::string &encode_format) {
             //EquirectangularTiledLightField<ColorSpace>::framerate = framerate;

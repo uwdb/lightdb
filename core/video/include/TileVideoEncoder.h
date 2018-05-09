@@ -46,22 +46,22 @@ public:
     }
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers) {
-      return tile(reader, writers, [](VideoLock&, Frame& frame) -> Frame& { return frame; });
+      return tile(reader, writers, [](VideoLock&, const Frame& frame) -> const Frame& { return frame; });
     }
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers,
                      const std::vector<FrameTransform> &transforms) {
-      return tile(reader, writers, [this, transforms](VideoLock&, Frame& frame) -> Frame& {
+      return tile(reader, writers, [this, transforms](VideoLock&, const Frame& frame) -> const Frame& {
           return std::accumulate(
                   transforms.begin(), transforms.end(),
                   std::ref(frame),
-                  [this](auto& frame, auto& f) -> Frame& { return f(lock_, frame); });
+                  [this](auto& frame, auto& f) -> const Frame& { return f(lock_, frame); });
       });
     }
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers,
                      const FrameTransform &transform) {
-      VideoDecoderSession decodeSession(decoder_, reader);
+      VideoDecoderSession decodeSession(decoder_, reader.begin(), reader.end());
       auto sessions = CreateEncoderSessions(writers);
       size_t framesDecoded = 0, framesEncoded = 0;
       FrameRateAlignment alignment(encoders()[0]->configuration().framerate, decoder_.configuration().framerate);

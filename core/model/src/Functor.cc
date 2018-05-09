@@ -21,16 +21,17 @@ namespace lightdb {
     }*/
 
     Greyscale::operator const FrameTransform() const {
-        return [](VideoLock& lock, Frame& frame) -> Frame& {
+        return [](VideoLock& lock, const Frame& frame) -> const Frame& {
             std::scoped_lock{lock};
 
             auto uv_offset = frame.width() * frame.height();
             auto uv_height = frame.height() / 2;
 
-            assert(cuMemsetD2D8(frame.handle() + uv_offset,
-                                frame.pitch(),
+            CudaDecodedFrame cudaFrame(frame);
+            assert(cuMemsetD2D8(cudaFrame.handle() + uv_offset,
+                                cudaFrame.pitch(),
                                 128,
-                                frame.width(),
+                                cudaFrame.width(),
                                 uv_height) == CUDA_SUCCESS);
             return frame;
         };
@@ -56,12 +57,13 @@ namespace lightdb {
         else if(function_ == nullptr && (result = cuModuleGetFunction(&function_, module_, "blur")) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Failure loading kernel blur", result);
 
-        return [this](VideoLock& lock, Frame& frame) -> Frame& {
+        return [this](VideoLock& lock, const Frame& frame) -> const Frame& {
             std::scoped_lock{lock};
+            CudaDecodedFrame cudaFrame(frame);
 
             dim3 blockDims(512,1,1);
             dim3 gridDims((unsigned int) std::ceil((double)(frame.width() * frame.height() * 3 / blockDims.x)), 1, 1 );
-            CUdeviceptr input = frame.handle(), output = frame.handle();
+            CUdeviceptr input = cudaFrame.handle(), output = cudaFrame.handle();
             auto height = frame.height(), width = frame.width();
             void *arguments[4] = {&input, &output, &height, &width};
 
@@ -84,7 +86,7 @@ namespace lightdb {
     }*/
 
     Identity::operator const FrameTransform() const {
-        return [](VideoLock&, Frame& frame) -> Frame& {
+        return [](VideoLock&, const Frame& frame) -> const Frame& {
             return frame;
         };
     };
@@ -99,12 +101,14 @@ namespace lightdb {
 
         return [this](VideoLock& lock, const std::vector<Frame>& frames) -> const Frame& {
             std::scoped_lock{lock};
+            CudaDecodedFrame cudaFrame0(frames[0]);
+            CudaDecodedFrame cudaFrame1(frames[1]);
 
             assert(frames.size() == 2);
 
             dim3 blockDims(512,1,1);
             dim3 gridDims((unsigned int) std::ceil((double)(frames[0].width() * frames[0].height() * 3 / blockDims.x)), 1, 1 );
-            CUdeviceptr left = frames[0].handle(), right = frames[1].handle(), output = frames[0].handle();
+            CUdeviceptr left = cudaFrame0.handle(), right = cudaFrame1.handle(), output = cudaFrame0.handle();
             auto height = frames[0].height(), width = frames[0].width();
             auto transparent = transparent_;
             void *arguments[6] = {&left, &right, &output, &height, &width, &transparent};

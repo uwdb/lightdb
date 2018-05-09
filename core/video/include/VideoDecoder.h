@@ -28,7 +28,7 @@ private:
 class CudaDecoder: public VideoDecoder {
 public:
   CudaDecoder(const DecodeConfiguration &configuration, FrameQueue& frame_queue, VideoLock& lock)
-          : VideoDecoder(configuration, frame_queue)
+          : VideoDecoder(configuration, frame_queue), handle_(nullptr)
   {
       CUresult result;
       auto decoderCreateInfo = configuration.AsCuvidCreateInfo(lock);
@@ -38,8 +38,16 @@ public:
       }
   }
 
+  CudaDecoder(const CudaDecoder&) = delete;
+  CudaDecoder(CudaDecoder&& other) noexcept
+          : VideoDecoder(other),
+            handle_(other.handle_) {
+      other.handle_ = nullptr;
+  }
+
   virtual ~CudaDecoder() {
-      cuvidDestroyDecoder(handle());
+      if(handle() != nullptr)
+          cuvidDestroyDecoder(handle());
   }
 
   const CUvideodecoder handle() const { return handle_; }

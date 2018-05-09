@@ -39,8 +39,8 @@ namespace lightdb {
             class Metadata {
                 friend class Catalog;
 
-                Metadata(const Catalog &catalog, std::experimental::filesystem::path path)
-                        : catalog_(catalog), path_(std::move(path)),
+                Metadata(const Catalog &catalog, std::string name, std::experimental::filesystem::path path)
+                        : catalog_(catalog), name_(std::move(name)), path_(std::move(path)),
                         //TODO grab boxes and load volume/geometry, detect colorspace
                           volume_({{0, 0}, {0, 0}, {0, 0}, {0, 10}, ThetaRange::limits(), PhiRange::limits()}),
                           colorSpace_(YUVColorSpace::instance()),
@@ -48,12 +48,15 @@ namespace lightdb {
                 { }
 
             public:
-                const Volume& volume() const { return volume_; }
-                const ColorSpace& colorSpace() const { return colorSpace_; }
-                const Geometry& geometry() const { return geometry_; }
+                const Volume& volume() const noexcept { return volume_; }
+                const ColorSpace& colorSpace() const noexcept { return colorSpace_; }
+                const Geometry& geometry() const noexcept { return geometry_; }
+                const std::string path() const noexcept { return path_; }
+                const std::vector<std::string> streams() const noexcept;
 
             private:
                 const Catalog &catalog_;
+                const std::string name_;
                 const std::experimental::filesystem::path path_;
                 const Volume volume_;
                 const ColorSpace colorSpace_;

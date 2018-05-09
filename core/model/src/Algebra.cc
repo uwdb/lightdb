@@ -43,6 +43,12 @@ namespace lightdb::logical {
         throw NotImplementedError(); //TODO
     }
 
+    LightFieldReference Algebra::Encode(const std::string &codec) {
+        return LightFieldReference::make<logical::EncodedLightField>(
+                this_, codec, this_->volume().bounding(), this_->colorSpace());
+    }
+
+
     LightFieldReference Algebra::Union(const LightFieldReference other) {
         return LightFieldReference::make<logical::CompositeLightField>(std::vector<LightFieldReference>{this_, other});
     }

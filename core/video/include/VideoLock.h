@@ -9,7 +9,7 @@
 class VideoLock
 {
 public:
-    VideoLock(GPUContext& context) : context_(context) { // TODO shared pointer for context
+    explicit VideoLock(GPUContext& context) : context_(context) { // TODO shared pointer for context
         CUresult result;
 
         if ((result = cuvidCtxLockCreate(&lock_, context.get())) != CUDA_SUCCESS) {
@@ -17,8 +17,14 @@ public:
         }
     }
     ~VideoLock() {
-        cuvidCtxLockDestroy(lock_);
+        if(lock_ != nullptr)
+            cuvidCtxLockDestroy(lock_);
     }
+
+    VideoLock(const VideoLock&) = delete;
+    VideoLock(VideoLock&& other) noexcept
+            : context_(other.context_), lock_(other.lock_)
+    { other.lock_ = nullptr; }
 
     const GPUContext &context() const { return context_; }
     CUvideoctxlock get() const { return lock_; }

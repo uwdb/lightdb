@@ -1,10 +1,14 @@
+#include "HeuristicOptimizer.h"
+#include "Coordinator.h"
+#include "Display.h"
 #include "VisitorTemp2.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
 using namespace lightdb::logical;
-using namespace lightdb::planning;
+using namespace lightdb::optimization;
 using namespace lightdb::catalog;
+using namespace lightdb::execution;
 
 class VisitorTestFixture : public testing::Test {
 public:
@@ -16,18 +20,15 @@ protected:
     Catalog catalog;
 };
 
-//#include "VisitorTemp.h"
+TEST_F(VisitorTestFixture, testFoo) {
+    auto source = Scan("red10");
+    auto encoded = source.Encode();
 
- TEST_F(VisitorTestFixture, testFoo) {
-    auto l = Scan("red10");
-    auto r = Scan("red10");
-    auto u = l.Union(r);
+    auto environment = LocalEnvironment();
+    auto coordinator = Coordinator();
+    Plan plan = HeuristicOptimizer(environment).optimize(encoded);
 
-    Plan plan;
+    print_plan(plan);
 
-    ChooseDecoders c(plan);
-    u->accept(c);
-    //ChooseDecoders c;
-    //PlanNode<logical::CompositeLightField> n(u);
-    //c.dispatch(n);
+    coordinator.save(plan, "out.hevc");
 }

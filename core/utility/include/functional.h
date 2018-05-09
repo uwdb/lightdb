@@ -1,6 +1,7 @@
 #ifndef LIGHTDB_FUNCTIONAL_H
 #define LIGHTDB_FUNCTIONAL_H
 
+#include <iterator>
 #include <algorithm>
 
 namespace lightdb::functional {
@@ -38,6 +39,14 @@ namespace lightdb::functional {
         return values;
     }
 
+    template<typename T, typename InputIterator, typename Predicate>
+    std::vector<T> filter(InputIterator begin, const InputIterator end, const Predicate p)
+    {
+        std::vector<T> values;
+        std::copy_if(begin, end, std::back_inserter(values), p);
+        return values;
+    };
+
     template<typename T, typename InputIterator, typename OutputIterator, typename UnaryFunction, typename Predicate>
     OutputIterator transform_if(
             InputIterator begin, const InputIterator end, OutputIterator output,
@@ -54,7 +63,7 @@ namespace lightdb::functional {
                                 const UnaryFunction f, const Predicate p)
     {
         std::vector<T> values;
-        values.reserve(end - begin);
+        values.reserve(std::distance(begin, end));
         transform_if<T>(begin, end, std::back_inserter(values), f, p);
         return values;
     };

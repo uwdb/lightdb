@@ -6,18 +6,25 @@
 #include "DecodeReader.h"
 #include "dynlink_cuda.h"
 
+template<typename Input=DecodeReader::iterator>
 class VideoDecoderSession {
 public:
-    VideoDecoderSession(CudaDecoder& decoder, DecodeReader& reader)
-            : decoder_(decoder), reader(reader), parser(CreateParser(this, decoder_)),
-              decodedFrameCount_(0),
-              worker{&VideoDecoderSession::DecodeAll, this}
+    VideoDecoderSession(CudaDecoder& decoder, Input reader, const Input end)
+            : decoder_(decoder),
+              worker_{std::make_unique<std::thread>(&VideoDecoderSession::DecodeAll, std::ref(decoder), reader, end)}
     { }
 
+    VideoDecoderSession(VideoDecoderSession&& other) noexcept
+            : decoder_(other.decoder_),
+              worker_(std::move(other.worker_)) {
+        other.moved_ = true;
+    }
+
     ~VideoDecoderSession() {
-        decoder_.frame_queue().endDecode();
-        worker.join();
-        cuvidDestroyVideoParser(parser);
+        if(!moved_) {
+            decoder_.frame_queue().endDecode();
+            worker_->join();
+        }
     }
 
     DecodedFrame decode() {
@@ -28,29 +35,32 @@ public:
 
 protected:
     CudaDecoder &decoder_;
-    DecodeReader &reader;
-    CUvideoparser parser;
-    size_t decodedFrameCount_;
-    std::thread worker;
+    std::unique_ptr<std::thread> worker_;
+    bool moved_ = false;
 
-    void DecodeAll() {
+    static void DecodeAll(CudaDecoder &decoder, Input reader, const Input end) {
         CUresult status;
-        std::optional <DecodeReaderPacket> packet;
+        DecodeReaderPacket packet;
+
+        auto parser = CreateParser(decoder);
 
         do {
-            packet = reader.ReadPacket();
-            if (packet.has_value()) {
-                if ((status = cuvidParseVideoData(parser, &*packet)) != CUDA_SUCCESS) {
+            if (reader != end) {
+                packet = static_cast<DecodeReaderPacket>(reader++);
+                if ((status = cuvidParseVideoData(parser, &packet)) != CUDA_SUCCESS) {
+                    cuvidDestroyVideoParser(parser);
                     throw GpuCudaRuntimeError("Call to cuvidParseVideoData failed", status);
                 }
             }
-        } while (!decoder_.frame_queue().isEndOfDecode() && packet.has_value());
+        } while (!decoder.frame_queue().isEndOfDecode() && reader != end);
 
-        decoder_.frame_queue().endDecode();
+        decoder.frame_queue().endDecode();
+        cuvidDestroyVideoParser(parser);
+        LOG(INFO) << "Decode complete; thread terminating.";
     }
 
 private:
-    static CUvideoparser CreateParser(VideoDecoderSession *session, CudaDecoder &decoder) {
+    static CUvideoparser CreateParser(CudaDecoder &decoder) {
         CUresult status;
         CUvideoparser parser = nullptr;
         CUVIDPARSERPARAMS parameters = {
@@ -60,7 +70,7 @@ private:
             .ulErrorThreshold = 0,
             .ulMaxDisplayDelay = 1,
             .uReserved1 = {},
-            .pUserData = session,
+            .pUserData = &decoder,
             .pfnSequenceCallback = HandleVideoSequence,
             .pfnDecodePicture = HandlePictureDecode,
             .pfnDisplayPicture = HandlePictureDisplay,
@@ -77,21 +87,22 @@ private:
     }
 
     static int CUDAAPI HandleVideoSequence(void *userData, CUVIDEOFORMAT *format) {
-        auto* session = static_cast<VideoDecoderSession*>(userData);
+        //auto* session = static_cast<VideoDecoderSession*>(userData);
+        auto* decoder = static_cast<CudaDecoder*>(userData);
 
         assert(format->display_area.bottom - format->display_area.top >= 0);
         assert(format->display_area.right - format->display_area.left >= 0);
 
-        if(session == nullptr)
-            LOG(ERROR) << "Unexpected null session data during video decode (HandleVideoSequence)";
+        if(decoder == nullptr)
+            LOG(ERROR) << "Unexpected null decoder during video decode (HandleVideoSequence)";
         //assert(session);
 
-        else if ((format->codec != session->decoder_.configuration().codec) ||
-            ((static_cast<unsigned int>(format->display_area.right - format->display_area.left)) != session->decoder_.configuration().width) ||
-            ((static_cast<unsigned int>(format->display_area.bottom - format->display_area.top)) != session->decoder_.configuration().height) ||
-            (format->coded_width < session->decoder_.configuration().width) ||
-            (format->coded_height < session->decoder_.configuration().height) ||
-            (format->chroma_format != session->decoder_.configuration().chroma_format)) {
+        else if ((format->codec != decoder->configuration().codec) ||
+            ((static_cast<unsigned int>(format->display_area.right - format->display_area.left)) != decoder->configuration().width) ||
+            ((static_cast<unsigned int>(format->display_area.bottom - format->display_area.top)) != decoder->configuration().height) ||
+            (format->coded_width < decoder->configuration().width) ||
+            (format->coded_height < decoder->configuration().height) ||
+            (format->chroma_format != decoder->configuration().chroma_format)) {
             throw GpuRuntimeError("Video format changed but not currently supported");
         }
 
@@ -99,34 +110,27 @@ private:
     }
 
     static int CUDAAPI HandlePictureDecode(void *userData, CUVIDPICPARAMS *parameters) {
-        //LOG(INFO) << "HandlePictureDecode";
         CUresult status;
-        auto* session = static_cast<VideoDecoderSession*>(userData);
+        auto* decoder = static_cast<CudaDecoder*>(userData);
 
-        if(session == nullptr)
-            LOG(ERROR) << "Unexpected null session data during video decode (HandlePictureDecode)";
-        //assert(session);
+        if(decoder == nullptr)
+            LOG(ERROR) << "Unexpected null decoder during video decode (HandlePictureDecode)";
         else {
-            session->decoder_.frame_queue().waitUntilFrameAvailable(parameters->CurrPicIdx);
-            if((status = cuvidDecodePicture(session->decoder_.handle(), parameters)) != CUDA_SUCCESS)
+            decoder->frame_queue().waitUntilFrameAvailable(parameters->CurrPicIdx);
+            if((status = cuvidDecodePicture(decoder->handle(), parameters)) != CUDA_SUCCESS)
                 LOG(ERROR) << "cuvidDecodePicture failed (" << status << ")";
-            //assert(cuvidDecodePicture(session->decoder.handle(), parameters) == CUDA_SUCCESS);
         }
 
         return 1;
     }
 
     static int CUDAAPI HandlePictureDisplay(void *userData, CUVIDPARSERDISPINFO *frame) {
-        //LOG(INFO) << "HandlePictureDisplay";
-        auto* session = static_cast<VideoDecoderSession*>(userData);
+        auto* decoder = static_cast<CudaDecoder*>(userData);
 
-        if(session == nullptr)
-            LOG(ERROR) << "Unexpected null session data during video decode (HandlePictureDisplay)";
-        //assert(session);
-        else {
-            session->decoder_.frame_queue().enqueue(frame);
-            session->decodedFrameCount_++;
-        }
+        if(decoder == nullptr)
+            LOG(ERROR) << "Unexpected null decoder during video decode (HandlePictureDisplay)";
+        else
+            decoder->frame_queue().enqueue(frame);
 
         return 1;
     }

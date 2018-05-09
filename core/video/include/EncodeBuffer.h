@@ -40,6 +40,7 @@ struct EncodeBuffer
     VideoEncoder&           encoder;
     const size_t            size;
 
+    //TODO why is this deleted?
     EncodeBuffer(const EncodeBuffer&& other) = delete;
 
     EncodeBuffer(const EncodeBuffer& other)
@@ -97,14 +98,16 @@ struct EncodeBuffer
             throw InvalidArgumentError("Frame size does not match buffer size", "frame");
         }
 
+        //TODO create new overloads that accept CudaDecodedFrame
+        CudaDecodedFrame cudaFrame(frame);
         copy(lock, {
             .srcXInBytes = 0,
             .srcY = 0,
             .srcMemoryType = CU_MEMORYTYPE_DEVICE,
             .srcHost = nullptr,
-            .srcDevice = frame.handle(),
+            .srcDevice = cudaFrame.handle(),
             .srcArray = nullptr,
-            .srcPitch = frame.pitch(),
+            .srcPitch = cudaFrame.pitch(),
 
             .dstXInBytes = 0,
             .dstY = 0,
@@ -123,14 +126,15 @@ struct EncodeBuffer
     void copy(VideoLock &lock, const Frame &frame,
               size_t frame_top, size_t frame_left,
               size_t buffer_top=0, size_t buffer_left=0) {
+        CudaDecodedFrame cudaFrame(frame);
         CUDA_MEMCPY2D lumaPlaneParameters = {
                 srcXInBytes:   frame_left,
                 srcY:          frame_top,
                 srcMemoryType: CU_MEMORYTYPE_DEVICE,
                 srcHost:       nullptr,
-                srcDevice:     frame.handle(),
+                srcDevice:     cudaFrame.handle(),
                 srcArray:      nullptr,
-                srcPitch:      frame.pitch(),
+                srcPitch:      cudaFrame.pitch(),
 
                 dstXInBytes:   buffer_left,
                 dstY:          buffer_top,
@@ -140,8 +144,8 @@ struct EncodeBuffer
                 dstArray:      nullptr,
                 dstPitch:      input_buffer.NV12Stride,
 
-                WidthInBytes:  std::min(input_buffer.width - buffer_left, frame.width() - frame_left),
-                Height:        std::min(input_buffer.height - buffer_top, frame.height() - frame_top) ,
+                WidthInBytes:  std::min(input_buffer.width - buffer_left, cudaFrame.width() - frame_left),
+                Height:        std::min(input_buffer.height - buffer_top, cudaFrame.height() - frame_top) ,
         };
 
         CUDA_MEMCPY2D chromaPlaneParameters = {
@@ -149,9 +153,9 @@ struct EncodeBuffer
                 srcY:          frame.height() + frame_top / 2,
                 srcMemoryType: CU_MEMORYTYPE_DEVICE,
                 srcHost:       nullptr,
-                srcDevice:     frame.handle(),
+                srcDevice:     cudaFrame.handle(),
                 srcArray:      nullptr,
-                srcPitch:      frame.pitch(),
+                srcPitch:      cudaFrame.pitch(),
 
                 dstXInBytes:   buffer_left,
                 dstY:          input_buffer.height + buffer_top / 2,
@@ -161,8 +165,8 @@ struct EncodeBuffer
                 dstArray:      nullptr,
                 dstPitch:      input_buffer.NV12Stride,
 
-                WidthInBytes:  std::min(input_buffer.width - buffer_left, frame.width() - frame_left),
-                Height:        std::min(input_buffer.height - buffer_top, frame.height() - frame_top) / 2
+                WidthInBytes:  std::min(input_buffer.width - buffer_left, cudaFrame.width() - frame_left),
+                Height:        std::min(input_buffer.height - buffer_top, cudaFrame.height() - frame_top) / 2
         };
 
         copy(lock, {lumaPlaneParameters, chromaPlaneParameters});

@@ -292,24 +292,47 @@ namespace lightdb {
 
             void accept(LightFieldVisitor &visitor) override { LightField::accept<ScannedLightField>(visitor); }
 
+            const catalog::Catalog::Metadata& metadata() const noexcept { return metadata_; }
+
         private:
             const catalog::Catalog::Metadata metadata_;
         };
 
         class ExternalLightField : public LightField {
         public:
-            ExternalLightField(std::string uri, const Volume &volume,
-                               const ColorSpace &colorSpace, const Geometry &geometry)
+            ExternalLightField(std::string uri, std::string codec,
+                               const Volume &volume, const ColorSpace &colorSpace, const Geometry &geometry)
                     : LightField({}, volume, colorSpace),
-                      uri_(std::move(uri)), colorSpace_(colorSpace), geometry_(geometry) { }
+                      uri_(std::move(uri)), codec_(std::move(codec)),
+                      colorSpace_(colorSpace), geometry_(geometry) { }
+
+            const std::string& uri() const noexcept { return uri_; }
 
             void accept(LightFieldVisitor &visitor) override { LightField::accept<ExternalLightField>(visitor); }
 
         private:
             const std::string uri_;
+            const std::string codec_;
             const ColorSpace &colorSpace_;
             const Geometry &geometry_;
         };
+
+        class EncodedLightField : public LightField {
+        public:
+            EncodedLightField(LightFieldReference parent,
+                              std::string codec, const Volume &volume, const ColorSpace &colorSpace)
+                    : LightField({parent}, volume, colorSpace),
+                      codec_(std::move(codec)), colorSpace_(colorSpace) { }
+
+            void accept(LightFieldVisitor &visitor) override { LightField::accept<EncodedLightField>(visitor); }
+
+        private:
+            const std::string codec_;
+            const ColorSpace &colorSpace_;
+        };
+
+
+
 
         //TODO These all moved to physical algebra, obvs
         //TODO think now that I've moved geometry to physical algebra, this whole class should die

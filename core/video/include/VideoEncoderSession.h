@@ -18,11 +18,14 @@ public:
         : frameCount_(0), encoder_(encoder), writer(writer), queue_(encoder_.buffers)
     { }
 
+    VideoEncoderSession(const VideoEncoderSession &) = delete;
+    VideoEncoderSession(VideoEncoderSession &&) = default;
+    
     ~VideoEncoderSession() {
         Flush();
     }
 
-    void Encode(Frame &frame, size_t top=0, size_t left=0) {
+    void Encode(const Frame &frame, size_t top=0, size_t left=0) {
         auto &buffer = GetAvailableBuffer();
 
         if(buffer.input_buffer.buffer_format != NV_ENC_BUFFER_FORMAT_NV12_PL)
@@ -32,29 +35,29 @@ public:
         if(top == 0 && left == 0 &&
            frame.width() == buffer.input_buffer.width &&
            frame.height() == buffer.input_buffer.height)
-            buffer.copy(encoder().lock, frame);
+            buffer.copy(encoder().lock_, frame);
         else
-            buffer.copy(encoder().lock, frame, top, left);
+            buffer.copy(encoder().lock_, frame, top, left);
         return Encode(buffer, frame.type());
     }
 
-    void Encode(std::vector<Frame> &frames, FrameCopierFunction copier) {
+    void Encode(std::vector<Frame> &frames, const FrameCopierFunction &copier) {
         return Encode(frames, copier, [](VideoLock&, EncodeBuffer& buffer) -> EncodeBuffer& { return buffer; });
     }
 
-    void Encode(std::vector<Frame> &frames, FrameCopierFunction copier, EncodableFrameTransform transform) {
+    void Encode(std::vector<Frame> &frames, const FrameCopierFunction &copier, const EncodableFrameTransform transform) {
         auto &buffer = GetAvailableBuffer();
 
-        if(frames.size() == 0)
+        if(frames.empty())
             LOG(ERROR) << "no frames";
         else if(buffer.input_buffer.buffer_format != NV_ENC_BUFFER_FORMAT_NV12_PL)
             LOG(ERROR) << "buffer.input_buffer.buffer_format != NV_ENC_BUFFER_FORMAT_NV12_PL";
         assert(buffer.input_buffer.buffer_format == NV_ENC_BUFFER_FORMAT_NV12_PL);
-        assert(frames.size() > 0);
+        assert(!frames.empty());
 
         for(auto i = 0u; i < frames.size(); i++)
             copier(buffer, frames[i], i);
-        return Encode(transform(encoder().lock, buffer), frames[0].type());
+        return Encode(transform(encoder().lock_, buffer), frames[0].type());
     }
 
     void Flush() {
@@ -85,7 +88,7 @@ private:
         size_t pendingIndex;
 
     public:
-        EncoderBufferQueue(std::vector<T> &items)
+        explicit EncoderBufferQueue(std::vector<T> &items)
             : items(items), pendingCount(0), availableIndex(0), pendingIndex(0)
         { }
 

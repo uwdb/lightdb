@@ -136,7 +136,7 @@ using std::to_string;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Frame CREATE_BLACK_FRAME(const Configuration &);
-void ASSERT_BLACK_FRAME(const Frame &);
+CudaFrame CREATE_BLACK_FRAME(const Configuration &);
+void ASSERT_BLACK_FRAME(const DecodedFrame &);
 
 #endif //LIGHTDB_ASSERTVIDEO_H

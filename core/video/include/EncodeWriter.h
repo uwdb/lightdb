@@ -35,10 +35,11 @@ public:
 protected:
     EncodeAPI &api;
 
-    EncodeWriter(EncodeAPI &api): api(api) {}
-    EncodeWriter(VideoEncoder &encoder): EncodeWriter(encoder.api()) {}
+    explicit EncodeWriter(EncodeAPI &api): api(api) {}
 
-    virtual NVENCSTATUS WriteFrame(const void *buffer, const size_t size) = 0;
+    explicit EncodeWriter(VideoEncoder &encoder): EncodeWriter(encoder.api()) {}
+
+    virtual NVENCSTATUS WriteFrame(const void *buffer, size_t size) = 0;
     virtual NVENCSTATUS WriteFrame(NV_ENC_LOCK_BITSTREAM &bitstream) {
         NVENCSTATUS status;
 
@@ -58,23 +59,36 @@ protected:
 
 class MemoryEncodeWriter: public EncodeWriter {
 public:
-    MemoryEncodeWriter(EncodeAPI &api, size_t initial_buffer_size=16*1024*1024)
+    explicit MemoryEncodeWriter(EncodeAPI &api, size_t initial_buffer_size=16*1024*1024)
         : EncodeWriter(api), buffer_()
     {
         buffer_.reserve(initial_buffer_size);
     }
 
+    MemoryEncodeWriter(const MemoryEncodeWriter&) = delete;
+    MemoryEncodeWriter(MemoryEncodeWriter&& other) noexcept
+            : EncodeWriter(other.api), buffer_(other.buffer_), lock_{}
+    { }
+
     NVENCSTATUS Flush() override { return NV_ENC_SUCCESS; }
-    const std::vector<char> buffer() const { return buffer_; }
+    const std::vector<char> buffer() const { return buffer_; } //TODO why not ref?
+    std::vector<char> dequeue() {
+        std::lock_guard lock{lock_};
+        auto value = buffer_;
+        buffer_.clear();
+        return value;
+    }
 
 protected:
     NVENCSTATUS WriteFrame(const void *buffer, const size_t size) override {
+        std::lock_guard lock{lock_};
         buffer_.insert(buffer_.end(), static_cast<const char*>(buffer), static_cast<const char*>(buffer) + size);
         return NV_ENC_SUCCESS;
     }
 
 private:
     std::vector<char> buffer_;
+    std::mutex lock_;
 };
 
 

@@ -92,6 +92,7 @@ protected:
     EncodeSessionHandle                                  *encodeSessionHandle;
     NV_ENC_INITIALIZE_PARAMS                             m_stCreateEncodeParams;
     NV_ENC_CONFIG                                        m_stEncodeConfig;
+    bool                                                 moved_;
 
 public:
     bool encoderCreated() const { return encoderCreated_; }
@@ -137,6 +138,27 @@ public:
     EncodeAPI(GPUContext& context) : EncodeAPI(context.get()) { }
     EncodeAPI(CUcontext context) : EncodeAPI(context, NV_ENC_DEVICE_TYPE_CUDA) { }
     EncodeAPI(void* device, NV_ENC_DEVICE_TYPE deviceType);
+    EncodeAPI(const EncodeAPI&) = delete;
+    EncodeAPI(EncodeAPI &&other) noexcept
+            : m_EncodeIdx(other.m_EncodeIdx),
+              m_uMaxWidth(other.m_uMaxWidth),
+              m_uMaxHeight(other.m_uMaxHeight),
+              m_uCurWidth(other.m_uCurWidth),
+              m_uCurHeight(other.m_uCurHeight),
+              m_bEncoderInitialized(other.m_bEncoderInitialized),
+              encoderCreated_(other.encoderCreated_),
+              codecGUID(other.codecGUID),
+              m_pEncodeAPI(other.m_pEncodeAPI),
+              m_hinstLib(other.m_hinstLib),
+              frameEncodedHandler(other.frameEncodedHandler),
+              motionEstimationEncodedHandler(other.motionEstimationEncodedHandler),
+              encodeSessionHandle(other.encodeSessionHandle),
+              m_stCreateEncodeParams(other.m_stCreateEncodeParams),
+              m_stEncodeConfig(other.m_stEncodeConfig),
+              moved_(false)
+    { other.moved_ = true; }
+
+
     virtual ~EncodeAPI();
     NVENCSTATUS                                          CreateEncoder(const EncodeConfiguration *pEncCfg);
     NVENCSTATUS                                          NvEncEncodeFrame(EncodeBuffer *pEncodeBuffer, NvEncPictureCommand *encPicCommand,

@@ -26,12 +26,12 @@ protected:
 
 
 TEST_F(VideoDecoderSessionTestFixture, testConstructor) {
-    VideoDecoderSession session(decoder, reader);
+    VideoDecoderSession session(decoder, reader.begin(), reader.end());
     ASSERT_EQ(session.decoder().handle(), decoder.handle());
 }
 
 TEST_F(VideoDecoderSessionTestFixture, testDecodeSingleFrame) {
-    VideoDecoderSession session(decoder, reader);
+    VideoDecoderSession<> session(decoder, reader.begin(), reader.end());
 
     auto frame = session.decode();
     ASSERT_EQ(frame.width(), configuration.width);
@@ -41,7 +41,7 @@ TEST_F(VideoDecoderSessionTestFixture, testDecodeSingleFrame) {
 
 TEST_F(VideoDecoderSessionTestFixture, testEncodeMultipleFrames) {
     auto count = 60;
-    VideoDecoderSession session(decoder, reader);
+    VideoDecoderSession<> session(decoder, reader.begin(), reader.end());
 
     for(int i = 0; i < count; i++) {
         auto frame = session.decode();

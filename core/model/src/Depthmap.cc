@@ -10,13 +10,13 @@ static const char* kernel_name = "blur";
 namespace lightdb {
 
 DepthmapCPU::operator const FrameTransform() const {
-    return [this](VideoLock &lock, Frame &frame) -> Frame & {
+    return [this](VideoLock &lock, const Frame &frame) -> const Frame & {
         return frame;
     };
 }
 
 DepthmapFPGA::operator const FrameTransform() const {
-    return [this](VideoLock &lock, Frame &frame) -> Frame & {
+    return [this](VideoLock &lock, const Frame &frame) -> const Frame & {
         return frame;
     };
 }
@@ -29,7 +29,7 @@ DepthmapGPU::operator const FrameTransform() const {
     else if(function_ == nullptr && (result = cuModuleGetFunction(&function_, module_, kernel_name)) != CUDA_SUCCESS)
         throw GpuCudaRuntimeError(std::string("Failure loading kernel ") + kernel_name, result);
     else
-        return [this](VideoLock& lock, Frame& frame) -> Frame& {
+        return [this](VideoLock& lock, const Frame& frame) -> const Frame& {
             std::scoped_lock{lock};
 
             //dim3 blockDims{512,1,1};

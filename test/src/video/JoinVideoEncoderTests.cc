@@ -233,7 +233,7 @@ TEST_F(JoinVideoEncoderTestFixture, test2x2TileTransform) {
     JoinVideoEncoder joiner(context, {rows*columns, decodeConfiguration2K}, encodeConfiguration, rows, columns);
     std::vector<std::shared_ptr<DecodeReader>> readers{};
     FileEncodeWriter writer{joiner.api(), FILENAME(0)};
-    std::vector<FrameTransform> tileTransforms{4, [&transforms](VideoLock&, Frame& frame) -> Frame& {
+    std::vector<FrameTransform> tileTransforms{4, [&transforms](VideoLock&, const Frame& frame) -> const Frame& {
         transforms++;
         return frame; }};
 

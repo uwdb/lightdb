@@ -72,7 +72,7 @@ struct EncodeConfiguration: public Configuration
         bool enableReferenceFrameInvalidation;
     } flags;
 
-    EncodeConfiguration(const struct EncodeConfiguration& copy) = default;
+    EncodeConfiguration(const struct EncodeConfiguration&) = default;
 
     EncodeConfiguration(const struct EncodeConfiguration& model, const size_t height, const size_t width)
             : EncodeConfiguration(model)
@@ -122,6 +122,45 @@ struct EncodeConfiguration: public Configuration
             EncodeConfiguration(height, width, max_height, max_width, codec,
                                 EncodeAPI::GetPresetGUID(preset.c_str(), codec),
                                 {fps, 1}, gop_length, bitrate, rateControlMode)
+    { }
+
+    EncodeConfiguration(const Configuration &configuration,
+                        const EncodeCodec codec,
+                        const unsigned int gop_length,
+                        const NV_ENC_PARAMS_RC_MODE rateControlMode=NV_ENC_PARAMS_RC_CONSTQP,
+                        const unsigned int b_frames=0,
+                        const NV_ENC_BUFFER_FORMAT input_format=NV_ENC_BUFFER_FORMAT_NV12,
+                        const NV_ENC_PIC_STRUCT picture_struct=NV_ENC_PIC_STRUCT_FRAME,
+                        const float i_qfactor=DEFAULT_I_QFACTOR,
+                        const float b_qfactor=DEFAULT_B_QFACTOR,
+                        const float i_qoffset=DEFAULT_I_QOFFSET,
+                        const float b_qoffset=DEFAULT_B_QOFFSET):
+            EncodeConfiguration(configuration.height, configuration.width,
+                                configuration.max_height, configuration.max_width,
+                                codec, NV_ENC_PRESET_DEFAULT_GUID,
+                                configuration.framerate, gop_length, configuration.bitrate,
+                                rateControlMode, b_frames, input_format, picture_struct,
+                                i_qfactor, b_qfactor, i_qoffset, b_qoffset)
+    { }
+
+    EncodeConfiguration(const Configuration &configuration,
+                        const EncodeCodec codec,
+                        const std::string &preset,
+                        const unsigned int gop_length,
+                        const NV_ENC_PARAMS_RC_MODE rateControlMode=NV_ENC_PARAMS_RC_CONSTQP,
+                        const unsigned int b_frames=0,
+                        const NV_ENC_BUFFER_FORMAT input_format=NV_ENC_BUFFER_FORMAT_NV12,
+                        const NV_ENC_PIC_STRUCT picture_struct=NV_ENC_PIC_STRUCT_FRAME,
+                        const float i_qfactor=DEFAULT_I_QFACTOR,
+                        const float b_qfactor=DEFAULT_B_QFACTOR,
+                        const float i_qoffset=DEFAULT_I_QOFFSET,
+                        const float b_qoffset=DEFAULT_B_QOFFSET):
+            EncodeConfiguration(configuration.height, configuration.width,
+                                configuration.max_height, configuration.max_width,
+                                codec, EncodeAPI::GetPresetGUID(preset.c_str(), codec),
+                                configuration.framerate, gop_length, configuration.bitrate,
+                                rateControlMode, b_frames, input_format, picture_struct,
+                                i_qfactor, b_qfactor, i_qoffset, b_qoffset)
     { }
 
     EncodeConfiguration(const unsigned int height, const unsigned int width,

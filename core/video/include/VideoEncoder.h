@@ -12,24 +12,30 @@ struct EncodeBuffer;
 
 class VideoEncoder {
 public:
-  VideoEncoder(VideoEncoder &&other) = delete;
+    VideoEncoder(GPUContext& context, const EncodeConfiguration& configuration, VideoLock& lock)
+            : configuration_(configuration), context_(context), api_(std::make_shared<EncodeAPI>(context)), lock_(lock),
+              encoderHandle_(VideoEncoderHandle(context, *api_, configuration)),
+              buffers(CreateBuffers(minimumBufferCount())) {
+        if(api().ValidatePresetGUID(configuration) != NV_ENC_SUCCESS)
+            throw InvalidArgumentError("Invalid preset guid", "configuration");
+    }
 
-  VideoEncoder(GPUContext& context, const EncodeConfiguration& configuration, VideoLock& lock)
-          : configuration_(configuration), context_(context), api_(context), lock(lock),
-            encoderHandle_(VideoEncoderHandle(context, api_, configuration)),
-            buffers(CreateBuffers(minimumBufferCount())) {
-      if(api().ValidatePresetGUID(configuration) != NV_ENC_SUCCESS)
-          throw InvalidArgumentError("Invalid preset guid", "configuration");
-  }
+  VideoEncoder(VideoEncoder &) = delete;
+  //TODO this is inefficient, we really want to use the existing buffers, but they refer to the old encoder :(
+  VideoEncoder(VideoEncoder &&other) noexcept
+          : configuration_(other.configuration_), context_(other.context_), api_(other.api_), lock_(other.lock_),
+            encoderHandle_(std::move(other.encoderHandle_)),
+            buffers(CreateBuffers(minimumBufferCount()))
+  { }
 
-  EncodeAPI &api() { return api_; }
+  EncodeAPI &api() { return *api_; }
   const EncodeConfiguration &configuration() const { return configuration_; }
 
 protected:
     const EncodeConfiguration& configuration_;
     GPUContext &context_;
-    EncodeAPI api_;
-    VideoLock &lock;
+    std::shared_ptr<EncodeAPI> api_;
+    VideoLock &lock_;
 
 private:
     class VideoEncoderHandle {
@@ -42,9 +48,14 @@ private:
                 throw GpuEncodeRuntimeError("Call to api.CreateEncoder failed", status);
         }
 
+        VideoEncoderHandle(VideoEncoderHandle &) = delete;
+        VideoEncoderHandle(VideoEncoderHandle &&other) noexcept
+                : context_(other.context_), api_(other.api_), configuration_(other.configuration_) {
+            other.moved_ = true; }
+
         ~VideoEncoderHandle() {
             NVENCSTATUS result;
-            if((result = api_.NvEncDestroyEncoder()) != NV_ENC_SUCCESS)
+            if(!moved_ && (result = api_.NvEncDestroyEncoder()) != NV_ENC_SUCCESS)
                 LOG(ERROR) << "Swallowed failure to destroy encoder (NVENCSTATUS " << result << ") in destructor";
         }
 
@@ -52,6 +63,7 @@ private:
         GPUContext &context_;
         EncodeAPI &api_;
         const EncodeConfiguration &configuration_;
+        bool moved_ = false;
     } encoderHandle_;
 
   std::vector<std::shared_ptr<EncodeBuffer>> buffers;
