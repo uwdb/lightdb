@@ -236,8 +236,8 @@ namespace lightdb {
                       decoder_([this]() { return CudaDecoder(decode_configuration_, queue_, lock_); }),
                       session_([this]() { return VideoDecoderSession<downcast_iterator<CPUEncodedFrameData>>(
                               decoder_,
-                                      downcast_iterator<CPUEncodedFrameData>(iterators()[0]),
-                                      downcast_iterator<CPUEncodedFrameData>::eos()); }) {
+                              downcast_iterator<CPUEncodedFrameData>(iterators()[0]),
+                              downcast_iterator<CPUEncodedFrameData>::eos()); }) {
                 CHECK_EQ(source->device(), DeviceType::GPU);
             }
 

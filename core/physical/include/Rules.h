@@ -26,12 +26,12 @@ namespace lightdb::optimization {
         using OptimizerRule::OptimizerRule;
 
         bool visit(const logical::EncodedLightField &node) override {
-            //TODO clean this up, shouldn't just be randomly picking first parent
+            //TODO clean this up, shouldn't just be randomly picking last parent
             auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
                     node.parents().begin(), node.parents().end(),
                     [this](auto &parent) { return plan().assignments(parent); });
 
-            auto physical_parent = physical_parents[0];
+            auto physical_parent = physical_parents[physical_parents.size() - 1];
 
             if(!plan().has_physical_assignment(node)) {
                 plan().emplace<physical::GPUEncode>(plan().lookup(node), physical_parent);
