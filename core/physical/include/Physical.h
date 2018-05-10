@@ -3,6 +3,7 @@
 
 #include "LightField.h"
 #include "Encoding.h"
+#include "Environment.h"
 #include "Functor.h"
 #include "Data.h"
 #include "DecodeReader.h"
@@ -93,7 +94,6 @@ namespace lightdb {
             iterator iterator_;
         };
 
-
         static const iterator eos;
         virtual iterator begin() { return iterator(*this); }
         virtual iterator end() { return eos; }
@@ -129,6 +129,7 @@ namespace lightdb {
     namespace physical {
         class GPUOperator: public PhysicalLightField {
         public:
+            const execution::GPU& gpu() const { return gpu_; }
             GPUContext& context() { return *context_; }
             VideoLock& lock() {return *lock_; }
             const Configuration& configuration() { return *output_configuration_; }
@@ -136,84 +137,103 @@ namespace lightdb {
         protected:
             explicit GPUOperator(const LightFieldReference &logical,
                                  const std::vector<PhysicalLightFieldReference> &parents,
-                                 const std::function<GPUContext()> &context,
-                                 const std::function<Configuration()> &output_configuration,
-                                 const std::function<VideoLock()> &lock)
-                    : GPUOperator(logical, parents, lazy(context), lazy(output_configuration), lazy(lock))
+                                 const execution::GPU &gpu,
+                                 const std::function<Configuration()> &output_configuration)
+                    : GPUOperator(logical, parents, gpu, lazy(output_configuration))
             { }
 
             explicit GPUOperator(const LightFieldReference &logical,
                                  std::vector<PhysicalLightFieldReference> parents,
-                                 lazy<GPUContext> context,
-                                 lazy<Configuration> output_configuration,
-                                 lazy<VideoLock> lock)
+                                 execution::GPU gpu,
+                                 lazy<Configuration> output_configuration)
                     : PhysicalLightField(logical, std::move(parents), DeviceType::GPU),
-                      context_(std::move(context)),
-                      lock_(std::move(lock)),
+                      gpu_(gpu),
+                      context_([this]() { return this->gpu().context(); }),
+                      lock_([this]() mutable { return VideoLock(context()); }),
                       output_configuration_(std::move(output_configuration))
             { }
 
             explicit GPUOperator(const LightFieldReference &logical,
                                  PhysicalLightFieldReference &parent)
+                    : GPUOperator(logical, {parent}, parent.downcast<GPUOperator>())
+            { }
+
+            explicit GPUOperator(const LightFieldReference &logical,
+                                 PhysicalLightFieldReference &parent,
+                                 GPUOperator &gpuParent)
                     : GPUOperator(logical, {parent},
-                                  [parent]() mutable { return parent.downcast<GPUOperator>().context(); },
-                                  [parent]() mutable { return parent.downcast<GPUOperator>().configuration(); },
-                                  [parent]() mutable { return std::move(parent.downcast<GPUOperator>().lock()); }) {
-                if(!parent.is<GPUOperator>())
-                    throw InvalidArgumentError("Parent must be a GPUOperator instance.", "parent");
+                                  gpuParent.gpu(),
+                                  [&gpuParent]() mutable { return gpuParent.configuration(); }) {
             }
 
         private:
+            execution::GPU gpu_;
             lazy<GPUContext> context_;
             lazy<VideoLock> lock_;
             lazy<Configuration> output_configuration_;
         };
 
+        class GPUUnaryOperator : public GPUOperator {
+        public:
+            explicit GPUUnaryOperator(const LightFieldReference &logical,
+                                 PhysicalLightFieldReference &parent)
+                    : GPUOperator(logical, {parent})
+            { }
+
+            explicit GPUUnaryOperator(const LightFieldReference &logical,
+                                 const PhysicalLightFieldReference &parent,
+                                 const execution::GPU &gpu,
+                                 const std::function<Configuration()> &output_configuration)
+                    : GPUOperator(logical, {parent}, gpu, lazy(output_configuration))
+            { }
+
+            iterator &iterator() noexcept { return iterators()[0]; }
+        };
+
         class ScanSingleFile: public PhysicalLightField {
         public:
-            explicit ScanSingleFile(const LightFieldReference &logical, const size_t stream_index)
-                    : ScanSingleFile(logical, logical->downcast<logical::ScannedLightField>(), stream_index)
+            explicit ScanSingleFile(const LightFieldReference &logical, const catalog::Stream &stream)
+                    : ScanSingleFile(logical, logical->downcast<logical::ScannedLightField>(), stream)
             { }
 
             std::optional<physical::DataReference> read() override {
                 auto packet = reader_->read();
                 return packet.has_value()
-                       ? std::optional<physical::DataReference>{CPUEncodedFrameData(packet.value())}
+                       ? std::optional<physical::DataReference>{CPUEncodedFrameData(stream_.codec(), packet.value())}
                        : std::nullopt;
             }
+
+            const Codec &codec() const { return stream_.codec(); }
 
         private:
             explicit ScanSingleFile(const LightFieldReference &logical,
                                     const logical::ScannedLightField &scanned,
-                                    const size_t stream_index)
+                                    catalog::Stream stream)
                     : PhysicalLightField(logical, DeviceType::GPU),
-                      stream_index_(stream_index),
+                      stream_(std::move(stream)),
                       scanned_(scanned),
-                      reader_([=]() -> FileDecodeReader {
-                          return FileDecodeReader(scanned.metadata().streams()[stream_index]); }) {
-                CHECK_LT(stream_index, scanned_.metadata().streams().size());
-            }
+                      reader_([this]() -> FileDecodeReader {
+                          return FileDecodeReader(stream_.path()); })
+            { }
 
-            const size_t stream_index_;
+            const catalog::Stream stream_;
             const logical::ScannedLightField &scanned_;
             lazy<FileDecodeReader> reader_;
         };
 
-        class GPUDecode : public GPUOperator {
+        class GPUDecode : public GPUUnaryOperator {
         public:
             explicit GPUDecode(const LightFieldReference &logical,
-                               const PhysicalLightFieldReference &source)
-                    : GPUOperator(logical, {source},
-                                  //TODO hardcoded device
-                                  []() { return GPUContext(0); },
-                                  //TODO hardcoded configuration
-                                  []() { return EncodeConfiguration{240, 320, NV_ENC_HEVC, 24, 30, 1024*1024}; },
-                                  //TODO shouldn't base class be doing this for us?
-                                  [this]() { return VideoLock(context()); }),
-                      decode_configuration_{configuration(), cudaVideoCodec_H264},
-                      lock_([this]() { return VideoLock(context()); }),
-                      queue_([this]() { return CUVIDFrameQueue(lock_); }),
-                      decoder_([this]() { return CudaDecoder(decode_configuration_, queue_, lock_); }),
+                               const PhysicalLightFieldReference &source,
+                               const execution::GPU &gpu)
+                    : GPUUnaryOperator(logical, {source}, gpu,
+                                       //TODO hardcoded configuration
+                                       []() { return Configuration{320, 240, 0, 0, 1024*1024, {24, 1}}; }),
+                                       // []() { return EncodeConfiguration{240, 320, NV_ENC_HEVC, 24, 30, 1024*1024}; }),
+                      decode_configuration_([this]() { return DecodeConfiguration{configuration(),
+                                                                                  get_codec().cudaId().value()}; }),
+                      queue_([this]() { return CUVIDFrameQueue(lock()); }),
+                      decoder_([this]() { return CudaDecoder(decode_configuration_, queue_, lock()); }),
                       session_([this]() { return VideoDecoderSession<downcast_iterator<CPUEncodedFrameData>>(
                               decoder_,
                               downcast_iterator<CPUEncodedFrameData>(iterators()[0]),
@@ -240,11 +260,14 @@ namespace lightdb {
             }
 
         private:
-            DecodeConfiguration decode_configuration_;
-            lazy<VideoLock> lock_;
+            lazy<DecodeConfiguration> decode_configuration_;
             lazy<CUVIDFrameQueue> queue_;
             lazy<CudaDecoder> decoder_;
             lazy<VideoDecoderSession<downcast_iterator<CPUEncodedFrameData>>> session_;
+
+            const Codec& get_codec() {
+                return (*iterator()).downcast<CPUEncodedFrameData>().codec();
+            }
         };
 
         class GPUUnion : public GPUOperator {
@@ -252,9 +275,8 @@ namespace lightdb {
             explicit GPUUnion(const LightFieldReference &logical,
                               std::vector<PhysicalLightFieldReference> &parents)
                     : GPUOperator(logical, parents,
-                                  [parents]() mutable { return parents[0].downcast<GPUOperator>().context(); },
-                                  [parents]() mutable { return parents[0].downcast<GPUOperator>().configuration(); },
-                                  [parents]() mutable { return std::move(parents[0].downcast<GPUOperator>().lock()); }),
+                                  parents[0].downcast<GPUOperator>().gpu(),
+                                  [parents]() mutable { return parents[0].downcast<GPUOperator>().configuration(); }),
                       tempEncodeConfiguration_{1024, 2048, NV_ENC_HEVC, 24, 30, 1024*1024},
                       input_configurations_([this, parents]() {
                           return std::vector<DecodeConfiguration>{DecodeConfiguration(tempEncodeConfiguration_, cudaVideoCodec_H264)}; }),
@@ -291,11 +313,11 @@ namespace lightdb {
             lazy<UnionTranscoder> unioner_;
         };
 
-        class GPUEncode : public GPUOperator {
+        class GPUEncode : public GPUUnaryOperator {
         public:
             explicit GPUEncode(const LightFieldReference &logical,
                                PhysicalLightFieldReference &parent)
-                    : GPUOperator(logical, parent),
+                    : GPUUnaryOperator(logical, parent),
                       encodeConfiguration_([this]() { return EncodeConfiguration{configuration(), NV_ENC_HEVC, 30}; }),
                       encoder_([this]() { return VideoEncoder(context(), encodeConfiguration_, lock()); }),
                       encodeSession_([this]() { return VideoEncoderSession(encoder_, writer_); }),
@@ -316,15 +338,13 @@ namespace lightdb {
 
                     auto packet = new CUVIDSOURCEDATAPACKET{.flags = 0, .payload_size=chunk.size(), .payload=chunkcopy, .timestamp=0};
                     const DecodeReaderPacket decodepacket(*packet); //TODO leak leak leak leak leak
-                    return {CPUEncodedFrameData(decodepacket)};
+                    return {CPUEncodedFrameData(Codec::hevc(), decodepacket)};
                 }
                 else
                     return std::nullopt;
             }
 
         private:
-            iterator &iterator() noexcept { return iterators()[0]; }
-
             lazy<EncodeConfiguration> encodeConfiguration_;
             lazy<VideoEncoder> encoder_;
             lazy<VideoEncoderSession> encodeSession_;

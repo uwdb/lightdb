@@ -26,8 +26,12 @@ public:
 
         for(const auto &data: output)
         {
-            const auto &encoded = data.downcast<physical::CPUEncodedFrameData>();
-            file.write((const char*)encoded.data(), encoded.size());
+            auto &encoded = data.downcast<physical::CPUEncodedFrameData>();
+            auto &e = const_cast<physical::CPUEncodedFrameData&>(encoded);
+            //std::copy(encoded.value().begin(),encoded.value().end(),std::ostreambuf_iterator<char>(file));
+            std::copy(e.value().begin(),e.value().end(),std::ostreambuf_iterator<char>(file));
+            //file.write(encoded.value().data());
+            //file.write((const char*)encoded.data(), encoded.size());
         }
     }
 };

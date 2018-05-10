@@ -56,6 +56,7 @@ namespace lightdb::optimization {
         LightFieldReference lookup(const LightField &node) const { return nodes_.at(&node); }
         const std::vector<LightFieldReference>& sinks() const { return sinks_; }
         const auto& physical() const { return physical_; }
+        const auto& environment() const { return environment_; }
 
     private:
         const execution::Environment environment_;

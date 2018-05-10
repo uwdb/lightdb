@@ -11,10 +11,13 @@ namespace lightdb::optimization {
 
         bool visit(const logical::ScannedLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
-                LOG(WARNING) << "Just using first stream and ignoring all others";
+                LOG(WARNING) << "Just using first stream and GPU and ignoring all others";
+                auto gpu = plan().environment().gpus()[0];
+                auto stream = node.metadata().streams()[0];
+
                 auto logical = plan().lookup(node);
-                auto &scan = plan().emplace<physical::ScanSingleFile>(logical, 0);
-                auto decode = plan().emplace<physical::GPUDecode>(logical, scan);
+                auto &scan = plan().emplace<physical::ScanSingleFile>(logical, stream);
+                auto decode = plan().emplace<physical::GPUDecode>(logical, scan, gpu);
                 return true;
             }
             return false;

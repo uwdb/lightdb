@@ -1,6 +1,7 @@
 #ifndef LIGHTDB_CATALOG_H
 #define LIGHTDB_CATALOG_H
 
+#include "Codec.h"
 #include "Geometry.h"
 #include "Color.h"
 #include <experimental/filesystem>
@@ -10,6 +11,20 @@ namespace lightdb {
     class LightFieldReference;
 
     namespace catalog {
+        class Stream {
+        public:
+            Stream(std::experimental::filesystem::path path, Codec codec)
+                    : path_(std::move(path)), codec_(std::move(codec))
+            { }
+
+            const std::experimental::filesystem::path& path() const { return path_; }
+            const Codec& codec() const { return codec_; }
+
+        private:
+            const std::experimental::filesystem::path path_;
+            const Codec codec_;
+        };
+
         class Catalog {
         public:
             Catalog(const Catalog &catalog) = default;
@@ -42,9 +57,11 @@ namespace lightdb {
                 Metadata(const Catalog &catalog, std::string name, std::experimental::filesystem::path path)
                         : catalog_(catalog), name_(std::move(name)), path_(std::move(path)),
                         //TODO grab boxes and load volume/geometry, detect colorspace
+                          codec_(Codec::h264()),
                           volume_({{0, 0}, {0, 0}, {0, 0}, {0, 10}, ThetaRange::limits(), PhiRange::limits()}),
                           colorSpace_(YUVColorSpace::instance()),
-                          geometry_(EquirectangularGeometry::instance())
+                          geometry_(EquirectangularGeometry::instance()),
+                          streams_(get_streams(path_))
                 { }
 
             public:
@@ -52,23 +69,27 @@ namespace lightdb {
                 const ColorSpace& colorSpace() const noexcept { return colorSpace_; }
                 const Geometry& geometry() const noexcept { return geometry_; }
                 const std::string path() const noexcept { return path_; }
-                const std::vector<std::string> streams() const noexcept;
+                const std::vector<Stream>& streams() const noexcept { return streams_; }
 
             private:
                 const Catalog &catalog_;
                 const std::string name_;
                 const std::experimental::filesystem::path path_;
+                const Codec codec_;
                 const Volume volume_;
                 const ColorSpace colorSpace_;
                 const Geometry &geometry_;
+                std::vector<Stream> streams_;
             };
 
         private:
             Catalog() : path_("") { }
 
             const std::experimental::filesystem::path path_;
+
             static constexpr const char *metadataFilename_ = "metadata.mp4";
             static std::optional<Catalog> instance_;
+            static std::vector<Stream> get_streams(const std::experimental::filesystem::path&);
         };
     } //namespace catalog
 } //namespace lightdb

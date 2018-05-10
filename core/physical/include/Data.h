@@ -1,10 +1,10 @@
 #ifndef LIGHTDB_DATA_H
 #define LIGHTDB_DATA_H
 
-#include <utility>
-#include <DecodeReader.h>
-
 #include "Encoding.h"
+#include "DecodeReader.h"
+#include "Codec.h"
+#include <utility>
 
 namespace lightdb::physical {
     class Data;
@@ -38,34 +38,48 @@ namespace lightdb::physical {
 
     class SerializableData: public Data {
     public:
-        virtual const bytestring& value() = 0;
+        virtual const bytestring& value() const { return *value_; }
 
     protected:
-        explicit SerializableData(DeviceType device)
-                : Data(device)
-        { }
-        SerializableData(DeviceType device, bytestring value)
-            : Data(device), value_(std::move(value))
+        SerializableData(DeviceType device, bytestring &value)
+            : SerializableData(device, value.begin(), value.end())
         { }
 
-    protected:
-        bytestring value_;
+        template<typename Input>
+        SerializableData(DeviceType device, Input begin, Input end)
+                : Data(device), value_(std::make_unique<bytestring>(begin, end))
+        { }
+
+    private:
+        const std::shared_ptr<bytestring> value_;
     };
 
-    class CPUEncodedFrameData: public SerializableData {
-    public:
-        explicit CPUEncodedFrameData(const DecodeReaderPacket &packet)
-                : SerializableData(DeviceType::CPU), packet_(packet)
+    class EncodedFrameData: public SerializableData {
+    protected:
+        EncodedFrameData(const DeviceType device, const Codec &codec, const bytestring &value)
+                : EncodedFrameData(device, codec, value.begin(), value.end())
         { }
 
-        size_t size() const noexcept { return packet_.payload_size; }
-        const void *data() const noexcept { return packet_.payload;}
+        template<typename Input>
+        EncodedFrameData(const DeviceType device, Codec codec, Input begin, const Input end)
+                : SerializableData(device, begin, end), codec_(std::move(codec))
+        { }
+
+    public:
+        const Codec& codec() const { return codec_; }
+
+    private:
+        const Codec codec_;
+    };
+
+    class CPUEncodedFrameData: public EncodedFrameData {
+    public:
+        explicit CPUEncodedFrameData(const Codec &codec, const DecodeReaderPacket &packet)
+                : EncodedFrameData(DeviceType::CPU, codec, packet.payload, packet.payload + packet.payload_size),
+                  packet_(packet)
+        { }
 
         explicit operator const DecodeReaderPacket() const noexcept { return packet_; }
-
-        const bytestring& value() override {
-            return (value_ = bytestring(static_cast<const char*>(data()), static_cast<const char*>(data()) + size()));
-        }
 
     private:
         const DecodeReaderPacket packet_;
