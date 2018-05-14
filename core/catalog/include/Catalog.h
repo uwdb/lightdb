@@ -6,6 +6,7 @@
 #include "Color.h"
 #include <experimental/filesystem>
 #include <utility>
+#include <Configuration.h>
 
 namespace lightdb {
     class LightFieldReference;
@@ -13,16 +14,18 @@ namespace lightdb {
     namespace catalog {
         class Stream {
         public:
-            Stream(std::experimental::filesystem::path path, Codec codec)
-                    : path_(std::move(path)), codec_(std::move(codec))
+            Stream(std::experimental::filesystem::path path, Codec codec, Configuration configuration)
+                    : path_(std::move(path)), codec_(std::move(codec)), configuration_(std::move(configuration))
             { }
 
             const std::experimental::filesystem::path& path() const { return path_; }
             const Codec& codec() const { return codec_; }
+            const Configuration& configuration() const { return configuration_; }
 
         private:
             const std::experimental::filesystem::path path_;
             const Codec codec_;
+            const Configuration configuration_;
         };
 
         class Catalog {
