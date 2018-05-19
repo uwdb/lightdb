@@ -54,8 +54,8 @@ protected:
             }
         } while (!decoder.frame_queue().isEndOfDecode() && reader != end);
 
-        decoder.frame_queue().endDecode();
         cuvidDestroyVideoParser(parser);
+        decoder.frame_queue().endDecode();
         LOG(INFO) << "Decode complete; thread terminating.";
     }
 

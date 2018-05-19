@@ -15,12 +15,12 @@ public:
 
 protected:
     //TODO push frame_queue into session
-    VideoDecoder(const DecodeConfiguration &configuration, FrameQueue& frame_queue)
-        : configuration_(configuration), frame_queue_(frame_queue)
+    VideoDecoder(DecodeConfiguration configuration, FrameQueue& frame_queue)
+        : configuration_(std::move(configuration)), frame_queue_(frame_queue)
     { }
 
 private:
-    const DecodeConfiguration &configuration_;
+    const DecodeConfiguration configuration_;
     FrameQueue& frame_queue_;
 };
 
@@ -31,7 +31,7 @@ public:
           : VideoDecoder(configuration, frame_queue), handle_(nullptr)
   {
       CUresult result;
-      auto decoderCreateInfo = configuration.AsCuvidCreateInfo(lock);
+      auto decoderCreateInfo = this->configuration().AsCuvidCreateInfo(lock);
 
       if((result = cuvidCreateDecoder(&handle_, &decoderCreateInfo)) != CUDA_SUCCESS) {
           throw GpuCudaRuntimeError("Call to cuvidCreateDecoder failed", result);

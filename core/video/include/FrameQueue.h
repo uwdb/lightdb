@@ -18,21 +18,19 @@
 #include <thread>
 #include <memory>
 #include <pthread.h>
-#include <string.h>
+#include <cstring>
 #include <unistd.h>
 
 typedef pthread_mutex_t CRITICAL_SECTION;
 typedef void *HANDLE;
 
-#define DIV_UP(a, b) (((a) + (b)-1) / (b))
-
 class FrameQueue {
 public:
   static const unsigned int cnMaximumSize = 20; // MAX_FRM_CNT;
 
-  FrameQueue(CUvideoctxlock ctxLock);
+  explicit FrameQueue(CUvideoctxlock ctxLock);
 
-  FrameQueue(VideoLock &lock);
+  explicit FrameQueue(VideoLock &lock);
 
   virtual ~FrameQueue();
 
@@ -77,13 +75,13 @@ public:
   bool waitUntilFrameAvailable(int nPictureIndex);
 
   void reset() {
-      hEvent_ = 0;
+      hEvent_ = nullptr;
       nReadPosition_ = 0;
       nWritePosition_ = 0;
       nFramesInQueue_ = 0;
       bEndOfDecode_ = false;
-      for(auto i = 0u; i < cnMaximumSize; i++)
-          aIsFrameInUse_[i] = 0;
+      for (auto &i : aIsFrameInUse_)
+          i = 0;
       //memset(reinterpret_cast<void*>(aIsFrameInUse_), 0, cnMaximumSize * sizeof(int));
   }
 
@@ -92,25 +90,6 @@ public:
   bool isEmpty() { return nFramesInQueue_ == 0; }
 
   bool isComplete() { return isEndOfDecode() && isEmpty(); }
-/*
-    template<typename T>
-    class MappedFrame {
-    public:
-        Frame(FrameQueue &frameQueue, std::shared_ptr<T> &data)
-                : frameQueue_(frameQueue), data_(data) { }
-        Frame(Frame&&) = delete;
-        Frame(const Frame&&) = delete;
-
-        ~Frame() {
-            //frameQueue_.releaseFrame(&data_);
-        }
-
-        const T& data() const { return data_; }
-
-    private:
-        FrameQueue &frameQueue_;
-        const std::shared_ptr<T> data_;
-    };*/
 
     template<typename T>
     const std::shared_ptr<T> dequeue_wait() {
@@ -128,31 +107,6 @@ public:
                 ? data
                 : nullptr;
     }
-
-//            return data;// std::optional<Frame<T>>(std::in_place, *this, data);
-  //      } else
-    //        return nullptr; //{};
-
-/*
-        T data;
-        if(dequeue(&data)) {
-            const std::optional<const Frame<T>> r(std::in_place, *this, data);
-            printf("foo\n");
-            return std::move(r);
-
-            //std::optional<Frame<T>> result;
-            //result.emplace(*this, data);
-            //return std::move(result);
-
-            //Frame<T> frame(*this, std::move(data));
-            //return {std::in_place, *this, data};
-        } else
-            return {};
-*/
-        //return dequeue(&data)
-        //       ? std::optional<Frame<T>>(Frame<T>(*this, std::move(data)))
-        //       : std::optional<Frame<T>>{};
-//    }
 
 protected:
   void signalStatusChange();
@@ -173,20 +127,21 @@ protected:
 class CUVIDFrameQueue : public FrameQueue {
 
 public:
-  CUVIDFrameQueue(VideoLock &lock);
-  CUVIDFrameQueue(CUvideoctxlock ctxLock);
-  ~CUVIDFrameQueue();
+  explicit CUVIDFrameQueue(VideoLock &lock);
+  explicit CUVIDFrameQueue(CUvideoctxlock ctxLock);
 
-  virtual void enqueue(const void *pData);
+  void enqueue(const void *pData) override;
   //virtual bool dequeue(CUVIDPARSERDISPINFO *data) { return dequeue(static_cast<void*>(data)); }
 
   const std::shared_ptr<CUVIDPARSERDISPINFO> dequeue() {
       return static_cast<FrameQueue*>(this)->dequeue<CUVIDPARSERDISPINFO>();
   }
 
+    //TODO this was protected, move back after debugging
+    void releaseFrame(const void *pPicParams) override;
+
 protected:
-  virtual bool dequeue(void *pData);
-  virtual void releaseFrame(const void *pPicParams);
+  bool dequeue(void *pData) override;
   CUVIDPARSERDISPINFO aDisplayQueue_[cnMaximumSize];
 };
 

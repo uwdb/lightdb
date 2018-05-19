@@ -19,6 +19,7 @@ public:
         return *assignments[0];
     }
 
+    //TODO this should be in the algebra, returning an external TLF
     void save(const optimization::Plan &plan, const std::string &filename)
     {
         std::ofstream file(filename);
@@ -27,11 +28,7 @@ public:
         for(const auto &data: output)
         {
             auto &encoded = data.downcast<physical::CPUEncodedFrameData>();
-            auto &e = const_cast<physical::CPUEncodedFrameData&>(encoded);
-            //std::copy(encoded.value().begin(),encoded.value().end(),std::ostreambuf_iterator<char>(file));
-            std::copy(e.value().begin(),e.value().end(),std::ostreambuf_iterator<char>(file));
-            //file.write(encoded.value().data());
-            //file.write((const char*)encoded.data(), encoded.size());
+            std::copy(encoded.value().begin(),encoded.value().end(),std::ostreambuf_iterator<char>(file));
         }
     }
 };

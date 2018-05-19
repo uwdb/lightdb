@@ -19,7 +19,10 @@ namespace lightdb::catalog {
 
     std::vector<Stream> Catalog::get_streams(const filesystem::path &path) {
         LOG(WARNING) << "Using unimplemented stub Catalog::get_streams";
-        return {Stream{filesystem::absolute(path / "stream0.h264"), Codec::h264()}};
+        LOG(WARNING) << "Using hardcoded configuration";
+        return {Stream{filesystem::absolute(path / "stream0.h264"),
+                       Codec::h264(),
+                       Configuration{320, 240, 0, 0, 1024*1024, {24, 1}}}};
     }
 
 } // namespace lightdb::catalog
