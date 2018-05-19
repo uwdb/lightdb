@@ -6,10 +6,6 @@
 #include "VideoEncoder.h"
 #include "EncodeWriter.h"
 
-struct VideoEncodePosition {
-    const size_t x, y;
-};
-
 using FrameCopierFunction = std::function<void(EncodeBuffer&, Frame&, size_t)>;
 
 class VideoEncoderSession {
@@ -45,7 +41,8 @@ public:
         return Encode(frames, copier, [](VideoLock&, EncodeBuffer& buffer) -> EncodeBuffer& { return buffer; });
     }
 
-    void Encode(std::vector<Frame> &frames, const FrameCopierFunction &copier, const EncodableFrameTransform transform) {
+    void Encode(std::vector<Frame> &frames, const FrameCopierFunction &copier,
+                const EncodableFrameTransform &transform) {
         auto &buffer = GetAvailableBuffer();
 
         if(frames.empty())
@@ -57,6 +54,7 @@ public:
 
         for(auto i = 0u; i < frames.size(); i++)
             copier(buffer, frames[i], i);
+
         return Encode(transform(encoder().lock_, buffer), frames[0].type());
     }
 

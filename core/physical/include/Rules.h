@@ -34,10 +34,11 @@ namespace lightdb::optimization {
                     node.parents().begin(), node.parents().end(),
                     [this](auto &parent) { return plan().assignments(parent); });
 
-            auto physical_parent = physical_parents[physical_parents.size() - 1];
+            auto physical_parent = physical_parents[0]; //physical_parents.size() - 1];
 
+            //TODO shouldn't just be randomly selecting HEVC
             if(!plan().has_physical_assignment(node)) {
-                plan().emplace<physical::GPUEncode>(plan().lookup(node), physical_parent);
+                plan().emplace<physical::GPUEncode>(plan().lookup(node), physical_parent, Codec::hevc());
                 return true;
             }
             return false;

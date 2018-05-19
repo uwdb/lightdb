@@ -9,8 +9,8 @@
 
 #define InvalidArgumentError(message, argument) \
     ::lightdb::errors::_InvalidArgument(message, argument, __FILE__, __LINE__, __func__)
-#define BadCastError() \
-    ::lightdb::errors::_BadCast(__FILE__, __LINE__, __func__)
+#define BadCastError(message) \
+    ::lightdb::errors::_BadCast(__FILE__, __LINE__, __func__, "" message)
 
 #define NotImplementedError(message) \
     ::lightdb::errors::_NotImplemented(__FILE__, __LINE__, __func__, "Not implemented " message)
@@ -51,18 +51,27 @@ namespace lightdb::errors {
 
     class _BadCast: public std::bad_cast {
     public:
-        _BadCast(const char* file, int line, const char* function)
-            : file_(file), line_(line), func_(function)
-        {  }
+        _BadCast(const char* file, int line, const char* function, const char *message = nullptr)
+                : _BadCast(file, line, function, message == nullptr ? "" : std::string{message})
+        { }
+
+        _BadCast(const char* file, int line, const char* function, std::string message = "")
+                : file_(file), line_(line), func_(function), message_(std::move(message))
+        { log(); }
 
         int         line() const { return line_; }
         const char* file() const { return file_; }
         const char* function() const { return func_; }
+        const std::string message() const { return !message_.empty() ? message_ : what(); }
+
+    protected:
+        virtual void log() const { LOG(ERROR) << message() << " (" << function() << ':' << file() << ':' << line() << ')'; }
 
     private:
         const char* file_;
         const int   line_;
         const char* func_;
+        const std::string message_;
     };
 
     class _InvalidArgument: public LightDBError<std::invalid_argument> {

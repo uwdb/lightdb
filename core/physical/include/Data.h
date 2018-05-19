@@ -74,6 +74,11 @@ namespace lightdb::physical {
 
     class CPUEncodedFrameData: public EncodedFrameData {
     public:
+        explicit CPUEncodedFrameData(const Codec &codec, const std::vector<char> &data)
+                : EncodedFrameData(DeviceType::CPU, codec, data.begin(), data.end()),
+                  packet_(data)
+        { }
+
         explicit CPUEncodedFrameData(const Codec &codec, const DecodeReaderPacket &packet)
                 : EncodedFrameData(DeviceType::CPU, codec, packet.payload, packet.payload + packet.payload_size),
                   packet_(packet)
@@ -91,10 +96,18 @@ namespace lightdb::physical {
                 : Data(DeviceType::GPU), frames_{std::move(frames)}
         { }
 
+        GPUDecodedFrameData(const GPUDecodedFrameData& other)
+                : Data(DeviceType::GPU), frames_(other.frames_)
+        { }
+
+        GPUDecodedFrameData(GPUDecodedFrameData &&other) noexcept
+                : Data(DeviceType::GPU), frames_{other.frames_}
+        { }
+
         inline std::vector<DecodedFrame>& frames() noexcept { return frames_; }
 
     private:
-        std::vector<DecodedFrame> frames_;
+        std::vector<DecodedFrame> frames_{};
     };
 } // namespace lightdb::physical
 

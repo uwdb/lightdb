@@ -5,16 +5,16 @@
 
 namespace lightdb::physical {
 
-class HomomorphicUniformTile: public PhysicalLightField, public EncodedVideoOperator {
+class HomomorphicUniformTile: public PhysicalLightField, public EncodedVideoInterface {
 public:
     explicit HomomorphicUniformTile(const LightFieldReference &logical,
                                     const std::vector<PhysicalLightFieldReference> &parents,
                                     const unsigned int rows, const unsigned int columns)
             : PhysicalLightField(logical, parents, DeviceType::CPU),
               rows_(rows), columns_(columns),
-              sources_(functional::transform<std::reference_wrapper<const EncodedVideoOperator>>(
+              sources_(functional::transform<std::reference_wrapper<const EncodedVideoInterface>>(
                       parents.begin(), parents.end(), [](const PhysicalLightFieldReference &parent) {
-                          return std::ref(parent.downcast<EncodedVideoOperator>()); })),
+                          return std::ref(parent.downcast<EncodedVideoInterface>()); })),
               configuration_{get_configuration(sources_, rows_, columns_)}
     {
         //TODO assert preconditions
@@ -32,11 +32,11 @@ public:
 
 private:
     const unsigned int rows_, columns_;
-    const std::vector<std::reference_wrapper<const EncodedVideoOperator>> sources_;
+    const std::vector<std::reference_wrapper<const EncodedVideoInterface>> sources_;
     const Configuration configuration_;
 
     static const Configuration get_configuration(
-            const std::vector<std::reference_wrapper<const EncodedVideoOperator>>& sources,
+            const std::vector<std::reference_wrapper<const EncodedVideoInterface>>& sources,
             const unsigned int rows, const unsigned int columns) {
         auto &first_configuration = sources[0].get().configuration();
 

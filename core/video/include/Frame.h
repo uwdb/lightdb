@@ -38,11 +38,11 @@ public:
         : Frame(decoder.configuration(), extract_type(parameters)), decoder_(decoder), parameters_(parameters)
     { }
 
-    DecodedFrame(const DecodedFrame &frame) = default;
+    DecodedFrame(const DecodedFrame&) = default;
     DecodedFrame(DecodedFrame &&other) noexcept = default;
 
     const CudaDecoder &decoder() const { return decoder_; }
-    const std::shared_ptr<CUVIDPARSERDISPINFO> parameters() const { return parameters_; }
+    const CUVIDPARSERDISPINFO& parameters() const { return *parameters_; }
     unsigned int height() const override { return decoder_.configuration().height; }
     unsigned int width() const override { return decoder_.configuration().width; }
 
@@ -58,6 +58,7 @@ private:
     const CudaDecoder &decoder_;
     const std::shared_ptr<CUVIDPARSERDISPINFO> parameters_;
 };
+
 
 class CudaFrame: public Frame {
 public:
@@ -113,12 +114,11 @@ private:
         CUdeviceptr handle;
         unsigned int pitch;
         CUVIDPROCPARAMS mapParameters{
-                .progressive_frame = frame.parameters()->progressive_frame,
+                .progressive_frame = frame.parameters().progressive_frame,
                 .second_field = 0,
-                .top_field_first = frame.parameters()->top_field_first,
-                .unpaired_field = frame.parameters()->progressive_frame == 1 || frame.parameters()->repeat_first_field <= 1};
-
-        if((result = cuvidMapVideoFrame(frame.decoder().handle(), frame.parameters()->picture_index,
+                .top_field_first = frame.parameters().top_field_first,
+                .unpaired_field = frame.parameters().progressive_frame == 1 || frame.parameters().repeat_first_field <= 1};
+        if((result = cuvidMapVideoFrame(frame.decoder().handle(), frame.parameters().picture_index,
                                         &handle, &pitch, &mapParameters)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuvidMapVideoFrame failed", result);
 

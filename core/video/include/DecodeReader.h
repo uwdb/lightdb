@@ -13,12 +13,17 @@ public:
 
     explicit DecodeReaderPacket(const CUVIDSOURCEDATAPACKET &packet)
         : CUVIDSOURCEDATAPACKET{packet.flags, packet.payload_size, nullptr, packet.timestamp},
-          buffer_(std::make_shared<std::vector<unsigned char>>())
-    {
+          buffer_(std::make_shared<std::vector<unsigned char>>()) {
         buffer_->reserve(payload_size);
         buffer_->insert(buffer_->begin(), packet.payload, packet.payload + payload_size);
         payload = buffer_->data();
     }
+
+    explicit DecodeReaderPacket(const std::vector<char> &data, const unsigned long flags=0,
+                                const CUvideotimestamp timestamp=0)
+            : DecodeReaderPacket(CUVIDSOURCEDATAPACKET{flags, data.size(),
+                                                       reinterpret_cast<const unsigned char*>(data.data()), timestamp})
+    { }
 
     DecodeReaderPacket& operator=(const DecodeReaderPacket &packet) = default;
     bool operator==(const DecodeReaderPacket &packet) const noexcept {

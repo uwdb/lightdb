@@ -10,21 +10,19 @@
  */
 
 #include "FrameQueue.h"
-#include <assert.h>
-#include <stdio.h>
-#include <glog/logging.h>
+#include <cassert>
 
 FrameQueue::FrameQueue(VideoLock &lock)
         : FrameQueue(lock.get())
 { }
 
 FrameQueue::FrameQueue(CUvideoctxlock ctxLock)
-    : hEvent_(0), nReadPosition_(0), nWritePosition_(0), nFramesInQueue_(0), bEndOfDecode_(0), m_ctxLock(ctxLock) {
+    : hEvent_(nullptr), nReadPosition_(0), nWritePosition_(0), nFramesInQueue_(0), bEndOfDecode_(0), m_ctxLock(ctxLock) {
 #ifdef _WIN32
   hEvent_ = CreateEvent(NULL, false, false, NULL);
   InitializeCriticalSection(&oCriticalSection_);
 #else
-  pthread_mutex_init(&oCriticalSection_, NULL);
+  pthread_mutex_init(&oCriticalSection_, nullptr);
 #endif
 
   memset((void *)aIsFrameInUse_, 0, cnMaximumSize * sizeof(int));
@@ -61,13 +59,13 @@ void FrameQueue::leave_CS(CRITICAL_SECTION *pCS) {
 #endif
 }
 
-void FrameQueue::set_event(HANDLE event) {
+void FrameQueue::set_event(HANDLE) {
 #ifdef _WIN32
   SetEvent(event);
 #endif
 }
 
-void FrameQueue::reset_event(HANDLE event) {
+void FrameQueue::reset_event(HANDLE) {
 #ifdef _WIN32
   ResetEvent(event);
 #endif
@@ -111,13 +109,13 @@ CUVIDFrameQueue::CUVIDFrameQueue(CUvideoctxlock ctxLock) : FrameQueue(ctxLock) {
   memset(aDisplayQueue_, 0, cnMaximumSize * sizeof(CUVIDPARSERDISPINFO));
 }
 
-CUVIDFrameQueue::~CUVIDFrameQueue() {}
+//CUVIDFrameQueue::~CUVIDFrameQueue() = default;
 
 void CUVIDFrameQueue::enqueue(const void *pData) {
   // Mark the frame as 'in-use' so we don't re-use it for decoding until it is
   // no longer needed
   // for display
-  const CUVIDPARSERDISPINFO *pPicParams = (const CUVIDPARSERDISPINFO *)(pData);
+  const auto *pPicParams = (const CUVIDPARSERDISPINFO *)(pData);
   aIsFrameInUse_[pPicParams->picture_index] = true;
   // Wait until we have a free entry in the display queue (should never block if
   // we have enough entries)
@@ -142,7 +140,7 @@ void CUVIDFrameQueue::enqueue(const void *pData) {
 // if no valid picture can be return the pic-info's picture_index will
 // be -1.
 bool CUVIDFrameQueue::dequeue(void *pData) {
-  CUVIDPARSERDISPINFO *pDisplayInfo = (CUVIDPARSERDISPINFO *)(pData);
+    auto *pDisplayInfo = (CUVIDPARSERDISPINFO *)(pData);
   pDisplayInfo->picture_index = -1;
   bool bHaveNewFrame = false;
 
@@ -161,6 +159,6 @@ bool CUVIDFrameQueue::dequeue(void *pData) {
 
 void CUVIDFrameQueue::releaseFrame(const void *pPicParams) {
 
-  const CUVIDPARSERDISPINFO *pInfo = (const CUVIDPARSERDISPINFO *)(pPicParams);
+  const auto *pInfo = (const CUVIDPARSERDISPINFO *)(pPicParams);
   aIsFrameInUse_[pInfo->picture_index] = false;
 }

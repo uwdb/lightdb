@@ -39,6 +39,9 @@ protected:
 
     explicit EncodeWriter(VideoEncoder &encoder): EncodeWriter(encoder.api()) {}
 
+    EncodeWriter(const EncodeWriter&) = default;
+    EncodeWriter(EncodeWriter&&) noexcept = default;
+
     virtual NVENCSTATUS WriteFrame(const void *buffer, size_t size) = 0;
     virtual NVENCSTATUS WriteFrame(NV_ENC_LOCK_BITSTREAM &bitstream) {
         NVENCSTATUS status;
@@ -67,15 +70,15 @@ public:
 
     MemoryEncodeWriter(const MemoryEncodeWriter&) = delete;
     MemoryEncodeWriter(MemoryEncodeWriter&& other) noexcept
-            : EncodeWriter(other.api), buffer_(other.buffer_), lock_{}
+            : EncodeWriter(std::move(other)), buffer_(std::move(other.buffer_)), lock_{}
     { }
 
     NVENCSTATUS Flush() override { return NV_ENC_SUCCESS; }
-    const std::vector<char> buffer() const { return buffer_; } //TODO why not ref?
+    const std::vector<char>& buffer() const { return buffer_; }
     std::vector<char> dequeue() {
+        std::vector<char> value;
         std::lock_guard lock{lock_};
-        auto value = buffer_;
-        buffer_.clear();
+        buffer_.swap(value);
         return value;
     }
 

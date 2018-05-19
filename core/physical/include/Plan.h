@@ -16,8 +16,8 @@ namespace lightdb::optimization {
                 : Plan(environment, sinks.begin(), sinks.end()) { }
 
         template<typename InputIterator>
-        explicit Plan(const execution::Environment &environment, const InputIterator first, const InputIterator last)
-                : environment_(environment),
+        explicit Plan(execution::Environment environment, const InputIterator first, const InputIterator last)
+                : environment_(std::move(environment)),
                   sinks_(first, last),
                   physical_([](const auto &left, const auto &right) { return &*left < &*right; }) {
             std::for_each(first, last, std::bind(&Plan::associate, this, std::placeholders::_1));

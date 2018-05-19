@@ -11,7 +11,7 @@
 #include <UnionTranscoder.h>
 
 namespace lightdb {
-    const PhysicalLightField::iterator PhysicalLightField::eos{};
+    PhysicalLightField::iterator PhysicalLightField::iterator::eos_instance_{};
 
     namespace physical {
 
