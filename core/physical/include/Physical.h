@@ -532,7 +532,7 @@ namespace lightdb::physical {
 
                     if(video == nullptr)
                         throw std::invalid_argument("Composite child was not a video.");
-                    else if(video->metadata().codec != "hevc")
+                    else if(video->metadata().codec().name() != "hevc")
                         throw std::invalid_argument("Input video was not HEVC encoded.");
 
                     videos.push_back(video);

@@ -1,6 +1,6 @@
 #include "Catalog.h"
 #include "LightField.h"
-#include <glog/logging.h>
+#include "Ffmpeg.h"
 
 namespace filesystem = ::std::experimental::filesystem;
 
@@ -20,9 +20,11 @@ namespace lightdb::catalog {
     std::vector<Stream> Catalog::get_streams(const filesystem::path &path) {
         LOG(WARNING) << "Using unimplemented stub Catalog::get_streams";
         LOG(WARNING) << "Using hardcoded configuration";
-        return {Stream{filesystem::absolute(path / "stream0.h264"),
-                       Codec::h264(),
-                       Configuration{320, 240, 0, 0, 1024*1024, {24, 1}}}};
+        LOG(WARNING) << "Using hardcoded first stream for video configuration";
+
+        const size_t index = 0;
+        auto metadata = utility::StreamMetadata(path / metadataFilename_, index, false);
+        return {Stream{filesystem::absolute(path / "stream0.h264"), metadata.codec(), metadata.configuration()}};
     }
 
 } // namespace lightdb::catalog

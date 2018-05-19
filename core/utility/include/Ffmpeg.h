@@ -6,13 +6,16 @@
 extern "C" {
 #include <libavcodec/avcodec.h>
 }
+#include "Configuration.h"
+#include "Codec.h"
 #include <glog/logging.h>
 #include <vector>
 #include <istream>
 
 namespace lightdb::utility {
+    //TODO drop this struct and just return a Configuration instance
     struct StreamMetadata {
-        std::string codec;
+        std::string codec_;
         unsigned int height, width;
         rational framerate;
         size_t frames;
@@ -20,7 +23,22 @@ namespace lightdb::utility {
         size_t bitrate;
         size_t index;
 
-        StreamMetadata(const std::string &filename, const size_t index, const bool probe=false);
+        StreamMetadata(const std::string &filename, size_t index, bool probe=false);
+
+        Configuration configuration() const {
+            return Configuration{width, height, 0, 0, bitrate,
+                                 {static_cast<const unsigned int>(framerate.numerator()),
+                                  static_cast<const unsigned int>(framerate.denominator())}};
+        }
+
+        Codec codec() const {
+            if(codec_ == "h264")
+                return Codec::h264();
+            else if(codec_ == "hevc")
+                return Codec::hevc();
+            else
+                throw NotImplementedError("StreamMetadata does not support codec conversion");
+        }
     };
 
     namespace ffmpeg {

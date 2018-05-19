@@ -279,7 +279,7 @@ namespace lightdb::utility {
                 context->streams[index]->codecpar->codec_id != AV_CODEC_ID_HEVC)
             throw FfmpegRuntimeError("Hardcoded support only for H264 and HEVC");
 
-        codec =  context->streams[index]->codecpar->codec_id == AV_CODEC_ID_H264 ? "h264" : "hevc";
+        codec_ =  context->streams[index]->codecpar->codec_id == AV_CODEC_ID_H264 ? "h264" : "hevc";
         height = static_cast<unsigned int>(context->streams[index]->codecpar->height);
         width = static_cast<unsigned int>(context->streams[index]->codecpar->width);
         framerate = rational(context->streams[index]->r_frame_rate.num, context->streams[index]->r_frame_rate.den);
