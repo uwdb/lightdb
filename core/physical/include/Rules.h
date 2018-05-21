@@ -2,6 +2,9 @@
 #define LIGHTDB_RULES_H
 
 #include "Optimizer.h"
+#include "ScanOperators.h"
+#include "EncodeOperators.h"
+#include "DecodeOperators.h"
 
 namespace lightdb::optimization {
 

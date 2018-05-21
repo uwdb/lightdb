@@ -2,7 +2,7 @@
 #define LIGHTDB_VISITORTEMP2_H
 
 #include "LightField.h"
-#include "Physical.h"
+#include "PhysicalOperators.h"
 #include "Plan.h"
 
 namespace lightdb::optimization {

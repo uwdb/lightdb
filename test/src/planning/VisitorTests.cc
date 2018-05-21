@@ -1,7 +1,7 @@
 #include "HeuristicOptimizer.h"
 #include "Coordinator.h"
 #include "Display.h"
-#include "Homomorphisms.h"
+#include "HomomorphicOperators.h"
 #include "VisitorTemp2.h"
 #include <gtest/gtest.h>
 

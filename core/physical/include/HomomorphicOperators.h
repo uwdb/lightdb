@@ -1,7 +1,7 @@
-#ifndef LIGHTDB_HOMOMORPHISMS_H
-#define LIGHTDB_HOMOMORPHISMS_H
+#ifndef LIGHTDB_HOMOMORPHICOPERATORS_H
+#define LIGHTDB_HOMOMORPHICOPERATORS_H
 
-#include "Physical.h"
+#include "PhysicalOperators.h"
 
 namespace lightdb::physical {
 
@@ -53,4 +53,4 @@ private:
 
 } // namespace lightdb::physical
 
-#endif //LIGHTDB_HOMOMORPHISMS_H
+#endif //LIGHTDB_HOMOMORPHICOPERATORS_H

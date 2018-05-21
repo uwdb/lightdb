@@ -1,5 +1,5 @@
-#ifndef LIGHTDB_PHYSICAL_H
-#define LIGHTDB_PHYSICAL_H
+#ifndef LIGHTDB_PHYSICALOPERATORS_H
+#define LIGHTDB_PHYSICALOPERATORS_H
 
 #include "LightField.h"
 #include "Encoding.h"
@@ -13,7 +13,6 @@
 #include <tuple>
 #include <stdexcept>
 #include <utility>
-
 
 namespace lightdb {
     class PhysicalLightField;
@@ -217,88 +216,6 @@ namespace lightdb {
             virtual const Configuration &configuration() const = 0;
         };
 
-
-
-        class ScanSingleFile: public PhysicalLightField, public EncodedVideoInterface {
-        public:
-            explicit ScanSingleFile(const LightFieldReference &logical, const catalog::Stream &stream)
-                    : ScanSingleFile(logical, logical->downcast<logical::ScannedLightField>(), stream)
-            { }
-
-            std::optional<physical::DataReference> read() override {
-                auto packet = reader_->read();
-                return packet.has_value()
-                       ? std::optional<physical::DataReference>{CPUEncodedFrameData(codec(), packet.value())}
-                       : std::nullopt;
-            }
-
-            const Codec &codec() const override { return stream_.codec(); }
-            const Configuration &configuration() const override { return stream_.configuration(); }
-
-        private:
-            explicit ScanSingleFile(const LightFieldReference &logical,
-                                    const logical::ScannedLightField &scanned,
-                                    catalog::Stream stream)
-                    : PhysicalLightField(logical, DeviceType::GPU),
-                      stream_(std::move(stream)),
-                      scanned_(scanned),
-                      reader_([this]() { return FileDecodeReader(stream_.path()); })
-            { }
-
-            const catalog::Stream stream_;
-            const logical::ScannedLightField &scanned_;
-            lazy<FileDecodeReader> reader_;
-        };
-
-        class GPUDecode : public GPUUnaryOperator<CPUEncodedFrameData> {
-        public:
-            explicit GPUDecode(const LightFieldReference &logical,
-                               PhysicalLightFieldReference source,
-                               const execution::GPU &gpu)
-                    : GPUDecode(logical, source, source.expect_downcast<EncodedVideoInterface>(), gpu)
-            { }
-
-            GPUDecode(const GPUDecode &) = delete;
-            GPUDecode(GPUDecode &&) = default;
-
-            std::optional<physical::DataReference> read() override {
-                std::vector<DecodedFrame> frames;
-
-                if(!decoder_->frame_queue().isComplete())
-                    do
-                        frames.emplace_back(session_->decode());
-                    while(!decoder_->frame_queue().isEmpty() &&
-                          !decoder_->frame_queue().isEndOfDecode());
-
-                if(!frames.empty() || !decoder_->frame_queue().isComplete())
-                    return std::optional<physical::DataReference>{GPUDecodedFrameData(frames)};
-                else
-                    return std::nullopt;
-            }
-
-        protected:
-            explicit GPUDecode(const LightFieldReference &logical,
-                               const PhysicalLightFieldReference &source,
-                               EncodedVideoInterface &encoded,
-                               const execution::GPU &gpu)
-                    : GPUUnaryOperator(logical, source, gpu, [&encoded](){return encoded.configuration(); }),
-                      decode_configuration_([&encoded, this]() {
-                          return DecodeConfiguration{configuration(), encoded.codec().cudaId().value()}; }),
-                      queue_([this]() { return CUVIDFrameQueue(lock()); }),
-                      decoder_([this]() { return CudaDecoder(decode_configuration_, queue_, lock()); }),
-                      session_([this]() {
-                          return VideoDecoderSession<downcast_iterator<CPUEncodedFrameData>>(
-                              decoder_, iterator(), iterator().eos()); }) {
-                CHECK_EQ(source->device(), DeviceType::GPU);
-            }
-
-        private:
-            lazy<DecodeConfiguration> decode_configuration_;
-            lazy<CUVIDFrameQueue> queue_;
-            lazy<CudaDecoder> decoder_;
-            lazy<VideoDecoderSession<downcast_iterator<CPUEncodedFrameData>>> session_;
-        };
-
         class GPUUnion : public GPUOperator {
         public:
             explicit GPUUnion(const LightFieldReference &logical,
@@ -340,54 +257,6 @@ namespace lightdb {
             EncodeConfiguration tempEncodeConfiguration_;
             lazy<std::vector<DecodeConfiguration>> input_configurations_; //TODO these should be Configuration instances
             lazy<UnionTranscoder> unioner_;
-        };
-
-        class GPUEncode : public GPUUnaryOperator<GPUDecodedFrameData> {
-        public:
-            static const size_t kDefaultGopSize = 30;
-
-            explicit GPUEncode(const LightFieldReference &logical,
-                               PhysicalLightFieldReference &parent,
-                               const Codec &codec)
-                    : GPUEncode(logical, parent, codec, kDefaultGopSize)
-            { }
-
-            explicit GPUEncode(const LightFieldReference &logical,
-                               PhysicalLightFieldReference &parent,
-                               Codec codec,
-                               const unsigned int gop_size)
-                    : GPUUnaryOperator(logical, parent),
-                      codec_(std::move(codec)),
-                      encodeConfiguration_([this, gop_size]() {
-                          return EncodeConfiguration{configuration(), codec_.nvidiaId().value(), gop_size}; }),
-                      encoder_([this]() { return VideoEncoder(context(), encodeConfiguration_, lock()); }),
-                      encodeSession_([this]() { return VideoEncoderSession(encoder_, writer_); }),
-                      writer_([this]() { return MemoryEncodeWriter(encoder_->api()); })
-            { }
-
-            std::optional<physical::DataReference> read() override {
-                if(iterator() != iterator().eos()) {
-                    auto decoded = iterator()++;
-
-                    for(const auto &frame: decoded.frames())
-                        encodeSession_->Encode(frame);
-
-                    // Did we just reach the end of the decode stream?
-                    if(iterator() == iterator().eos())
-                        // If so, flush the encode queue and end this op too
-                        encodeSession_->Flush();
-
-                    return {CPUEncodedFrameData(codec_, writer_->dequeue())};
-                } else
-                    return std::nullopt;
-            }
-
-        private:
-            const Codec codec_;
-            lazy<EncodeConfiguration> encodeConfiguration_;
-            lazy<VideoEncoder> encoder_;
-            lazy<VideoEncoderSession> encodeSession_;
-            lazy<MemoryEncodeWriter> writer_;
         };
 
     } // namespace physical
@@ -748,4 +617,4 @@ namespace lightdb::physical {
         template<typename ColorSpace> std::string EquirectangularTiledLightField<ColorSpace>::decode_format = "";
 } // namespace lightdb::physical
 
-#endif //LIGHTDB_PHYSICAL_H
+#endif //LIGHTDB_PHYSICALOPERATORS_H
