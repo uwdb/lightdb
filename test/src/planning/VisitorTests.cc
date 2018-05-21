@@ -22,7 +22,7 @@ protected:
 };
 
 TEST_F(VisitorTestFixture, testFoo) {
-    auto source = Scan("coaster45g");
+    auto source = Scan("red10");
     auto encoded = source.Encode();
 
     auto environment = LocalEnvironment();

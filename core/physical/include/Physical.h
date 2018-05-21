@@ -17,7 +17,7 @@
 
 namespace lightdb {
     class PhysicalLightField;
-    using PhysicalLightFieldReference = shared_addressable_reference<PhysicalLightField>;
+    using PhysicalLightFieldReference = shared_reference<PhysicalLightField, AddressableMixin<PhysicalLightField>>;
 
     class PhysicalLightField {
     public:
@@ -175,8 +175,8 @@ namespace lightdb {
                                  GPUOperator &gpuParent)
                     : GPUOperator(logical, {parent},
                                   gpuParent.gpu(),
-                                  [&gpuParent]() mutable { return gpuParent.configuration(); }) {
-            }
+                                  [&gpuParent]() mutable { return gpuParent.configuration(); })
+            { }
 
         private:
             execution::GPU gpu_;

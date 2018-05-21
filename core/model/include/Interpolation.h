@@ -8,7 +8,6 @@
 
 namespace lightdb {
 
-class LightFieldReference;
 
 namespace interpolation {
 

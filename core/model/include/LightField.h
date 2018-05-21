@@ -19,7 +19,8 @@
 #include <stdexcept>
 
 namespace lightdb {
-    class LightFieldReference;
+    class LightField;
+    using LightFieldReference = shared_reference<LightField, logical::Algebra>;
 
     class LightField {
     protected:
@@ -74,51 +75,6 @@ namespace lightdb {
         const std::vector<LightFieldReference> parents_;
         const CompositeVolume volume_;
         const ColorSpace colorSpace_;
-    };
-
-    //TODO using LightFieldReference = ::lightdb::shared_reference<LightField, logical::Algebra>;
-    class LightFieldReference: public logical::Algebra {
-    public:
-        LightFieldReference(std::shared_ptr<LightField> lightfield)
-            : Algebra(*this), pointer_(std::move(lightfield)), direct_(pointer_.get()) {}
-
-        LightFieldReference(const LightFieldReference &reference)
-            : Algebra(*this), pointer_(reference.pointer_), direct_(pointer_.get()) {}
-
-        inline operator const LightField &() const {
-            return *pointer_;
-        }
-
-        inline LightField *operator->() const {
-            return pointer_.get();
-        }
-
-        template<typename LightField>
-        inline LightField *operator->() const {
-            return pointer_.get();
-        }
-
-        inline LightField &operator*() const {
-            return *pointer_;
-        }
-
-        inline std::string type() const {
-            return pointer_.get()->type();
-        }
-
-        explicit operator const std::shared_ptr<LightField>() const {
-            return pointer_;
-        }
-
-        template<typename T, typename... _Args>
-        inline static LightFieldReference
-        make(_Args &&... args) {
-            return static_cast<std::shared_ptr<LightField>>(std::make_shared<T>(args...));
-        }
-
-    private:
-        const std::shared_ptr<LightField> pointer_;
-        const LightField *direct_; // TODO Useful for debugging, not exposed
     };
 
     namespace logical {

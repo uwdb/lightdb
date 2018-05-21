@@ -7,23 +7,33 @@
 
 namespace lightdb {
 
-class _EmptyMixin { };
+class DefaultMixin {
+public:
+    inline void PostConstruct(const DefaultMixin&) const { }
+};
 
-template<typename T, typename Mixin=_EmptyMixin>
+template<typename T, typename Mixin=DefaultMixin>
 class shared_reference: public Mixin {
 public:
+    //TODO Change PostConstruct to use SFINAE
     explicit shared_reference(std::shared_ptr<T> pointer)
-        : pointer_(std::move(pointer))
-    { }
+        : Mixin(*this),
+          pointer_(std::move(pointer))
+    { Mixin::PostConstruct(*this); }
 
     shared_reference(const shared_reference &reference)
-        : pointer_(reference.pointer_)
-    { }
+        : Mixin(*this), pointer_(reference.pointer_)
+    { Mixin::PostConstruct(*this); }
+
+    template<typename TDerived>
+    shared_reference(const std::shared_ptr<TDerived> &value)
+            : Mixin(*this), pointer_{std::dynamic_pointer_cast<T>(value)}
+    { Mixin::PostConstruct(*this); }
 
     template<typename TDerived>
     shared_reference(const TDerived &value)
-        : pointer_{static_cast<std::shared_ptr<T>>(std::make_shared<TDerived>(value))}
-    { }
+        : Mixin(*this), pointer_{static_cast<std::shared_ptr<T>>(std::make_shared<TDerived>(value))}
+    { Mixin::PostConstruct(*this); }
 
     virtual ~shared_reference() = default;
 
@@ -39,7 +49,7 @@ public:
         return *pointer_;
     }
 
-    explicit operator const std::shared_ptr<T>&() const {
+    inline explicit operator const std::shared_ptr<T>&() const {
         return pointer_;
     }
 
@@ -104,48 +114,31 @@ private:
     std::shared_ptr<T> pointer_;
 };
 
-template<typename T, typename Mixin=_EmptyMixin>
-class shared_addressable_reference: public shared_reference<T, Mixin> {
+template<typename T>
+class AddressableMixin {
 public:
-    explicit shared_addressable_reference(const std::shared_ptr<T>& pointer)
-            : shared_reference<T, Mixin>(pointer) {
-        Register(*this);
+    virtual ~AddressableMixin() {
+        Unregister(static_cast<shared_reference<T, AddressableMixin>&>(*this));
     }
 
-    shared_addressable_reference(const shared_addressable_reference &reference)
-            : shared_reference<T, Mixin>(static_cast<const shared_reference<T, Mixin>&>(reference)) {
-        Register(*this);
+    void PostConstruct(const shared_reference<T, AddressableMixin>& instance) {
+        Register(static_cast<const std::shared_ptr<T>&>(instance));
     }
 
-    template<typename TDerived>
-    shared_addressable_reference(const TDerived &value)
-            : shared_reference<T, Mixin>(value) {
-        Register(*this);
-    }
-
-    virtual ~shared_addressable_reference() {
-        Unregister(*this);
-    }
-
-    static shared_addressable_reference<T, Mixin> get(const T& instance) {
+    static shared_reference<T, AddressableMixin> get(const T& instance) {
         auto weak = lookup_[&instance];
         auto shared = weak.lock();
-        return shared_addressable_reference<T, Mixin>(shared);
+        return shared_reference<T, AddressableMixin>(shared);
     };
 
 private:
-    static void Register(const shared_addressable_reference<T, Mixin>& instance) {
-        Register(static_cast<const std::shared_ptr<T>&>(
-                         static_cast<const shared_reference<T, Mixin>&>(instance)));
-    }
     static void Register(const std::shared_ptr<T>& pointer) {
         if(pointer != nullptr)
             lookup_.emplace(std::make_pair(&*pointer, std::weak_ptr<T>(pointer)));
     }
 
-    static void Unregister(const shared_addressable_reference<T, Mixin>& instance) {
-        Unregister(static_cast<const std::shared_ptr<T>&>(
-                           static_cast<const shared_reference<T, Mixin>&>(instance)));
+    static void Unregister(const shared_reference<T, AddressableMixin>& instance) {
+        Unregister(static_cast<const std::shared_ptr<T>&>(instance));
     }
     static void Unregister(const std::shared_ptr<T>& pointer) {
         if(pointer != nullptr && pointer.unique())
@@ -155,8 +148,8 @@ private:
     static std::unordered_map<T*, std::weak_ptr<T>> lookup_;
 };
 
-template<typename T, typename Mixin>
-std::unordered_map<T*, std::weak_ptr<T>> shared_addressable_reference<T, Mixin>::lookup_{};
+template<typename T>
+std::unordered_map<T*, std::weak_ptr<T>> AddressableMixin<T>::lookup_{};
 
 } // namespace lightdb
 

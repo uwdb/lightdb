@@ -53,10 +53,9 @@ namespace lightdb::logical {
         return LightFieldReference::make<logical::CompositeLightField>(std::vector<LightFieldReference>{this_, other});
     }
 
-    LightFieldReference Algebra::Union(const std::vector<LightFieldReference> &others) {
-        std::vector<LightFieldReference> combined{others};
-        combined.push_back(this_);
-        return LightFieldReference::make<logical::CompositeLightField>(combined);
+    LightFieldReference Algebra::Union(std::vector<LightFieldReference> fields) {
+        fields.push_back(this_);
+        return LightFieldReference::make<logical::CompositeLightField>(fields);
     }
 
     LightFieldReference Algebra::Rotate(const angle theta, const angle phi) {

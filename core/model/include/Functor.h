@@ -7,7 +7,9 @@
 #include <optional>
 
 namespace lightdb {
-    class LightFieldReference;
+    class LightField;
+    namespace logical { class Algebra; }
+    using LightFieldReference = shared_reference<LightField, logical::Algebra>;
 
     namespace internal {
         template<typename, typename>

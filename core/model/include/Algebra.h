@@ -7,13 +7,14 @@
 #include "Interpolation.h"
 
 namespace lightdb {
-    class LightFieldReference;
+    namespace logical { class Algebra; };
+    using LightFieldReference = shared_reference<LightField, logical::Algebra>;
 
     namespace logical {
         LightFieldReference Scan(const std::string &name);
         LightFieldReference Scan(const catalog::Catalog&, const std::string &name);
 
-        class Algebra {
+        class Algebra: public DefaultMixin {
         public:
             //TODO Encode, Decode, Transcode
 
@@ -22,7 +23,7 @@ namespace lightdb {
             LightFieldReference Select(SpatiotemporalDimension, const SpatiotemporalRange&);
             LightFieldReference Select(const ThetaRange&);
             LightFieldReference Select(const PhiRange&);
-            LightFieldReference Union(const std::vector<LightFieldReference>&); //TODO needs merge function
+            LightFieldReference Union(std::vector<LightFieldReference>); //TODO needs merge function
             LightFieldReference Union(LightFieldReference); //TODO needs merge function
             LightFieldReference Rotate(angle theta, angle phi);
             LightFieldReference Partition(Dimension, number);
@@ -35,7 +36,7 @@ namespace lightdb {
             void Store(const std::string &name);
 
         protected:
-            explicit Algebra(LightFieldReference &lightField) : this_(lightField) { }
+            explicit Algebra(const LightFieldReference &lightField) : DefaultMixin(lightField), this_(lightField) { }
 
         private:
             const LightFieldReference &this_;
