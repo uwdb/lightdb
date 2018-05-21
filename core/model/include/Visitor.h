@@ -2,8 +2,9 @@
 #define LIGHTDB_VISITOR_H
 
 namespace lightdb {
-    class LightFieldReference;
     class LightField;
+    namespace logical { class Algebra; }
+    using LightFieldReference = shared_reference<LightField, logical::Algebra>;
 
     namespace logical {
         class ConstantLightField;
