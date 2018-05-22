@@ -19,20 +19,32 @@ public:
     explicit shared_reference(std::shared_ptr<T> pointer)
         : Mixin(*this),
           pointer_(std::move(pointer))
+          #ifndef NDEBUG
+            , direct_(&*pointer_)
+          #endif
     { Mixin::PostConstruct(*this); }
 
     shared_reference(const shared_reference &reference)
         : Mixin(*this), pointer_(reference.pointer_)
+          #ifndef NDEBUG
+            , direct_(&*pointer_)
+          #endif
     { Mixin::PostConstruct(*this); }
 
     template<typename TDerived>
     shared_reference(const std::shared_ptr<TDerived> &value)
             : Mixin(*this), pointer_{std::dynamic_pointer_cast<T>(value)}
+              #ifndef NDEBUG
+                , direct_(&*pointer_)
+              #endif
     { Mixin::PostConstruct(*this); }
 
     template<typename TDerived>
     shared_reference(const TDerived &value)
         : Mixin(*this), pointer_{static_cast<std::shared_ptr<T>>(std::make_shared<TDerived>(value))}
+          #ifndef NDEBUG
+            , direct_(&*pointer_)
+          #endif
     { Mixin::PostConstruct(*this); }
 
     virtual ~shared_reference() = default;
@@ -112,6 +124,9 @@ public:
 
 private:
     std::shared_ptr<T> pointer_;
+    #ifndef NDEBUG
+    const T* direct_;
+    #endif
 };
 
 template<typename T>
