@@ -27,11 +27,12 @@ namespace lightdb {
             auto uv_offset = frame.width() * frame.height();
             auto uv_height = frame.height() / 2;
 
-            CudaDecodedFrame cudaFrame(frame);
-            assert(cuMemsetD2D8(cudaFrame.handle() + uv_offset,
-                                cudaFrame.pitch(),
+            auto cudaFrame = dynamic_cast<const GPUFrame&>(frame).cuda();
+            //CudaDecodedFrame cudaFrame(frame);
+            assert(cuMemsetD2D8(cudaFrame->handle() + uv_offset,
+                                cudaFrame->pitch(),
                                 128,
-                                cudaFrame.width(),
+                                cudaFrame->width(),
                                 uv_height) == CUDA_SUCCESS);
             return frame;
         };
@@ -58,12 +59,13 @@ namespace lightdb {
             throw GpuCudaRuntimeError("Failure loading kernel blur", result);
 
         return [this](VideoLock& lock, const Frame& frame) -> const Frame& {
-            std::scoped_lock{lock};
-            CudaDecodedFrame cudaFrame(frame);
+            std::scoped_lock l{lock};
+            auto cudaFrame = dynamic_cast<const GPUFrame&>(frame).cuda();
+            //CudaDecodedFrame cudaFrame(frame);
 
             dim3 blockDims(512,1,1);
             dim3 gridDims((unsigned int) std::ceil((double)(frame.width() * frame.height() * 3 / blockDims.x)), 1, 1 );
-            CUdeviceptr input = cudaFrame.handle(), output = cudaFrame.handle();
+            CUdeviceptr input = cudaFrame->handle(), output = cudaFrame->handle();
             auto height = frame.height(), width = frame.width();
             void *arguments[4] = {&input, &output, &height, &width};
 
@@ -101,14 +103,16 @@ namespace lightdb {
 
         return [this](VideoLock& lock, const std::vector<Frame>& frames) -> const Frame& {
             std::scoped_lock{lock};
-            CudaDecodedFrame cudaFrame0(frames[0]);
-            CudaDecodedFrame cudaFrame1(frames[1]);
+            auto cudaFrame0 = dynamic_cast<const GPUFrame&>(frames[0]).cuda();
+            auto cudaFrame1 = dynamic_cast<const GPUFrame&>(frames[1]).cuda();
+            //CudaDecodedFrame cudaFrame0(frames[0]);
+            //CudaDecodedFrame cudaFrame1(frames[1]);
 
             assert(frames.size() == 2);
 
             dim3 blockDims(512,1,1);
             dim3 gridDims((unsigned int) std::ceil((double)(frames[0].width() * frames[0].height() * 3 / blockDims.x)), 1, 1 );
-            CUdeviceptr left = cudaFrame0.handle(), right = cudaFrame1.handle(), output = cudaFrame0.handle();
+            CUdeviceptr left = cudaFrame0->handle(), right = cudaFrame1->handle(), output = cudaFrame0->handle();
             auto height = frames[0].height(), width = frames[0].width();
             auto transparent = transparent_;
             void *arguments[6] = {&left, &right, &output, &height, &width, &transparent};

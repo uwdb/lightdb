@@ -109,9 +109,10 @@ TEST_F(TranscoderTestFixture, testTranscoderWithComplexTransform) {
     FrameTransform halfBlackTransform = [](VideoLock& lock, const Frame& frame) -> const Frame& {
         CUresult result;
         std::scoped_lock mutex{lock};
-        CudaDecodedFrame cudaFrame(frame);
-        if((result = cuMemsetD2D8(cudaFrame.handle(), cudaFrame.pitch(), 0,
-                                  cudaFrame.width() / 2, cudaFrame.height())) != CUDA_SUCCESS)
+
+        auto cudaFrame = dynamic_cast<const GPUFrame&>(frame).cuda();
+        if((result = cuMemsetD2D8(cudaFrame->handle(), cudaFrame->pitch(), 0,
+                                  cudaFrame->width() / 2, cudaFrame->height())) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuMemsetD2D8 failed.", result);
         return frame;
     };
@@ -139,16 +140,18 @@ TEST_F(TranscoderTestFixture, testTranscoderWithMultipleTransform) {
 
     FrameTransform leftHalfBlackTransform = [](VideoLock& lock, const Frame& frame) -> const Frame& {
         std::scoped_lock mutex{lock};
-        CudaDecodedFrame cudaFrame(frame);
-        assert(cuMemsetD2D8(cudaFrame.handle(), cudaFrame.pitch(), 0,
-                            cudaFrame.width() / 2, cudaFrame.height()) == CUDA_SUCCESS);
+
+        auto cudaFrame = dynamic_cast<const GPUFrame&>(frame).cuda();
+        assert(cuMemsetD2D8(cudaFrame->handle(), cudaFrame->pitch(), 0,
+                            cudaFrame->width() / 2, cudaFrame->height()) == CUDA_SUCCESS);
         return frame;
     };
     FrameTransform topHalfBlackTransform = [](VideoLock& lock, const Frame& frame) -> const Frame& {
         std::scoped_lock mutex{lock};
-        CudaDecodedFrame cudaFrame(frame);
-        assert(cuMemsetD2D8(cudaFrame.handle(), cudaFrame.pitch(), 0,
-                            cudaFrame.width(), cudaFrame.height() / 2) == CUDA_SUCCESS);
+
+        auto cudaFrame = dynamic_cast<const GPUFrame&>(frame).cuda();
+        assert(cuMemsetD2D8(cudaFrame->handle(), cudaFrame->pitch(), 0,
+                            cudaFrame->width(), cudaFrame->height() / 2) == CUDA_SUCCESS);
         return frame;
     };
 

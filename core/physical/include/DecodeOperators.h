@@ -20,7 +20,7 @@ public:
     GPUDecode(GPUDecode &&) = default;
 
     std::optional<physical::DataReference> read() override {
-        std::vector<DecodedFrame> frames;
+        std::vector<GPUFrameReference> frames;
 
         if(!decoder_->frame_queue().isComplete())
             do

@@ -63,8 +63,7 @@ protected:
 class MemoryEncodeWriter: public EncodeWriter {
 public:
     explicit MemoryEncodeWriter(EncodeAPI &api, size_t initial_buffer_size=16*1024*1024)
-        : EncodeWriter(api), buffer_()
-    {
+        : EncodeWriter(api), buffer_() {
         buffer_.reserve(initial_buffer_size);
     }
 

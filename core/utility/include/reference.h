@@ -39,13 +39,34 @@ public:
               #endif
     { Mixin::PostConstruct(*this); }
 
+    shared_reference(const T &value)
+            : Mixin(*this), pointer_{std::make_shared<T>(value)}
+            #ifndef NDEBUG
+                , direct_(&*pointer_)
+            #endif
+    {
+        Mixin::PostConstruct(*this);
+    }
+
     template<typename TDerived>
-    shared_reference(const TDerived &value)
-        : Mixin(*this), pointer_{static_cast<std::shared_ptr<T>>(std::make_shared<TDerived>(value))}
+    shared_reference(const TDerived &value, typename std::enable_if<std::is_base_of<T,TDerived>::value>::type* = 0)
+        : Mixin(*this), pointer_{std::make_shared<TDerived>(value)}
           #ifndef NDEBUG
             , direct_(&*pointer_)
           #endif
-    { Mixin::PostConstruct(*this); }
+    {
+        Mixin::PostConstruct(*this);
+    }
+
+    template<typename TDerived>
+    shared_reference(TDerived &value, typename std::enable_if<std::is_base_of<T,TDerived>::value>::type* = 0)
+            : Mixin(*this), pointer_{std::make_shared<TDerived>(value)}
+              #ifndef NDEBUG
+                , direct_(&*pointer_)
+              #endif
+    {
+        Mixin::PostConstruct(*this);
+    }
 
     virtual ~shared_reference() = default;
 
@@ -67,6 +88,9 @@ public:
 
     bool operator==(const shared_reference& other) const { return pointer_ == other.pointer_; }
     bool operator!=(const shared_reference& other) const { return !(*this == other); }
+
+    shared_reference& operator=(const shared_reference&) = default;
+    shared_reference& operator=(shared_reference&&) = default;
 
     template<typename TDerived>
     inline const TDerived& downcast() const {
@@ -125,7 +149,7 @@ public:
 private:
     std::shared_ptr<T> pointer_;
     #ifndef NDEBUG
-    const T* direct_;
+    T* direct_;
     #endif
 };
 

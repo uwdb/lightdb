@@ -5,6 +5,7 @@
 #include "ScanOperators.h"
 #include "EncodeOperators.h"
 #include "DecodeOperators.h"
+#include "UnionOperators.h"
 
 namespace lightdb::optimization {
 
@@ -41,7 +42,8 @@ namespace lightdb::optimization {
                                    ? physical_parents[0]
                                    : physical_parents[physical_parents.size() - 1];
 
-            //TODO shouldn't just be randomly selecting HEVC
+            LOG(WARNING) << "Randomly picking HEVC as codec";
+
             if(!plan().has_physical_assignment(node)) {
                 plan().emplace<physical::GPUEncode>(plan().lookup(node), physical_parent, Codec::hevc());
                 return true;
@@ -55,12 +57,20 @@ namespace lightdb::optimization {
         using OptimizerRule::OptimizerRule;
 
         bool visit(const logical::CompositeLightField &node) override {
-            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
-                    node.parents().begin(), node.parents().end(),
-                    [this](auto &parent) { return plan().assignments(parent); });
+            //TODO this assumes a linear sequence of operators, needs some sort of dedicated "outputs" function
+            //TODO better: just have a composite physical op that manages this internally and force a 1-1 mapping in plan
+            //TODO clean up implementation
+            std::vector<PhysicalLightFieldReference> physical_outputs;
+            for(auto &parent: node.parents()) {
+                auto &assignments = plan().assignments(parent);
+                physical_outputs.push_back(assignments[assignments.size() - 1]);
+            }
+
+            LOG(WARNING) << "Assuming 2 rows, 1 column";
+            LOG(WARNING) << "Randomly picking HEVC as codec";
 
             if(!plan().has_physical_assignment(node)) {
-                plan().emplace<physical::GPUUnion>(plan().lookup(node), physical_parents);
+                plan().emplace<physical::GPUUnion>(plan().lookup(node), physical_outputs, Codec::hevc(), 2, 1);
                 return true;
             }
             return false;

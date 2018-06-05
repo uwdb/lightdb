@@ -17,22 +17,16 @@ namespace lightdb::physical {
 
 class GPUEncode : public GPUUnaryOperator<GPUDecodedFrameData> {
 public:
-    static const size_t kDefaultGopSize = 30;
-
-    explicit GPUEncode(const LightFieldReference &logical,
-                       PhysicalLightFieldReference &parent,
-                       const Codec &codec)
-            : GPUEncode(logical, parent, codec, kDefaultGopSize) {}
+    static constexpr size_t kDefaultGopSize = 30;
 
     explicit GPUEncode(const LightFieldReference &logical,
                        PhysicalLightFieldReference &parent,
                        Codec codec,
-                       const unsigned int gop_size)
+                       const unsigned int gop_size=kDefaultGopSize)
             : GPUUnaryOperator(logical, parent),
               codec_(std::move(codec)),
               encodeConfiguration_([this, gop_size]() {
-                  return EncodeConfiguration{configuration(), codec_.nvidiaId().value(), gop_size};
-              }),
+                  return EncodeConfiguration{configuration(), codec_.nvidiaId().value(), gop_size}; }),
               encoder_([this]() { return VideoEncoder(context(), encodeConfiguration_, lock()); }),
               encodeSession_([this]() { return VideoEncoderSession(encoder_, writer_); }),
               writer_([this]() { return MemoryEncodeWriter(encoder_->api()); }) {}
@@ -42,7 +36,7 @@ public:
             auto decoded = iterator()++;
 
             for (const auto &frame: decoded.frames())
-                encodeSession_->Encode(frame);
+                encodeSession_->Encode(*frame);
 
             // Did we just reach the end of the decode stream?
             if (iterator() == iterator().eos())

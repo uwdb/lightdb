@@ -40,13 +40,12 @@ protected:
 
     static void DecodeAll(CudaDecoder &decoder, Input reader, const Input end) {
         CUresult status;
-        DecodeReaderPacket packet;
 
         auto parser = CreateParser(decoder);
 
         do {
             if (reader != end) {
-                packet = static_cast<DecodeReaderPacket>(reader++);
+                auto packet = static_cast<DecodeReaderPacket>(reader++);
                 if ((status = cuvidParseVideoData(parser, &packet)) != CUDA_SUCCESS) {
                     cuvidDestroyVideoParser(parser);
                     throw GpuCudaRuntimeError("Call to cuvidParseVideoData failed", status);
@@ -87,7 +86,6 @@ private:
     }
 
     static int CUDAAPI HandleVideoSequence(void *userData, CUVIDEOFORMAT *format) {
-        //auto* session = static_cast<VideoDecoderSession*>(userData);
         auto* decoder = static_cast<CudaDecoder*>(userData);
 
         assert(format->display_area.bottom - format->display_area.top >= 0);
@@ -95,7 +93,6 @@ private:
 
         if(decoder == nullptr)
             LOG(ERROR) << "Unexpected null decoder during video decode (HandleVideoSequence)";
-        //assert(session);
 
         else if ((format->codec != decoder->configuration().codec) ||
             ((static_cast<unsigned int>(format->display_area.right - format->display_area.left)) != decoder->configuration().width) ||

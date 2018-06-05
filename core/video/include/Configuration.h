@@ -9,6 +9,7 @@
 struct Configuration {
     unsigned int width;
     unsigned int height;
+    //TODO maxes belong in EncodeConfiguration, not here
     unsigned int max_width;
     unsigned int max_height;
     size_t bitrate;

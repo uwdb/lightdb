@@ -92,8 +92,8 @@ namespace lightdb::physical {
 
     class GPUDecodedFrameData: public Data {
     public:
-        explicit GPUDecodedFrameData(std::vector<DecodedFrame> frames)
-                : Data(DeviceType::GPU), frames_{std::move(frames)}
+        explicit GPUDecodedFrameData(std::vector<GPUFrameReference> frames)
+                : Data(DeviceType::GPU), frames_(std::move(frames))
         { }
 
         GPUDecodedFrameData(const GPUDecodedFrameData& other)
@@ -104,10 +104,11 @@ namespace lightdb::physical {
                 : Data(DeviceType::GPU), frames_{other.frames_}
         { }
 
-        inline std::vector<DecodedFrame>& frames() noexcept { return frames_; }
+        inline std::vector<GPUFrameReference>& frames() noexcept { return frames_; }
+        inline explicit operator std::vector<GPUFrameReference>&() noexcept { return frames_; }
 
     private:
-        std::vector<DecodedFrame> frames_{};
+        std::vector<GPUFrameReference> frames_{};
     };
 } // namespace lightdb::physical
 

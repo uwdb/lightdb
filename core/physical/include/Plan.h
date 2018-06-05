@@ -19,7 +19,7 @@ namespace lightdb::optimization {
         explicit Plan(execution::Environment environment, const InputIterator first, const InputIterator last)
                 : environment_(std::move(environment)),
                   sinks_(first, last),
-                  physical_([](const auto &left, const auto &right) { return &*left < &*right; }) {
+                  physical_() {
             std::for_each(first, last, std::bind(&Plan::associate, this, std::placeholders::_1));
         }
 
@@ -30,12 +30,14 @@ namespace lightdb::optimization {
         }
 
         const PhysicalLightFieldReference& add(const PhysicalLightFieldReference &physical) {
-            return *physical_.insert(physical).first;
+            physical_.push_back(physical);
+            return physical;
         }
 
         template<typename PhysicalLightField, typename... Args>
         const PhysicalLightFieldReference& emplace(Args&&... args) {
-            return *physical_.emplace(PhysicalLightFieldReference::make<PhysicalLightField>(args...)).first;
+            physical_.emplace_back(PhysicalLightFieldReference::make<PhysicalLightField>(args...));
+            return physical_[physical_.size() - 1];
         }
 
         inline bool has_physical_assignment(const LightField &node) { return has_physical_assignment(lookup(node)); }
@@ -61,9 +63,12 @@ namespace lightdb::optimization {
     private:
         const execution::Environment environment_;
         std::vector<LightFieldReference> sinks_;
+        //TODO can be replaced with an addressable shared_reference
         std::unordered_map<const LightField *, LightFieldReference> nodes_;
-        std::set<PhysicalLightFieldReference,
-                bool (*)(const PhysicalLightFieldReference &, const PhysicalLightFieldReference &)> physical_;
+        //TODO this should be a set once rule/ordering is cleaned up
+        //std::set<PhysicalLightFieldReference,
+        //         bool (*)(const PhysicalLightFieldReference &, const PhysicalLightFieldReference &)> physical_;
+        std::vector<PhysicalLightFieldReference> physical_;
 
     };
 }

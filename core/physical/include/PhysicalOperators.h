@@ -4,11 +4,7 @@
 #include "LightField.h"
 #include "Encoding.h"
 #include "Environment.h"
-#include "Functor.h"
 #include "Data.h"
-#include "DecodeReader.h"
-#include "VideoDecoderSession.h"
-#include "UnionTranscoder.h"
 #include "lazy.h"
 #include <tuple>
 #include <stdexcept>
@@ -25,7 +21,7 @@ namespace lightdb {
         inline std::string type() const noexcept { return typeid(*this).name(); }
         inline const LightFieldReference& logical() const noexcept { return logical_; }
         inline physical::DeviceType device() const noexcept { return deviceType_; }
-        inline const auto& parents() const noexcept { return parents_; }
+        inline auto& parents() noexcept { return parents_; }
 
         template<typename T>
         class downcast_iterator;
@@ -71,6 +67,7 @@ namespace lightdb {
             bool eos_;
         };
 
+        //TODO this should move to functional.h, all it does is downcast *this
         template<typename T>
         class downcast_iterator {
             friend class iterator;
@@ -127,9 +124,15 @@ namespace lightdb {
         virtual ~PhysicalLightField() = default;
 
         std::vector<iterator>& iterators() noexcept { return iterators_; }
+        bool any_parent_eos() noexcept { return std::any_of(iterators_->begin(),
+                                                            iterators_->end(),
+                                                            [](auto &it) { return it == iterator::eos(); }); }
+        bool all_parent_eos() noexcept { return std::all_of(iterators_->begin(),
+                                                            iterators_->end(),
+                                                            [](auto &it) { return it == iterator::eos(); }); }
 
     private:
-        const std::vector<PhysicalLightFieldReference> parents_;
+        std::vector<PhysicalLightFieldReference> parents_;
         const LightFieldReference logical_;
         const physical::DeviceType deviceType_;
         lazy<std::vector<iterator>> iterators_;
@@ -143,9 +146,6 @@ namespace lightdb {
             const Configuration& configuration() { return output_configuration_; }
 
         protected:
-            GPUContext& context() { return context_; }
-            VideoLock& lock() {return lock_; }
-
             explicit GPUOperator(const LightFieldReference &logical,
                                  const std::vector<PhysicalLightFieldReference> &parents,
                                  const execution::GPU &gpu,
@@ -176,6 +176,9 @@ namespace lightdb {
                                   gpuParent.gpu(),
                                   [&gpuParent]() mutable { return gpuParent.configuration(); })
             { }
+
+            GPUContext& context() { return context_; }
+            VideoLock& lock() {return lock_; }
 
         private:
             execution::GPU gpu_;
@@ -216,48 +219,6 @@ namespace lightdb {
             virtual const Configuration &configuration() const = 0;
         };
 
-        class GPUUnion : public GPUOperator {
-        public:
-            explicit GPUUnion(const LightFieldReference &logical,
-                              std::vector<PhysicalLightFieldReference> &parents)
-                    : GPUOperator(logical, parents,
-                                  parents[0].downcast<GPUOperator>().gpu(),
-                                  [parents]() mutable { return parents[0].downcast<GPUOperator>().configuration(); }),
-                      tempEncodeConfiguration_{1024, 2048, NV_ENC_HEVC, 24, 30, 1024*1024},
-                      input_configurations_([this, parents]() {
-                          return std::vector<DecodeConfiguration>{DecodeConfiguration(tempEncodeConfiguration_, cudaVideoCodec_H264)}; }),
-                      unioner_([this]() {
-                          return UnionTranscoder(
-                              context(),
-                              *input_configurations_,
-                              tempEncodeConfiguration_); }) {
-                /*
-                assert(std::all_of(parents.begin(), parents.end(), [parents](auto &parent) mutable {
-                    return parent.is<GPUOperator>() &&
-                            parent.downcast().context().device() ==
-                                    parents[0].downcast<GPUOperator>().context().device() &&
-                            parent->device() == DeviceType::GPU;
-                }));*/
-            }
-
-            GPUUnion(const GPUUnion &) = delete;
-
-            std::optional<physical::DataReference> read() override {
-                static bool init = false;
-                if(!init)
-                {
-                    init = true;
-                    return {GPUDecodedFrameData({})};
-                }
-                else
-                    return {};
-            }
-
-        private:
-            EncodeConfiguration tempEncodeConfiguration_;
-            lazy<std::vector<DecodeConfiguration>> input_configurations_; //TODO these should be Configuration instances
-            lazy<UnionTranscoder> unioner_;
-        };
 
     } // namespace physical
 } // namespace lightdb

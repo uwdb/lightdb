@@ -10,8 +10,7 @@ if(NVENC_SEARCH_LIB_PATH)
   )
 else()
   find_library(NVENC_LIBRARIES
-               NAMES nvidia-encode
-               PATH_SUFFIXES nvidia)
+               NAMES nvidia-encode)
 endif()
 
 if(NVENC_LIBRARIES)

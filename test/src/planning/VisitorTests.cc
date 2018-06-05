@@ -22,8 +22,10 @@ protected:
 };
 
 TEST_F(VisitorTestFixture, testFoo) {
-    auto source = Scan("red10");
-    auto encoded = source.Encode();
+    auto left = Scan("red10");
+    auto right = Scan("red10");
+    auto unioned = left.Union(right);
+    auto encoded = unioned.Encode();
 
     auto environment = LocalEnvironment();
     auto coordinator = Coordinator();
