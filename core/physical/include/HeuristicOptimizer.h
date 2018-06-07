@@ -14,6 +14,7 @@ namespace lightdb::optimization {
         const rule_vector rules() override {
             return { make_rule<ChooseDecoders>(),
                      make_rule<ChooseUnion>(),
+                     make_rule<ChooseMap>(),
                      make_rule<ChooseEncoders>() }; }
     };
 

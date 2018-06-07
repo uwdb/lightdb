@@ -10,7 +10,6 @@ class GPUUnion : public GPUOperator {
 public:
     explicit GPUUnion(const LightFieldReference &logical,
                       std::vector<PhysicalLightFieldReference> &parents,
-                      const Codec &codec,
                       const unsigned int rows, const unsigned int columns)
             : GPUOperator(logical, parents,
                           parents[0].downcast<GPUOperator>().gpu(),
@@ -26,7 +25,7 @@ public:
 
     std::optional<physical::DataReference> read() override {
         if(!any_parent_eos()) {
-            std::vector<GPUFrameReference> out;
+            GPUDecodedFrameData output;
             auto available_frames = std::max(frames_->available(), 1ul);
 
             for(auto i = 0u; i < available_frames; i++) {
@@ -40,10 +39,10 @@ public:
                                   configuration().height / rows_,
                                   configuration().width / columns_);
 
-                out.emplace_back(GPUFrameReference{unioned});
+                output.frames().emplace_back(GPUFrameReference{unioned});
             }
 
-            return GPUDecodedFrameData{out};
+            return {output};
         } else
             return {};
     }

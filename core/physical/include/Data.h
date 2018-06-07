@@ -92,6 +92,10 @@ namespace lightdb::physical {
 
     class GPUDecodedFrameData: public Data {
     public:
+        GPUDecodedFrameData()
+                : Data(DeviceType::GPU), frames_{}
+        { }
+
         explicit GPUDecodedFrameData(std::vector<GPUFrameReference> frames)
                 : Data(DeviceType::GPU), frames_(std::move(frames))
         { }

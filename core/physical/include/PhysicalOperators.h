@@ -146,17 +146,17 @@ namespace lightdb {
             const Configuration& configuration() { return output_configuration_; }
 
         protected:
-            explicit GPUOperator(const LightFieldReference &logical,
-                                 const std::vector<PhysicalLightFieldReference> &parents,
-                                 const execution::GPU &gpu,
-                                 const std::function<Configuration()> &output_configuration)
+            GPUOperator(const LightFieldReference &logical,
+                        const std::vector<PhysicalLightFieldReference> &parents,
+                        const execution::GPU &gpu,
+                        const std::function<Configuration()> &output_configuration)
                     : GPUOperator(logical, parents, gpu, lazy(output_configuration))
             { }
 
-            explicit GPUOperator(const LightFieldReference &logical,
-                                 std::vector<PhysicalLightFieldReference> parents,
-                                 execution::GPU gpu,
-                                 lazy<Configuration> output_configuration)
+            GPUOperator(const LightFieldReference &logical,
+                        std::vector<PhysicalLightFieldReference> parents,
+                        execution::GPU gpu,
+                        lazy<Configuration> output_configuration)
                     : PhysicalLightField(logical, std::move(parents), DeviceType::GPU),
                       gpu_(gpu),
                       context_([this]() { return this->gpu().context(); }),
@@ -164,17 +164,29 @@ namespace lightdb {
                       output_configuration_(std::move(output_configuration))
             { }
 
-            explicit GPUOperator(const LightFieldReference &logical,
-                                 PhysicalLightFieldReference &parent)
+            GPUOperator(const LightFieldReference &logical,
+                        PhysicalLightFieldReference &parent)
                     : GPUOperator(logical, {parent}, parent.expect_downcast<GPUOperator>())
             { }
 
-            explicit GPUOperator(const LightFieldReference &logical,
-                                 PhysicalLightFieldReference &parent,
-                                 GPUOperator &gpuParent)
-                    : GPUOperator(logical, {parent},
-                                  gpuParent.gpu(),
+            GPUOperator(const LightFieldReference &logical,
+                        PhysicalLightFieldReference &parent,
+                        const std::function<Configuration()> &output_configuration)
+                    : GPUOperator(logical, {parent}, parent.expect_downcast<GPUOperator>(), output_configuration)
+            { }
+
+            GPUOperator(const LightFieldReference &logical,
+                        PhysicalLightFieldReference &parent,
+                        GPUOperator &gpuParent)
+                    : GPUOperator(logical, parent, gpuParent,
                                   [&gpuParent]() mutable { return gpuParent.configuration(); })
+            { }
+
+            GPUOperator(const LightFieldReference &logical,
+                        PhysicalLightFieldReference &parent,
+                        GPUOperator &gpuParent,
+                        const std::function<Configuration()> &output_configuration)
+                    : GPUOperator(logical, {parent}, gpuParent.gpu(), output_configuration)
             { }
 
             GPUContext& context() { return context_; }
@@ -190,6 +202,8 @@ namespace lightdb {
         template<typename Data>
         class GPUUnaryOperator : public GPUOperator {
         public:
+            template<typename T=PhysicalLightField>
+            T& parent() noexcept { return parents()[0].downcast<T>(); }
             downcast_iterator<Data>& iterator() noexcept { return iterator_; }
 
         protected:
@@ -204,6 +218,13 @@ namespace lightdb {
                                  const execution::GPU &gpu,
                                  const std::function<Configuration()> &output_configuration)
                     : GPUOperator(logical, {parent}, gpu, lazy(output_configuration)),
+                      iterator_([this]() { return iterators()[0].downcast<Data>(); })
+            { }
+
+            explicit GPUUnaryOperator(const LightFieldReference &logical,
+                                      PhysicalLightFieldReference &parent,
+                                      const std::function<Configuration()> &output_configuration)
+                    : GPUOperator(logical, parent, output_configuration),
                       iterator_([this]() { return iterators()[0].downcast<Data>(); })
             { }
 

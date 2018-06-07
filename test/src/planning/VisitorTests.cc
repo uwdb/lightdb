@@ -26,7 +26,11 @@ TEST_F(VisitorTestFixture, testFoo) {
     auto right = Scan("red10");
     auto unioned = left.Union(right);
     auto encoded = unioned.Encode();
-
+/*
+    auto input = Scan("red10");
+    auto gray = input.Map(lightdb::Greyscale());
+    auto encoded = gray.Encode();
+*/
     auto environment = LocalEnvironment();
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(encoded);

@@ -6,6 +6,7 @@
 #include "EncodeOperators.h"
 #include "DecodeOperators.h"
 #include "UnionOperators.h"
+#include "MapOperators.h"
 
 namespace lightdb::optimization {
 
@@ -67,10 +68,26 @@ namespace lightdb::optimization {
             }
 
             LOG(WARNING) << "Assuming 2 rows, 1 column";
-            LOG(WARNING) << "Randomly picking HEVC as codec";
 
             if(!plan().has_physical_assignment(node)) {
-                plan().emplace<physical::GPUUnion>(plan().lookup(node), physical_outputs, Codec::hevc(), 2, 1);
+                plan().emplace<physical::GPUUnion>(plan().lookup(node), physical_outputs, 2, 1);
+                return true;
+            }
+            return false;
+        }
+    };
+
+    class ChooseMap : public OptimizerRule {
+    public:
+        using OptimizerRule::OptimizerRule;
+
+        bool visit(const logical::TransformedLightField &node) override {
+            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                    node.parents().begin(), node.parents().end(),
+                    [this](auto &parent) { return plan().assignments(parent); });
+
+            if(!plan().has_physical_assignment(node)) {
+                plan().emplace<physical::GPUMap>(plan().lookup(node), physical_parents[physical_parents.size() - 1], static_cast<FrameTransform>(*node.functor()));
                 return true;
             }
             return false;
