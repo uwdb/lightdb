@@ -23,16 +23,16 @@ public:
 
     void crop(DecodeReader &reader, EncodeWriter &writer, const size_t top, const size_t left,
               const std::optional<size_t> &frames) {
-        crop(reader, writer, [](VideoLock&, const Frame& frame) -> const Frame& { return frame; }, top, left, frames);
+        crop(reader, writer, [](VideoLock&, Frame& frame) -> Frame& { return frame; }, top, left, frames);
     }
 
     void crop(DecodeReader &reader, EncodeWriter &writer, const std::vector<FrameTransform> &transforms,
               const size_t top, const size_t left, const std::optional<size_t> &frames={}) {
-        crop(reader, writer, [this, transforms](VideoLock&, const Frame& frame) -> const Frame& {
+        crop(reader, writer, [this, transforms](VideoLock&, Frame& frame) -> Frame& {
             return std::accumulate(
                 transforms.begin(), transforms.end(),
                 std::ref(frame),
-                [this](auto& frame, auto& f) -> const Frame& { return f(lock_, frame); });
+                [this](auto& frame, auto& f) -> Frame& { return f(lock_, frame); });
         }, top, left, frames);
     }
 
@@ -46,7 +46,7 @@ public:
         while (!decoder().frame_queue().isComplete() && remaining--) {
             auto dropOrDuplicate = alignment.dropOrDuplicate(framesDecoded++, framesEncoded);
             auto decodedFrame = decodeSession.decode();
-            const auto &processedFrame = transform(lock_, decodedFrame);
+            auto &processedFrame = transform(lock_, decodedFrame);
 
             for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++)
                 encodeSession.Encode(processedFrame, top, left);

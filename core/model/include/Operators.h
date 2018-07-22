@@ -7,6 +7,7 @@
 #include "Interpolation.h"
 #include "Ffmpeg.h"
 #include "rational.h"
+#include "OldModel.h"
 #include <memory>
 #include <functional>
 #include <fstream>
@@ -262,10 +263,10 @@ namespace lightdb {
 
     class Map : public UnaryOperator { //TODO
     public:
-        explicit Map(FunctorReference &functor)
+        explicit Map(functor::UnaryFunctorReference &functor)
                 : functor_(functor) {}
 
-        explicit Map(FunctorReference &&functor)
+        explicit Map(functor::UnaryFunctorReference &&functor)
                 : functor_(functor) {}
 
         LightFieldReference apply(const LightFieldReference &field) const override {
@@ -273,7 +274,7 @@ namespace lightdb {
         }
 
     private:
-        const FunctorReference &functor_;
+        const functor::UnaryFunctorReference &functor_;
     };
 
 //    template<typename InColorSpace, typename OutColorSpace>

@@ -1,4 +1,5 @@
 #include "PhysicalOperators.h"
+#include "OldPhysicalOperators.h"
 #include "Operators.h"
 #include <LFVideo.h>
 #include <glog/logging.h>

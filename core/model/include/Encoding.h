@@ -1,6 +1,7 @@
 #ifndef LIGHTDB_ENCODING_H
 #define LIGHTDB_ENCODING_H
 
+#include "Geometry.h"
 #include <glog/logging.h>
 #include <memory>
 #include <optional>
@@ -13,7 +14,7 @@ namespace lightdb {
 
     class EncodedLightFieldData {
     public:
-        virtual ~EncodedLightFieldData() { }
+        virtual ~EncodedLightFieldData() = default;
 
         //TODO combine these into a single struct
         virtual const std::vector<std::shared_ptr<bytestring>> segments() = 0;

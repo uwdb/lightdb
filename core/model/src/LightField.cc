@@ -1,4 +1,5 @@
 #include "LightField.h"
+#include "functional.h"
 
 namespace lightdb {
 

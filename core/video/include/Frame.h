@@ -2,12 +2,15 @@
 #define LIGHTDB_FRAME_H
 
 #include "VideoDecoder.h"
+#include "Encoding.h"
 #include "lazy.h"
 #include "reference.h"
 #include "utility"
 #include "errors.h"
 #include "dynlink_nvcuvid.h"
 #include <mutex>
+
+//TODO move into lightdb namespace
 
 class Frame {
 public:
@@ -35,6 +38,8 @@ protected:
 };
 
 class CudaFrame;
+class LocalFrame;
+
 class GPUFrame : public Frame {
 public:
     using Frame::Frame;
@@ -42,7 +47,7 @@ public:
     explicit GPUFrame(Frame && frame) noexcept : Frame(frame) { }
 
 public:
-    virtual std::shared_ptr<CudaFrame> cuda() const = 0;
+    virtual std::shared_ptr<CudaFrame> cuda() = 0;
 };
 using GPUFrameReference = lightdb::shared_reference<GPUFrame>;
 
@@ -65,6 +70,8 @@ public:
             : GPUFrame(height, width, type), handle_(handle), pitch_(pitch), owner_(false)
     { }
 
+    explicit CudaFrame(const LocalFrame& frame);
+
     CudaFrame(const CudaFrame&) = delete;
     CudaFrame(CudaFrame&& frame) noexcept
             : GPUFrame(std::move(frame)), handle_(frame.handle_), pitch_(frame.pitch_), owner_(frame.owner_)
@@ -80,7 +87,7 @@ public:
     virtual CUdeviceptr handle() const { return handle_; }
     virtual unsigned int pitch() const { return pitch_; }
 
-    std::shared_ptr<CudaFrame> cuda() const override {
+    std::shared_ptr<CudaFrame> cuda() override {
         //owner_ = false;
         //handle_ = 0;
         //pitch_ = 0;
@@ -219,6 +226,7 @@ private:
     const unsigned int pitch_;
     bool owner_;
 };
+using CudaFrameReference = lightdb::shared_reference<CudaFrame>;
 
 class DecodedFrame : public GPUFrame {
 public:
@@ -229,7 +237,7 @@ public:
     DecodedFrame(const DecodedFrame&) = default;
     DecodedFrame(DecodedFrame &&other) noexcept = default;
 
-    std::shared_ptr<CudaFrame> cuda() const override;
+    std::shared_ptr<CudaFrame> cuda() override;
 
     const CudaDecoder &decoder() const { return decoder_; }
     const CUVIDPARSERDISPINFO& parameters() const { return *parameters_; }
@@ -247,15 +255,11 @@ private:
 
     const CudaDecoder &decoder_;
     const std::shared_ptr<CUVIDPARSERDISPINFO> parameters_;
+    std::shared_ptr<CudaFrame> cuda_;
 };
 
 class CudaDecodedFrame: public DecodedFrame, public CudaFrame {
 public:
-    //TODO remove this overload after cleaning up hierarchy
-    //explicit CudaDecodedFrame(const Frame &frame)
-    //        : CudaDecodedFrame(dynamic_cast<const DecodedFrame&>(frame))
-    //{ }
-
     explicit CudaDecodedFrame(const DecodedFrame &frame)
             : DecodedFrame(frame), CudaFrame(frame, map_frame(frame))
     { }
@@ -291,17 +295,16 @@ private:
     }
 };
 
-
-//TODO really should have a base class Frame for host and GPU frames, and then change the current Frame class to GpuFrame
-class LocalFrame {
+class LocalFrame: public Frame {
 public:
     LocalFrame(const LocalFrame &frame)
-        : height_(frame.height()), width_(frame.width()), data_(frame.data_)
+        : Frame(frame),
+          data_(frame.data_)
     { }
 
     explicit LocalFrame(const CudaFrame &source)
-        : height_(source.height()), width_(source.width()),
-          data_(std::make_shared<std::vector<unsigned char>>(width() * height() * 3 / 2))
+        : Frame(source),
+          data_(std::make_shared<lightdb::bytestring>(width() * height() * 3 / 2))
     {
         CUresult status;
         auto params = CUDA_MEMCPY2D {
@@ -330,20 +333,20 @@ public:
             throw GpuCudaRuntimeError("Call to cuMemcpy2D failed", status);
     }
 
-    virtual unsigned int height() const { return height_; }
-    virtual unsigned int width() const { return width_; }
-
     unsigned char operator()(size_t x, size_t y) const { return data_->at(x + y * width()); }
+    const lightdb::bytestring& data() const { return *data_; }
 
 private:
-    const unsigned int height_, width_;
-    const std::shared_ptr<std::vector<unsigned char>> data_;
+    const std::shared_ptr<lightdb::bytestring> data_;
 };
 
+using LocalFrameReference = lightdb::shared_reference<LocalFrame>;
+
 //TODO Make EncodeBuffer a "EncodableFrame" derived from Frame
+//TODO Believe these can be removed; Functor.cc has replacements
 class EncodeBuffer;
 typedef std::function<EncodeBuffer&(VideoLock&, EncodeBuffer&)> EncodableFrameTransform;
-typedef std::function<const Frame&(VideoLock&, const Frame&)> FrameTransform;
+typedef std::function<Frame&(VideoLock&, Frame&)> FrameTransform;
 typedef std::function<const Frame&(VideoLock&, const std::vector<Frame>&)> NaryFrameTransform;
 
 #endif //LIGHTDB_FRAME_H

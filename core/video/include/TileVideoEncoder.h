@@ -46,16 +46,16 @@ public:
     }
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers) {
-      return tile(reader, writers, [](VideoLock&, const Frame& frame) -> const Frame& { return frame; });
+      return tile(reader, writers, [](VideoLock&, Frame& frame) -> Frame& { return frame; });
     }
 
     NVENCSTATUS tile(DecodeReader &reader, const std::vector<std::shared_ptr<EncodeWriter>> &writers,
                      const std::vector<FrameTransform> &transforms) {
-      return tile(reader, writers, [this, transforms](VideoLock&, const Frame& frame) -> const Frame& {
+      return tile(reader, writers, [this, transforms](VideoLock&, Frame& frame) -> Frame& {
           return std::accumulate(
                   transforms.begin(), transforms.end(),
                   std::ref(frame),
-                  [this](auto& frame, auto& f) -> const Frame& { return f(lock_, frame); });
+                  [this](auto& frame, auto& f) -> Frame& { return f(lock_, frame); });
       });
     }
 

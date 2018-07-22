@@ -28,7 +28,8 @@ private:
 class CudaDecoder: public VideoDecoder {
 public:
   CudaDecoder(const DecodeConfiguration &configuration, FrameQueue& frame_queue, VideoLock& lock)
-          : VideoDecoder(configuration, frame_queue), handle_(nullptr)
+          : VideoDecoder(configuration, frame_queue), handle_(nullptr),
+            lock_(lock)
   {
       CUresult result;
       auto decoderCreateInfo = this->configuration().AsCuvidCreateInfo(lock);
@@ -40,8 +41,9 @@ public:
 
   CudaDecoder(const CudaDecoder&) = delete;
   CudaDecoder(CudaDecoder&& other) noexcept
-          : VideoDecoder(other),
-            handle_(other.handle_) {
+          : VideoDecoder(std::move(other)),
+            handle_(other.handle_),
+            lock_(other.lock_) {
       other.handle_ = nullptr;
   }
 
@@ -51,9 +53,11 @@ public:
   }
 
   const CUvideodecoder handle() const { return handle_; }
+  VideoLock &lock() const {return lock_; }
 
 protected:
   CUvideodecoder handle_;
+  VideoLock &lock_;
 };
 
 #endif // LIGHTDB_VIDEODECODER_H

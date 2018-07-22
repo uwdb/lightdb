@@ -25,7 +25,7 @@ TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_CPU) {
     auto start = steady_clock::now();
 
     Decode(source)
-            >> Map(lightdb::DepthmapCPU())
+//TODO temp while updating functors            >> Map(lightdb::DepthmapCPU())
             >> Encode()
             >> Store(name);
 
@@ -41,7 +41,7 @@ TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_GPU) {
     auto start = steady_clock::now();
 
     Decode(source)
-            >> Map(lightdb::DepthmapGPU())
+//TODO temp while updating functors            >> Map(lightdb::DepthmapGPU())
             >> Encode()
             >> Store(name);
 
@@ -57,7 +57,7 @@ TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_FPGA) {
     auto start = steady_clock::now();
 
     Decode(source)
-            >> Map(lightdb::DepthmapFPGA())
+//TODO temp while updating functors            >> Map(lightdb::DepthmapFPGA())
             >> Encode()
             >> Store(name);
 

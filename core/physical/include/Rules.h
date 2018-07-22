@@ -1,12 +1,14 @@
 #ifndef LIGHTDB_RULES_H
 #define LIGHTDB_RULES_H
 
+#include "Model.h"
 #include "Optimizer.h"
 #include "ScanOperators.h"
 #include "EncodeOperators.h"
 #include "DecodeOperators.h"
 #include "UnionOperators.h"
 #include "MapOperators.h"
+#include "TransferOperators.h"
 
 namespace lightdb::optimization {
 
@@ -34,20 +36,29 @@ namespace lightdb::optimization {
         using OptimizerRule::OptimizerRule;
 
         bool visit(const logical::EncodedLightField &node) override {
-            //TODO clean this up, shouldn't just be randomly picking last parent
             auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
                     node.parents().begin(), node.parents().end(),
                     [this](auto &parent) { return plan().assignments(parent); });
 
-            auto physical_parent = physical_parents[0].is<physical::GPUDecode>()
+            //TODO clean this up, shouldn't just be randomly picking last parent
+            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>()
                                    ? physical_parents[0]
                                    : physical_parents[physical_parents.size() - 1];
 
-            LOG(WARNING) << "Randomly picking HEVC as codec";
-
             if(!plan().has_physical_assignment(node)) {
-                plan().emplace<physical::GPUEncode>(plan().lookup(node), physical_parent, Codec::hevc());
+                LOG(WARNING) << "Randomly picking HEVC as codec";
+                if(hardcoded_parent.is<physical::GPUOperator>())
+                    plan().emplace<physical::GPUEncode>(plan().lookup(node), hardcoded_parent, Codec::hevc());
+                else if(hardcoded_parent.is<physical::CPUMap>() && hardcoded_parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
+                    plan().emplace<physical::IdentityEncode>(plan().lookup(node), hardcoded_parent);
+                else {
+                    auto gpu = plan().environment().gpus()[0];
+                    auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(plan().lookup(node), hardcoded_parent, gpu);
+                    plan().emplace<physical::GPUEncode>(plan().lookup(node), transfer, Codec::hevc());
+                }
                 return true;
+            } else {
+
             }
             return false;
         }
@@ -77,6 +88,45 @@ namespace lightdb::optimization {
         }
     };
 
+    class ChooseMapTransfers : public OptimizerRule {
+    public:
+        using OptimizerRule::OptimizerRule;
+
+        bool visit(const logical::TransformedLightField &node) override {
+            /*auto gpu = plan().environment().gpus()[0];
+            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                    node.parents().begin(), node.parents().end(),
+                    [this](auto &parent) { return plan().assignments(parent); });
+
+            //TODO clean this up, shouldn't just be randomly picking last parent
+            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>()
+                                    ? physical_parents[0]
+                                    : physical_parents[physical_parents.size() - 1];
+
+            if (!plan().has_physical_assignment(node) &&
+                !node.functor()->has_implementation(hardcoded_parent->device())) {
+                    switch(node.functor()->preferred_implementation().device()) {
+                        case physical::DeviceType::CPU:
+                            plan().emplace<physical::CPUTransfer>(plan().lookup(node),
+                                                                  physical_parents[physical_parents.size() - 1]);
+                            return true;
+
+                        case physical::DeviceType::GPU:
+                            LOG(WARNING) << "Using first GPU and ignoring all others";
+                            plan().emplace<physical::GPUTransfer>(plan().lookup(node),
+                                                                  physical_parents[physical_parents.size() - 1],
+                                                                  gpu);
+                            return true;
+
+                        case physical::DeviceType::FPGA:
+                        default:
+                            break;
+                    }
+            }*/
+            return false;
+        }
+    };
+
     class ChooseMap : public OptimizerRule {
     public:
         using OptimizerRule::OptimizerRule;
@@ -86,8 +136,18 @@ namespace lightdb::optimization {
                     node.parents().begin(), node.parents().end(),
                     [this](auto &parent) { return plan().assignments(parent); });
 
+            //TODO clean this up, shouldn't just be randomly picking last parent
+            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>() || physical_parents[0].is<physical::CPUtoGPUTransfer>()
+                                   ? physical_parents[0]
+                                   : physical_parents[physical_parents.size() - 1];
+
             if(!plan().has_physical_assignment(node)) {
-                plan().emplace<physical::GPUMap>(plan().lookup(node), physical_parents[physical_parents.size() - 1], static_cast<FrameTransform>(*node.functor()));
+                //auto gpu = plan().environment().gpus()[0];
+                if(!node.functor()->has_implementation(physical::DeviceType::GPU)) {
+                    auto transfer = plan().emplace<physical::GPUtoCPUTransfer>(plan().lookup(node), hardcoded_parent);
+                    plan().emplace<physical::CPUMap>(plan().lookup(node), transfer, *node.functor());
+                } else
+                    plan().emplace<physical::GPUMap>(plan().lookup(node), hardcoded_parent, *node.functor());
                 return true;
             }
             return false;

@@ -4,6 +4,7 @@
 #include "spsc_queue.h"
 #include "dynlink_cuda.h"
 #include "PThreadMutex.h"
+#include <thread>
 
 struct DecodeReaderPacket: public CUVIDSOURCEDATAPACKET {
 public:

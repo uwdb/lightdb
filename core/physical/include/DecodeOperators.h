@@ -5,6 +5,7 @@
 #include "Environment.h"
 #include "PhysicalOperators.h"
 #include "Data.h"
+#include "VideoDecoderSession.h"
 
 namespace lightdb::physical {
 
@@ -22,11 +23,15 @@ public:
     std::optional<physical::DataReference> read() override {
         std::vector<GPUFrameReference> frames;
 
+        LOG_IF(WARNING, decode_configuration_->output_surfaces < 8)
+            << "Decode configuration output surfaces is low, limiting throughput";
+
         if(!decoder_->frame_queue().isComplete())
             do
                 frames.emplace_back(session_->decode());
             while(!decoder_->frame_queue().isEmpty() &&
-                  !decoder_->frame_queue().isEndOfDecode());
+                  !decoder_->frame_queue().isEndOfDecode() &&
+                    frames.size() <= decode_configuration_->output_surfaces / 4);
 
         if(!frames.empty() || !decoder_->frame_queue().isComplete())
             return std::optional<physical::DataReference>{GPUDecodedFrameData(frames)};

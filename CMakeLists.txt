@@ -51,8 +51,9 @@ set(CLANG_TIDY_EXCLUDED_SOURCES ${NVIDIASDK_SOURCES})
 find_package(PythonLibs 2.7 REQUIRED)
 include_directories(${PYTHON_INCLUDE_DIRS})
 
-find_package(Boost COMPONENTS python REQUIRED)
+find_package(Boost COMPONENTS python filesystem system REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
+set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${Boost_LIBRARIES})
 
 find_package(FFmpeg REQUIRED COMPONENTS AVCODEC AVFORMAT AVUTIL SWSCALE)
 include_directories(${FFMPEG_INCLUDE_DIRS})

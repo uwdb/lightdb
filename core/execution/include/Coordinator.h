@@ -11,12 +11,18 @@ public:
     {
         if(plan.sinks().size() != 1)
             throw NotImplementedError("Executing with more than one sink not yet supported.");
-        else if(plan.assignments(plan.sinks()[0]).size() != 1)
-            throw NotImplementedError("Executing with more than one sink assignment not yet supported.");
+        else if(plan.assignments(plan.sinks()[0]).empty())
+            throw NotImplementedError("Cannot execute with no assignment for sink");
+        //else if(plan.assignments(plan.sinks()[0]).size() > 1)
+         //   throw NotImplementedError("Executing with more than one sink assignment not yet supported.");
 
         const auto &sinks = plan.sinks();
         const auto &assignments = plan.assignments(sinks[0]);
-        return *assignments[0];
+
+        if(assignments.size() > 1)
+            LOG(WARNING) << "Found more than one sink assignment; randomly selecting last one.";
+
+        return *assignments[assignments.size() - 1];
     }
 
     //TODO this should be in the algebra, returning an external TLF

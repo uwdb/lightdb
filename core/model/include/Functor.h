@@ -1,149 +1,108 @@
 #ifndef LIGHTDB_FUNCTOR_H
 #define LIGHTDB_FUNCTOR_H
 
-#include "Color.h"
-#include "Geometry.h"
-#include "Frame.h"
-#include <optional>
+#include "LightField.h"
+#include "Data.h"
+#include "functional.h"
+#include <map>
 
 namespace lightdb {
-    class LightField;
-    namespace logical { class Algebra; }
-    using LightFieldReference = shared_reference<LightField, logical::Algebra>;
+    class PhysicalLightField;
 
-    namespace internal {
-        template<typename, typename>
-        class _nary_builder;
+    namespace functor {
+        namespace internal {
+            template<typename, typename>
+            class _nary_builder;
 
-        template<typename T, std::size_t... S>
-        class _nary_builder<T, std::index_sequence<S...>> {
-            template<std::size_t>
-            using type = T;
+            template<typename T, std::size_t... S>
+            class _nary_builder<T, std::index_sequence<S...>> {
+                template<std::size_t>
+                using type = T;
 
-            //TODO not happy about doing one heap allocation per interpolation, use a flyweight
-            virtual const ColorReference operator()(const ColorSpace &, const Point6D &, type<S>...) const = 0;
+            public:
+                virtual shared_reference<typename std::remove_reference<T>::type> operator()(const type<S>...) = 0;
+            };
+        } // namespace internal
+
+
+        template<std::size_t n>
+        class naryfunction: public functor::internal::_nary_builder<LightField&, std::make_index_sequence<n>> {
+        public:
+            explicit naryfunction(const physical::DeviceType deviceType, Codec codec)
+                    : deviceType_(deviceType),
+                      codec_(std::move(codec))
+            { }
+
+            virtual ~naryfunction() = default;
+
+            const Codec& codec() const { return codec_; }
+            physical::DeviceType device() const { return deviceType_; }
+
+        private:
+            const physical::DeviceType deviceType_;
+            const Codec codec_;
         };
-    } // namespace internal
 
-    //TODO functor namespace?
-    template<std::size_t n>
-    class naryfunctor: internal::_nary_builder<const LightFieldReference&, std::make_index_sequence<n>> {
-    public:
-        virtual ~naryfunctor() = default;
+        template<std::size_t n>
+        using NaryFunctionReference = shared_reference<naryfunction<n>>;
+        using UnaryFunctionReference = NaryFunctionReference<1>;
 
-        // Clean this up, unify FrameTransform and NaryFrameTransform
-        virtual explicit operator const FrameTransform() const { throw BadCastError(); }
-        virtual operator const NaryFrameTransform() const { throw BadCastError(); }
-        virtual bool hasFrameTransform() const { return false; }
-    };
 
-    using unaryfunctor = naryfunctor<1>;
-    using binaryfunctor = naryfunctor<2>;
-    using FunctorReference = shared_reference<unaryfunctor>;
+        template<std::size_t n>
+        class naryfunctor {
+        public:
+            template<typename... Args>
+            explicit naryfunctor(const std::string &name, const Args&... functions)
+                    : naryfunctor(name, std::initializer_list<NaryFunctionReference<n>>{functions...})
+            { }
 
-    class Identity: public unaryfunctor {
-    public:
-        explicit operator const FrameTransform() const override;
-        bool hasFrameTransform() const override { return true; }
+            virtual ~naryfunctor() = default;
 
-    protected:
-        const ColorReference operator()(const ColorSpace&, const Point6D&, const LightFieldReference&) const override;
-    };
+            const std::string& name() const noexcept { return name_; }
+            naryfunction<n>& operator()(const physical::DeviceType type) const {
+                return *implementations_.at(type);
+            }
+            bool has_implementation(const physical::DeviceType type) const {
+                return implementations_.find(type) != implementations_.end();
+            }
+            const naryfunction<n>& preferred_implementation() const {
+                if(has_implementation(physical::DeviceType::GPU))
+                    return (*this)(physical::DeviceType::GPU);
+                else if(has_implementation(physical::DeviceType::FPGA))
+                    return (*this)(physical::DeviceType::FPGA);
+                else if(has_implementation(physical::DeviceType::CPU))
+                    return (*this)(physical::DeviceType::CPU);
+                else
+                    throw NotImplementedError("Functor has no implementations");
+            }
 
-    class Greyscale: public unaryfunctor {
-    public:
-        explicit operator const FrameTransform() const override;
-        bool hasFrameTransform() const override { return true; }
+        private:
+            explicit naryfunctor(std::string name, const std::initializer_list<NaryFunctionReference<n>> &functions)
+                    : naryfunctor(name,
+                                  functional::transform<std::pair<physical::DeviceType, NaryFunctionReference<n>>>(
+                                          functions.begin(), functions.end(), [](auto &f) {
+                                              return std::make_pair(f->device(), f); }))
+            { }
 
-    protected:
-        const ColorReference operator()(const ColorSpace&, const Point6D&, const LightFieldReference&) const override;
-    };
+            explicit naryfunctor(std::string name, const std::vector<std::pair<physical::DeviceType, NaryFunctionReference<n>>> &functions)
+                    : name_(std::move(name)),
+                      implementations_(functions.begin(), functions.end())
+            { }
 
-    class GaussianBlur: public unaryfunctor {
-    public:
-        GaussianBlur();
+            const std::string name_;
+            const std::map<physical::DeviceType, NaryFunctionReference<n>> implementations_;
+        };
 
-        explicit operator const FrameTransform() const override;
-        bool hasFrameTransform() const override { return true; }
+        template<std::size_t n>
+        using FunctorReference = shared_reference<naryfunctor<n>>;
+        using UnaryFunctorReference = FunctorReference<1>;
+        using BinaryFunctorReference = FunctorReference<2>;
 
-    protected:
-        const ColorReference operator()(const ColorSpace&, const Point6D&, const LightFieldReference&) const override;
-
-    private:
-        mutable CUmodule module_; //TODO these shouldn't be mutable
-        mutable CUfunction function_;
-    };
-
-    class DepthmapCPU: public unaryfunctor {
-    public:
-        explicit operator const FrameTransform() const override;
-        bool hasFrameTransform() const override { return true; }
-
-    protected:
-        const ColorReference operator()(const ColorSpace&, const Point6D&, const LightFieldReference&) const override {
-            throw std::runtime_error("Not implemented");
-        }
-    };
-
-    class DepthmapGPU: public unaryfunctor {
-    public:
-        DepthmapGPU() : module_(nullptr), function_(nullptr) { }
-
-        explicit operator const FrameTransform() const override;
-        bool hasFrameTransform() const override { return true; }
-
-    protected:
-        const ColorReference operator()(const ColorSpace&, const Point6D&, const LightFieldReference&) const override {
-            throw std::runtime_error("Not implemented");
-        }
-
-    private:
-        mutable CUmodule module_; //TODO these shouldn't be mutable
-        mutable CUfunction function_;
-    };
-
-    class DepthmapFPGA: public unaryfunctor {
-    public:
-        explicit operator const FrameTransform() const override;
-        bool hasFrameTransform() const override { return true; }
-
-    protected:
-        const ColorReference operator()(const ColorSpace&, const Point6D&, const LightFieldReference&) const override {
-            throw std::runtime_error("Not implemented");
-        }
-    };
-
-    class Left: public naryfunctor<2> {
-    public:
-        //operator const NaryFrameTransform() const override;
-        bool hasFrameTransform() const override { return true; }
-
-    protected:
-        const ColorReference operator()(const ColorSpace&, const Point6D&, const LightFieldReference&,
-                                        const LightFieldReference&) const override {
-            throw std::runtime_error("Not implemented");
-        }
-    };
-
-    class Overlay: public naryfunctor<2> {
-    public:
-        explicit Overlay(const YUVColorSpace::Color &transparent)
-            : transparent_(transparent), module_(0), function_(0)
-        { }
-
-        explicit operator const NaryFrameTransform() const override;
-        bool hasFrameTransform() const override { return true; }
-
-    protected:
-        const ColorReference operator()(const ColorSpace&, const Point6D&, const LightFieldReference&, const LightFieldReference&) const override {
-            throw std::runtime_error("Not implemented");
-        }
-
-    private:
-        YUVColorSpace::Color transparent_;
-        mutable CUmodule module_; //TODO these shouldn't be mutable
-        mutable CUfunction function_;
-    };
+        using unaryfunctor = naryfunctor<1>;
+        using binaryfunctor = naryfunctor<2>;
+        using unaryfunction = naryfunction<1>;
+        using binaryfunction = naryfunction<2>;
+    }; // namespace functor
 }; // namespace lightdb
 
 #endif //LIGHTDB_FUNCTOR_H

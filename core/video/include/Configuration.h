@@ -205,7 +205,7 @@ struct DecodeConfiguration: public Configuration {
                         const cudaVideoCodec codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
-                        const unsigned long output_surfaces = 2,
+                        const unsigned long output_surfaces = 16,
                         const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
@@ -220,7 +220,7 @@ struct DecodeConfiguration: public Configuration {
                         const cudaVideoCodec codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
-                        const unsigned long output_surfaces = 2,
+                        const unsigned long output_surfaces = 16,
                         const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
@@ -234,7 +234,7 @@ struct DecodeConfiguration: public Configuration {
                         const cudaVideoCodec codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
-                        const unsigned long output_surfaces = 2,
+                        const unsigned long output_surfaces = 16,
                         const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
@@ -247,7 +247,7 @@ struct DecodeConfiguration: public Configuration {
                         const cudaVideoCodec codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
-                        const unsigned long output_surfaces = 2,
+                        const unsigned long output_surfaces = 16,
                         const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
@@ -260,7 +260,7 @@ struct DecodeConfiguration: public Configuration {
                         const cudaVideoCodec codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
-                        const unsigned long output_surfaces = 2,
+                        const unsigned long output_surfaces = 16,
                         const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
@@ -268,9 +268,9 @@ struct DecodeConfiguration: public Configuration {
                                   chroma_format, output_format, output_surfaces, creation_flags, deinterlace_mode)
     { }
 
-    DecodeConfiguration(const CUVIDEOFORMAT &video_format,
+    explicit DecodeConfiguration(const CUVIDEOFORMAT &video_format,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
-                        const unsigned long output_surfaces = 2,
+                        const unsigned long output_surfaces = 16,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
             : DecodeConfiguration({video_format.coded_width, video_format.coded_height,
@@ -286,7 +286,7 @@ struct DecodeConfiguration: public Configuration {
                         const cudaVideoCodec codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
-                        const unsigned long output_surfaces = 2,
+                        const unsigned long output_surfaces = 16,
                         const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)

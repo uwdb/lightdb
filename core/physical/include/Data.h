@@ -3,6 +3,7 @@
 
 #include "Encoding.h"
 #include "DecodeReader.h"
+#include "Frame.h"
 #include "Codec.h"
 #include <utility>
 
@@ -16,20 +17,26 @@ namespace lightdb::physical {
         FPGA
     };
 
-    class Data {
+    //TODO rename to MaterializedLightField
+    class Data: public LightField {
     public:
         Data(Data &) = default;
         Data(const Data &) = default;
         Data(Data &&) = default;
 
-        virtual ~Data() = default;
+        ~Data() override = default;
 
         Data& operator=(const Data&) = default;
         Data& operator=(Data&&)      = default;
 
+        explicit virtual operator DataReference() = 0;
+        void accept(LightFieldVisitor& visitor) override { visitor.visit(*this); }
+
     protected:
         explicit Data(DeviceType device)
-                : device_(device)
+                //TODO remove hardcoded placeholders
+                : LightField({}, Volume::limits(), UnknownColorSpace::instance()),
+                  device_(device)
         { }
 
     private:
@@ -84,32 +91,68 @@ namespace lightdb::physical {
                   packet_(packet)
         { }
 
-        explicit operator const DecodeReaderPacket() const noexcept { return packet_; }
+        inline explicit operator const DecodeReaderPacket() const noexcept { return packet_; }
+        inline explicit operator DataReference() override { return DataReference::make<CPUEncodedFrameData>(*this); }
 
     private:
         const DecodeReaderPacket packet_;
     };
 
+    class CPUDecodedFrameData: public Data {
+    public:
+        CPUDecodedFrameData()
+                : Data(DeviceType::CPU),
+                  frames_{}
+        { }
+
+        explicit CPUDecodedFrameData(std::vector<LocalFrameReference> frames)
+                : Data(DeviceType::CPU),
+                  frames_(std::move(frames))
+        { }
+
+        CPUDecodedFrameData(const CPUDecodedFrameData& other)
+                : Data(DeviceType::CPU),
+                  frames_(other.frames_)
+        { }
+
+        CPUDecodedFrameData(CPUDecodedFrameData &&other) noexcept
+                : Data(DeviceType::CPU),
+                  frames_{std::move(other.frames_)}
+        { }
+
+        inline std::vector<LocalFrameReference>& frames() noexcept { return frames_; }
+        inline explicit operator std::vector<LocalFrameReference>&() noexcept { return frames_; }
+        inline explicit operator DataReference() override { return DataReference::make<CPUDecodedFrameData>(*this); }
+
+    private:
+        std::vector<LocalFrameReference> frames_{};
+    };
+
     class GPUDecodedFrameData: public Data {
     public:
         GPUDecodedFrameData()
-                : Data(DeviceType::GPU), frames_{}
+                : Data(DeviceType::GPU),
+                  frames_{}
         { }
 
         explicit GPUDecodedFrameData(std::vector<GPUFrameReference> frames)
-                : Data(DeviceType::GPU), frames_(std::move(frames))
+                : Data(DeviceType::GPU),
+                  frames_(std::move(frames))
         { }
 
         GPUDecodedFrameData(const GPUDecodedFrameData& other)
-                : Data(DeviceType::GPU), frames_(other.frames_)
+                : Data(DeviceType::GPU),
+                  frames_(other.frames_)
         { }
 
         GPUDecodedFrameData(GPUDecodedFrameData &&other) noexcept
-                : Data(DeviceType::GPU), frames_{other.frames_}
+                : Data(DeviceType::GPU),
+                  frames_{std::move(other.frames_)}
         { }
 
         inline std::vector<GPUFrameReference>& frames() noexcept { return frames_; }
         inline explicit operator std::vector<GPUFrameReference>&() noexcept { return frames_; }
+        inline explicit operator DataReference() override { return DataReference::make<GPUDecodedFrameData>(*this); }
 
     private:
         std::vector<GPUFrameReference> frames_{};

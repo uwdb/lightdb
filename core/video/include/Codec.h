@@ -7,13 +7,23 @@ namespace lightdb {
 
     class Codec {
     public:
+        static const Codec& raw() {
+            static const Codec value("RAW", {}, {});
+            return value;
+        }
+
         static const Codec& h264() {
-            static const Codec value(std::string("H264"), NV_ENC_H264, cudaVideoCodec_H264);
+            static const Codec value("H264", NV_ENC_H264, cudaVideoCodec_H264);
             return value;
         }
 
         static const Codec& hevc() {
             static const Codec value{"HEVC", NV_ENC_HEVC, cudaVideoCodec_HEVC};
+            return value;
+        }
+
+        static const Codec& boxes() {
+            static const Codec value("BoundingBoxes", {}, {});
             return value;
         }
 

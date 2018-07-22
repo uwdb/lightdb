@@ -1,4 +1,5 @@
 #include "PhysicalOperators.h"
+#include "OldPhysicalOperators.h"
 #include "Operators.h"
 #include "TileVideoEncoder.h"
 #include "Transcoder.h"
@@ -315,7 +316,8 @@ namespace lightdb {
             FileDecodeReader reader(video_.filename());
             SegmentedMemoryEncodeWriter writer{transcoder.encoder().api(), encodeConfiguration};
 
-            transcoder.transcode(reader, writer, static_cast<const FrameTransform>(functor_));
+            //TODO removed with functor updates
+            //transcoder.transcode(reader, writer, static_cast<FrameTransform>(functor_));
 
             auto decode = std::make_shared<bytestring>(writer.buffer());
 
@@ -348,17 +350,21 @@ namespace lightdb {
             std::vector<SegmentedMemoryEncodeWriter> writers;
             FileDecodeReader reader(video_.filename());
 
+            //TODO removed with functor updates
+            /*
             printf("*** %lu\n", partitioning_.volume().components().size());
             for(auto &volume: partitioning_.volume().components())
             {
                 if(reader.isComplete()) //TODO this shouldn't happen, but TLFs have hardcoded duration...
                     break;
 
-                size_t frames = volume.t().magnitude() * gop;
+                //size_t frames = volume.t().magnitude() * gop;
                 writers.emplace_back(transcoder.encoder().api(), encodeConfiguration);
 
-                transcoder.transcode(reader, writers.back(), static_cast<const FrameTransform>(functor_), frames);
-            }
+                //TODO removed with functor updates
+                //auto transform = static_cast<FrameTransform>(functor_);
+                //transcoder.transcode(reader, writers.back(), transform, frames);
+            }*/
 
             std::vector<std::shared_ptr<bytestring>> decodes;
             for(auto &writer: writers)
@@ -401,7 +407,8 @@ namespace lightdb {
             SegmentedMemoryEncodeWriter writer{transcoder.encoder().api(), encodeConfiguration};
             std::vector<DecodeReader*> readers{&leftReader, &rightReader};
 
-            transcoder.Union(readers, writer, static_cast<const NaryFrameTransform&>(functor_));
+            //TODO removed with functor updates
+            //transcoder.Union(readers, writer, static_cast<const NaryFrameTransform&>(functor_));
 
             auto decode = std::make_shared<bytestring>(writer.buffer());
 

@@ -1,10 +1,10 @@
 #ifndef LIGHTDB_MAPOPERATORS_H
 #define LIGHTDB_MAPOPERATORS_H
-
 #include <utility>
 
 #include "PhysicalOperators.h"
 #include "EncodeOperators.h"
+#include "Functor.h"
 
 namespace lightdb::physical {
 
@@ -12,7 +12,7 @@ class GPUMap: public GPUUnaryOperator<GPUDecodedFrameData> {
 public:
     GPUMap(const LightFieldReference &logical,
            PhysicalLightFieldReference &parent,
-           const FrameTransform& transform)
+           const functor::unaryfunctor &transform)
             : GPUMap(logical, parent, [this]() -> Configuration { return this->parent<GPUOperator>().configuration(); },
                      transform)
     { }
@@ -20,44 +20,65 @@ public:
     GPUMap(const LightFieldReference &logical,
            PhysicalLightFieldReference &parent,
            const Configuration &configuration,
-           FrameTransform transform)
-            : GPUUnaryOperator(logical, parent,
-                          parent.downcast<GPUOperator>().gpu(),
-                          [configuration]() { return configuration; }),
-              transform_(std::move(transform))
+           const functor::unaryfunctor &transform)
+            : GPUMap(logical, parent, [configuration]() { return configuration; }, transform)
     { }
 
     std::optional<physical::DataReference> read() override {
         if(iterator() != iterator().eos()) {
-            GPUDecodedFrameData output;
             auto input = iterator()++;
 
-            for(auto& frame: input.frames()) {
-                //auto mapped = GPUFrameReference::make<CudaFrame>(configuration().height, configuration().width, frame->type());
-                //auto &cuda = mapped.downcast<CudaFrame>();
-
-                auto result = transform_(lock(), *frame->cuda());
-
-                output.frames().emplace_back(GPUFrameReference{frame}); //result});
-            }
-
-            return {output};
+            auto &transform = transform_(DeviceType::GPU);
+            auto output = transform(input);
+            auto &field = static_cast<LightField&>(output);
+            auto &data = dynamic_cast<Data&>(field);
+            return static_cast<physical::DataReference>(data);
         } else
             return {};
     }
+
+    const functor::unaryfunctor transform() const { return transform_; }
 
 private:
     GPUMap(const LightFieldReference &logical,
            PhysicalLightFieldReference &parent,
            const std::function<Configuration()> &configuration,
-           FrameTransform transform)
+           const functor::unaryfunctor &transform)
             : GPUUnaryOperator(logical, parent, configuration),
-              transform_(std::move(transform))
+              transform_(transform)
     { }
 
-    const FrameTransform transform_;
+    const functor::unaryfunctor transform_;
 };
 
+    class CPUMap: public PhysicalLightField {
+    public:
+        CPUMap(const LightFieldReference &logical,
+               PhysicalLightFieldReference &parent,
+               const functor::unaryfunctor &transform)
+                : PhysicalLightField(logical, {parent}, physical::DeviceType::CPU),
+                  transform_(transform)
+        { }
+
+
+        std::optional<physical::DataReference> read() override {
+            if(iterators()[0] != iterators()[0].eos()) {
+                auto input = iterators()[0]++.downcast<CPUDecodedFrameData>();
+
+                auto &transform = transform_(DeviceType::CPU);
+                auto output = transform(input);
+                auto &field = static_cast<LightField&>(output);
+                auto &data = dynamic_cast<Data&>(field);
+                return static_cast<physical::DataReference>(data);
+            } else
+                return {};
+        }
+
+        const functor::unaryfunctor transform() const { return transform_; }
+
+    private:
+        const functor::unaryfunctor transform_;
+    };
 } // lightdb::physical
 
 #endif //LIGHTDB_MAPOPERATORS_H

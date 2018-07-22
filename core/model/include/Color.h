@@ -31,7 +31,8 @@ namespace lightdb
 
     class UnknownColorSpace: public ColorSpace {
     public:
-        static const UnknownColorSpace Instance;
+        static constexpr const UnknownColorSpace instance() { return {}; }
+        //static const UnknownColorSpace Instance;
 
     protected:
         UnknownColorSpace() = default;

@@ -1,6 +1,8 @@
 #include "Execution.h"
 #include "PhysicalOperators.h"
+#include "OldPhysicalOperators.h"
 #include "Encoding.h"
+#include "OldModel.h"
 #include "Display.h"
 
 namespace lightdb {
@@ -70,7 +72,9 @@ namespace lightdb {
             if(left != nullptr && right != nullptr &&
                     static_cast<const LightField*>(left)->volume().bounding() == static_cast<const LightField*>(right)->volume().bounding()) {
                 //TODO this is just broken, need a binary union transcoder
-                return {lightdb::physical::BinaryUnionTranscodedLightField(*left, *right, Overlay(YUVColor::red())).apply(format)};
+                return {};
+                //Removed Overlay with the functor updates...
+                // return {lightdb::physical::BinaryUnionTranscodedLightField(*left, *right, Overlay(YUVColor::red())).apply(format)};
             }
             else
                 return {};
@@ -146,21 +150,29 @@ namespace lightdb {
 
         //template<typename ColorSpace>
         static std::optional<EncodedLightField> applyTranscode(LightFieldReference lightfield, const std::string &format) {
+            //TODO removed with functor updates
+            /*
+            Identity identity;
+            auto &transform = static_cast<unaryfunctor&>(identity);
             auto *video = dynamic_cast<logical::PanoramicVideoLightField*>(&*lightfield);
             if(video != nullptr && video->metadata().codec().name() != format)
-                return std::optional<EncodedLightField>{lightdb::physical::EquirectangularTranscodedLightField<YUVColorSpace>(*video, Identity()).apply(format)};
-            else
+                return std::optional<EncodedLightField>{lightdb::physical::EquirectangularTranscodedLightField<YUVColorSpace>(*video, transform).apply(format)};
+            else*/
                 return {};
         }
 
         //template<typename ColorSpace>
         static std::optional<EncodedLightField> applyTemporalPartitonedTranscode(LightFieldReference lightfield, const std::string &format) {
+            //TODO removed with functor updates
+            /*
+            lightdb::Identity id;
+            auto &transform = static_cast<unaryfunctor&>(id);
             auto *partitioning = dynamic_cast<const logical::PartitionedLightField*>(&*lightfield);
             auto *video = partitioning != nullptr && partitioning->parents().size() == 1 ? dynamic_cast<logical::PanoramicVideoLightField*>(&*partitioning->parents()[0]) : nullptr;
 
             if(partitioning != nullptr && video != nullptr && video->metadata().codec().name() != format && static_cast<LightField*>(video)->volume().components().size() > 0)
-                return {lightdb::physical::TemporalPartitionedEquirectangularTranscodedLightField<YUVColorSpace>(*partitioning, *video, Identity()).apply(format)};
-            else
+                return {lightdb::physical::TemporalPartitionedEquirectangularTranscodedLightField<YUVColorSpace>(*partitioning, *video, transform).apply(format)};
+            else*/
                 return {};
         }
 
@@ -172,8 +184,9 @@ namespace lightdb {
             auto *transform = dynamic_cast<logical::TransformedLightField*>(&*lightfield);
             auto *video = dynamic_cast<logical::PanoramicVideoLightField*>(&*lightfield->parents()[0]);
             if(transform != nullptr && video != nullptr &&
-               transform->functor()->hasFrameTransform())
-                return {lightdb::physical::EquirectangularTranscodedLightField<YUVColorSpace>(*video, *transform->functor()).apply(format)};
+               true) //transform->functor()->hasFrameTransform())
+                return {};
+//TODO temp while updating functors                return {lightdb::physical::EquirectangularTranscodedLightField<YUVColorSpace>(*video, *transform->functor()).apply(format)};
             else
                 return {};
         }

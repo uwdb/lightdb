@@ -20,7 +20,7 @@ public:
         auto start = steady_clock::now();
 
         Decode(source)
-                >> Map(lightdb::Greyscale())
+//TODO temp while updating functors                >> Map(lightdb::Greyscale())
                 >> Encode()
                 >> Store(name);
 
@@ -38,7 +38,7 @@ public:
         auto start = steady_clock::now();
 
         Decode(source)
-                >> Map(lightdb::GaussianBlur())
+//TODO temp while updating functors                >> Map(lightdb::GaussianBlur())
                 >> Encode()
                 >> Store(name);
 

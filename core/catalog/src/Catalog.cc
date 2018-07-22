@@ -1,5 +1,6 @@
 #include "Catalog.h"
 #include "LightField.h"
+#include "Model.h"
 #include "Ffmpeg.h"
 
 namespace filesystem = ::std::experimental::filesystem;

@@ -1,5 +1,6 @@
 #include "Algebra.h"
 #include "LightField.h"
+#include "Model.h"
 
 using namespace lightdb::catalog;
 
@@ -43,7 +44,7 @@ namespace lightdb::logical {
         throw NotImplementedError(); //TODO
     }
 
-    LightFieldReference Algebra::Encode(const std::string &codec) {
+    LightFieldReference Algebra::Encode(const Codec &codec) {
         return LightFieldReference::make<logical::EncodedLightField>(
                 this_, codec, this_->volume().bounding(), this_->colorSpace());
     }
@@ -80,7 +81,7 @@ namespace lightdb::logical {
         return Discretize(GeometryReference::make<IntervalGeometry>(dimension, interval));
     }
 
-    LightFieldReference Algebra::Map(FunctorReference functor) {
+    LightFieldReference Algebra::Map(functor::UnaryFunctorReference functor) {
         return LightFieldReference::make<logical::TransformedLightField>(this_, functor);
     }
 

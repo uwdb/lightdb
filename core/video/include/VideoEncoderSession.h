@@ -21,7 +21,7 @@ public:
         Flush();
     }
 
-    void Encode(const Frame &frame, size_t top=0, size_t left=0) {
+    void Encode(Frame &frame, size_t top=0, size_t left=0) {
         auto &buffer = GetAvailableBuffer();
 
         if(buffer.input_buffer.buffer_format != NV_ENC_BUFFER_FORMAT_NV12_PL)

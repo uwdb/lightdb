@@ -18,7 +18,7 @@ public:
 
     void testGOP(const size_t gop) {
         auto source = Scan("red10"); //std::string("test" + std::to_string(gop)));
-        auto encoded = source.Encode("hevc");
+        auto encoded = source.Encode(Codec::hevc());
 
         auto environment = LocalEnvironment();
         auto coordinator = Coordinator();
@@ -45,7 +45,7 @@ TEST_F(TranscodeOptimizerTestFixture, testGOP15) {
 
 TEST_F(TranscodeOptimizerTestFixture, testTranscode) {
     auto source = Scan("red10");
-    auto encoded = source.Encode("hevc");
+    auto encoded = source.Encode(Codec::hevc());
 
     auto environment = LocalEnvironment();
     auto coordinator = Coordinator();

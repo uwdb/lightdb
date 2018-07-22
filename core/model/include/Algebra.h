@@ -1,14 +1,17 @@
 #ifndef LIGHTDB_ALGEBRA_H
 #define LIGHTDB_ALGEBRA_H
 
+#include "LightField.h"
 #include "Catalog.h"
 #include "Geometry.h"
-#include "Functor.h"
 #include "Interpolation.h"
 
 namespace lightdb {
-    namespace logical { class Algebra; };
-    using LightFieldReference = shared_reference<LightField, logical::Algebra>;
+    namespace functor {
+        template<std::size_t n> class naryfunctor;
+        template<std::size_t n> using FunctorReference = shared_reference<naryfunctor<n>>;
+        using UnaryFunctorReference = FunctorReference<1>;
+    }
 
     namespace logical {
         LightFieldReference Scan(const std::string &name);
@@ -16,7 +19,7 @@ namespace lightdb {
 
         class Algebra: public DefaultMixin {
         public:
-            //TODO Encode, Decode, Transcode
+            //TODO Decode, Transcode
 
             //LightFieldReference Load(const std::string &uri);
             LightFieldReference Select(const Volume&);
@@ -30,13 +33,15 @@ namespace lightdb {
             LightFieldReference Interpolate(Dimension, const interpolation::interpolator&);
             LightFieldReference Discretize(const GeometryReference&);
             LightFieldReference Discretize(Dimension, number);
-            LightFieldReference Map(FunctorReference);
+            LightFieldReference Map(functor::UnaryFunctorReference);
 
-            LightFieldReference Encode(const std::string &codec="");
+            LightFieldReference Encode(const Codec &codec=Codec::hevc());
             void Store(const std::string &name);
 
         protected:
-            explicit Algebra(const LightFieldReference &lightField) : DefaultMixin(lightField), this_(lightField) { }
+            explicit Algebra(const LightFieldReference &lightField)
+                    : DefaultMixin(lightField), this_(lightField)
+            { }
 
         private:
             const LightFieldReference &this_;

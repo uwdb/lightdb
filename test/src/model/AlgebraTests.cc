@@ -1,11 +1,11 @@
 #include "Operators.h"
+#include "Greyscale.h"
 #include "AssertUtility.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
 using namespace lightdb::logical;
 using namespace lightdb::catalog;
-//using namespace lightdb::functor;
 
 class AlgebraTestFixture : public testing::Test {
 public:
@@ -125,9 +125,9 @@ TEST_F(AlgebraTestFixture, testDiscretize) {
 TEST_F(AlgebraTestFixture, testMap) {
     auto l = Scan("red10")
             .Select(SpatiotemporalDimension::Time, {0, 10})
-            .Map(Greyscale());
+            .Map(Greyscale);
 
     ASSERT_TYPE(*l, TransformedLightField);
-    ASSERT_TRUE(l->downcast<TransformedLightField>().functor().is<Greyscale>());
+    ASSERT_TRUE(l->downcast<TransformedLightField>().functor().is<decltype(Greyscale)>());
     ASSERT_EQ(l->volume().components().size(), 1);
 }

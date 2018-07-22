@@ -88,7 +88,7 @@ TEST_F(TranscoderTestFixture, testMultipleFileTranscoder) {
 TEST_F(TranscoderTestFixture, testTranscoderWithIdentityTransform) {
     FileDecodeReader reader("resources/test-pattern.h264");
     FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
-    FrameTransform identityTransform = [](VideoLock&, const Frame& frame) -> const Frame& { return frame; };
+    FrameTransform identityTransform = [](VideoLock&, Frame& frame) -> Frame& { return frame; };
 
     ASSERT_SECS(
             ASSERT_NO_THROW(transcoder.transcode(reader, writer, identityTransform)),
@@ -106,11 +106,11 @@ TEST_F(TranscoderTestFixture, testTranscoderWithComplexTransform) {
     FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
     auto height = reader.format().display_area.bottom, width = reader.format().display_area.right;
 
-    FrameTransform halfBlackTransform = [](VideoLock& lock, const Frame& frame) -> const Frame& {
+    FrameTransform halfBlackTransform = [](VideoLock& lock, Frame& frame) -> Frame& {
         CUresult result;
         std::scoped_lock mutex{lock};
 
-        auto cudaFrame = dynamic_cast<const GPUFrame&>(frame).cuda();
+        auto cudaFrame = dynamic_cast<GPUFrame&>(frame).cuda();
         if((result = cuMemsetD2D8(cudaFrame->handle(), cudaFrame->pitch(), 0,
                                   cudaFrame->width() / 2, cudaFrame->height())) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuMemsetD2D8 failed.", result);
@@ -138,18 +138,18 @@ TEST_F(TranscoderTestFixture, testTranscoderWithMultipleTransform) {
     FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
     auto height = reader.format().display_area.bottom, width = reader.format().display_area.right;
 
-    FrameTransform leftHalfBlackTransform = [](VideoLock& lock, const Frame& frame) -> const Frame& {
+    FrameTransform leftHalfBlackTransform = [](VideoLock& lock, Frame& frame) -> Frame& {
         std::scoped_lock mutex{lock};
 
-        auto cudaFrame = dynamic_cast<const GPUFrame&>(frame).cuda();
+        auto cudaFrame = dynamic_cast<GPUFrame&>(frame).cuda();
         assert(cuMemsetD2D8(cudaFrame->handle(), cudaFrame->pitch(), 0,
                             cudaFrame->width() / 2, cudaFrame->height()) == CUDA_SUCCESS);
         return frame;
     };
-    FrameTransform topHalfBlackTransform = [](VideoLock& lock, const Frame& frame) -> const Frame& {
+    FrameTransform topHalfBlackTransform = [](VideoLock& lock, Frame& frame) -> Frame& {
         std::scoped_lock mutex{lock};
 
-        auto cudaFrame = dynamic_cast<const GPUFrame&>(frame).cuda();
+        auto cudaFrame = dynamic_cast<GPUFrame&>(frame).cuda();
         assert(cuMemsetD2D8(cudaFrame->handle(), cudaFrame->pitch(), 0,
                             cudaFrame->width(), cudaFrame->height() / 2) == CUDA_SUCCESS);
         return frame;

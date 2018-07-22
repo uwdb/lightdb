@@ -48,7 +48,7 @@ public:
     NVENCSTATUS join(const std::vector<std::shared_ptr<DecodeReader>> &readers, EncodeWriter &writer,
                      EncodableFrameTransform joinedTransform) {
         return join(readers, writer,
-                    std::vector<FrameTransform>{readers.size(), [](VideoLock&, const Frame& frame) -> const Frame& {
+                    std::vector<FrameTransform>{readers.size(), [](VideoLock&, Frame& frame) -> Frame& {
                         return frame; }},
                     joinedTransform);
     }
@@ -82,7 +82,7 @@ public:
             for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++) {
                 encoderSession.Encode(decodedFrames,
                                       [tileTransforms, joinedTransform, this](
-                                              EncodeBuffer &buffer, const Frame &frame, size_t index) {
+                                              EncodeBuffer &buffer, Frame &frame, size_t index) {
                     auto row = index / columns(), column = index % columns();
                     buffer.copy(lock_, tileTransforms[index](lock_, frame),
                                 0, 0, row * frame.height(), column * frame.width());

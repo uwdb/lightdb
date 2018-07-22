@@ -93,14 +93,15 @@ struct EncodeBuffer
     }
 
     //TODO These arguments should be GPUFrame
-    void copy(VideoLock &lock, const Frame &frame) {
+    void copy(VideoLock &lock, Frame &frame) {
         if(frame.width() != input_buffer.width ||
            frame.height() != input_buffer.height) {
             throw InvalidArgumentError("Frame size does not match buffer size", "frame");
         }
 
-        //TODO create new overloads that accept CudaDecodedFrame
-        auto cudaFrame = dynamic_cast<const GPUFrame&>(frame).cuda();
+        //TODO create new overloads that accept CudaDecodedFrames and avoid unsafe cast
+        auto cudaFrame = dynamic_cast<GPUFrame&>(frame).cuda();
+
         //CudaDecodedFrame cudaFrame(frame);
         copy(lock, {
             .srcXInBytes = 0,
@@ -125,10 +126,10 @@ struct EncodeBuffer
         });
     }
 
-    void copy(VideoLock &lock, const Frame &frame,
+    void copy(VideoLock &lock, Frame &frame,
               size_t frame_top, size_t frame_left,
               size_t buffer_top=0, size_t buffer_left=0) {
-        auto cudaFrame = dynamic_cast<const GPUFrame&>(frame).cuda();
+        auto cudaFrame = dynamic_cast<GPUFrame&>(frame).cuda();
         //CudaDecodedFrame cudaFrame(frame);
         CUDA_MEMCPY2D lumaPlaneParameters = {
                 srcXInBytes:   frame_left,

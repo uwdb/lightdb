@@ -1,8 +1,10 @@
 #include "HeuristicOptimizer.h"
 #include "Coordinator.h"
+#include "Greyscale.h"
 #include "Display.h"
 #include "HomomorphicOperators.h"
 #include "VisitorTemp2.h"
+#include "extension.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
@@ -22,15 +24,21 @@ protected:
 };
 
 TEST_F(VisitorTestFixture, testFoo) {
-    auto left = Scan("red10");
+/*    auto left = Scan("red10");
     auto right = Scan("red10");
     auto unioned = left.Union(right);
     auto encoded = unioned.Encode();
-/*
+    */
+
+    //auto foo = dlopen("/home/bhaynes/projects/yolo/cmake-build-debug/libyolo.so", RTLD_LAZY | RTLD_GLOBAL);
+    //printf( "Could not open file : %s\n", dlerror() );
+    auto yolo = lightdb::extensibility::Load("yolo", "/home/bhaynes/projects/yolo/cmake-build-debug");
+
     auto input = Scan("red10");
-    auto gray = input.Map(lightdb::Greyscale());
-    auto encoded = gray.Encode();
-*/
+    auto gray = input.Map(yolo);
+    //auto gray = input.Map(lightdb::Greyscale);
+    auto encoded = gray.Encode(Codec::boxes());
+
     auto environment = LocalEnvironment();
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(encoded);
