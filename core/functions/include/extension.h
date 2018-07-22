@@ -3,12 +3,13 @@
 
 #include "Functor.h"
 #include <boost/dll/import.hpp>
+#include <experimental/filesystem>
 
 namespace lightdb::extensibility {
 
-auto Load(const std::string &name, const std::string &filename="plugins") {
+auto Load(const std::string &name, const std::experimental::filesystem::path &path="plugins") {
     auto plugin = boost::dll::import<functor::unaryfunctor>(
-            filename + "/" + name,
+            std::string(path / name),
             name,
             boost::dll::load_mode::append_decorations);
 

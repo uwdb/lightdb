@@ -23,6 +23,13 @@ add_test(lightdb_test lightdb_test)
 # Copy test files to output directory
 file(COPY resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
+# Copy plugins to output plugin directory
+ADD_CUSTOM_COMMAND(TARGET lightdb_test
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/plugins
+        COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/plugins/* ${CMAKE_CURRENT_BINARY_DIR}/plugins
+        )
+
 # Add custom target 'check'
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -V DEPENDS lightdb_test)
 

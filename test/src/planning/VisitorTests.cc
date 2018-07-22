@@ -32,7 +32,7 @@ TEST_F(VisitorTestFixture, testFoo) {
 
     //auto foo = dlopen("/home/bhaynes/projects/yolo/cmake-build-debug/libyolo.so", RTLD_LAZY | RTLD_GLOBAL);
     //printf( "Could not open file : %s\n", dlerror() );
-    auto yolo = lightdb::extensibility::Load("yolo", "/home/bhaynes/projects/yolo/cmake-build-debug");
+    auto yolo = lightdb::extensibility::Load("yolo"); //, "/home/bhaynes/projects/yolo/cmake-build-debug");
 
     auto input = Scan("red10");
     auto gray = input.Map(yolo);
