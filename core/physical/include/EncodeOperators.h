@@ -8,7 +8,7 @@
 #include "VideoEncoder.h"
 #include "EncodeWriter.h"
 #include "VideoEncoderSession.h"
-#include "Data.h"
+#include "MaterializedLightField.h"
 #include "lazy.h"
 #include <cstdio>
 #include <utility>
@@ -31,7 +31,7 @@ public:
               encodeSession_([this]() { return VideoEncoderSession(encoder_, writer_); }),
               writer_([this]() { return MemoryEncodeWriter(encoder_->api()); }) {}
 
-    std::optional<physical::DataReference> read() override {
+    std::optional<physical::MaterializedLightFieldReference> read() override {
         if (iterator() != iterator().eos()) {
             auto decoded = iterator()++;
 
@@ -65,7 +65,7 @@ public:
             : PhysicalLightField(logical, {parent}, physical::DeviceType::CPU)
     { }
 
-    std::optional<physical::DataReference> read() override {
+    std::optional<physical::MaterializedLightFieldReference> read() override {
         if(iterators()[0] != iterators()[0].eos()) {
             return iterators()[0]++;
         } else

@@ -21,7 +21,7 @@ public:
         throw NotImplementedError();
     }
 
-    std::optional<physical::DataReference> read() override {
+    std::optional<physical::MaterializedLightFieldReference> read() override {
         //auto chunks = functional::transform(sources_.begin(), sources_.end(), [](auto &source) {
         //                                        return source.read(); });
         throw NotImplementedError();

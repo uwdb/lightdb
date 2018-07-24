@@ -34,7 +34,9 @@ TEST_F(VisitorTestFixture, testFoo) {
     //printf( "Could not open file : %s\n", dlerror() );
     auto yolo = lightdb::extensibility::Load("yolo"); //, "/home/bhaynes/projects/yolo/cmake-build-debug");
 
+    //auto name = std::getenv("TLFNAME");
     auto input = Scan("red10");
+//    auto small = input.Discretize(Dimension::Theta, 1);
     auto gray = input.Map(yolo);
     //auto gray = input.Map(lightdb::Greyscale);
     auto encoded = gray.Encode(Codec::boxes());
@@ -45,5 +47,5 @@ TEST_F(VisitorTestFixture, testFoo) {
 
     print_plan(plan);
 
-    coordinator.save(plan, "out.hevc");
+    coordinator.save(plan, "out.bb");
 }

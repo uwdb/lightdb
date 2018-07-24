@@ -12,7 +12,7 @@ public:
             : PhysicalLightField(logical, {parent}, physical::DeviceType::CPU)
     { }
 
-    std::optional<physical::DataReference> read() override {
+    std::optional<physical::MaterializedLightFieldReference> read() override {
         if(iterators()[0] != iterators()[0].eos()) {
             CPUDecodedFrameData output;
             auto input = iterators()[0]++;
@@ -35,7 +35,7 @@ public:
             : GPUOperator(logical, {parent}, gpu, []() { return Configuration{320, 240, 0, 0, 0, {30, 1}}; })
     { }
 
-    std::optional<physical::DataReference> read() override {
+    std::optional<physical::MaterializedLightFieldReference> read() override {
         if(iterators()[0] != iterators()[0].eos()) {
             GPUDecodedFrameData output;
             auto input = iterators()[0]++;

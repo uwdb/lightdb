@@ -2,7 +2,7 @@
 #define LIGHTDB_FUNCTOR_H
 
 #include "LightField.h"
-#include "Data.h"
+#include "MaterializedLightField.h"
 #include "functional.h"
 #include <map>
 

@@ -24,15 +24,15 @@ public:
             : GPUMap(logical, parent, [configuration]() { return configuration; }, transform)
     { }
 
-    std::optional<physical::DataReference> read() override {
+    std::optional<physical::MaterializedLightFieldReference> read() override {
         if(iterator() != iterator().eos()) {
             auto input = iterator()++;
 
             auto &transform = transform_(DeviceType::GPU);
             auto output = transform(input);
             auto &field = static_cast<LightField&>(output);
-            auto &data = dynamic_cast<Data&>(field);
-            return static_cast<physical::DataReference>(data);
+            auto &data = dynamic_cast<MaterializedLightField&>(field);
+            return static_cast<physical::MaterializedLightFieldReference>(data);
         } else
             return {};
     }
@@ -61,15 +61,15 @@ private:
         { }
 
 
-        std::optional<physical::DataReference> read() override {
+        std::optional<physical::MaterializedLightFieldReference> read() override {
             if(iterators()[0] != iterators()[0].eos()) {
                 auto input = iterators()[0]++.downcast<CPUDecodedFrameData>();
 
                 auto &transform = transform_(DeviceType::CPU);
                 auto output = transform(input);
                 auto &field = static_cast<LightField&>(output);
-                auto &data = dynamic_cast<Data&>(field);
-                return static_cast<physical::DataReference>(data);
+                auto &data = dynamic_cast<MaterializedLightField&>(field);
+                return static_cast<physical::MaterializedLightFieldReference>(data);
             } else
                 return {};
         }

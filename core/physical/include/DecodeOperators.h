@@ -4,7 +4,7 @@
 #include "LightField.h"
 #include "Environment.h"
 #include "PhysicalOperators.h"
-#include "Data.h"
+#include "MaterializedLightField.h"
 #include "VideoDecoderSession.h"
 
 namespace lightdb::physical {
@@ -20,7 +20,7 @@ public:
     GPUDecode(const GPUDecode &) = delete;
     GPUDecode(GPUDecode &&) = default;
 
-    std::optional<physical::DataReference> read() override {
+    std::optional<physical::MaterializedLightFieldReference> read() override {
         std::vector<GPUFrameReference> frames;
 
         LOG_IF(WARNING, decode_configuration_->output_surfaces < 8)
@@ -34,7 +34,7 @@ public:
                     frames.size() <= decode_configuration_->output_surfaces / 4);
 
         if(!frames.empty() || !decoder_->frame_queue().isComplete())
-            return std::optional<physical::DataReference>{GPUDecodedFrameData(frames)};
+            return std::optional<physical::MaterializedLightFieldReference>{GPUDecodedFrameData(frames)};
         else
             return std::nullopt;
     }

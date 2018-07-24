@@ -11,10 +11,10 @@ public:
             : ScanSingleFile(logical, logical->downcast<logical::ScannedLightField>(), stream)
     { }
 
-    std::optional<physical::DataReference> read() override {
+    std::optional<physical::MaterializedLightFieldReference> read() override {
         auto packet = reader_->read();
         return packet.has_value()
-               ? std::optional<physical::DataReference>{CPUEncodedFrameData(codec(), packet.value())}
+               ? std::optional<physical::MaterializedLightFieldReference>{CPUEncodedFrameData(codec(), packet.value())}
                : std::nullopt;
     }
 

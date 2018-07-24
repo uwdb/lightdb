@@ -23,7 +23,7 @@ public:
 
     GPUUnion(const GPUUnion &) = delete;
 
-    std::optional<physical::DataReference> read() override {
+    std::optional<physical::MaterializedLightFieldReference> read() override {
         if(!any_parent_eos()) {
             GPUDecodedFrameData output;
             auto available_frames = std::max(frames_->available(), 1ul);

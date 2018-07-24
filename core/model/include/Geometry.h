@@ -249,8 +249,8 @@ namespace lightdb {
 
     class Volume::iterable {
     public:
-        iterable(const Volume &model, const Dimension dimension, const number &interval)
-                : model_(model), dimension_(dimension), interval_(interval)
+        iterable(Volume model, const Dimension dimension, const number &interval)
+                : model_(std::move(model)), dimension_(dimension), interval_(interval)
         { }
 
         iterator begin() const;

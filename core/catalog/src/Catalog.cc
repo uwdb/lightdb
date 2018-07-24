@@ -1,7 +1,6 @@
 #include "Catalog.h"
 #include "LightField.h"
 #include "Model.h"
-#include "Ffmpeg.h"
 
 namespace filesystem = ::std::experimental::filesystem;
 
@@ -25,7 +24,9 @@ namespace lightdb::catalog {
 
         const size_t index = 0;
         auto metadata = utility::StreamMetadata(path / metadataFilename_, index, false);
-        return {Stream{filesystem::absolute(path / "stream0.h264"), metadata.codec(), metadata.configuration()}};
+        auto hardcoded_hevc_path = filesystem::absolute(path / "stream0.hevc");
+        auto hardcoded_h264_path = filesystem::absolute(path / "stream0.h264");
+        return {Stream{filesystem::exists(hardcoded_hevc_path) ? hardcoded_hevc_path : hardcoded_h264_path, metadata.codec(), metadata.configuration()}};
     }
 
 } // namespace lightdb::catalog

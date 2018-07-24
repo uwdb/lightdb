@@ -4,7 +4,7 @@
 #include "LightField.h"
 #include "Encoding.h"
 #include "Environment.h"
-#include "Data.h"
+#include "MaterializedLightField.h"
 #include "lazy.h"
 #include "functional.h"
 #include <tuple>
@@ -42,13 +42,13 @@ namespace lightdb {
                 current_.reset();
                 eos_ = !(current_ = physical_->read()).has_value();
             }
-            physical::DataReference operator++(int)
+            physical::MaterializedLightFieldReference operator++(int)
             {
                 auto value = **this;
                 ++*this;
                 return value;
             }
-            physical::DataReference operator*() { return current_.value(); }
+            physical::MaterializedLightFieldReference operator*() { return current_.value(); }
 
             template<typename T>
             downcast_iterator<T> downcast() { return downcast_iterator<T>(*this); }
@@ -64,7 +64,7 @@ namespace lightdb {
         private:
             static iterator eos_instance_;
             PhysicalLightField *physical_;
-            std::optional<physical::DataReference> current_;
+            std::optional<physical::MaterializedLightFieldReference> current_;
             bool eos_;
         };
 
@@ -105,7 +105,7 @@ namespace lightdb {
 
         virtual iterator begin() { return iterator(*this); }
         virtual const iterator& end() { return iterator::eos(); }
-        virtual std::optional<physical::DataReference> read() = 0;
+        virtual std::optional<physical::MaterializedLightFieldReference> read() = 0;
 
     protected:
         explicit PhysicalLightField(const LightFieldReference &logical, const physical::DeviceType deviceType)
