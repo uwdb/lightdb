@@ -1,9 +1,6 @@
 #ifndef LIGHTDB_VIDEOLOCK_H
 #define LIGHTDB_VIDEOLOCK_H
 
-#include <dynlink_cuda.h>
-#include <dynlink_cuviddec.h>
-#include <cstdio>
 #include "GPUContext.h"
 
 class VideoLock

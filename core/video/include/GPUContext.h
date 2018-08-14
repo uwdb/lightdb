@@ -3,8 +3,8 @@
 
 #include "errors.h"
 #include <glog/logging.h>
+#include <nvcuvid.h>
 #include <stdexcept>
-#include <dynlink_nvcuvid.h>
 
 class GPUContext {
 public:

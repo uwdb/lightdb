@@ -1,10 +1,10 @@
 #ifndef LIGHTDB_VIDEODECODERSESSION_H
 #define LIGHTDB_VIDEODECODERSESSION_H
 
-#include <thread>
 #include "VideoDecoder.h"
 #include "DecodeReader.h"
-#include "dynlink_cuda.h"
+#include <cuda.h>
+#include <thread>
 
 template<typename Input=DecodeReader::iterator>
 class VideoDecoderSession {

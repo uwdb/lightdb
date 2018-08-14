@@ -1,7 +1,7 @@
 #ifndef LIGHTDB_GEOMETRY_H
 #define LIGHTDB_GEOMETRY_H
 
-#include "rational.h"
+#include "number.h"
 #include "asserts.h"
 #include <utility>
 #include <vector>
@@ -373,6 +373,7 @@ namespace lightdb {
 
     class Geometry {
     public:
+        virtual bool is_monotonic() const = 0;
         virtual bool defined_at(const Point6D &point) const = 0;
     };
 
@@ -384,6 +385,8 @@ namespace lightdb {
 
         virtual double v(angle theta, angle phi) const = 0;
 
+        bool is_monotonic() const override { return false; }
+
         bool defined_at(const Point6D &point) const override {
             return true; //TODO
         }
@@ -391,15 +394,31 @@ namespace lightdb {
 
     class EquirectangularGeometry : public MeshGeometry {
     public:
+        class Samples
+        {
+            size_t theta;
+            size_t phi;
+        };
+
+        explicit EquirectangularGeometry(Samples samples)
+                : samples_(samples)
+        { }
+
+
         double u(const angle theta, const angle phi) const override { return 0; }
 
         double v(const angle theta, const angle phi) const override { return 0; }
+
+        bool is_monotonic() const override { return true; }
 
         bool defined_at(const Point6D &point) const override {
             return true; //TODO
         }
 
-        static constexpr const EquirectangularGeometry instance() { return EquirectangularGeometry(); }
+        private:
+            const Samples samples_;
+
+//        static constexpr const EquirectangularGeometry instance() { return EquirectangularGeometry(); }
     };
 
     class IntervalGeometry : public Geometry {
@@ -412,18 +431,27 @@ namespace lightdb {
             return point.get(dimension()).epsilon_equal<tolerance>(interval());
         }
 
+        bool is_monotonic() const override { return true; }
+
         bool defined_at(const Point6D &point) const override {
             return this->defined_at<std::pico>(point);
         }
 
         inline constexpr const Dimension dimension() const { return dimension_; }
         inline constexpr const number interval() const { return interval_; }
+        inline constexpr std::optional<unsigned long> size() const {
+            if(dimension() == Dimension::Theta)
+                return {static_cast<unsigned long>(2 * PI / interval())};
+            else if(dimension() == Dimension::Phi)
+                return {static_cast<unsigned long>(PI / interval())};
+            else
+                return {};
+        }
 
     private:
         const Dimension dimension_;
         const number interval_;
     };
-
 } // namespace lightdb
 
 #endif //LIGHTDB_GEOMETRY_H

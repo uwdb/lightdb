@@ -9,6 +9,8 @@ YOLO::CPU::CPU()
               "/home/bhaynes/projects/darknet/cfg/coco.data")
 { }
 
+//int pow2_ceiling(unsigned int value) { return 2 << (unsigned int)log2l(value); }
+
 shared_reference<LightField> YOLO::CPU::operator()(LightField& input) {
     const auto channels = 3u;
     std::vector<char> output;
@@ -20,9 +22,12 @@ shared_reference<LightField> YOLO::CPU::operator()(LightField& input) {
         auto y_data = reinterpret_cast<const unsigned char*>(frame->data().data());
         auto uv_data = y_data + frame_size_;
         IppiSize size{static_cast<int>(frame->width()), static_cast<int>(frame->height())};
+        //IppiSize size{pow2_ceiling(frame->width()), pow2_ceiling(frame->height())};
 
         // NV12 -> RGB
-        assert(ippiYCbCr420ToRGB_8u_P2C3R(y_data, frame->width(), uv_data, frame->width(), rgb_.data(), channels * frame->width(), size) == ippStsNoErr);
+        //assert(
+                ippiYCbCr420ToRGB_8u_P2C3R(y_data, frame->width(), uv_data, frame->width(), rgb_.data(), channels * frame->width(), size)
+                ;//== ippStsNoErr);
 
         // RGBRGBRGB -> RRRBBBGGG
         assert(ippiCopy_8u_C3P3R(rgb_.data(), 3 * frame->width(), std::initializer_list<unsigned char*>(
@@ -43,11 +48,15 @@ shared_reference<LightField> YOLO::CPU::operator()(LightField& input) {
                        boxes_,
                        probabilities_);
 
+        if(true)
         for(auto i = 0u; i < box_count_; i++)
             for(auto j = 0u; j < metadata_.classes; j++)
                 if(probabilities_[i][j] > 0.001)
+                    {
+                    printf("%s,%.0f,%.0f,%.0f,%.0f,%.3f\n", metadata_.names[j], boxes_[i].x, boxes_[i].y, boxes_[i].w, boxes_[i].h, probabilities_[i][j]);
                     output.insert(output.end(), reinterpret_cast<char*>(&boxes_[i]),
                                                 reinterpret_cast<char*>(&boxes_[i + 1]));
+                    }
         }
 
     return physical::CPUEncodedFrameData(Codec::boxes(), output);

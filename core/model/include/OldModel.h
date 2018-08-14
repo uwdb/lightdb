@@ -13,7 +13,7 @@ namespace lightdb::logical {
                             const ThetaRange &theta = ThetaRange::limits(),
                             const PhiRange &phi = PhiRange::limits())
                 : DiscreteLightField(Volume{point, time, theta, phi}/*.ToVolume(range, theta, phi)*/, YUVColorSpace::instance(),
-                                     GeometryReference::make<EquirectangularGeometry>()),
+                                     GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples())),
                   point_(point)
         //                   : DiscreteLightField(EquirectangularGeometry::Instance, point.ToVolume(range, theta, phi)),
         //                   point_(point)
@@ -26,7 +26,7 @@ namespace lightdb::logical {
 
     protected:
         bool defined_at(const Point6D &point) const override {
-            return volume().bounding().contains(point) && EquirectangularGeometry::instance().defined_at(point);
+            return false; //volume().bounding().contains(point) && EquirectangularGeometry::instance().defined_at(point);
         }
 
     private:

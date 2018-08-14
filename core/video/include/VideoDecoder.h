@@ -1,12 +1,12 @@
 #ifndef LIGHTDB_VIDEODECODER_H
 #define LIGHTDB_VIDEODECODER_H
 
-#include <errors.h>
 #include "Configuration.h"
 #include "FrameQueue.h"
 #include "VideoLock.h"
-#include "dynlink_cuda.h"
-#include "dynlink_nvcuvid.h"
+#include "errors.h"
+#include <cuda.h>
+#include <nvcuvid.h>
 
 class VideoDecoder {
 public:

@@ -15,6 +15,7 @@ namespace lightdb::optimization {
             return { make_rule<ChooseDecoders>(),
                      make_rule<ChooseUnion>(),
                      make_rule<ChooseMapTransfers>(),
+                     make_rule<ChooseDiscretize>(),
                      make_rule<ChooseMap>(),
                      make_rule<ChooseEncoders>() }; }
     };

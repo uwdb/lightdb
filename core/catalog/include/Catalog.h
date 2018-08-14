@@ -4,9 +4,9 @@
 #include "Codec.h"
 #include "Geometry.h"
 #include "Color.h"
+#include "Configuration.h"
 #include <experimental/filesystem>
 #include <utility>
-#include <Configuration.h>
 
 namespace lightdb {
     class LightField;
@@ -65,14 +65,14 @@ namespace lightdb {
                           codec_(Codec::h264()),
                           volume_({{0, 0}, {0, 0}, {0, 0}, {0, 10}, ThetaRange::limits(), PhiRange::limits()}),
                           colorSpace_(YUVColorSpace::instance()),
-                          geometry_(EquirectangularGeometry::instance()),
+                          geometry_(EquirectangularGeometry(EquirectangularGeometry::Samples())),
                           streams_(get_streams(path_))
                 { }
 
             public:
                 const Volume& volume() const noexcept { return volume_; }
                 const ColorSpace& colorSpace() const noexcept { return colorSpace_; }
-                const Geometry& geometry() const noexcept { return geometry_; }
+                const GeometryReference geometry() const noexcept { return geometry_; }
                 const std::string path() const noexcept { return path_; }
                 const std::vector<Stream>& streams() const noexcept { return streams_; }
 
@@ -83,7 +83,7 @@ namespace lightdb {
                 const Codec codec_;
                 const Volume volume_;
                 const ColorSpace colorSpace_;
-                const Geometry &geometry_;
+                const GeometryReference geometry_;
                 std::vector<Stream> streams_;
             };
 

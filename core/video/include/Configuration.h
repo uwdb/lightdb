@@ -3,7 +3,7 @@
 
 #include "EncodeAPI.h"
 #include "VideoLock.h"
-#include "rational.h"
+#include "number.h"
 #include <string>
 
 struct Configuration {

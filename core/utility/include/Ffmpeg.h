@@ -2,7 +2,7 @@
 #define LIGHTDB_FFMPEG_H
 
 #include "Geometry.h"
-#include "rational.h"
+#include "number.h"
 extern "C" {
 #include <libavcodec/avcodec.h>
 }

@@ -9,6 +9,7 @@
 #include "UnionOperators.h"
 #include "MapOperators.h"
 #include "TransferOperators.h"
+#include "DiscretizeOperators.h"
 
 namespace lightdb::optimization {
 
@@ -39,6 +40,9 @@ namespace lightdb::optimization {
             auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
                     node.parents().begin(), node.parents().end(),
                     [this](auto &parent) { return plan().assignments(parent); });
+
+            if(physical_parents.empty())
+                return false;
 
             //TODO clean this up, shouldn't just be randomly picking last parent
             auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>()
@@ -136,6 +140,9 @@ namespace lightdb::optimization {
                     node.parents().begin(), node.parents().end(),
                     [this](auto &parent) { return plan().assignments(parent); });
 
+            if(physical_parents.empty())
+                return false;
+
             //TODO clean this up, shouldn't just be randomly picking last parent
             auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>() || physical_parents[0].is<physical::CPUtoGPUTransfer>()
                                    ? physical_parents[0]
@@ -149,6 +156,50 @@ namespace lightdb::optimization {
                 } else
                     plan().emplace<physical::GPUMap>(plan().lookup(node), hardcoded_parent, *node.functor());
                 return true;
+            }
+            return false;
+        }
+    };
+
+    class ChooseDiscretize : public OptimizerRule {
+    public:
+        using OptimizerRule::OptimizerRule;
+
+        bool visit(const logical::DiscreteLightField &node) override {
+            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                    node.parents().begin(), node.parents().end(),
+                    [this](auto &parent) { return plan().assignments(parent); });
+
+            //TODO clean this up, shouldn't just be randomly picking last parent
+            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>() || physical_parents[0].is<physical::CPUtoGPUTransfer>()
+                                    ? physical_parents[0]
+                                    : physical_parents[physical_parents.size() - 1];
+            auto is_discrete = hardcoded_parent.is<physical::GPUDecode>() && hardcoded_parent->logical().is<logical::ScannedLightField>();
+
+            if(physical_parents.empty())
+                return false;
+
+            if(!plan().has_physical_assignment(node) && is_discrete) {
+                auto scanned = hardcoded_parent->logical().downcast<logical::ScannedLightField>();
+                auto &scanned_geometry = scanned.metadata().geometry();
+                auto &discrete_geometry = node.geometry();
+
+                if(scanned.metadata().streams().size() != 1)
+                    return false;
+                else if(!discrete_geometry.is<IntervalGeometry>())
+                    return false;
+                else if(!scanned_geometry.is<EquirectangularGeometry>())
+                    return false;
+                else if(discrete_geometry.downcast<IntervalGeometry>().dimension() == Dimension::Theta &&
+                        scanned.metadata().streams()[0].configuration().width % discrete_geometry.downcast<IntervalGeometry>().size().value_or(1) == 0)
+                {
+                    if(hardcoded_parent->device() == physical::DeviceType::GPU)
+                    {
+                        plan().emplace<physical::GPUDownsampleResolution>(plan().lookup(node), hardcoded_parent, discrete_geometry.downcast<IntervalGeometry>());
+                        return true;
+                    }
+                }
+                //TODO handle case where interval is equal to resolution (by applying identity)
             }
             return false;
         }

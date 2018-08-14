@@ -39,6 +39,15 @@ public:
               #endif
     { Mixin::PostConstruct(*this); }
 
+    template<typename TDerived>
+    shared_reference(const shared_reference<TDerived> &value)
+            : Mixin(*this),
+              pointer_{std::dynamic_pointer_cast<T>(static_cast<std::shared_ptr<TDerived>>(value))}
+    #ifndef NDEBUG
+                , direct_(&*pointer_)
+    #endif
+    { Mixin::PostConstruct(*this); }
+
     shared_reference(const T &value)
             : Mixin(*this), pointer_{std::make_shared<T>(value)}
             #ifndef NDEBUG

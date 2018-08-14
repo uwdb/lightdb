@@ -12,7 +12,7 @@
  */
 
 #include "VideoLock.h"
-#include "dynlink_nvcuvid.h" // <nvcuvid.h>
+#include <nvcuvid.h>
 
 #include <optional>
 #include <thread>

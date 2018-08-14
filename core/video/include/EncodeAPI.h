@@ -2,10 +2,9 @@
 #define LIGHTDB_ENCODE_API
 
 #include "GPUContext.h"
-#include "nvEncodeAPI.h"
-#include "dynlink_cuda.h"
 #include "nvUtils.h"
-#include <assert.h>
+#include <cuda.h>
+#include <cassert>
 #include <functional>
 
 struct EncodeConfiguration;
