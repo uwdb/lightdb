@@ -170,28 +170,35 @@ namespace lightdb::optimization {
                     node.parents().begin(), node.parents().end(),
                     [this](auto &parent) { return plan().assignments(parent); });
 
+            if(physical_parents.empty())
+                return false;
+
             //TODO clean this up, shouldn't just be randomly picking last parent
             auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>() || physical_parents[0].is<physical::CPUtoGPUTransfer>()
                                     ? physical_parents[0]
                                     : physical_parents[physical_parents.size() - 1];
-            auto is_discrete = hardcoded_parent.is<physical::GPUDecode>() && hardcoded_parent->logical().is<logical::ScannedLightField>();
+            auto is_discrete = (hardcoded_parent.is<physical::GPUDecode>() && hardcoded_parent->logical().is<logical::ScannedLightField>()) ||
+                               hardcoded_parent.is<physical::GPUDownsampleResolution>();
 
             if(physical_parents.empty())
                 return false;
 
             if(!plan().has_physical_assignment(node) && is_discrete) {
-                auto scanned = hardcoded_parent->logical().downcast<logical::ScannedLightField>();
-                auto &scanned_geometry = scanned.metadata().geometry();
+                auto downsampled = hardcoded_parent->logical().try_downcast<logical::DiscretizedLightField>();
+                auto scanned = downsampled.has_value() ? hardcoded_parent->logical()->parents()[0].downcast<logical::ScannedLightField>() : hardcoded_parent->logical().downcast<logical::ScannedLightField>();
+                auto &parent_geometry = scanned.metadata().geometry();
                 auto &discrete_geometry = node.geometry();
 
                 if(scanned.metadata().streams().size() != 1)
                     return false;
                 else if(!discrete_geometry.is<IntervalGeometry>())
                     return false;
-                else if(!scanned_geometry.is<EquirectangularGeometry>())
+                else if(!parent_geometry.is<EquirectangularGeometry>())
                     return false;
-                else if(discrete_geometry.downcast<IntervalGeometry>().dimension() == Dimension::Theta &&
-                        scanned.metadata().streams()[0].configuration().width % discrete_geometry.downcast<IntervalGeometry>().size().value_or(1) == 0)
+                else if((discrete_geometry.downcast<IntervalGeometry>().dimension() == Dimension::Theta &&
+                         scanned.metadata().streams()[0].configuration().width % discrete_geometry.downcast<IntervalGeometry>().size().value_or(1) == 0) ||
+                        (discrete_geometry.downcast<IntervalGeometry>().dimension() == Dimension::Phi &&
+                         scanned.metadata().streams()[0].configuration().height % discrete_geometry.downcast<IntervalGeometry>().size().value_or(1) == 0))
                 {
                     if(hardcoded_parent->device() == physical::DeviceType::GPU)
                     {

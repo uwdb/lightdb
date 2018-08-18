@@ -35,7 +35,9 @@ TEST_F(VisitorTestFixture, testFoo) {
 
     auto name = "red10"; //std::getenv("TLFNAME");
     auto input = Scan(name);
-    auto small = input.Discretize(Dimension::Theta, rational_times_real({2, 160}, PI));
+//    auto continuous = input.Interpolate(Dimension::Theta, interpolation::NearestNeighbor());
+    auto smalltheta = input.Discretize(Dimension::Theta, rational_times_real({2, 160}, PI));
+    auto small = smalltheta.Discretize(Dimension::Phi, rational_times_real({2, 160}, PI));
     auto gray = small.Map(yolo);
     //auto gray = input.Map(lightdb::Greyscale);
     //auto gray = input.Map(yolo);
