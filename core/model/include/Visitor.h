@@ -92,18 +92,18 @@ namespace lightdb {
             explicit AdaptedVisitor(StatefulLightFieldVisitor &visitor, State initial_state)
                     : visitor_(visitor), state_(std::move(initial_state)) { }
 
-            void visit(const LightField &field) final { visitor_.visit(state_, field); }
-            void visit(const logical::ConstantLightField &field) final { visitor_.visit(state_, field); }
-            void visit(const logical::CompositeLightField &field) final { visitor_.visit(state_, field); }
-            void visit(const logical::PartitionedLightField &field) final { visitor_.visit(state_, field); }
-            void visit(const logical::SubsetLightField &field) final { visitor_.visit(state_, field); }
-            void visit(const logical::RotatedLightField &field) final { visitor_.visit(state_, field); }
-            void visit(const logical::DiscreteLightField &field) final { visitor_.visit(state_, field); }
-            void visit(const logical::InterpolatedLightField &field) final { visitor_.visit(state_, field); }
-            void visit(const logical::TransformedLightField &field) final { visitor_.visit(state_, field); }
-            void visit(const logical::ScannedLightField &field) final { visitor_.visit(state_, field); }
-            void visit(const logical::ExternalLightField &field) final { visitor_.visit(state_, field); }
-            void visit(const logical::EncodedLightField &field) final  { visitor_.visit(state_, field); }
+            void visit(const LightField &field) final { state_ = visitor_.visit(state_, field); }
+            void visit(const logical::ConstantLightField &field) final { state_ = visitor_.visit(state_, field); }
+            void visit(const logical::CompositeLightField &field) final { state_ = visitor_.visit(state_, field); }
+            void visit(const logical::PartitionedLightField &field) final { state_ = visitor_.visit(state_, field); }
+            void visit(const logical::SubsetLightField &field) final { state_ = visitor_.visit(state_, field); }
+            void visit(const logical::RotatedLightField &field) final { state_ = visitor_.visit(state_, field); }
+            void visit(const logical::DiscreteLightField &field) final { state_ = visitor_.visit(state_, field); }
+            void visit(const logical::InterpolatedLightField &field) final { state_ = visitor_.visit(state_, field); }
+            void visit(const logical::TransformedLightField &field) final { state_ = visitor_.visit(state_, field); }
+            void visit(const logical::ScannedLightField &field) final { state_ = visitor_.visit(state_, field); }
+            void visit(const logical::ExternalLightField &field) final { state_ = visitor_.visit(state_, field); }
+            void visit(const logical::EncodedLightField &field) final  { state_ = visitor_.visit(state_, field); }
 
             State result() const { return state_; }
 
