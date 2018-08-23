@@ -31,6 +31,8 @@ namespace lightdb::physical {
         explicit virtual operator MaterializedLightFieldReference() = 0;
         void accept(LightFieldVisitor& visitor) override { visitor.visit(*this); }
 
+        DeviceType device() const { return device_; }
+
     protected:
         explicit MaterializedLightField(DeviceType device)
                 //TODO remove hardcoded placeholders
@@ -156,6 +158,29 @@ namespace lightdb::physical {
     private:
         std::vector<GPUFrameReference> frames_{};
     };
+
+    template<typename BaseType>
+    class InterpolatedData: public BaseType {
+    public:
+        InterpolatedData(const shared_reference<BaseType> &base,
+                         const interpolation::InterpolatorReference interpolator)
+            : BaseType(base),
+              base_(base),
+              interpolator_(interpolator)
+        { }
+
+        inline explicit operator MaterializedLightFieldReference() override { return MaterializedLightFieldReference::make<InterpolatedData<BaseType>>(*this); }
+
+    private:
+        const MaterializedLightFieldReference base_;
+        const interpolation::InterpolatorReference interpolator_;
+    };
+
+    class InterpolatedGPUDecodedFrameData : public InterpolatedData<GPUDecodedFrameData> {
+    public:
+        using InterpolatedData<GPUDecodedFrameData>::InterpolatedData;
+    };
+
 } // namespace lightdb::physical
 
 #endif //LIGHTDB_DATA_H

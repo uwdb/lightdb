@@ -229,7 +229,7 @@ namespace lightdb {
 
     class Interpolate : public UnaryOperator { //TODO
     public:
-        explicit Interpolate(const Dimension dimension, const interpolation::interpolator &interpolator)
+        explicit Interpolate(const Dimension dimension, const interpolation::InterpolatorReference &interpolator)
                 : dimension_(dimension), interpolator_(interpolator) {}
 
         LightFieldReference apply(const LightFieldReference &field) const override {
@@ -239,7 +239,7 @@ namespace lightdb {
 
     private:
         const Dimension dimension_;
-        const interpolation::interpolator &interpolator_;
+        const interpolation::InterpolatorReference &interpolator_;
     };
 
     class Discretize : public UnaryOperator { //TODO

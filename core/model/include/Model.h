@@ -157,16 +157,16 @@ namespace lightdb::logical {
     public:
         InterpolatedLightField(const LightFieldReference &source,
                                const Dimension dimension,
-                               const interpolation::interpolator &interpolator)
+                               const interpolation::InterpolatorReference &interpolator)
                 : LightField(source),
                   interpolator_(interpolator) {}
 
-        const interpolation::interpolator& interpolator() const { return interpolator_; }
+        const interpolation::InterpolatorReference interpolator() const { return interpolator_; }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<InterpolatedLightField>(visitor); }
 
     private:
-        const interpolation::interpolator &interpolator_;
+        const interpolation::InterpolatorReference interpolator_;
     };
 
     class TransformedLightField : public LightField {

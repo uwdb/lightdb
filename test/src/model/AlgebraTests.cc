@@ -103,10 +103,10 @@ TEST_F(AlgebraTestFixture, testPartition) {
 TEST_F(AlgebraTestFixture, testInterpolate) {
     auto l = Scan("red10")
             .Select(SpatiotemporalDimension::Time, {0, 10})
-            .Interpolate(Dimension::Time, interpolation::NearestNeighbor());
+            .Interpolate(Dimension::Time, interpolation::Linear());
 
     ASSERT_TYPE(*l, InterpolatedLightField);
-    ASSERT_TYPE(l->downcast<InterpolatedLightField>().interpolator(), interpolation::NearestNeighbor);
+    ASSERT_TYPE(*l->downcast<InterpolatedLightField>().interpolator(), interpolation::Linear);
     ASSERT_EQ(l->volume().components().size(), 1);
 }
 

@@ -6,10 +6,7 @@
 #include <functional>
 
 
-namespace lightdb {
-
-
-namespace interpolation {
+namespace lightdb::interpolation {
 
 class interpolator {
 public:
@@ -18,19 +15,32 @@ public:
         return operator()(ColorSpace::Instance, lightField, point);
     }
 
+    const std::string& name() const { return name_; }
+
 protected:
+    explicit interpolator(std::string name)
+            : name_(std::move(name))
+    { }
+
     //TODO not happy about doing one heap allocation per interpolation
     virtual const ColorReference operator()(const ColorSpace&, const lightdb::LightFieldReference&, const Point6D&) const = 0;
+
+private:
+    const std::string name_;
 };
 
-class NearestNeighbor: public interpolator {
+using InterpolatorReference = shared_reference<interpolator>;
+
+class Linear: public interpolator {
+public:
+    Linear() : interpolator("linear") { }
+
 protected:
     const ColorReference operator()(const ColorSpace &colorSpace, const lightdb::LightFieldReference&, const Point6D&) const override {
         return ColorReference::make<YUVColor>(YUVColor::green()); //TODO
-    }
+}
 };
 
-} // namespace interpolation
-} // namespace lightdb
+} // namespace lightdb::interpolation
 
 #endif //LIGHTDB_INTERPOLATION_H

@@ -30,7 +30,7 @@ namespace lightdb {
             LightFieldReference Union(LightFieldReference); //TODO needs merge function
             LightFieldReference Rotate(angle theta, angle phi);
             LightFieldReference Partition(Dimension, number);
-            LightFieldReference Interpolate(Dimension, const interpolation::interpolator&);
+            LightFieldReference Interpolate(Dimension, interpolation::InterpolatorReference);
             LightFieldReference Discretize(const GeometryReference&);
             LightFieldReference Discretize(Dimension, number);
             LightFieldReference Map(functor::UnaryFunctorReference);

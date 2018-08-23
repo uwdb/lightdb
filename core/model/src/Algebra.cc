@@ -69,7 +69,7 @@ namespace lightdb::logical {
     }
 
     LightFieldReference Algebra::Interpolate(const Dimension dimension,
-                                             const interpolation::interpolator& interpolator) {
+                                             interpolation::InterpolatorReference interpolator) {
         return LightFieldReference::make<logical::InterpolatedLightField>(this_, dimension, interpolator);
     }
 

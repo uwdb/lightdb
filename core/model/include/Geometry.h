@@ -452,6 +452,7 @@ namespace lightdb {
         const Dimension dimension_;
         const number interval_;
     };
+
 } // namespace lightdb
 
 #endif //LIGHTDB_GEOMETRY_H

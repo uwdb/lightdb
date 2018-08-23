@@ -8,6 +8,7 @@
 
 namespace lightdb::physical {
 
+//TODO CPUMap and GPU map can be combined into one templated class
 class GPUMap: public GPUUnaryOperator<GPUDecodedFrameData> {
 public:
     GPUMap(const LightFieldReference &logical,

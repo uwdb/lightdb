@@ -14,9 +14,15 @@ public:
     GPUDownsampleResolution(const LightFieldReference &logical,
                             PhysicalLightFieldReference &parent,
                             IntervalGeometry geometry)
+            : GPUDownsampleResolution(logical, parent, std::vector<IntervalGeometry>({geometry}))
+    { }
+
+    GPUDownsampleResolution(const LightFieldReference &logical,
+                            PhysicalLightFieldReference &parent,
+                            std::vector<IntervalGeometry> geometries)
             : GPUUnaryOperator(logical, parent,
                                [this]() { return downsampled_configuration(); }),
-              geometry_(std::move(geometry)),
+              geometries_(std::move(geometries)),
               scaler_([this]() { return video::GPUScale(context()); })
     { }
 
@@ -40,21 +46,35 @@ public:
             return {};
     }
 
-    const IntervalGeometry& geometry() const { return geometry_; }
+    std::vector<IntervalGeometry>& geometries() { return geometries_; }
 
 private:
+    std::optional<IntervalGeometry> get_geometry(const Dimension dimension) {
+        const auto iterator = std::find_if(geometries_.begin(),
+                                           geometries_.end(),
+                                           [&dimension](const auto &g) {
+                                               return g.dimension() == dimension; });
+        return iterator != geometries_.end()
+                ? std::optional<IntervalGeometry>{*iterator}
+                : std::optional<IntervalGeometry>{};
+
+    }
     Configuration downsampled_configuration()
     {
         const auto &base = parent<GPUOperator>().configuration();
-        auto theta_samples = geometry().dimension() == Dimension::Theta
-                             ? geometry().size().value()
+        const auto &theta_geometry = get_geometry(Dimension::Theta);
+        const auto &phi_geometry = get_geometry(Dimension::Phi);
+        auto theta_samples = theta_geometry.has_value() && theta_geometry.value().size().has_value()
+                             ? theta_geometry.value().size().value()
                              : base.width;
-        auto phi_samples = geometry().dimension() == Dimension::Phi
-                             ? geometry().size().value()
+        auto phi_samples = phi_geometry.has_value() && phi_geometry.value().size().has_value()
+                             ? phi_geometry.value().size().value()
                              : base.height;
 
         CHECK_LE(theta_samples, std::numeric_limits<unsigned int>::max());
         CHECK_LE(phi_samples, std::numeric_limits<unsigned int>::max());
+
+        LOG(INFO) << "Downsampling to " << theta_samples << 'x' << phi_samples;
 
         return Configuration{static_cast<unsigned int>(theta_samples),
                              static_cast<unsigned int>(phi_samples),
@@ -62,7 +82,7 @@ private:
                              base.bitrate, base.framerate};
     }
 
-    const IntervalGeometry geometry_;
+    std::vector<IntervalGeometry> geometries_;
     lazy<video::GPUScale> scaler_;
 };
 

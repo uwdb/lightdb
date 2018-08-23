@@ -24,7 +24,6 @@ namespace lightdb {
             };
         } // namespace internal
 
-
         template<std::size_t n>
         class naryfunction: public functor::internal::_nary_builder<LightField&, std::make_index_sequence<n>> {
         public:
@@ -46,7 +45,6 @@ namespace lightdb {
         template<std::size_t n>
         using NaryFunctionReference = shared_reference<naryfunction<n>>;
         using UnaryFunctionReference = NaryFunctionReference<1>;
-
 
         template<std::size_t n>
         class naryfunctor {
