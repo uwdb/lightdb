@@ -36,7 +36,7 @@ public:
             auto decoded = iterator()++;
 
             for (const auto &frame: decoded.frames())
-                encodeSession_->Encode(*frame);
+                encodeSession_->Encode(*frame, configuration().offset.top, configuration().offset.left);
 
             //TODO think this should move down just above nullopt
             // Did we just reach the end of the decode stream?
@@ -55,22 +55,6 @@ private:
     lazy <VideoEncoder> encoder_;
     lazy <VideoEncoderSession> encodeSession_;
     lazy <MemoryEncodeWriter> writer_;
-};
-
-//TODO There's nothing "Encodey" about this operation, just make an IdentityOp
-class IdentityEncode: public PhysicalLightField {
-public:
-    IdentityEncode(const LightFieldReference &logical,
-                   PhysicalLightFieldReference &parent)
-            : PhysicalLightField(logical, {parent}, physical::DeviceType::CPU)
-    { }
-
-    std::optional<physical::MaterializedLightFieldReference> read() override {
-        if(iterators()[0] != iterators()[0].eos()) {
-            return iterators()[0]++;
-        } else
-            return {};
-    }
 };
 
 }; // namespace lightdb::physical

@@ -31,28 +31,43 @@ namespace lightdb::optimization {
 
         const PhysicalLightFieldReference& add(const PhysicalLightFieldReference &physical) {
             physical_.push_back(physical);
+            assign(physical->logical(), physical);
             return physical;
         }
 
         template<typename PhysicalLightField, typename... Args>
         const PhysicalLightFieldReference& emplace(Args&&... args) {
-            physical_.emplace_back(PhysicalLightFieldReference::make<PhysicalLightField>(args...));
-            return physical_[physical_.size() - 1];
+            const auto &value = physical_.emplace_back(PhysicalLightFieldReference::make<PhysicalLightField>(args...));
+            assign(value->logical(), value);
+            return value;
+        }
+
+        void assign(const LightFieldReference &node, const PhysicalLightFieldReference &physical) {
+            if(assigned_.find(&*node) == assigned_.end())
+                assigned_[&*node] = {};
+            assigned_[&*node].push_back(physical);
         }
 
         inline bool has_physical_assignment(const LightField &node) { return has_physical_assignment(lookup(node)); }
 
         bool has_physical_assignment(const LightFieldReference &reference) {
-            return std::any_of(physical_.begin(), physical_.end(), [reference](auto &physical) {
-                return &*physical->logical() == &*reference; });
+            return assigned_.find(&*reference) != assigned_.end();
         }
 
         inline auto assignments(const LightField &node) const { return assignments(lookup(node)); }
 
         const std::vector<PhysicalLightFieldReference> assignments(const LightFieldReference &reference) const {
-            return functional::filter<PhysicalLightFieldReference>(
-                    physical_.begin(), physical_.end(), [reference](auto &physical) {
-                        return &*physical->logical() == &*reference; });
+            auto element = assigned_.find(&*reference);
+            return element != assigned_.end()
+                   ? element->second
+                   : std::vector<PhysicalLightFieldReference>{};
+        }
+
+        std::vector<PhysicalLightFieldReference> assignments(const LightFieldReference &reference) {
+            auto element = assigned_.find(&*reference);
+            return element != assigned_.end()
+                   ? element->second
+                   : std::vector<PhysicalLightFieldReference>{};
         }
 
         LightFieldReference lookup(const LightField &node) const { return nodes_.at(&node); }
@@ -65,6 +80,7 @@ namespace lightdb::optimization {
         std::vector<LightFieldReference> sinks_;
         //TODO can be replaced with an addressable shared_reference
         std::unordered_map<const LightField *, LightFieldReference> nodes_;
+        std::unordered_map<const LightField*, std::vector<PhysicalLightFieldReference>> assigned_;
         //TODO this should be a set once rule/ordering is cleaned up
         //std::set<PhysicalLightFieldReference,
         //         bool (*)(const PhysicalLightFieldReference &, const PhysicalLightFieldReference &)> physical_;

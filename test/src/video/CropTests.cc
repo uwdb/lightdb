@@ -22,7 +22,7 @@ TEST_F(CropperTestFixture, testConstructor) {
 
 TEST_F(CropperTestFixture, testFileCropper) {
     auto top = 200u, left = 200u, width = 512u, height = 128u;
-    EncodeConfiguration encodeConfiguration{height, width, NV_ENC_HEVC, 24, 24, 1024*1024};
+    EncodeConfiguration encodeConfiguration{Configuration{width, height, 0, 0, 1024*1024, {24, 1}}, NV_ENC_HEVC, 24};
     CropTranscoder cropper(context, decodeConfiguration, encodeConfiguration);
     FileDecodeReader reader("resources/test-pattern.h264");
     FileEncodeWriter writer(cropper.encoder().api(), FILENAME(0));
@@ -41,7 +41,7 @@ TEST_F(CropperTestFixture, testFileCropper) {
 
 TEST_F(CropperTestFixture, testFileCropperWithLimit) {
     auto top = 200u, left = 200u, width = 512u, height = 128u, limit = 20u;
-    EncodeConfiguration encodeConfiguration{height, width, NV_ENC_HEVC, 24, 24, 1024*1024};
+    EncodeConfiguration encodeConfiguration{{width, height, 0, 0, 1024*1024, {24, 1}}, NV_ENC_HEVC, 24};
     CropTranscoder cropper(context, decodeConfiguration, encodeConfiguration);
     FileDecodeReader reader("resources/test-pattern.h264");
     FileEncodeWriter writer(cropper.encoder().api(), FILENAME(0));

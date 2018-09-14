@@ -55,10 +55,14 @@ namespace lightdb {
 
             //context.AttachToThread();
             DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
-            std::vector<EncodeConfiguration> encodeConfigurations(
+            /*std::vector<EncodeConfiguration> encodeConfigurations(
                     rows() * columns(),
                     EncodeConfiguration{video_.metadata().height/rows(), video_.metadata().width/columns(),
-                                        NV_ENC_HEVC, video_.metadata().framerate, gop, low_bitrate, NV_ENC_PARAMS_RC_CBR});
+                                        NV_ENC_HEVC, video_.metadata().framerate, gop, low_bitrate, NV_ENC_PARAMS_RC_CBR});*/
+            std::vector<EncodeConfiguration> encodeConfigurations(
+                    rows() * columns(),
+                    EncodeConfiguration{Configuration{video_.metadata().width/columns(), video_.metadata().height/rows(), 0, 0, low_bitrate, Configuration::FrameRate{static_cast<unsigned int>(video_.metadata().framerate.numerator()), static_cast<unsigned int>(video_.metadata().framerate.denominator())}},
+                                        NV_ENC_HEVC, gop, NV_ENC_PARAMS_RC_CBR});
             encodeConfigurations[1].bitrate = high_bitrate;
 
             TileVideoEncoder tiler(context, decodeConfiguration, encodeConfigurations, rows(), columns());
@@ -273,8 +277,10 @@ namespace lightdb {
             //context.AttachToThread();
             DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
             //TODO why CBR?
-            EncodeConfiguration encodeConfiguration{bottom - top, right - left,
-                                                    NV_ENC_HEVC, video_.metadata().framerate, gop, bitrate, NV_ENC_PARAMS_RC_CBR};
+            EncodeConfiguration encodeConfiguration{Configuration{right - left, bottom - top, 0, 0, bitrate, {static_cast<unsigned int>(video_.metadata().framerate.numerator()), static_cast<unsigned int>(video_.metadata().framerate.denominator())}},
+                                                    NV_ENC_HEVC, gop, NV_ENC_PARAMS_RC_CBR};
+            //EncodeConfiguration encodeConfiguration{bottom - top, right - left,
+            //                                        NV_ENC_HEVC, video_.metadata().framerate, gop, bitrate, NV_ENC_PARAMS_RC_CBR};
 
             CropTranscoder cropper(context, decodeConfiguration, encodeConfiguration);
 
@@ -305,8 +311,10 @@ namespace lightdb {
 
             DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
             //TODO why CBR?
-            EncodeConfiguration encodeConfiguration{video_.metadata().height, video_.metadata().width,
-                                                    NV_ENC_HEVC, video_.metadata().framerate, (unsigned int)gop, bitrate, NV_ENC_PARAMS_RC_CBR};
+            //EncodeConfiguration encodeConfiguration{video_.metadata().height, video_.metadata().width,
+            //                                        NV_ENC_HEVC, video_.metadata().framerate, (unsigned int)gop, bitrate, NV_ENC_PARAMS_RC_CBR};
+            EncodeConfiguration encodeConfiguration{Configuration{video_.metadata().width, video_.metadata().height, 0, 0, bitrate, {static_cast<unsigned int>(video_.metadata().framerate.numerator()), static_cast<unsigned int>(video_.metadata().framerate.denominator())}},
+                                                    NV_ENC_HEVC, (unsigned int)gop, NV_ENC_PARAMS_RC_CBR};
 
             Transcoder transcoder(context, decodeConfiguration, encodeConfiguration);
 
@@ -339,8 +347,10 @@ namespace lightdb {
 
             DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
             //TODO why CBR?
-            EncodeConfiguration encodeConfiguration{video_.metadata().height, video_.metadata().width,
-                                                    NV_ENC_HEVC, video_.metadata().framerate, (unsigned int)gop, bitrate, NV_ENC_PARAMS_RC_CBR};
+            //EncodeConfiguration encodeConfiguration{video_.metadata().height, video_.metadata().width,
+            //                                        NV_ENC_HEVC, video_.metadata().framerate, (unsigned int)gop, bitrate, NV_ENC_PARAMS_RC_CBR};
+            EncodeConfiguration encodeConfiguration{Configuration{video_.metadata().width, video_.metadata().height, 0, 0, bitrate, {static_cast<unsigned int>(video_.metadata().framerate.numerator()), static_cast<unsigned int>(video_.metadata().framerate.denominator())}},
+                                                    NV_ENC_HEVC, (unsigned int)gop, NV_ENC_PARAMS_RC_CBR};
 
             Transcoder transcoder(context, decodeConfiguration, encodeConfiguration);
 
@@ -394,8 +404,10 @@ namespace lightdb {
             DecodeConfiguration rightDecodeConfiguration{right_.metadata().width, right_.metadata().height, right_.metadata().framerate, cudaVideoCodec_H264};
             std::vector<DecodeConfiguration> decodeConfigurations{leftDecodeConfiguration, rightDecodeConfiguration};
             //TODO why CBR?
-            EncodeConfiguration encodeConfiguration{left_.metadata().height, left_.metadata().width,
-                                                    NV_ENC_HEVC, left_.metadata().framerate, (unsigned int)gop, bitrate, NV_ENC_PARAMS_RC_CBR};
+            //EncodeConfiguration encodeConfiguration{left_.metadata().height, left_.metadata().width,
+            //                                        NV_ENC_HEVC, left_.metadata().framerate, (unsigned int)gop, bitrate, NV_ENC_PARAMS_RC_CBR};
+            EncodeConfiguration encodeConfiguration{Configuration{left_.metadata().width, left_.metadata().height, 0, 0, bitrate, {30, 1}, {0, 0}},
+                                                    NV_ENC_HEVC, (unsigned int)gop, NV_ENC_PARAMS_RC_CBR};
 
             UnionTranscoder transcoder(context, decodeConfigurations, encodeConfiguration);
 

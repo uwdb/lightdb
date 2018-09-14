@@ -6,7 +6,7 @@ class VideoEncoderTestFixture : public testing::Test {
 public:
     VideoEncoderTestFixture()
         : context(0),
-          configuration(1080, 1920, NV_ENC_HEVC, 30, 30, 1024*1024),
+          configuration({1920, 1080, 0, 0, 1024*1024, {30, 1}}, NV_ENC_HEVC, 30),
           lock(context),
           encoder(context, configuration, lock)
     {}

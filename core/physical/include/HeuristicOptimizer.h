@@ -12,13 +12,16 @@ namespace lightdb::optimization {
 
     protected:
         const rule_vector rules() override {
-            return { make_rule<ChooseDecoders>(),
+            return { make_rule<ChooseMaterializedScans>(),
+                     make_rule<ChooseDecoders>(),
                      make_rule<ChooseUnion>(),
-                     make_rule<ChooseMapTransfers>(),
+                     make_rule<ChooseSelection>(),
                      make_rule<ChooseInterpolate>(),
                      make_rule<ChooseDiscretize>(),
                      make_rule<ChooseLinearScale>(),
                      make_rule<ChooseMap>(),
+                     make_rule<ChoosePartition>(),
+                     make_rule<ChooseSubquery>(),
                      make_rule<ChooseEncoders>() }; }
     };
 }

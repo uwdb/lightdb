@@ -21,6 +21,16 @@ namespace lightdb
                theta().contains(point.theta()) && phi().contains(point.phi());
     }
 
+    bool Volume::has_nonempty_intersection(const Volume &other) const {
+        auto intersection = *this & other;
+        return (!intersection.x().empty() || x().empty()) &&
+                (!intersection.y().empty() || y().empty()) &&
+                (!intersection.z().empty() || z().empty()) &&
+                (!intersection.t().empty() || t().empty()) &&
+                (!intersection.theta().empty() || theta().empty()) &&
+                (!intersection.phi().empty() || phi().empty());
+    }
+
     Volume& Volume::set(const SpatiotemporalDimension dimension, const SpatiotemporalRange &range) {
         switch(dimension) {
             case SpatiotemporalDimension::X:
@@ -75,8 +85,11 @@ namespace lightdb
 
     Volume::iterator Volume::iterable::begin() const { return iterator(model_, dimension_, interval_); }
     Volume::iterator Volume::iterable::end() const {
-        return iterator(Volume{model_}.set(dimension_, {model_.get(dimension_).end(),
-                                                        model_.get(dimension_).end()}),
+        // Guard against omitting any partitions when |dimension| == 0
+        auto end = model_.get(dimension_).start() < model_.get(dimension_).end()
+                   ? model_.get(dimension_).end()
+                   : model_.get(dimension_).start() + interval_;
+        return iterator(Volume{model_}.set(dimension_, {end, end}),
                         dimension_, interval_); }
     Volume::iterable Volume::partition(const Dimension dimension, const number& interval) const {
         return Volume::iterable(*this, dimension, interval);

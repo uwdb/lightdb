@@ -85,4 +85,8 @@ namespace lightdb::logical {
         return LightFieldReference::make<logical::TransformedLightField>(this_, functor);
     }
 
+    LightFieldReference Algebra::Subquery(const std::function<LightFieldReference(LightFieldReference)> &subquery) {
+        return LightFieldReference::make<logical::SubqueriedLightField>(this_, subquery);
+    }
+
 } // namespace lightdb::logical

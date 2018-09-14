@@ -8,7 +8,8 @@
 #include <ratio>
 
 namespace lightdb {
-    static const long double PI = 3.141592653589793238512808959406186204433;
+    static constexpr const long double PI = 3.141592653589793238512808959406186204433;
+    static constexpr const long double TWOPI = 2*PI;
 
     #define _LOGICAL_RATIONAL_OPERATOR(op)                                                       \
     inline bool operator op(const rational& other) const noexcept {                              \
@@ -113,7 +114,10 @@ namespace lightdb {
 
     template<class tolerance, typename T1, typename T2>
     constexpr inline bool epsilon_equal(const T1 &left, const T2 &right) noexcept {
-        return rational{tolerance::num, tolerance::den} > boost::math::relative_difference(left, right);
+        //TODO these casts are superfluous; need unit tests
+        return static_cast<long double>(rational{tolerance::num, tolerance::den}) > boost::math::relative_difference(
+                static_cast<long double>(left),
+                static_cast<long double>(right));
     }
 
     struct number {

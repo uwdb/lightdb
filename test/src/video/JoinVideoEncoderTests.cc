@@ -28,7 +28,7 @@ TEST_F(JoinVideoEncoderTestFixture, testSingleTile) {
     const auto height = 1080, width = 1920;
     const auto inputFilename = "resources/test-pattern.h264";
 
-    EncodeConfiguration encodeConfiguration(1080, 1920, NV_ENC_HEVC, 24, 24, 1024*1024);
+    EncodeConfiguration encodeConfiguration({1920, 1080, 0, 0, 1024*1024, {24, 1}}, NV_ENC_HEVC, 24);
     JoinVideoEncoder joiner(context, {decodeConfiguration2K}, encodeConfiguration, 1, 1);
     std::vector<std::shared_ptr<DecodeReader>> readers{};
     FileEncodeWriter writer{joiner.api(), FILENAME(0)};
@@ -48,7 +48,7 @@ TEST_F(JoinVideoEncoderTestFixture, testTwoRows) {
     const auto height = 1080, width = 1920;
     auto inputFilename = "resources/test-pattern.h264";
 
-    EncodeConfiguration encodeConfiguration(2*height, width, NV_ENC_HEVC, 24, 24, 1024*1024);
+    EncodeConfiguration encodeConfiguration({width, 2*height, 0, 0, 1024*1024, {24, 1}}, NV_ENC_HEVC, 24);
     JoinVideoEncoder joiner(context, {2, decodeConfiguration2K}, encodeConfiguration, 2, 1);
     std::vector<std::shared_ptr<DecodeReader>> readers{};
     FileEncodeWriter writer{joiner.api(), FILENAME(0)};
@@ -77,7 +77,7 @@ TEST_F(JoinVideoEncoderTestFixture, testTwoColumns) {
     const auto height = 1080, width = 1920;
     const auto inputFilename = "resources/test-pattern.h264";
 
-    EncodeConfiguration encodeConfiguration(height, 2*width, NV_ENC_HEVC, 24, 24, 1024*1024);
+    EncodeConfiguration encodeConfiguration({2*width, height, 0, 0, 1024*1024, {24, 1}}, NV_ENC_HEVC, 24);
     JoinVideoEncoder joiner(context, {2, decodeConfiguration2K}, encodeConfiguration, 1, 2);
     std::vector<std::shared_ptr<DecodeReader>> readers{};
     FileEncodeWriter writer{joiner.api(), FILENAME(0)};
@@ -107,7 +107,7 @@ TEST_F(JoinVideoEncoderTestFixture, test2x2) {
     const auto height = 1080u, width = 1920u;
     const auto inputFilename = "resources/test-pattern.h264";
 
-    EncodeConfiguration encodeConfiguration(rows*height, columns*width, NV_ENC_HEVC, 24, 24, 1024*1024);
+    EncodeConfiguration encodeConfiguration({columns*width, rows*height, 0, 0, 1024*1024, {24, 1}}, NV_ENC_HEVC, 24);
     JoinVideoEncoder joiner(context, {rows*columns, decodeConfiguration2K}, encodeConfiguration, rows, columns);
     std::vector<std::shared_ptr<DecodeReader>> readers{};
     FileEncodeWriter writer{joiner.api(), FILENAME(0)};
@@ -137,7 +137,7 @@ TEST_F(JoinVideoEncoderTestFixture, test6x2) {
     const auto height = 512u, width = 1024u;
     const auto inputFilename = "resources/test-pattern-1K.h264";
 
-    EncodeConfiguration encodeConfiguration(rows*height, columns*width, NV_ENC_HEVC, 24, 24, 1024*1024);
+    EncodeConfiguration encodeConfiguration({columns*width, rows*height, 0, 0, 1024*1024, {24, 1}}, NV_ENC_HEVC, 24);
     JoinVideoEncoder joiner(context, {rows*columns, decodeConfiguration1K}, encodeConfiguration, rows, columns);
     std::vector<std::shared_ptr<DecodeReader>> readers{};
     FileEncodeWriter writer{joiner.api(), FILENAME(0)};
@@ -167,7 +167,7 @@ TEST_F(JoinVideoEncoderTestFixture, test2x8) {
     const auto height = 512u, width = 1024u;
     const auto inputFilename = "resources/test-pattern-1K.h264";
 
-    EncodeConfiguration encodeConfiguration(rows*height, columns*width, NV_ENC_HEVC, 24, 24, 1024*1024);
+    EncodeConfiguration encodeConfiguration({columns*width, rows*height, 0, 0, 1024*1024, {24, 1}}, NV_ENC_HEVC, 24);
     JoinVideoEncoder joiner(context, {rows*columns, decodeConfiguration1K}, encodeConfiguration, rows, columns);
     std::vector<std::shared_ptr<DecodeReader>> readers{};
     FileEncodeWriter writer{joiner.api(), FILENAME(0)};
@@ -197,7 +197,7 @@ TEST_F(JoinVideoEncoderTestFixture, test2x2_at_4K) {
     const auto height = 2160u, width = 3840u;
     const auto inputFilename = "resources/test-pattern-4K.h264";
 
-    EncodeConfiguration encodeConfiguration(rows*height, columns*width, NV_ENC_HEVC, 24, 24, 1024*1024);
+    EncodeConfiguration encodeConfiguration({columns*width, rows*height, 0, 0, 1024*1024, {24, 1}}, NV_ENC_HEVC, 24);
     JoinVideoEncoder joiner(context, {rows*columns, decodeConfiguration4K}, encodeConfiguration, rows, columns);
     std::vector<std::shared_ptr<DecodeReader>> readers{};
     FileEncodeWriter writer{joiner.api(), FILENAME(0)};
@@ -229,7 +229,7 @@ TEST_F(JoinVideoEncoderTestFixture, test2x2TileTransform) {
     const auto frames = 99u;
 
     auto transforms = 0u;
-    EncodeConfiguration encodeConfiguration(rows*height, columns*width, NV_ENC_HEVC, 24, 24, 1024*1024);
+    EncodeConfiguration encodeConfiguration({columns*width, rows*height, 0, 0, 1024*1024, {24, 1}}, NV_ENC_HEVC, 24);
     JoinVideoEncoder joiner(context, {rows*columns, decodeConfiguration2K}, encodeConfiguration, rows, columns);
     std::vector<std::shared_ptr<DecodeReader>> readers{};
     FileEncodeWriter writer{joiner.api(), FILENAME(0)};
@@ -257,7 +257,7 @@ TEST_F(JoinVideoEncoderTestFixture, test2x2JoinedTransform) {
     const auto frames = 99u;
 
     auto transforms = 0u;
-    EncodeConfiguration encodeConfiguration(rows*height, columns*width, NV_ENC_HEVC, 24, 24, 1024*1024);
+    EncodeConfiguration encodeConfiguration({columns*width, rows*height, 0, 0, 1024*1024, {24, 1}}, NV_ENC_HEVC, 24);
     JoinVideoEncoder joiner(context, {rows*columns, decodeConfiguration2K}, encodeConfiguration, rows, columns);
     std::vector<std::shared_ptr<DecodeReader>> readers{};
     FileEncodeWriter writer{joiner.api(), FILENAME(0)};

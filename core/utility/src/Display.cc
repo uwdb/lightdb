@@ -10,7 +10,7 @@ namespace lightdb {
             auto current = queue.front();
             queue.pop_front();
 
-            printf("%*s\n",
+            printf("L:%*s\n",
                    current.second + static_cast<int>(strlen(typeid(*current.first).name())),
                    typeid(*current.first).name());
 
@@ -19,7 +19,7 @@ namespace lightdb {
         }
     }
 
-    void print_plan(optimization::Plan &plan) {
+    void print_plan(const optimization::Plan &plan) {
         std::deque<std::pair<PhysicalLightFieldReference, unsigned int>> queue{};
 
         for(auto &sink: plan.sinks()) {
@@ -32,13 +32,14 @@ namespace lightdb {
             auto current = queue.front();
             queue.pop_front();
 
-            printf("%*s\n",
+            printf("P:%*s\n",
                    current.second + static_cast<int>(strlen(typeid(*current.first).name())),
                    typeid(*current.first).name());
 
             for(const auto &field: current.first->parents())
                 queue.push_front({field, current.second + 4});
         }
+        printf("===\n");
     }
 
 } // namespace lightdb

@@ -34,9 +34,12 @@ namespace lightdb {
             LightFieldReference Discretize(const GeometryReference&);
             LightFieldReference Discretize(Dimension, number);
             LightFieldReference Map(functor::UnaryFunctorReference);
+            LightFieldReference Subquery(const std::function<LightFieldReference(LightFieldReference)>&);
 
             LightFieldReference Encode(const Codec &codec=Codec::hevc());
             void Store(const std::string &name);
+
+            Algebra& operator=(Algebra&& other) noexcept { return *this; }
 
         protected:
             explicit Algebra(const LightFieldReference &lightField)

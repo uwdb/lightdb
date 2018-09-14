@@ -47,12 +47,12 @@ namespace lightdb {
             class theta {
             public:
                 static constexpr const angle minimum{0};
-                static constexpr const angle maximum{2*M_PI};
+                static constexpr const angle maximum{2*lightdb::PI};
             };
             class phi {
             public:
                 static constexpr const angle minimum{0};
-                static constexpr const angle maximum{M_PI};
+                static constexpr const angle maximum{lightdb::PI};
             };
             using none = spatial;
         }
@@ -82,6 +82,11 @@ namespace lightdb {
             operator UnknownRange() const;
 
             inline TDerived operator|(const TDerived &other) const {
+                auto min_start = std::min(start(), other.start());
+                return {min_start, std::max(min_start, std::max(end(), other.end()))};
+            }
+
+            inline TDerived operator&(const TDerived &other) const {
                 auto max_start = std::max(start(), other.start());
                 return {max_start, std::max(max_start, std::min(end(), other.end()))};
             }
@@ -144,9 +149,10 @@ namespace lightdb {
             : Volume(x, y, z, t, ThetaRange::limits(), PhiRange::limits())
         { }
 
-        constexpr Volume(const SpatialRange &x, const SpatialRange &y, const SpatialRange &z, const TemporalRange &t,
-                         const ThetaRange &theta, const PhiRange &phi)
-            : x_(x), y_(y), z_(z), t_(t), theta_(theta), phi_(phi)
+        constexpr Volume(SpatialRange x, SpatialRange y, SpatialRange z, TemporalRange t,
+                         ThetaRange theta, PhiRange phi)
+            : x_(std::move(x)), y_(std::move(y)), z_(std::move(z)), t_(std::move(t)),
+              theta_(std::move(theta)), phi_(std::move(phi))
         { }
 
         Volume(const Point3D&, const TemporalRange&, const ThetaRange&, const PhiRange&);
@@ -172,6 +178,7 @@ namespace lightdb {
         Volume& set(Dimension dimension, const UnknownRange &range);
 
         bool contains(const Point6D &point) const;
+        bool has_nonempty_intersection(const Volume &other) const;
         iterable partition(Dimension, const number&) const;
         Volume translate(const Point6D&) const;
 
@@ -187,6 +194,11 @@ namespace lightdb {
         inline Volume operator|(const Volume &other) const {
             return {x() | other.x(), y() | other.y(), z() | other.z(), t() | other.t(),
                     theta() | other.theta(), phi() | other.phi()};
+        }
+
+        inline Volume operator&(const Volume &other) const {
+            return {x() & other.x(), y() &other.y(), z() & other.z(), t() & other.t(),
+                    theta() & other.theta(), phi() & other.phi()};
         }
 
         bool operator==(const Volume &other) const {

@@ -72,3 +72,52 @@ TEST_F(VisitorTestFixture, testInterpolateDiscretizeMap) {
 
     coordinator.save(plan, "dout.hevc");
 }
+
+TEST_F(VisitorTestFixture, testPartitionEncode) {
+    auto name = "red10";
+    auto input = Scan(name);
+    auto partitioned = input.Partition(Dimension::Theta, rational_times_real({2, 4}, PI));
+    auto encoded = partitioned.Encode(Codec::hevc());
+
+    auto environment = LocalEnvironment();
+    auto coordinator = Coordinator();
+    Plan plan = HeuristicOptimizer(environment).optimize(encoded);
+
+    print_plan(plan);
+
+    coordinator.save(plan, "out.hevc");
+}
+
+TEST_F(VisitorTestFixture, testPartitionPartitionEncode) {
+    auto name = "red10";
+    auto input = Scan(name);
+    auto partitioned1 = input.Partition(Dimension::Theta, rational_times_real({2, 4}, PI));
+    auto partitioned2 = partitioned1.Partition(Dimension::Theta, rational_times_real({2, 4}, PI));
+    auto encoded = partitioned2.Encode(Codec::hevc());
+
+    auto environment = LocalEnvironment();
+    auto coordinator = Coordinator();
+    Plan plan = HeuristicOptimizer(environment).optimize(encoded);
+
+    print_plan(plan);
+
+    coordinator.save(plan, "out.hevc");
+}
+
+TEST_F(VisitorTestFixture, testPartitionSubqueryUnion) {
+    auto name = "red10";
+    auto input = Scan(name);
+    auto partitioned_t = input.Partition(Dimension::Theta, rational_times_real({2, 4}, PI));
+    auto partitioned = partitioned_t.Partition(Dimension::Phi, rational_times_real({1, 4}, PI));
+    //auto transcoded = partitioned_t.Subquery([](auto l) { return l.Encode(Codec::hevc()); });
+    auto transcoded = partitioned.Subquery([](auto l) { return l.Encode(Codec::hevc()); });
+    auto encoded = transcoded.Encode(Codec::hevc());
+
+    auto environment = LocalEnvironment();
+    auto coordinator = Coordinator();
+    Plan plan = HeuristicOptimizer(environment).optimize(encoded);
+
+    print_plan(plan);
+
+    coordinator.save(plan, "out.hevc");
+}

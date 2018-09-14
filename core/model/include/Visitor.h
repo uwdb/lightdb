@@ -16,6 +16,7 @@ namespace lightdb {
         class InterpolatedLightField;
         class TransformedLightField;
         class ScannedLightField;
+        class SubqueriedLightField;
         class ExternalLightField;
         class EncodedLightField;
     }
@@ -32,6 +33,7 @@ namespace lightdb {
         virtual void visit(const logical::InterpolatedLightField &) {}
         virtual void visit(const logical::TransformedLightField &) {}
         virtual void visit(const logical::ScannedLightField &) {}
+        virtual void visit(const logical::SubqueriedLightField &) {}
         virtual void visit(const logical::ExternalLightField &) {}
         virtual void visit(const logical::EncodedLightField &) {}
 
@@ -70,6 +72,7 @@ namespace lightdb {
         virtual State visit(const logical::InterpolatedLightField &) { return {}; }
         virtual State visit(const logical::TransformedLightField &) { return {}; }
         virtual State visit(const logical::ScannedLightField &) { return {}; }
+        virtual State visit(const logical::SubqueriedLightField &) { return {}; }
         virtual State visit(const logical::ExternalLightField &) { return {}; }
         virtual State visit(const logical::EncodedLightField &) { return {}; }
 
@@ -83,6 +86,7 @@ namespace lightdb {
         virtual State visit(State state, const logical::InterpolatedLightField &field) { return state + visit(field); }
         virtual State visit(State state, const logical::TransformedLightField &field) {return state + visit(field); }
         virtual State visit(State state, const logical::ScannedLightField &field) {return state + visit(field); }
+        virtual State visit(State state, const logical::SubqueriedLightField &field) {return state + visit(field); }
         virtual State visit(State state, const logical::ExternalLightField &field) { return state + visit(field); }
         virtual State visit(State state, const logical::EncodedLightField &field) { return state + visit(field); }
 
@@ -102,6 +106,7 @@ namespace lightdb {
             void visit(const logical::InterpolatedLightField &field) final { state_ = visitor_.visit(state_, field); }
             void visit(const logical::TransformedLightField &field) final { state_ = visitor_.visit(state_, field); }
             void visit(const logical::ScannedLightField &field) final { state_ = visitor_.visit(state_, field); }
+            void visit(const logical::SubqueriedLightField &field) final { state_ = visitor_.visit(state_, field); }
             void visit(const logical::ExternalLightField &field) final { state_ = visitor_.visit(state_, field); }
             void visit(const logical::EncodedLightField &field) final  { state_ = visitor_.visit(state_, field); }
 

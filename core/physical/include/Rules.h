@@ -11,8 +11,37 @@
 #include "TransferOperators.h"
 #include "DiscretizeOperators.h"
 #include "InterpolateOperators.h"
+#include "SubqueryOperators.h"
+#include "IdentityOperators.h"
+#include "HomomorphicOperators.h"
+#include "SubsetOperators.h"
 
 namespace lightdb::optimization {
+    class ChooseMaterializedScans: public OptimizerRule {
+    public:
+        using OptimizerRule::OptimizerRule;
+
+        bool visit(const LightField &node) override {
+            if (plan().has_physical_assignment(node))
+                return false;
+            else if(node.is<physical::GPUDecodedFrameData>()) {
+                auto ref = plan().lookup(node);
+                auto &m = node.downcast<physical::GPUDecodedFrameData>();
+                auto mref = physical::MaterializedLightFieldReference::make<physical::GPUDecodedFrameData>(m);
+
+                //Removed this line without actually testing the consequences
+                //plan().emplace<physical::GPUScanMemory>(ref, mref);
+                plan().emplace<physical::GPUOperatorAdapter>(mref);
+                return true;
+            } else if(node.is<physical::PhysicalToLogicalLightFieldAdapter>()) {
+                auto ref = plan().lookup(node);
+                auto op = plan().emplace<physical::GPUOperatorAdapter>(ref.downcast<physical::PhysicalToLogicalLightFieldAdapter>().source());
+                plan().assign(ref, op);
+                return true;
+            } else
+                return false;
+        }
+    };
 
     class ChooseDecoders : public OptimizerRule {
     public:
@@ -52,10 +81,15 @@ namespace lightdb::optimization {
 
             if(!plan().has_physical_assignment(node)) {
                 LOG(WARNING) << "Randomly picking HEVC as codec";
-                if(hardcoded_parent.is<physical::GPUOperator>())
+                if(hardcoded_parent.is<physical::GPUAngularSubquery>() && hardcoded_parent.downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>())
+                    plan().emplace<physical::CPUIdentity>(plan().lookup(node), hardcoded_parent);
+                    //plan().emplace<physical::HomomorphicUniformTile>(plan().lookup(node), hardcoded_parent, 4, 4);
+                else if(hardcoded_parent.is<physical::GPUOperator>())
                     plan().emplace<physical::GPUEncode>(plan().lookup(node), hardcoded_parent, Codec::hevc());
+                //else if(hardcoded_parent.is<physical::GPUScanMemory>() && hardcoded_parent->device() == physical::DeviceType::GPU)
+                //    plan().emplace<physical::GPUEncode>(plan().lookup(node), hardcoded_parent, Codec::hevc());
                 else if(hardcoded_parent.is<physical::CPUMap>() && hardcoded_parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
-                    plan().emplace<physical::IdentityEncode>(plan().lookup(node), hardcoded_parent);
+                    plan().emplace<physical::CPUIdentity>(plan().lookup(node), hardcoded_parent);
                 else {
                     auto gpu = plan().environment().gpus()[0];
                     auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(plan().lookup(node), hardcoded_parent, gpu);
@@ -73,62 +107,67 @@ namespace lightdb::optimization {
     public:
         using OptimizerRule::OptimizerRule;
 
-        bool visit(const logical::CompositeLightField &node) override {
-            //TODO this assumes a linear sequence of operators, needs some sort of dedicated "outputs" function
-            //TODO better: just have a composite physical op that manages this internally and force a 1-1 mapping in plan
-            //TODO clean up implementation
-            std::vector<PhysicalLightFieldReference> physical_outputs;
-            for(auto &parent: node.parents()) {
-                auto &assignments = plan().assignments(parent);
-                physical_outputs.push_back(assignments[assignments.size() - 1]);
+        std::optional<PhysicalLightFieldReference> FindEncodeParent(const LightFieldReference &node) {
+            for(const auto &parent: node->parents()) {
+                if(parent.is<logical::EncodedLightField>() &&
+                   plan().has_physical_assignment(parent))
+                    return {plan().assignments(parent)[0]};
             }
-
-            LOG(WARNING) << "Assuming 2 rows, 1 column";
-
-            if(!plan().has_physical_assignment(node)) {
-                plan().emplace<physical::GPUUnion>(plan().lookup(node), physical_outputs, 2, 1);
-                return true;
-            }
-            return false;
+            return {};
         }
-    };
 
-    class ChooseMapTransfers : public OptimizerRule {
-    public:
-        using OptimizerRule::OptimizerRule;
+        std::optional<PhysicalLightFieldReference> FindHomomorphicAncestor(const LightFieldReference &node) {
+            std::deque<PhysicalLightFieldReference> queue;
 
-        bool visit(const logical::TransformedLightField &node) override {
-            /*auto gpu = plan().environment().gpus()[0];
-            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
-                    node.parents().begin(), node.parents().end(),
-                    [this](auto &parent) { return plan().assignments(parent); });
+            for(const auto &parent: node->parents())
+                for(const auto &assignment: plan().assignments(parent))
+                    queue.push_back(assignment);
 
-            //TODO clean this up, shouldn't just be randomly picking last parent
-            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>()
-                                    ? physical_parents[0]
-                                    : physical_parents[physical_parents.size() - 1];
+            while(!queue.empty()) {
+                auto element = queue.front();
+                queue.pop_front();
 
-            if (!plan().has_physical_assignment(node) &&
-                !node.functor()->has_implementation(hardcoded_parent->device())) {
-                    switch(node.functor()->preferred_implementation().device()) {
-                        case physical::DeviceType::CPU:
-                            plan().emplace<physical::CPUTransfer>(plan().lookup(node),
-                                                                  physical_parents[physical_parents.size() - 1]);
-                            return true;
+                if(element->logical().is<logical::CompositeLightField>() &&
+                   element.is<physical::HomomorphicUniformAngularUnion>())
+                    return element;
+                else if(element.is<physical::CPUIdentity>())
+                    for(const auto &parent: element->parents())
+                        queue.push_back(parent);
+            }
 
-                        case physical::DeviceType::GPU:
-                            LOG(WARNING) << "Using first GPU and ignoring all others";
-                            plan().emplace<physical::GPUTransfer>(plan().lookup(node),
-                                                                  physical_parents[physical_parents.size() - 1],
-                                                                  gpu);
-                            return true;
+            return {};
+        }
 
-                        case physical::DeviceType::FPGA:
-                        default:
-                            break;
-                    }
-            }*/
-            return false;
+        bool visit(const logical::CompositeLightField &node) override {
+            if(plan().has_physical_assignment(node))
+                return false;
+            else if(node.parents().size() != 2)
+                return false;
+            else if(node.parents()[0].is<logical::EncodedLightField>() &&
+                    node.parents()[1].is<logical::EncodedLightField>()) {
+                std::vector<PhysicalLightFieldReference> physical_outputs;
+                for (auto &parent: node.parents()) {
+                    const auto &assignments = plan().assignments(parent);
+                    if (assignments.empty())
+                        return false;
+                    physical_outputs.push_back(assignments[assignments.size() - 1]);
+                }
+
+                plan().emplace<physical::HomomorphicUniformAngularUnion>(plan().lookup(node), physical_outputs, 4, 4);
+                return true;
+            } else if(FindHomomorphicAncestor(node).has_value() &&
+                      FindEncodeParent(node).has_value()) {
+                auto href = FindHomomorphicAncestor(node).value();
+                auto eref = FindEncodeParent(node).value();
+
+                href->parents().emplace_back(eref);
+                plan().assign(node, href);
+                plan().assign(node, eref);
+
+                plan().emplace<physical::CPUIdentity>(plan().lookup(node), href);
+                return true;
+            } else
+                return false;
         }
     };
 
@@ -150,12 +189,39 @@ namespace lightdb::optimization {
                                    : physical_parents[physical_parents.size() - 1];
 
             if(!plan().has_physical_assignment(node)) {
-                //auto gpu = plan().environment().gpus()[0];
                 if(!node.functor()->has_implementation(physical::DeviceType::GPU)) {
                     auto transfer = plan().emplace<physical::GPUtoCPUTransfer>(plan().lookup(node), hardcoded_parent);
                     plan().emplace<physical::CPUMap>(plan().lookup(node), transfer, *node.functor());
                 } else
                     plan().emplace<physical::GPUMap>(plan().lookup(node), hardcoded_parent, *node.functor());
+                return true;
+            }
+            return false;
+        }
+    };
+
+    class ChooseSelection : public OptimizerRule {
+    public:
+        using OptimizerRule::OptimizerRule;
+
+        bool visit(const logical::SubsetLightField &node) override {
+            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                    node.parents().begin(), node.parents().end(),
+                    [this](auto &parent) { return plan().assignments(parent); });
+
+            if(physical_parents.empty())
+                return false;
+
+            //TODO clean this up, shouldn't just be randomly picking last parent
+            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>() || physical_parents[0].is<physical::CPUtoGPUTransfer>()
+                                    ? physical_parents[0]
+                                    : physical_parents[physical_parents.size() - 1];
+
+            if(!plan().has_physical_assignment(node)) {
+                if(hardcoded_parent->device() != physical::DeviceType::GPU)
+                    throw std::runtime_error("Hardcoded support only for GPU selection"); //TODO
+                LOG(ERROR) << "Assuming angular selection without actually checking";
+                plan().emplace<physical::GPUAngularSubframe>(plan().lookup(node), hardcoded_parent);
                 return true;
             }
             return false;
@@ -215,7 +281,7 @@ namespace lightdb::optimization {
                 hardcoded_parent.is<physical::GPUDownsampleResolution>()) {
                 auto &discrete = node.downcast<logical::DiscreteLightField>();
                 hardcoded_parent.downcast<physical::GPUDownsampleResolution>().geometries().push_back(static_cast<IntervalGeometry&>(*discrete.geometry()));
-                plan().emplace<physical::IdentityEncode>(plan().lookup(node), hardcoded_parent);
+                plan().emplace<physical::CPUIdentity>(plan().lookup(node), hardcoded_parent);
             } else if(!plan().has_physical_assignment(node) && is_discrete) {
                 auto downsampled = hardcoded_parent->logical().try_downcast<logical::DiscretizedLightField>();
                 auto scanned = downsampled.has_value() ? hardcoded_parent->logical()->parents()[0].downcast<logical::ScannedLightField>() : hardcoded_parent->logical().downcast<logical::ScannedLightField>();
@@ -268,8 +334,6 @@ namespace lightdb::optimization {
                     hardcoded_parent->logical().downcast<logical::InterpolatedLightField>().interpolator()->name() == "linear";
 
             if(!plan().has_physical_assignment(node) && is_linear_interpolated) {
-                //auto downsampled = hardcoded_parent->parents()[0]->logical().try_downcast<logical::DiscretizedLightField>();
-                //auto scanned = downsampled.has_value() ? hardcoded_parent->parents()[0]->logical()->parents()[0].downcast<logical::ScannedLightField>() : hardcoded_grandparent->logical().downcast<logical::ScannedLightField>();
                 auto scanned = hardcoded_grandparent->logical().is<logical::ScannedLightField>() ? hardcoded_grandparent->logical().downcast<logical::ScannedLightField>() : hardcoded_greatgrandparent->logical().downcast<logical::ScannedLightField>();
                 auto &scanned_geometry = scanned.metadata().geometry();
                 auto &discrete_geometry = node.geometry();
@@ -295,6 +359,53 @@ namespace lightdb::optimization {
         }
     };
 
+    class ChoosePartition : public OptimizerRule {
+    public:
+        using OptimizerRule::OptimizerRule;
+
+        bool visit(const logical::PartitionedLightField &node) override {
+            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                    node.parents().begin(), node.parents().end(),
+                    [this](auto &parent) { return plan().assignments(parent); });
+
+            if(physical_parents.empty())
+                return false;
+
+            //TODO clean this up, shouldn't just be randomly picking last parent
+            auto hardcoded_parent = physical_parents[physical_parents.size() - 1];
+
+            if(!plan().has_physical_assignment(node)) {
+                if(hardcoded_parent->device() == physical::DeviceType::CPU)
+                    plan().emplace<physical::CPUIdentity>(plan().lookup(node), hardcoded_parent);
+                else if(hardcoded_parent.is<physical::GPUOperator>())
+                    plan().emplace<physical::GPUIdentity>(plan().lookup(node), hardcoded_parent);
+                return true;
+            }
+            return false;
+        }
+    };
+
+    class ChooseSubquery: public OptimizerRule {
+    public:
+        bool visit(const logical::SubqueriedLightField &node) override {
+            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                    node.parents().begin(), node.parents().end(),
+                    [this](auto &parent) { return plan().assignments(parent); });
+
+            if(physical_parents.empty())
+                return false;
+
+            //TODO clean this up, shouldn't just be randomly picking last parent
+            auto hardcoded_parent = physical_parents[0];
+
+            if(!plan().has_physical_assignment(node)) {
+                plan().emplace<physical::GPUAngularSubquery>(plan().lookup(node), hardcoded_parent,
+                                                             plan().environment());
+                return true;
+            }
+            return false;
+        }
+    };
 }
 
 #endif //LIGHTDB_RULES_H

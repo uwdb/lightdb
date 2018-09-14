@@ -99,7 +99,7 @@ public:
     bool operator!=(const shared_reference& other) const { return !(*this == other); }
 
     shared_reference& operator=(const shared_reference&) = default;
-    shared_reference& operator=(shared_reference&&) = default;
+    shared_reference& operator=(shared_reference&&) noexcept = default;
 
     template<typename TDerived>
     inline const TDerived& downcast() const {
@@ -174,7 +174,7 @@ public:
     }
 
     static shared_reference<T, AddressableMixin> get(const T& instance) {
-        auto weak = lookup_[&instance];
+        auto weak = lookup_.at(&instance);
         auto shared = weak.lock();
         return shared_reference<T, AddressableMixin>(shared);
     };
@@ -193,11 +193,11 @@ private:
             lookup_.erase(&*pointer);
     }
 
-    static std::unordered_map<T*, std::weak_ptr<T>> lookup_;
+    static std::unordered_map<const T*, std::weak_ptr<T>> lookup_;
 };
 
 template<typename T>
-std::unordered_map<T*, std::weak_ptr<T>> AddressableMixin<T>::lookup_{};
+std::unordered_map<const T*, std::weak_ptr<T>> AddressableMixin<T>::lookup_{};
 
 } // namespace lightdb
 

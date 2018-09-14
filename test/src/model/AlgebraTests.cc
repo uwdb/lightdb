@@ -88,11 +88,12 @@ TEST_F(AlgebraTestFixture, testRotate) {
     ASSERT_EQ(l->volume().components().size(), 1);
 }
 
-TEST_F(AlgebraTestFixture, testPartition) {
+TEST_F(AlgebraTestFixture, testTemporalPartition) {
     // Interval of zero is invalid
     ASSERT_THROW(Scan("red10").Partition(Dimension::Time, 0), lightdb::errors::_InvalidArgument);
 
-    auto l = Scan("red10").Select(SpatiotemporalDimension::Time, {0, 10}).Partition(Dimension::Time, 1);
+    auto l = Scan("red10").Select(SpatiotemporalDimension::Time, {0, 10})
+                          .Partition(Dimension::Time, 1);
 
     ASSERT_TYPE(*l, PartitionedLightField);
     ASSERT_EQ(l->downcast<PartitionedLightField>().dimension(), Dimension::Time);

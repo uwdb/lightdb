@@ -23,18 +23,17 @@
 namespace lightdb::logical {
     class ConstantLightField : public LightField {
     public:
+        ConstantLightField(const Color &color, const Volume &volume)
+                : LightField({}, volume, color.colorSpace()), color_(color) { }
+
         static LightFieldReference create(const Color &color,
                                           const Volume &volume = Volume::limits()) {
-            return std::shared_ptr<LightField>(new ConstantLightField(color, volume));
+            return LightFieldReference::make<ConstantLightField>(color, volume);
         }
 
         const Color &color() const { return color_; }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<ConstantLightField>(visitor); }
-
-    protected:
-        ConstantLightField(const Color &color, const Volume &volume)
-                : LightField({}, volume, color.colorSpace()), color_(color) { }
 
     private:
         const Color &color_;
@@ -62,13 +61,13 @@ namespace lightdb::logical {
 
     class PartitionedLightField : public LightField {
     public:
-        //TODO should we just have a positive_rational class?
+        //TODO should we just have a positive_rational type?
         PartitionedLightField(const LightFieldReference &source,
                               const Dimension dimension,
                               const number &interval)
                 : LightField(source,
                              CompositeVolume{functional::flatmap<std::vector<Volume>>(
-                                     source->volume().components().begin(),
+                                             source->volume().components().begin(),
                                              source->volume().components().end(),
                                              [dimension, interval](auto &volume) {
                                                  return (std::vector<Volume>)volume.partition(
@@ -92,8 +91,8 @@ namespace lightdb::logical {
                              CompositeVolume{functional::transform_if<Volume>(
                                      lightfield->volume().components().begin(),
                                      lightfield->volume().components().end(),
-                                     [volume](auto &v) { return v | volume; },
-                                     [](auto &v) { return !v.is_point(); })})
+                                     [volume](auto &v) { return v & volume; },
+                                     [volume](auto &v) { return volume.has_nonempty_intersection(v); })})
         { }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<SubsetLightField>(visitor); }
@@ -182,6 +181,21 @@ namespace lightdb::logical {
 
     private:
         const functor::UnaryFunctorReference functor_;
+    };
+
+    class SubqueriedLightField : public LightField {
+    public:
+        SubqueriedLightField(const LightFieldReference &source,
+                             std::function<LightFieldReference(LightFieldReference)> subquery)
+                : LightField(source), subquery_(std::move(subquery))
+        { }
+
+        const std::function<LightFieldReference(LightFieldReference)>& subquery() const { return subquery_; };
+
+        void accept(LightFieldVisitor &visitor) override { LightField::accept<SubqueriedLightField>(visitor); }
+
+    private:
+        const std::function<LightFieldReference(LightFieldReference)> subquery_;
     };
 
     class ScannedLightField : public LightField {

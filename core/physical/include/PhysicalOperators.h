@@ -50,6 +50,8 @@ namespace lightdb {
             }
             physical::MaterializedLightFieldReference operator*() { return current_.value(); }
 
+            PhysicalLightField& physical() const { return *physical_; }
+
             template<typename T>
             downcast_iterator<T> downcast() { return downcast_iterator<T>(*this); }
 
@@ -143,8 +145,8 @@ namespace lightdb {
     namespace physical {
         class GPUOperator: public PhysicalLightField {
         public:
-            const execution::GPU& gpu() const { return gpu_; }
-            const Configuration& configuration() { return output_configuration_; }
+            inline const execution::GPU& gpu() const { return gpu_; }
+            inline const Configuration& configuration() { return output_configuration_; }
 
             GPUContext& context() { return context_; }
             VideoLock& lock() {return lock_; }
@@ -240,8 +242,6 @@ namespace lightdb {
             virtual const Codec &codec() const = 0;
             virtual const Configuration &configuration() const = 0;
         };
-
-
     } // namespace physical
 } // namespace lightdb
 

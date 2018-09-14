@@ -5,26 +5,44 @@
 
 namespace lightdb::physical {
 
-class HomomorphicUniformTile: public PhysicalLightField, public EncodedVideoInterface {
+class HomomorphicUniformAngularUnion: public PhysicalLightField, public EncodedVideoInterface {
 public:
-    explicit HomomorphicUniformTile(const LightFieldReference &logical,
-                                    const std::vector<PhysicalLightFieldReference> &parents,
-                                    const unsigned int rows, const unsigned int columns)
+    explicit HomomorphicUniformAngularUnion(const LightFieldReference &logical,
+                                            std::vector<PhysicalLightFieldReference> &parents,
+                                            const unsigned int rows, const unsigned int columns)
             : PhysicalLightField(logical, parents, DeviceType::CPU),
               rows_(rows), columns_(columns),
-              sources_(functional::transform<std::reference_wrapper<const EncodedVideoInterface>>(
-                      parents.begin(), parents.end(), [](const PhysicalLightFieldReference &parent) {
-                          return std::ref(parent.downcast<EncodedVideoInterface>()); })),
-              configuration_{get_configuration(sources_, rows_, columns_)}
+              configuration_(get_configuration(parents, rows_, columns_))
     {
-        //TODO assert preconditions
-        throw NotImplementedError();
+        LOG(WARNING) << "Ignored myriad preconditions on homomorphic angular union";
     }
 
+    std::ofstream tmpfile[64];
+
+
     std::optional<physical::MaterializedLightFieldReference> read() override {
-        //auto chunks = functional::transform(sources_.begin(), sources_.end(), [](auto &source) {
-        //                                        return source.read(); });
-        throw NotImplementedError();
+        if(!any_parent_eos()) {
+            std::optional<physical::MaterializedLightFieldReference> data;
+            static auto tmpindex = 0u;
+
+            if(tmpindex == 0u) {
+                for(auto i = 0u; i < iterators().size(); i++)
+                    tmpfile[i] = std::ofstream(std::string("homoout") + std::to_string(i) + ".hevc");
+            }
+
+            for(auto &it: iterators()) {
+                data = it++;
+                tmpindex++;
+
+                if(data.has_value()) {
+                    auto &encoded = data.value().downcast<CPUEncodedFrameData>();
+                    printf("hout %lu\n", encoded.value().size());
+                    std::copy(encoded.value().begin(),encoded.value().end(),std::ostreambuf_iterator<char>(tmpfile[tmpindex % iterators().size()]));
+                }
+            }
+            return data;
+        }
+        return {};
     }
 
     const Codec &codec() const override { return Codec::hevc(); }
@@ -32,22 +50,22 @@ public:
 
 private:
     const unsigned int rows_, columns_;
-    const std::vector<std::reference_wrapper<const EncodedVideoInterface>> sources_;
     const Configuration configuration_;
 
     static const Configuration get_configuration(
-            const std::vector<std::reference_wrapper<const EncodedVideoInterface>>& sources,
+            std::vector<PhysicalLightFieldReference>& sources,
             const unsigned int rows, const unsigned int columns) {
-        auto &first_configuration = sources[0].get().configuration();
+        auto &configuration = sources[0].downcast<GPUOperator>().configuration();
 
         //TODO assert sources[1...n] preconditions (e.g., have same width, height, framerate)
+        LOG(WARNING) << "Did not assert preconditions on homomorphic angular union sources";
 
-        return Configuration{first_configuration.width * columns,
-                             first_configuration.height * rows,
-                             first_configuration.max_width * columns,
-                             first_configuration.max_height * rows,
-                             0,
-                             first_configuration.framerate};
+        return Configuration{configuration.width * columns,
+                             configuration.height * rows,
+                             configuration.max_width * columns,
+                             configuration.max_height * rows,
+                             configuration.bitrate,
+                             configuration.framerate};
     }
 };
 
