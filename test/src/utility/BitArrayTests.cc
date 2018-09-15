@@ -12,14 +12,14 @@
 
 using lightdb::utility::BitArray;
 
-static const long kArraySize = 64;
+static const unsigned long kArraySize = 64u;
 class BitArrayTestFixture : public testing::Test {
 public:
 
     BitArrayTestFixture()
             : array(kArraySize)
     {
-        for (int i = 0; i < kArraySize; i++) {
+        for (auto i = 0u; i < kArraySize; i++) {
             array[i] = false;
         }
     }
@@ -33,19 +33,19 @@ TEST_F(BitArrayTestFixture, testConstructor) {
 
 TEST_F(BitArrayTestFixture, testSetByteGetByte) {
 
-    for (auto i = 0; i < kArraySize / 8; i++) {
+    for (auto i = 0u; i < kArraySize / 8; i++) {
         array.SetByte(i, static_cast<unsigned char>(i));
     }
 
-    for (auto i = 0; i < kArraySize / 8; i++) {
+    for (auto i = 0u; i < kArraySize / 8; i++) {
         unsigned char byte = 0;
-        for (int j = i * CHAR_BIT; j < i * CHAR_BIT + CHAR_BIT; j++) {
+        for (auto j = i * CHAR_BIT; j < i * CHAR_BIT + CHAR_BIT; j++) {
             byte = (byte << 1u) | array[j];
         }
         ASSERT_EQ(byte, i);
     }
 
-    for (auto i = 0; i < kArraySize / 8; i++) {
+    for (auto i = 0u; i < kArraySize / 8; i++) {
         auto byte = array.GetByte(i);
         ASSERT_EQ(byte, i);
     }
@@ -70,7 +70,7 @@ TEST_F(BitArrayTestFixture, testReplaceException) {
 }
 
 TEST_F(BitArrayTestFixture, testInsert) {
-    for (auto i = 0; i < kArraySize; i++) {
+    for (auto i = 0u; i < kArraySize; i++) {
         array[i] = true;
     }
 
@@ -117,58 +117,58 @@ TEST_F(BitArrayTestFixture, testInsert) {
 }
 
 TEST_F(BitArrayTestFixture, testReplace) {
-    int replacement_size = 10;
+    auto replacement_size = 10u;
     std::vector<bool> replacement(replacement_size);
-    for (auto i = 0; i < kArraySize; i++) {
+    for (auto i = 0u; i < kArraySize; i++) {
         array[i] = true;
     }
-    for (auto i = 0; i < replacement_size; i++) {
+    for (auto i = 0u; i < replacement_size; i++) {
         replacement[i] = false;
     }
 
     // Make sure we can correctly insert a smaller replacement
     array.Replace(10, 40, replacement);
-    for (auto i = 0; i < 10; i++) {
+    for (auto i = 0u; i < 10; i++) {
         ASSERT_TRUE(array[i]);
     }
-    for (auto i = 10; i < 10 + replacement_size; i++) {
+    for (auto i = 10u; i < 10u + replacement_size; i++) {
         ASSERT_FALSE(array[i]);
     }
-    for (auto i = 10 + replacement_size; i < array.size(); i++) {
+    for (auto i = 10u + replacement_size; i < array.size(); i++) {
         ASSERT_TRUE(array[i]);
     }
     ASSERT_EQ(array.size(), kArraySize - 40 + 10 + replacement_size);
 
     // Make sure we can correctly insert a larger replacement
     array = BitArray(kArraySize);
-    for (auto i = 0; i < kArraySize; i++) {
+    for (auto i = 0u; i < kArraySize; i++) {
         array[i] = true;
     }
     array.Replace(10, 15, replacement);
-    for (auto i = 0; i < 10; i++) {
+    for (auto i = 0u; i < 10; i++) {
         ASSERT_TRUE(array[i]);
     }
-    for (auto i = 10; i < 10 + replacement_size; i++) {
+    for (auto i = 10u; i < 10u + replacement_size; i++) {
         ASSERT_FALSE(array[i]);
     }
-    for (auto i = 10 + replacement_size; i < array.size(); i++) {
+    for (auto i = 10u + replacement_size; i < array.size(); i++) {
         ASSERT_TRUE(array[i]);
     }
     ASSERT_EQ(array.size(), kArraySize - 15 + 10 + replacement_size);
 
     // Make sure we can correctly insert a larger replacement
     array = BitArray(kArraySize);
-    for (auto i = 0; i < kArraySize; i++) {
+    for (auto i = 0u; i < kArraySize; i++) {
         array[i] = true;
     }
-    array.Replace(10, 10 + replacement_size, replacement);
-    for (auto i = 0; i < 10; i++) {
+    array.Replace(10, 10u + replacement_size, replacement);
+    for (auto i = 0u; i < 10; i++) {
         ASSERT_TRUE(array[i]);
     }
-    for (auto i = 10; i < 10 + replacement_size; i++) {
+    for (auto i = 10u; i < 10u + replacement_size; i++) {
         ASSERT_FALSE(array[i]);
     }
-    for (auto i = 10 + replacement_size; i < array.size(); i++) {
+    for (auto i = 10u + replacement_size; i < array.size(); i++) {
         ASSERT_TRUE(array[i]);
     }
     ASSERT_EQ(array.size(), kArraySize);
@@ -182,7 +182,7 @@ TEST_F(BitArrayTestFixture, testByteAlign) {
     // Should be one byte bigger now
     ASSERT_EQ(array.size(), kArraySize + CHAR_BIT);
     // Should have been padded with zeroes
-    for (auto i = kArraySize + 2; i < array.size(); i++) {
+    for (auto i = kArraySize + 2u; i < array.size(); i++) {
         ASSERT_FALSE(array[i]);
     }
 

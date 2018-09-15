@@ -35,6 +35,7 @@ namespace lightdb {
             if (skip) {
                 SkipBits(num);
             }
+            return *this;
         }
 
         BitStream &BitStream::CollectValue(const std::string &name, const size_t num) {
@@ -61,8 +62,8 @@ namespace lightdb {
         }
 
         unsigned long BitStream::NextBits(const size_t num) {
-            unsigned long bits = 0;
-            for (auto i = 0; i < num; i++) {
+            unsigned long bits = 0u;
+            for (auto i = 0u; i < num; i++) {
                 bits = (bits << 1) | *index_++;
             }
             return bits;
@@ -76,7 +77,7 @@ namespace lightdb {
         }
 
         BitStream &BitStream::SkipExponentialGolombs(const unsigned long num) {
-            for (auto i = 0; i < num; i++) {
+            for (auto i = 0u; i < num; i++) {
                 SkipExponentialGolomb();
             }
             return *this;

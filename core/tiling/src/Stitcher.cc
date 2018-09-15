@@ -120,7 +120,7 @@ namespace lightdb {
 
         auto it = stitched.begin();
         while (it != stitched.end()) {
-          for (auto i = 0; i < tile_num; i++) {
+          for (auto i = 0u; i < tile_num; i++) {
             auto current = Load(context_, *it, headers_);
             if (IsKeyframe(*it)) {
                 // We want to insert the header bytes before each GOP, which is indicated by a keyframe.

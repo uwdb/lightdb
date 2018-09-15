@@ -75,8 +75,8 @@ namespace lightdb {
 
         Context context_;
         bytestring byte_data_;
-        bool is_header_;
         int type_;
+        bool is_header_;
     };
 
 /**

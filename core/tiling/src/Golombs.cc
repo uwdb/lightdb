@@ -82,7 +82,7 @@ namespace lightdb {
         zero_sizes->pop_front();
 
         // First, add the zeroes at the front
-        for (int i = 0; i < zero_num; i++) {
+        for (auto i = 0u; i < zero_num; i++) {
             data[index++] = false;
         }
 

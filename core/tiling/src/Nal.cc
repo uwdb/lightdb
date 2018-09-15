@@ -4,19 +4,17 @@
 
 #include <cassert>
 #include <iostream>
-#include <string>
-#include <cassert>
 #include <memory>
 
 #include "Nal.h"
 #include "NalType.h"
-#include "Context.h"
 #include "SequenceParameterSet.h"
 #include "PictureParameterSet.h"
 #include "VideoParameterSet.h"
 #include "SliceSegmentLayer.h"
 #include "Opaque.h"
 #include "AccessDelimiter.h"
+#include "errors.h"
 
 using std::shared_ptr;
 
@@ -104,11 +102,12 @@ namespace lightdb {
     }
 
     SliceSegmentLayer Load(const Context &context, const bytestring &data, const Headers &headers) {
-        int type = PeekType(data);
+        auto type = PeekType(data);
         if (type == NalUnitCodedSliceIDRWRADL) {
             return IDRSliceSegmentLayer(context, data, headers);
         } else if (type == NalUnitCodedSliceTrailR) {
             return TrailRSliceSegmentLayer(context, data, headers);
-        }
+        } else
+            throw InvalidArgumentError(std::string("Unrecognized SliceSegmentLayer type ") + std::to_string(type), "data");
     }
 }
