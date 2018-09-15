@@ -20,6 +20,6 @@ namespace lightdb {
      * @return The golomb
      */
     unsigned long DecodeGolomb(utility::BitStream &stream);
-}
+}; //namespace lightdb
 
 #endif //LIGHTDB_GOLOMBS_H

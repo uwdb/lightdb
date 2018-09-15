@@ -15,7 +15,7 @@ namespace lightdb {
      * @param zero_sizes The list that will hold the number of zeroes
      * @return The number of bits necessary to encode the golomb
      */
-    size_t GetGolombEncodeSize(const unsigned long val, std::list<size_t> *zero_sizes);
+    size_t GetGolombEncodeSize(unsigned long val, std::list<size_t> *zero_sizes);
 
     /**
     *
@@ -54,7 +54,7 @@ namespace lightdb {
         return data;
     }
 
-    size_t GetGolombEncodeSize(const unsigned long val, std::list<size_t> *zero_sizes) {
+    inline size_t GetGolombEncodeSize(const unsigned long val, std::list<size_t> *zero_sizes) {
 
         // Note that val will always be at least 0, so val + 1 is always at least 1, meaning
         // log2 is never undefined
@@ -109,7 +109,7 @@ namespace lightdb {
         return (1u << size | stream.NextBits(size)) - 1;
     }
 
-    size_t GetGolombDecodeSize(BitStream &stream) {
+    inline size_t GetGolombDecodeSize(BitStream &stream) {
         // If the golomb is 00101, then we read the 0, update size to 1, read the next 0, update
         // size to 2, and receive a 1 next so we stop, leaving index at the 0 after the 1.
         auto size = 0u;
@@ -118,4 +118,4 @@ namespace lightdb {
         }
         return size;
     }
-}
+}; //namespace lightdb
