@@ -1,4 +1,5 @@
 #include "Golombs.h"
+#include "BitStream.h"
 #include <list>
 #include <cmath>
 
