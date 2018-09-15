@@ -1,82 +1,78 @@
-//
-// Created by sophi on 5/14/2018.
-//
-
-#include <climits>
-#include <cmath>
-#include <vector>
-#include <gtest/gtest.h>
-#include <gmock/gmock.h>
-
 #include "BitStream.h"
+#include <gtest/gtest.h>
 
 using lightdb::utility::BitStream;
-static const int kDataSize = 50;
+static constexpr unsigned int kDataSize = 50u;
 
 class BitStreamTestFixture : public testing::Test {
-public:
-
-    BitStreamTestFixture() = default;
-
 };
 
 TEST_F(BitStreamTestFixture, testMarkPositionSkipBits) {
-    std::vector<bool> data(kDataSize, 0);
+    std::vector<bool> data(kDataSize);
     BitStream stream(data.begin(), data.begin() + 5);
+
     stream.MarkPosition("start");
     stream.SkipBits(10);
     stream.MarkPosition("middle");
     stream.SkipBits(kDataSize - 5 - 10);
     stream.MarkPosition("end");
+
     ASSERT_EQ(stream.GetValue("start"), 5);
     ASSERT_EQ(stream.GetValue("middle"), 15);
     ASSERT_EQ(stream.GetValue("end"), kDataSize);
 }
 
 TEST_F(BitStreamTestFixture, testByteAlign) {
-    std::vector<bool> data(kDataSize, 0);
+    std::vector<bool> data(kDataSize);
+    for (auto i = 20u; i < 25u; i++) {
+        data[i] = true;
+    }
     BitStream stream(data.begin(), data.begin() + 5);
+
     stream.SkipBits(15);
-    stream.ByteAlign(4);
+    stream.ByteAlign(15);
     stream.SkipBits(11);
-    stream.ByteAlign(5);
+    stream.ByteAlign(0);
     stream.SkipBits(16);
     stream.ByteAlign(0);
 }
 
 TEST_F(BitStreamTestFixture, testSkipEntryPointOffsets) {
     std::vector<bool> data(kDataSize);
+
     // 3
-    data[0] = 0;
-    data[1] = 0;
-    data[2] = 1;
-    data[3] = 0;
-    data[4] = 0;
+    data[0] = false;
+    data[1] = false;
+    data[2] = true;
+    data[3] = false;
+    data[4] = false;
     // 2
-    data[5] = 0;
-    data[6] = 1;
-    data[7] = 1;
+    data[5] = false;
+    data[6] = true;
+    data[7] = true;
     // 9 bits to skip
-    data[8] = 0;
-    data[9] = 0;
-    data[10] = 0;
-    data[11] = 0;
-    data[12] = 0;
-    data[13] = 0;
-    data[14] = 0;
-    data[15] = 0;
-    data[16] = 0;
+    data[8] = false;
+    data[9] = false;
+    data[10] = false;
+    data[11] = false;
+    data[12] = false;
+    data[13] = false;
+    data[14] = false;
+    data[15] = false;
+    data[16] = false;
     // Mark bit
-    data[17] = 1;
+    data[17] = true;
     // 0
-    data[18] = 1;
+    data[18] = true;
     // shouldn't read this next value
-    data[19] = 0;
-    data[20] = 1;
-    data[21] = 1;
+    data[19] = false;
+    data[20] = true;
+    data[21] = true;
     // shouldn't process this either
-    data[22] = 0;
+    data[22] = false;
+
     BitStream stream(data.begin(), data.begin());
+
     stream.SkipEntryPointOffsets(true);
     stream.SkipTrue();
     stream.MarkPosition("first-mark");
@@ -91,23 +87,25 @@ TEST_F(BitStreamTestFixture, testSkipEntryPointOffsets) {
 
 TEST_F(BitStreamTestFixture, testGetExponentialGolomb) {
     std::vector<bool> data(kDataSize);
+
     // 3
-    data[0] = 0;
-    data[1] = 0;
-    data[2] = 1;
-    data[3] = 0;
-    data[4] = 0;
+    data[0] = false;
+    data[1] = false;
+    data[2] = true;
+    data[3] = false;
+    data[4] = false;
     // 0
-    data[5] = 1;
+    data[5] = true;
     // 8
-    data[6] = 0;
-    data[7] = 0;
-    data[8] = 0;
-    data[9] = 1;
-    data[10] = 0;
-    data[11] = 0;
-    data[12] = 1;
+    data[6] = false;
+    data[7] = false;
+    data[8] = false;
+    data[9] = true;
+    data[10] = false;
+    data[11] = false;
+    data[12] = true;
     BitStream stream(data.begin(), data.begin());
+
     ASSERT_EQ(stream.GetExponentialGolomb(), 3);
     ASSERT_EQ(stream.GetExponentialGolomb(), 0);
     ASSERT_EQ(stream.GetExponentialGolomb(), 8);
@@ -115,32 +113,36 @@ TEST_F(BitStreamTestFixture, testGetExponentialGolomb) {
 
 TEST_F(BitStreamTestFixture, testCollectValue) {
     std::vector<bool> data(kDataSize);
+
     // 0
-    data[0] = 0;
+    data[0] = false;
     // 1
-    data[1] = 1;
+    data[1] = true;
 
-    data[2] = 0;
-    data[3] = 0;
-    data[4] = 0;
+    data[2] = false;
+    data[3] = false;
+    data[4] = false;
     // 5
-    data[5] = 1;
-    data[6] = 0;
-    data[7] = 1;
+    data[5] = true;
+    data[6] = false;
+    data[7] = true;
 
-    data[8] = 0;
-    data[9] = 1;
+    data[8] = false;
+    data[9] = true;
     // 1
-    data[10] = 0;
-    data[11] = 0;
-    data[12] = 1;
+    data[10] = false;
+    data[11] = false;
+    data[12] = true;
+
     BitStream stream(data.begin(), data.begin());
+
     stream.CollectValue("zero");
     stream.CollectValue("one");
     stream.SkipBits(3);
     stream.CollectValue("five", 3);
     stream.SkipBits(2);
     stream.CollectValue("one-three", 3);
+
     ASSERT_EQ(stream.GetValue("zero"), 0);
     ASSERT_EQ(stream.GetValue("one"), 1);
     ASSERT_EQ(stream.GetValue("five"), 5);
@@ -149,38 +151,40 @@ TEST_F(BitStreamTestFixture, testCollectValue) {
 
 TEST_F(BitStreamTestFixture, testSkipExponentialGolombs) {
     std::vector<bool> data(kDataSize);
+
     // 0
-    data[0] = 0;
+    data[0] = false;
     // 1
-    data[1] = 1;
+    data[1] = true;
 
     // 0-3
-    data[2] = 0;
-    data[3] = 0;
-    data[4] = 0;
+    data[2] = false;
+    data[3] = false;
+    data[4] = false;
     // 1 - 4
-    data[5] = 0;
-    data[6] = 0;
-    data[7] = 0;
-    data[8] = 1;
+    data[5] = false;
+    data[6] = false;
+    data[7] = false;
+    data[8] = true;
     // 5
-    data[9] = 0;
-    data[10] = 0;
-    data[11] = 1;
-    data[12] = 1;
-    data[13] = 0;
+    data[9] = false;
+    data[10] = false;
+    data[11] = true;
+    data[12] = true;
+    data[13] = false;
     // 0
-    data[14]  = 1;
+    data[14]  = true;
     // 4
-    data[15] = 0;
-    data[16] = 0;
-    data[17] = 1;
-    data[18] = 0;
-    data[19] = 1;
+    data[15] = false;
+    data[16] = false;
+    data[17] = true;
+    data[18] = false;
+    data[19] = true;
     // end
-    data[20] = 0;
+    data[20] = false;
 
     BitStream stream(data.begin(), data.begin());
+
     stream.CollectValue("zero");
     stream.SkipExponentialGolombs("zero", 3);
     stream.MarkPosition("not-skipped");
@@ -196,5 +200,3 @@ TEST_F(BitStreamTestFixture, testSkipExponentialGolombs) {
     ASSERT_EQ(stream.GetValue("end"), 20);
     stream.SkipFalse();
 }
-
-
