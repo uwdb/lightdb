@@ -26,7 +26,7 @@ namespace lightdb {
          * being the width (num of columns)
          * @param loop_filter_enabled Set to false unless otherwise specified
          */
-        void SetTileDimensions(const unsigned int *dimensions, const bool loop_filter_enabled = false);
+        void SetTileDimensions(const std::pair<unsigned int, unsigned int>& dimensions, const bool loop_filter_enabled = false);
 
         /**
          *

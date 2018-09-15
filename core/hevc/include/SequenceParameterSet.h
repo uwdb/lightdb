@@ -28,14 +28,14 @@ namespace lightdb {
          * @param dimensions A length two array, the first element being the height and the second
          * being the width
          */
-        void SetDimensions(const unsigned int *dimensions);
+        void SetDimensions(const std::pair<unsigned int, unsigned int> dimensions);
 
         /**
          *
          * @return An array representing the tile dimensions, height first, then width.
          * Note that changing this array changes this header's tile dimensions
          */
-        const unsigned long * GetTileDimensions() const;
+        const std::pair<unsigned long, unsigned long> GetTileDimensions() const;
 
         /**
          * Sets the general level IDC value in the byte stream to be value, converting value to a byte
@@ -74,7 +74,7 @@ namespace lightdb {
         utility::BitStream metadata_;
         size_t address_length_in_bits_;
         std::vector<size_t> addresses_;
-        unsigned long dimensions_[2];
+        std::pair<unsigned long, unsigned long> dimensions_;
         unsigned long log2_max_pic_order_cnt_lsb_;
 
         static const int kSizeBeforeProfile = 1;

@@ -8,7 +8,13 @@ namespace lightdb {
     class AccessDelimiter : public Nal {
     public:
         AccessDelimiter(const Context &context, bytestring const &data) : Nal(context, data) {}
-        bytestring GetBytes() const override;
+
+        inline bytestring GetBytes() const override {
+            bytestring data = Nal::GetBytes();
+            bytestring nal_marker = GetNalMarker();
+            data.insert(data.begin(), nal_marker.begin(), nal_marker.end());
+            return data;
+        }
     };
 
 }

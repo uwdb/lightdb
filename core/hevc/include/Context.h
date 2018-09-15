@@ -1,6 +1,8 @@
 #ifndef LIGHTDB_CONTEXT_H
 #define LIGHTDB_CONTEXT_H
 
+#include <utility>
+
 namespace lightdb {
 
     class Context {
@@ -13,24 +15,32 @@ namespace lightdb {
          * @param video_dimensions  The video dimensions, first element being the height and the second
          * the width
          */
-        Context(const unsigned int *tile_dimensions, const unsigned int *video_dimensions);
+        Context(const std::pair<unsigned int, unsigned int>& tile_dimensions,
+                const std::pair<unsigned int, unsigned int>& video_dimensions)
+                : tile_dimensions_{tile_dimensions},
+                  video_dimensions_{tile_dimensions.first * video_dimensions.first, tile_dimensions.second * video_dimensions.second}
+        { }
+
         /**
          *
          * @return The tile dimensions. Note that this gives the user the ability to change the dimensions
          */
-        // TODO change to std::pair
-        const unsigned int* GetTileDimensions();
+        // TODO change to using dimensions=std::pair
+        inline const std::pair<unsigned int, unsigned int> GetTileDimensions() {
+            return tile_dimensions_;
+        }
         /**
          *
          * @return The video dimensions. Note that this gives the user the ability to change the dimensions
          */
-        const unsigned int* GetVideoDimensions();
+        inline const std::pair<unsigned int, unsigned int>& GetVideoDimensions() {
+            return video_dimensions_;
+        }
 
     private:
 
-        // TODO change to std::pair
-        unsigned int tile_dimensions_[2];
-        unsigned int video_dimensions_[2];
+        std::pair<unsigned int, unsigned int> tile_dimensions_;
+        std::pair<unsigned int, unsigned int> video_dimensions_;
 
     };
 

@@ -27,7 +27,8 @@ int main(int argc, char *argv[]) {
     video_dimensions[0] = static_cast<unsigned int>(std::stoul(argv[num_tiles + 4]));
     video_dimensions[1] = static_cast<unsigned int>(std::stoul(argv[num_tiles + 5]));
 
-    Context context(tile_dimensions, video_dimensions);
+    Context context(std::pair(tile_dimensions[0], tile_dimensions[1]),
+                    std::pair(video_dimensions[0], video_dimensions[1]));
     Stitcher stitcher(context, tiles);
     lightdb::bytestring stitched = stitcher.GetStitchedSegments();
 
