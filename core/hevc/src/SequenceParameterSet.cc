@@ -1,32 +1,15 @@
-//
-// Created by sophi on 4/17/2018.
-//
-
-#include <cmath>
-#include <string>
-#include <vector>
-#include <cassert>
-#include <cstddef>
-
 #include "Nal.h"
 #include "Emulation.h"
-#include "Context.h"
 #include "SequenceParameterSet.h"
-#include "BitStream.h"
 #include "Profile.h"
-#include "BitArray.h"
 #include "Golombs.h"
-
-using std::string;
-using std::vector;
-using lightdb::utility::BitStream;
-using lightdb::utility::BitArray;
 
 namespace lightdb {
 
-    SequenceParameterSet::SequenceParameterSet(const Context &context, const bytestring &data) : Nal(context, data),
-                                               data_(RemoveEmulationPrevention(data, GetHeaderSize(), data.size())),
-                                               metadata_(data_.begin(), data_.begin() + GetHeaderSizeInBits()) {
+    SequenceParameterSet::SequenceParameterSet(const Context &context, const bytestring &data)
+            : Nal(context, data),
+              data_(RemoveEmulationPrevention(data, GetHeaderSize(), data.size())),
+              metadata_(data_.begin(), data_.begin() + GetHeaderSizeInBits()) {
 
         metadata_.SkipBits(4);
         metadata_.CollectValue("sps_max_sub_layer_minus1", 3);
@@ -35,7 +18,7 @@ namespace lightdb {
         metadata_.SkipExponentialGolomb();
         metadata_.CollectGolomb("chroma_format_idc");
 
-        size_t skip_bits = 0;
+        auto skip_bits = 0u;
         if (metadata_.GetValue("chroma_format_idc") == 3) {
             skip_bits = 1;
         }
@@ -81,11 +64,11 @@ namespace lightdb {
 
         // The dimensions are width first, then height, so we must reverse the
         // order from our height, width
-        vector<unsigned long> new_dimensions(kNumDimensions);
+        std::vector<unsigned long> new_dimensions(kNumDimensions);
         new_dimensions[1] = static_cast<unsigned long>(dimensions[0]);
         new_dimensions[0] = static_cast<unsigned long>(dimensions[1]);
 
-        vector<unsigned long> old_dimensions(kNumDimensions);
+        std::vector<unsigned long> old_dimensions(kNumDimensions);
         old_dimensions[0] = dimensions_[1];
         old_dimensions[1] = dimensions_[0];
 
@@ -118,7 +101,7 @@ namespace lightdb {
         return dimensions_;
     }
 
-    const vector<size_t>& SequenceParameterSet::GetAddresses() const {
+    const std::vector<size_t>& SequenceParameterSet::GetAddresses() const {
         return addresses_;
     }
 

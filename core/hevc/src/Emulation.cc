@@ -1,33 +1,19 @@
-//
-// Created by sophi on 4/22/2018.
-//
-
-#include <string>
-#include <vector>
+#include "Emulation.h"
 #include <list>
 #include <iostream>
-#include <climits>
-#include <algorithm>
-#include "Emulation.h"
-#include "Nal.h"
-#include "BitArray.h"
-
-using std::string;
-using std::list;
-using std::copy;
-using lightdb::utility::BitArray;
 
 namespace lightdb {
 
-    BitArray RemoveEmulationPrevention(const bytestring &data, const unsigned long start, const unsigned long end) {
-        list<long> emulation_indices;
+    utility::BitArray RemoveEmulationPrevention(const bytestring &data, const unsigned long start, const unsigned long end) {
+        std::list<long> emulation_indices;
         auto zero_count = 0u;
         auto index = start;
         auto found = false;
 
         // Iterate over the string to remove the emulation_prevention_three_bytes
-        for (bytestring::const_iterator it = data.begin() + start; it != data.begin() + end; it++) {
+        for (auto it = data.begin() + start; it != data.begin() + end; it++) {
             // Necessary so that unsigned comparison is performed
+            //TODO add ubytestring?
                 auto c = static_cast<unsigned char>(*it);
                 if (found && 0 <= c && c <= 3) {
                     // If in the previous iteration we encountered the byte sequence and now we are at a 0, 1, 2, or 3
@@ -55,7 +41,7 @@ namespace lightdb {
         }
 
         auto set_size = (data.size() - emulation_indices.size()) * CHAR_BIT;
-        BitArray bits(set_size);
+        utility::BitArray bits(set_size);
         auto bit_index = 0u;
         auto str_index = 0u;
 
@@ -79,8 +65,8 @@ namespace lightdb {
         return bits;
     }
 
-    bytestring AddEmulationPreventionAndMarker(const BitArray data, const unsigned long start, const unsigned long end) {
-        list<long> emulation_indices;
+    bytestring AddEmulationPreventionAndMarker(const utility::BitArray data, const unsigned long start, const unsigned long end) {
+        std::list<long> emulation_indices;
 
         auto zero_count = 0u;
         auto data_size = data.size() / 8;

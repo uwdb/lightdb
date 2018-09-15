@@ -1,15 +1,6 @@
-//
-// Created by sophi on 5/12/2018.
-//
-
-#include <vector>
+#include "Golombs.h"
 #include <list>
 #include <cmath>
-#include <iostream>
-
-#include "Golombs.h"
-#include "BitArray.h"
-#include "BitStream.h"
 
 using lightdb::utility::BitArray;
 using lightdb::utility::BitStream;
@@ -42,10 +33,10 @@ namespace lightdb {
      * @param index The index to start inserting the bits at in "data"
      * @return The number of bits used to encode this golomb
      */
-    size_t EncodeGolomb(unsigned long golomb, BitArray &data, std::list<size_t> *zero_sizes, size_t index);
+    unsigned long EncodeGolomb(unsigned long golomb, BitArray &data, std::list<size_t> *zero_sizes, size_t index);
 
     BitArray EncodeGolombs(const std::vector<unsigned long> &golombs) {
-        size_t total_size = 0u;
+        auto total_size = 0ul;
         std::list<size_t> zero_sizes;
 
         // Record the total size of the bit array
@@ -54,7 +45,7 @@ namespace lightdb {
         }
 
         BitArray data(total_size);
-        size_t bit_index = 0;
+        auto bit_index = 0ul;
 
         for (auto val : golombs) {
             bit_index = EncodeGolomb(val, data, &zero_sizes, bit_index);
@@ -76,7 +67,7 @@ namespace lightdb {
         return val_size * 2 - 1;
     }
 
-    size_t EncodeGolomb(unsigned long golomb, BitArray &data, std::list<size_t> *zero_sizes, size_t index) {
+    unsigned long EncodeGolomb(unsigned long golomb, BitArray &data, std::list<size_t> *zero_sizes, size_t index) {
         golomb += 1;
         auto zero_num = zero_sizes->front();
         zero_sizes->pop_front();

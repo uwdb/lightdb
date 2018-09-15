@@ -12,8 +12,11 @@ namespace lightdb {
 
     class Headers;
 
-    Nal::Nal(const Context &context, const bytestring &data) : context_(context), byte_data_(data),
-                                                               type_(PeekType(data)), is_header_(IsHeader()) {
+    Nal::Nal(const Context &context, const bytestring &data)
+            : context_(context),
+              byte_data_(data),
+              type_(PeekType(data)),
+              is_header_(IsHeader()) {
         CHECK_EQ(ForbiddenZero(), 0);
     }
 

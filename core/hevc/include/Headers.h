@@ -47,12 +47,12 @@ namespace lightdb {
          */
         std::shared_ptr<PictureParameterSet> GetPicture() const;
 
-        static const int kNumHeaders = 3;
+        static constexpr unsigned int kNumHeaders = 3u;
 
     private:
-        int sequence_;
-        int picture_;
-        int video_;
+        unsigned int sequence_;
+        unsigned int picture_;
+        unsigned int video_;
         std::vector<std::shared_ptr<Nal>> headers_;
     };
 }

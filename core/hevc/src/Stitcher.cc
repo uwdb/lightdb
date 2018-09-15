@@ -1,35 +1,14 @@
-//
-// Created by sophi on 4/9/2018.
-//
-
-#include <iostream>
-#include <string>
-#include <vector>
-#include <list>
-#include <iterator>
-
 #include "Stitcher.h"
-#include "Nal.h"
-#include "Context.h"
 #include "SliceSegmentLayer.h"
-#include "SequenceParameterSet.h"
-#include "VideoParameterSet.h"
-#include "PictureParameterSet.h"
-#include "Headers.h"
-
-using std::list;
-using std::vector;
-using std::string;
-using std::copy;
-using std::move;
-using std::make_move_iterator;
+#include <list>
 
 namespace lightdb {
-    
-    vector<vector<bytestring>> Stitcher::GetNals() {
+
+    //TODO typedef nested type
+    std::vector<std::vector<bytestring>> Stitcher::GetNals() {
         tile_nals_.reserve(tiles_.size());
         for (auto tile : tiles_) {
-            vector<bytestring> nals;
+            std::vector<bytestring> nals;
             auto zero_count = 0u;
             auto first = true;
             auto start = tile.begin();
@@ -59,9 +38,9 @@ namespace lightdb {
         return tile_nals_;
     }
 
-    vector<bytestring> Stitcher::GetSegmentNals(const unsigned long tile_num, unsigned long *num_bytes, unsigned long *num_keyframes, bool first) {
+    std::vector<bytestring> Stitcher::GetSegmentNals(const unsigned long tile_num, unsigned long *num_bytes, unsigned long *num_keyframes, bool first) {
         auto nals = tile_nals_[tile_num];
-        vector<bytestring> segments;
+        std::vector<bytestring> segments;
         for (auto nal : nals) {
             if (IsSegment(nal)) {
                 if (IsKeyframe(nal) && first) {
@@ -82,7 +61,7 @@ namespace lightdb {
         headers_.GetPicture()->SetTileDimensions(context_.GetTileDimensions());
 
         auto tile_num = tiles_.size();
-        list<vector<bytestring>> segment_nals;
+        std::list<std::vector<bytestring>> segment_nals;
         auto num_segments = 0u;
         unsigned long num_bytes = 0u;
         unsigned long num_keyframes = 0u;
@@ -95,7 +74,7 @@ namespace lightdb {
         }
 
         auto tile_index = 0u;
-        vector<bytestring> stitched(num_segments);
+        std::vector<bytestring> stitched(num_segments);
 
         // Next, insert each segment nal from each tile in the appropriate
         // place in the final vector. If we have 3 tiles with 5 segments each,

@@ -1,7 +1,3 @@
-//
-// Created by sophi on 4/26/2018.
-//
-
 #include "AccessDelimiter.h"
 
 namespace lightdb {

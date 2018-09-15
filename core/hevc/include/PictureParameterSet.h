@@ -2,8 +2,8 @@
 #define LIGHTDB_PICTUREPARAMETERSET_H
 
 #include "Nal.h"
-#include <string>
-#include <vector>
+#include "BitArray.h"
+#include "BitStream.h"
 
 //TODO: Fix that you get direct access to dimensions?
 
@@ -33,7 +33,7 @@ namespace lightdb {
          * @return An array representing the tile dimensions, height first, then width.
          * Note that changing this array changes this header's tile dimensions
          */
-        unsigned int *GetTileDimensions();
+        const unsigned int *GetTileDimensions();
 
         /**
          *

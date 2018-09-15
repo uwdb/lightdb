@@ -116,7 +116,7 @@ namespace lightdb {
              * Skips the entry point offsets in the bit stream if skip is true
              * @param skip Determines whether or not to skip the offsets
              */
-            BitStream &SkipEntryPointOffsets(bool skip);
+            BitStream &SkipEntryPointOffsets(const bool skip);
 
             /**
              * Returns the bit(s) associated with name

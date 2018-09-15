@@ -1,24 +1,8 @@
-//
-// Created by sophi on 4/14/2018.
-//
-
-#include <string>
-#include <vector>
-#include <cassert>
-
 #include "Emulation.h"
 #include "BitStream.h"
 #include "PictureParameterSet.h"
 #include "SequenceParameterSet.h"
 #include "SliceSegmentLayer.h"
-#include "BitArray.h"
-#include "Headers.h"
-
-using std::string;
-using std::vector;
-using std::move;
-using lightdb::utility::BitStream;
-using lightdb::utility::BitArray;
 
 namespace lightdb {
 
@@ -31,7 +15,7 @@ namespace lightdb {
         return address_;
     }
 
-    BitStream& SliceSegmentLayer::GetBitStream() {
+    utility::BitStream& SliceSegmentLayer::GetBitStream() {
         return metadata_;
     }
 
@@ -43,7 +27,7 @@ namespace lightdb {
         // The header is the end of the metadata, so move the portion before that into
         // the header array
         auto header_end = metadata_.GetValue("end");
-        BitArray header_bits(header_end);
+        utility::BitArray header_bits(header_end);
         move(data_.begin(), data_.begin() + header_end, header_bits.begin());
 
         // Convert the header size from bytes to bits, add the offset
@@ -68,15 +52,15 @@ namespace lightdb {
         header_bits.ByteAlign();
         // The new size of the data is the size of the new header plus the size of the data
         // minus the old header size
-        BitArray new_data(header_bits.size() + data_.size() - header_end);
+        utility::BitArray new_data(header_bits.size() + data_.size() - header_end);
         move(header_bits.begin(), header_bits.end(), new_data.begin());
         move(data_.begin() + header_end, data_.end(), new_data.begin() + header_bits.size());
         data_ = new_data;
     }
 
 
-    IDRSliceSegmentLayer::IDRSliceSegmentLayer(const Context &context, const bytestring &data, const Headers &headers) :
-                                               SliceSegmentLayer(context, data, headers) {
+    IDRSliceSegmentLayer::IDRSliceSegmentLayer(const Context &context, const bytestring &data, const Headers &headers)
+            : SliceSegmentLayer(context, data, headers) {
 
         GetBitStream().CollectValue("first_slice_segment_in_pic_flag", 1, true);
         GetBitStream().SkipBits(1);
@@ -93,8 +77,8 @@ namespace lightdb {
         GetBitStream().MarkPosition("end");
     }
 
-    TrailRSliceSegmentLayer:: TrailRSliceSegmentLayer(const Context &context, const bytestring &data, const Headers &headers) :
-                                                      SliceSegmentLayer(context, data, headers) {
+    TrailRSliceSegmentLayer::TrailRSliceSegmentLayer(const Context &context, const bytestring &data, const Headers &headers)
+            : SliceSegmentLayer(context, data, headers) {
 
         GetBitStream().CollectValue("first_slice_segment_in_pic_flag", 1, true);
         GetBitStream().SkipExponentialGolomb();

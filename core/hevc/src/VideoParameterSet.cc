@@ -1,17 +1,5 @@
-//
-// Created by sophi on 4/17/2018.
-//
-
-#include <iostream>
-#include <string>
-#include <cassert>
 #include "Nal.h"
 #include "VideoParameterSet.h"
-#include "Profile.h"
-#include "Emulation.h"
-
-using lightdb::utility::BitArray;
-using std::copy;
 
 namespace lightdb {
 

@@ -15,11 +15,11 @@ namespace lightdb {
         video_dimensions_[1] = video_dimensions[1] * tile_dimensions[1];
     }
 
-    unsigned int* Context::GetTileDimensions() {
+    const unsigned int* Context::GetTileDimensions() {
         return tile_dimensions_;
     }
 
-    unsigned int* Context::GetVideoDimensions() {
+    const unsigned int* Context::GetVideoDimensions() {
         return video_dimensions_;
     }
 

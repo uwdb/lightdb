@@ -1,15 +1,6 @@
-//
-// Created by sophi on 4/13/2018.
-//
-
-#include <vector>
-#include <iostream>
-#include <map>
-#include <cassert>
 #include "BitStream.h"
-#include "BitArray.h"
 #include "Golombs.h"
-
+#include <cassert>
 
 namespace lightdb {
     namespace utility {
@@ -93,7 +84,7 @@ namespace lightdb {
             return *this;
         }
 
-        BitStream &BitStream::SkipEntryPointOffsets(bool skip) {
+        BitStream &BitStream::SkipEntryPointOffsets(const bool skip) {
             if (skip) {
                 auto num_entry_point_offsets = GetExponentialGolomb();
                 if (num_entry_point_offsets) {
@@ -125,9 +116,8 @@ namespace lightdb {
             // % 8 to make it 0
             auto value = NextBits(static_cast<size_t>((8 - std::distance(first_index_, index_) % 8) % 8));
             SkipBits(value);
-            if (check) {
-                assert (value == expected);
-            }
+
+            assert (!check || value == expected);
         }
     }
 }
