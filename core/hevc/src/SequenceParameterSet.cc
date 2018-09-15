@@ -76,7 +76,7 @@ namespace lightdb {
         return log2_max_pic_order_cnt_lsb_;
     }
 
-    void SequenceParameterSet::SetDimensions(const int *dimensions) {
+    void SequenceParameterSet::SetDimensions(const unsigned int *dimensions) {
         assert(dimensions[0] > 0 && dimensions[1] > 0);
 
         // The dimensions are width first, then height, so we must reverse the

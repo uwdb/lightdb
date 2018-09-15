@@ -33,7 +33,7 @@ namespace lightdb {
          * @param dimensions A length two array, the first element being the height and the second
          * being the width
          */
-        void SetDimensions(const int *dimensions);
+        void SetDimensions(const unsigned int *dimensions);
 
         /**
          *

@@ -17,22 +17,22 @@ namespace lightdb {
          * @param video_dimensions  The video dimensions, first element being the height and the second
          * the width
          */
-        Context(const int *tile_dimensions, const int *video_dimensions);
+        Context(const unsigned int *tile_dimensions, const unsigned int *video_dimensions);
         /**
          *
          * @return The tile dimensions. Note that this gives the user the ability to change the dimensions
          */
-        int* GetTileDimensions();
+        unsigned int* GetTileDimensions();
         /**
          *
          * @return The video dimensions. Note that this gives the user the ability to change the dimensions
          */
-        int* GetVideoDimensions();
+        unsigned int* GetVideoDimensions();
 
     private:
 
-        int tile_dimensions_[2];
-        int video_dimensions_[2];
+        unsigned int tile_dimensions_[2];
+        unsigned int video_dimensions_[2];
 
     };
 

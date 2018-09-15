@@ -7,7 +7,7 @@
 namespace lightdb {
 
 
-    Context::Context(const int *tile_dimensions, const int *video_dimensions) {
+    Context::Context(const unsigned int *tile_dimensions, const unsigned int *video_dimensions) {
         tile_dimensions_[0] = tile_dimensions[0];
         tile_dimensions_[1] = tile_dimensions[1];
 
@@ -15,11 +15,11 @@ namespace lightdb {
         video_dimensions_[1] = video_dimensions[1] * tile_dimensions[1];
     }
 
-    int* Context::GetTileDimensions() {
+    unsigned int* Context::GetTileDimensions() {
         return tile_dimensions_;
     }
 
-    int* Context::GetVideoDimensions() {
+    unsigned int* Context::GetVideoDimensions() {
         return video_dimensions_;
     }
 

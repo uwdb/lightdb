@@ -61,7 +61,7 @@ namespace lightdb {
         return static_cast<bool>(metadata_.GetValue("cabac_init_present_flag"));
     }
 
-    void PictureParameterSet::SetTileDimensions(int *dimensions, bool loop_filter_enabled) {
+    void PictureParameterSet::SetTileDimensions(const unsigned int *dimensions, const bool loop_filter_enabled) {
         if (dimensions[0] == tile_dimensions_[0] && dimensions[1] == tile_dimensions_[1]) {
             return;
         }
@@ -96,7 +96,7 @@ namespace lightdb {
         tile_dimensions_[1] = dimensions[1];
     }
 
-    int *PictureParameterSet::GetTileDimensions() {
+    unsigned int *PictureParameterSet::GetTileDimensions() {
         return tile_dimensions_;
     }
 }

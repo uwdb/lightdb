@@ -16,7 +16,7 @@ using lightdb::Stitcher;
 int main(int argc, char *argv[]) {
     auto num_tiles = std::stoul(argv[1]);
     vector<bytestring> tiles(num_tiles);
-    for (int i = 0; i < num_tiles; i++) {
+    for (auto i = 0ul; i < num_tiles; i++) {
         std::ifstream istrm;
         istrm.open(argv[i + 2]);
         std::stringstream buffer;
@@ -25,12 +25,12 @@ int main(int argc, char *argv[]) {
         tiles[i] = vector<char>(tile.begin(), tile.end());
     }
 
-    int tile_dimensions[2];
-    int video_dimensions[2];
-    tile_dimensions[0] = std::stoi(argv[num_tiles + 2]);
-    tile_dimensions[1] = std::stoi(argv[num_tiles + 3]);
-    video_dimensions[0] = std::stoi(argv[num_tiles + 4]);
-    video_dimensions[1] = std::stoi(argv[num_tiles + 5]);
+    unsigned int tile_dimensions[2];
+    unsigned int video_dimensions[2];
+    tile_dimensions[0] = static_cast<unsigned int>(std::stoul(argv[num_tiles + 2]));
+    tile_dimensions[1] = static_cast<unsigned int>(std::stoul(argv[num_tiles + 3]));
+    video_dimensions[0] = static_cast<unsigned int>(std::stoul(argv[num_tiles + 4]));
+    video_dimensions[1] = static_cast<unsigned int>(std::stoul(argv[num_tiles + 5]));
 
     Context context(tile_dimensions, video_dimensions);
     Stitcher stitcher(context, tiles);

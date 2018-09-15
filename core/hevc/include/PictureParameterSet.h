@@ -32,14 +32,14 @@ namespace lightdb {
          * being the width (num of columns)
          * @param loop_filter_enabled Set to false unless otherwise specified
          */
-        void SetTileDimensions(int *dimensions, bool loop_filter_enabled = false);
+        void SetTileDimensions(const unsigned int *dimensions, const bool loop_filter_enabled = false);
 
         /**
          *
          * @return An array representing the tile dimensions, height first, then width.
          * Note that changing this array changes this header's tile dimensions
          */
-        int *GetTileDimensions();
+        unsigned int *GetTileDimensions();
 
         /**
          *
@@ -63,7 +63,7 @@ namespace lightdb {
     private:
         utility::BitArray data_;
         utility::BitStream metadata_;
-        int tile_dimensions_[2];
+        unsigned int tile_dimensions_[2];
     };
 }
 
