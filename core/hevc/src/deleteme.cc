@@ -14,7 +14,7 @@ using lightdb::Context;
 using lightdb::Stitcher;
 
 int main(int argc, char *argv[]) {
-    int num_tiles = std::stoi(argv[1]);
+    auto num_tiles = std::stoul(argv[1]);
     vector<bytestring> tiles(num_tiles);
     for (int i = 0; i < num_tiles; i++) {
         std::ifstream istrm;
