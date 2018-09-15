@@ -1,7 +1,3 @@
-//
-// Created by sophi on 4/11/2018.
-//
-
 #ifndef LIGHTDB_BITSTREAM_H
 #define LIGHTDB_BITSTREAM_H
 

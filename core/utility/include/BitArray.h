@@ -1,12 +1,7 @@
-//
-// Created by sophi on 4/15/2018.
-//
-
 #ifndef LIGHTDB_BITARRAY_H
 #define LIGHTDB_BITARRAY_H
 
 #include <vector>
-#include <string>
 
 namespace lightdb {
     namespace utility {
@@ -52,14 +47,28 @@ namespace lightdb {
             void Insert(const size_t location, size_t value, const size_t value_size);
 
             /**
-             * Pads data with bits until it ends at a byte offset
+             * Pads data with bits until it ends at a byte offset. Then, removes
+             * all zero bytes from the end of the array
              * @param data The data to be padded
              */
             void ByteAlign();
 
+            /**
+             * Pads data with bits until it ends at a byte offset
+             * @param data The data to be padded
+             */
+            void ByteAlignWithoutRemoval();
+
 
         };
 
+        /**
+         * Checks that index is within [start end]. Throws an index out of bounds exception
+         * if not
+         * @param index The index to be checked
+         * @param start The first valid value of the index, inclusive
+         * @param end, The last valid value of the index,  inclusive
+         */
         void CheckBounds(const size_t index, const size_t start, const size_t end);
     }
 }
