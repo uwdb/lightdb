@@ -35,7 +35,7 @@ namespace lightdb {
         return metadata_;
     }
 
-    void SliceSegmentLayer::SetAddress(size_t address) {
+    void SliceSegmentLayer::SetAddress(const size_t address) {
         address_ = address;
         // Make sure it's byte aligned
         assert (metadata_.GetValue("end") % 8 == 0);

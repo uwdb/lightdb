@@ -1,20 +1,10 @@
-//
-// Created by sophi on 4/10/2018.
-//
-
 #ifndef LIGHTDB_HEADERS_H
 #define LIGHTDB_HEADERS_H
-
-#include<vector>
-#include<string>
-#include <memory>
 
 #include "Context.h"
 #include "SequenceParameterSet.h"
 #include "VideoParameterSet.h"
 #include "PictureParameterSet.h"
-
-using bytestring = std::vector<char>;
 
 namespace lightdb {
 

@@ -1,11 +1,5 @@
-//
-// Created by sophi on 4/22/2018.
-//
-
 #ifndef LIGHTDB_EMULATION_H
 #define LIGHTDB_EMULATION_H
-
-#include <vector>
 
 #include "BitArray.h"
 #include "Nal.h"

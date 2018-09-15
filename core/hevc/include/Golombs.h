@@ -1,7 +1,3 @@
-//
-// Created by sophi on 5/12/2018.
-//
-
 #ifndef LIGHTDB_GOLOMBS_H
 #define LIGHTDB_GOLOMBS_H
 

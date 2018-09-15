@@ -23,17 +23,17 @@ namespace lightdb {
         return bytes;
     }
 
-    int VideoParameterSet::VPSMaxSubLayersMinus1() const {
+    unsigned int VideoParameterSet::VPSMaxSubLayersMinus1() const {
         return data_[GetHeaderSize() + kVPSMaxSubLayersMinus1Offset] & kVPSMaxSubLayersMinus1Mask;
     }
 
-    void VideoParameterSet::SetGeneralLevelIDC(int value) {
+    void VideoParameterSet::SetGeneralLevelIDC(const unsigned char value) {
         // Profile size is in bits, so must be converted to bytes
-        data_[kSizeBeforeProfile + profile_size_ / 8 - kGeneralLevelIDCSize] = static_cast<unsigned char>(value);
+        data_[kSizeBeforeProfile + profile_size_ / 8 - kGeneralLevelIDCSize] = value;
     }
 
-    int VideoParameterSet::GetGeneralLevelIDC() const {
-        return data_[kSizeBeforeProfile + profile_size_ / 8 - kGeneralLevelIDCSize];
+    unsigned int VideoParameterSet::GetGeneralLevelIDC() const {
+        return static_cast<unsigned char>(data_[kSizeBeforeProfile + profile_size_ / 8 - kGeneralLevelIDCSize]);
     }
 }
 

@@ -1,87 +1,83 @@
-//
-// Created by sophi on 4/14/2018.
-//
-
 #ifndef LIGHTDB_NALTYPE_H
 #define LIGHTDB_NALTYPE_H
 
 namespace lightdb {
 
-    int NalUnitCodedSliceTrailN = 0;
-    int NalUnitCodedSliceTrailR = 1;
+    constexpr unsigned int NalUnitCodedSliceTrailN = 0;
+    constexpr unsigned int NalUnitCodedSliceTrailR = 1;
 
-    int NalUnitCodedSliceTSAN = 2;
-    int NalUnitCodedSliceTSAR = 3;
+    constexpr unsigned int NalUnitCodedSliceTSAN = 2;
+    constexpr unsigned int NalUnitCodedSliceTSAR = 3;
 
-    int NalUnitCodedSliceSTSAN = 4;
-    int NalUnitCodedSliceSTSAR = 5;
+    constexpr unsigned int NalUnitCodedSliceSTSAN = 4;
+    constexpr unsigned int NalUnitCodedSliceSTSAR = 5;
 
-    int NalUnitCodedSliceRADLN = 6;
-    int NalUnitCodedSliceRADLR = 7;
+    constexpr unsigned int NalUnitCodedSliceRADLN = 6;
+    constexpr unsigned int NalUnitCodedSliceRADLR = 7;
 
-    int NalUnitCodedSliceRASLN = 8;
-    int NalUnitCodedSliceRASLR = 9;
+    constexpr unsigned int NalUnitCodedSliceRASLN = 8;
+    constexpr unsigned int NalUnitCodedSliceRASLR = 9;
 
-    int NalUnitReservedVCLN10 = 10;
-    int NalUnitReservedVCLN11 = 11;
-    int NalUnitReservedVCLN12 = 12;
-    int NalUnitReservedVCLN13 = 13;
-    int NalUnitReservedVCLN14 = 14;
-    int NalUnitReservedVCLN15 = 15;
+    constexpr unsigned int NalUnitReservedVCLN10 = 10;
+    constexpr unsigned int NalUnitReservedVCLN11 = 11;
+    constexpr unsigned int NalUnitReservedVCLN12 = 12;
+    constexpr unsigned int NalUnitReservedVCLN13 = 13;
+    constexpr unsigned int NalUnitReservedVCLN14 = 14;
+    constexpr unsigned int NalUnitReservedVCLN15 = 15;
 
-    int NalUnitCodedSliceBLAWLP = 16;
-    int NalUnitCodedSliceBLAWRADL = 17;
-    int NalUnitCodedSliceBLANLP = 18;
-    int NalUnitCodedSliceIDRWRADL = 19;
-    int NalUnitCodedSliceIDRNLP = 20;
-    int NalUnitCodedSliceCRA = 21;
-    int NalUnitReservedIRAPVCL22 = 22;
-    int NalUnitReservedIRAPVCL23 = 23;
+    constexpr unsigned int NalUnitCodedSliceBLAWLP = 16;
+    constexpr unsigned int NalUnitCodedSliceBLAWRADL = 17;
+    constexpr unsigned int NalUnitCodedSliceBLANLP = 18;
+    constexpr unsigned int NalUnitCodedSliceIDRWRADL = 19;
+    constexpr unsigned int NalUnitCodedSliceIDRNLP = 20;
+    constexpr unsigned int NalUnitCodedSliceCRA = 21;
+    constexpr unsigned int NalUnitReservedIRAPVCL22 = 22;
+    constexpr unsigned int NalUnitReservedIRAPVCL23 = 23;
 
-    int NalUnitReservedVCL24 = 24;
-    int NalUnitReservedVCL25 = 25;
-    int NalUnitReservedVCL26 = 26;
-    int NalUnitReservedVCL27 = 27;
-    int NalUnitReservedVCL28 = 28;
-    int NalUnitReservedVCL29 = 29;
-    int NalUnitReservedVCL30 = 30;
-    int NalUnitReservedVCL31 = 31;
+    constexpr unsigned int NalUnitReservedVCL24 = 24;
+    constexpr unsigned int NalUnitReservedVCL25 = 25;
+    constexpr unsigned int NalUnitReservedVCL26 = 26;
+    constexpr unsigned int NalUnitReservedVCL27 = 27;
+    constexpr unsigned int NalUnitReservedVCL28 = 28;
+    constexpr unsigned int NalUnitReservedVCL29 = 29;
+    constexpr unsigned int NalUnitReservedVCL30 = 30;
+    constexpr unsigned int NalUnitReservedVCL31 = 31;
 
-    int NalUnitVPS = 32;
-    int NalUnitSPS = 33;
-    int NalUnitPPS = 34;
-    int NalUnitAccessUnitDelimiter = 35;
-    int NalUnitEOS = 36;
-    int NalUnitEOB = 37;
-    int NalUnitFillerData = 38;
-    int NalUnitPrefixSEI = 39;
-    int NalUnitSufficSEI = 40;
+    constexpr unsigned int NalUnitVPS = 32;
+    constexpr unsigned int NalUnitSPS = 33;
+    constexpr unsigned int NalUnitPPS = 34;
+    constexpr unsigned int NalUnitAccessUnitDelimiter = 35;
+    constexpr unsigned int NalUnitEOS = 36;
+    constexpr unsigned int NalUnitEOB = 37;
+    constexpr unsigned int NalUnitFillerData = 38;
+    constexpr unsigned int NalUnitPrefixSEI = 39;
+    constexpr unsigned int NalUnitSufficSEI = 40;
 
-    int NalUnitReservedNVCL41 = 41;
-    int NalUnitReservedNVCL42 = 42;
-    int NalUnitReservedNVCL43 = 43;
-    int NalUnitReservedNVCL44 = 44;
-    int NalUnitReservedNVCL45 = 45;
-    int NalUnitReservedNVCL46 = 46;
-    int NalUnitReservedNVCL47 = 47;
+    constexpr unsigned int NalUnitReservedNVCL41 = 41;
+    constexpr unsigned int NalUnitReservedNVCL42 = 42;
+    constexpr unsigned int NalUnitReservedNVCL43 = 43;
+    constexpr unsigned int NalUnitReservedNVCL44 = 44;
+    constexpr unsigned int NalUnitReservedNVCL45 = 45;
+    constexpr unsigned int NalUnitReservedNVCL46 = 46;
+    constexpr unsigned int NalUnitReservedNVCL47 = 47;
 
-    int NalUnitUnspecified48 = 48;
-    int NalUnitUnspecified49 = 49;
-    int NalUnitUnspecified50 = 50;
-    int NalUnitUnspecified51 = 51;
-    int NalUnitUnspecified52 = 52;
-    int NalUnitUnspecified53 = 53;
-    int NalUnitUnspecified54 = 54;
-    int NalUnitUnspecified55 = 55;
-    int NalUnitUnspecified56 = 56;
-    int NalUnitUnspecified57 = 57;
-    int NalUnitUnspecified58 = 58;
-    int NalUnitUnspecified59 = 59;
-    int NalUnitUnspecified60 = 60;
-    int NalUnitUnspecified61 = 61;
-    int NalUnitUnspecified62 = 62;
-    int NalUnitUnspecified63 = 63;
-    int NalUnitInvalid = 64;
+    constexpr unsigned int NalUnitUnspecified48 = 48;
+    constexpr unsigned int NalUnitUnspecified49 = 49;
+    constexpr unsigned int NalUnitUnspecified50 = 50;
+    constexpr unsigned int NalUnitUnspecified51 = 51;
+    constexpr unsigned int NalUnitUnspecified52 = 52;
+    constexpr unsigned int NalUnitUnspecified53 = 53;
+    constexpr unsigned int NalUnitUnspecified54 = 54;
+    constexpr unsigned int NalUnitUnspecified55 = 55;
+    constexpr unsigned int NalUnitUnspecified56 = 56;
+    constexpr unsigned int NalUnitUnspecified57 = 57;
+    constexpr unsigned int NalUnitUnspecified58 = 58;
+    constexpr unsigned int NalUnitUnspecified59 = 59;
+    constexpr unsigned int NalUnitUnspecified60 = 60;
+    constexpr unsigned int NalUnitUnspecified61 = 61;
+    constexpr unsigned int NalUnitUnspecified62 = 62;
+    constexpr unsigned int NalUnitUnspecified63 = 63;
+    constexpr unsigned int NalUnitInvalid = 64;
     
 }
 

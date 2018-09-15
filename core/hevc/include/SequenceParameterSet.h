@@ -1,16 +1,11 @@
-//
-// Created by sophi on 4/17/2018.
-//
-
 #ifndef LIGHTDB_SEQUENCEPARAMETERSET_H
 #define LIGHTDB_SEQUENCEPARAMETERSET_H
 
-#include <vector>
-#include <string>
 #include "Nal.h"
 #include "BitStream.h"
 #include "BitArray.h"
 #include "Context.h"
+#include <vector>
 
 
 namespace lightdb {
@@ -40,13 +35,13 @@ namespace lightdb {
          * @return An array representing the tile dimensions, height first, then width.
          * Note that changing this array changes this header's tile dimensions
          */
-        unsigned long * GetTileDimensions();
+        const unsigned long * GetTileDimensions() const;
 
         /**
          * Sets the general level IDC value in the byte stream to be value, converting value to a byte
          * @param value The new general level IDC value
          */
-        void SetGeneralLevelIDC(const int value);
+        void SetGeneralLevelIDC(const unsigned int value);
 
         /**
          *
@@ -69,7 +64,7 @@ namespace lightdb {
         /**
          * @return A vector containing the tile addresses
          */
-         std::vector<size_t> GetAddresses() const;
+         const std::vector<size_t>& GetAddresses() const;
 
     private:
 

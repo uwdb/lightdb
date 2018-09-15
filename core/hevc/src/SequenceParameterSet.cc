@@ -104,7 +104,7 @@ namespace lightdb {
         CalculateSizes();
     }
 
-    void SequenceParameterSet::SetGeneralLevelIDC(int value) {
+    void SequenceParameterSet::SetGeneralLevelIDC(const unsigned int value) {
         auto profile_size = GetSizeInBits(metadata_.GetValue("sps_max_sub_layer_minus1"));
         assert (profile_size % 8 == 0);
         data_.SetByte(GetHeaderSize() + kSizeBeforeProfile + profile_size / 8 - kGeneralLevelIDCSize, static_cast<unsigned char>(value));
@@ -114,11 +114,11 @@ namespace lightdb {
         return address_length_in_bits_;
     }
 
-    unsigned long * SequenceParameterSet::GetTileDimensions() {
+    const unsigned long * SequenceParameterSet::GetTileDimensions() const {
         return dimensions_;
     }
 
-    vector<size_t> SequenceParameterSet::GetAddresses() const {
+    const vector<size_t>& SequenceParameterSet::GetAddresses() const {
         return addresses_;
     }
 

@@ -1,16 +1,8 @@
-//
-// Created by sophi on 4/11/2018.
-//
-
 #ifndef LIGHTDB_BITSTREAM_H
 #define LIGHTDB_BITSTREAM_H
 
-#include <iostream>
-#include <string>
 #include <unordered_map>
 #include <vector>
-#include <cstddef>
-#include <iterator>
 
 
 namespace lightdb {

@@ -1,12 +1,6 @@
-//
-// Created by sophi on 4/11/2018.
-//
-
 #ifndef LIGHTDB_SLICESEGMENTLAYER_H
 #define LIGHTDB_SLICESEGMENTLAYER_H
 
-#include <vector>
-#include <string>
 #include "Nal.h"
 #include "Headers.h"
 #include "BitStream.h"
@@ -25,18 +19,20 @@ namespace lightdb {
         * @param data The byte stream
         * @param headers The headers associated with this segment
         */
-        SliceSegmentLayer(const Context &context, const bytestring &data, const Headers &headers) : Nal(context, data),
-                                                                                                     data_(RemoveEmulationPrevention(data, GetHeaderSize(), kMaxHeaderLength)),
-                                                                                                     headers_(headers),
-                                                                                                     metadata_(data_.begin(), data_.begin() + GetHeaderSizeInBits()){
-        }
+        SliceSegmentLayer(const Context &context, const bytestring &data, Headers headers)
+                : Nal(context, data),
+                  data_(RemoveEmulationPrevention(data, GetHeaderSize(), kMaxHeaderLength)),
+                  headers_(std::move(headers)),
+                  metadata_(data_.begin(), data_.begin() + GetHeaderSizeInBits()),
+                  address_(0)
+        { }
 
         /**
         * Sets the address of this segment to be address. Should only be called once -
         * if the address is set, should not be reset
         * @param address The new address of this segment
         */
-        void SetAddress(size_t address);
+        void SetAddress(const size_t address);
 
         /**
         *
@@ -52,8 +48,6 @@ namespace lightdb {
 
         SliceSegmentLayer(const SliceSegmentLayer& other) = default;
         SliceSegmentLayer(SliceSegmentLayer&& other) = default;
-        SliceSegmentLayer& operator= (const SliceSegmentLayer& other) = default;
-        SliceSegmentLayer& operator= (SliceSegmentLayer&& other) = default;
         ~SliceSegmentLayer() = default;
 
     protected:

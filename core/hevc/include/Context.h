@@ -1,7 +1,3 @@
-//
-// Created by sophi on 5/3/2018.
-//
-
 #ifndef LIGHTDB_CONTEXT_H
 #define LIGHTDB_CONTEXT_H
 

@@ -1,15 +1,9 @@
-//
-// Created by sophi on 4/11/2018.
-//
-
 #ifndef LIGHTDB_PICTUREPARAMETERSET_H
 #define LIGHTDB_PICTUREPARAMETERSET_H
 
+#include "Nal.h"
 #include <string>
 #include <vector>
-
-#include "Nal.h"
-#include "BitStream.h"
 
 //TODO: Fix that you get direct access to dimensions?
 

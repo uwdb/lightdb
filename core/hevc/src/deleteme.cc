@@ -1,12 +1,7 @@
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <streambuf>
-#include <sstream>
-#include <gtest/gtest.h>
-
 #include "Context.h"
 #include "Stitcher.h"
+#include "Encoding.h"
+#include <gtest/gtest.h>
 
 using std::string;
 using std::vector;
@@ -15,7 +10,7 @@ using lightdb::Stitcher;
 
 int main(int argc, char *argv[]) {
     auto num_tiles = std::stoul(argv[1]);
-    vector<bytestring> tiles(num_tiles);
+    vector<lightdb::bytestring> tiles(num_tiles);
     for (auto i = 0ul; i < num_tiles; i++) {
         std::ifstream istrm;
         istrm.open(argv[i + 2]);
@@ -34,7 +29,7 @@ int main(int argc, char *argv[]) {
 
     Context context(tile_dimensions, video_dimensions);
     Stitcher stitcher(context, tiles);
-    bytestring stitched = stitcher.GetStitchedSegments();
+    lightdb::bytestring stitched = stitcher.GetStitchedSegments();
 
     std::ofstream ostrm;
     ostrm.open(argv[num_tiles + 6]);

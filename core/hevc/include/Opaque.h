@@ -1,9 +1,6 @@
-
-
 #ifndef LIGHTDB_OPAQUE_H
 #define LIGHTDB_OPAQUE_H
 
-#include <string>
 #include "Nal.h"
 
 namespace lightdb {
@@ -18,7 +15,6 @@ namespace lightdb {
        * @return A string wtih the bytes of this Nal
        */
       bytestring GetBytes() const override;
-
   };
 
 }

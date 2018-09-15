@@ -1,19 +1,8 @@
-//
-// Created by sophi on 4/9/2018.
-//
-
 #ifndef LIGHTDB_NAL_H
 #define LIGHTDB_NAL_H
 
-#include <cstddef>
-#include <string>
-#include <vector>
-#include <climits>
-#include <memory>
-
 #include "Context.h"
-
-using bytestring = std::vector<char>;
+#include "Encoding.h"
 
 namespace lightdb {
 
@@ -28,7 +17,7 @@ namespace lightdb {
          * @param context The context of the Nal
          * @param data The bytes representing the Nal
          */
-        Nal(const Context &context, const bytestring &data);
+        Nal(const Context &context, const lightdb::bytestring &data);
 
         /**
          *
@@ -68,14 +57,14 @@ namespace lightdb {
 
      private:
 
-        int ForbiddenZero() const;
+        unsigned int ForbiddenZero() const;
 
-        static const int kForbiddenZeroIndex = 0;
-        static const int kForbiddenZeroMask = 0x80;
+        static constexpr const unsigned int kForbiddenZeroIndex = 0u;
+        static constexpr const unsigned int kForbiddenZeroMask = 0x80u;
 
         Context context_;
         bytestring byte_data_;
-        int type_;
+        unsigned int type_;
         bool is_header_;
     };
 
@@ -96,7 +85,7 @@ size_t GetHeaderSizeInBits();
  * @param data The byte stream
  * @return The type of the byte stream as defined in NalType.h
  */
-int PeekType(const bytestring &data);
+unsigned int PeekType(const bytestring &data);
 
 /**
  *
@@ -137,8 +126,8 @@ std::shared_ptr<Nal> Load(const Context &context, const bytestring &data);
  */
 SliceSegmentLayer Load(const Context &context, const bytestring &data, const Headers &headers);
 
-static const int kNalHeaderSize = 5;
-static const int kNalMarkerSize = 3;
+static constexpr unsigned int kNalHeaderSize = 5u;
+static constexpr unsigned int kNalMarkerSize = 3u;
 }
 
 #endif //LIGHTDB_NAL_H

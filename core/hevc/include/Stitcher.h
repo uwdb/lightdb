@@ -1,14 +1,9 @@
-//
-// Created by sophi on 4/9/2018.
-//
-
 #ifndef LIGHTDB_STITCHER_H
 #define LIGHTDB_STITCHER_H
 
-#include <string>
-#include <vector>
 #include "Headers.h"
 #include "Context.h"
+#include <vector>
 
 namespace lightdb {
     class Stitcher {
@@ -21,8 +16,9 @@ namespace lightdb {
          * @param data A vector with each element being the bytestring of a tile. All data is moved from this vector, rendering it useless post
          * processing
          */
-        Stitcher(const Context &context, std::vector<bytestring> &data) : tiles_(data), context_(context), headers_(context_, GetNals().front())  {
-        }
+        Stitcher(const Context &context, std::vector<bytestring> &data)
+                : tiles_(data), context_(context), headers_(context_, GetNals().front())
+        { }
 
         /**
          *

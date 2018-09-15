@@ -6,6 +6,7 @@ using lightdb::utility::BitArray;
 using lightdb::RemoveEmulationPrevention;
 using lightdb::AddEmulationPreventionAndMarker;
 using lightdb::GetNalMarker;
+using lightdb::bytestring;
 
 class EmulationPreventionTestFixture : public testing::Test {
     public:

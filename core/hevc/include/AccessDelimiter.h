@@ -1,13 +1,7 @@
-//
-// Created by sophi on 4/26/2018.
-//
-
 #ifndef LIGHTDB_ACCESSDELIMITER_H
 #define LIGHTDB_ACCESSDELIMITER_H
 
-#include <string>
 #include "Nal.h"
-
 
 namespace lightdb {
 

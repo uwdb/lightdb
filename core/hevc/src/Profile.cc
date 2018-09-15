@@ -1,13 +1,9 @@
-//
-// Created by sophi on 4/17/2018.
-//
-
 #include "Profile.h"
 #include <cassert>
 
 namespace lightdb {
 
-    unsigned long GetSizeInBits(unsigned long max_num_sub_layers_minus1) {
+    unsigned long GetSizeInBits(const unsigned long max_num_sub_layers_minus1) {
         auto sub_layer_size = 2 * max_num_sub_layers_minus1;
         auto reserved_zero_2bits_size = 0;
         if (max_num_sub_layers_minus1 > 0) {
