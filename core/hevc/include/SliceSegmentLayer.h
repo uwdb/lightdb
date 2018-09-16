@@ -32,35 +32,41 @@ namespace lightdb {
         * if the address is set, should not be reset
         * @param address The new address of this segment
         */
-        void SetAddress(const size_t address);
+        void SetAddress(size_t address);
 
         /**
         *
         * @return This segment's address
         */
-        size_t GetAddress() const;
+        inline size_t GetAddress() const {
+            return address_;
+        }
 
         /**
         *
         * @return A string with the bytes of this Nal
         */
-        bytestring GetBytes() const override;
+        inline bytestring GetBytes() const override {
+            return AddEmulationPreventionAndMarker(data_, GetHeaderSize(), kMaxHeaderLength);
+        }
 
         SliceSegmentLayer(const SliceSegmentLayer& other) = default;
         SliceSegmentLayer(SliceSegmentLayer&& other) = default;
         ~SliceSegmentLayer() = default;
 
     protected:
-        utility::BitStream& GetBitStream();
+        inline utility::BitStream& GetBitStream() {
+            return metadata_;
+        }
 
     private:
         utility::BitArray data_;
-        Headers headers_;
+        const Headers headers_;
         utility::BitStream metadata_;
         size_t address_;
 
-        static const int kFirstSliceFlagOffset = 0;
-        static const int kMaxHeaderLength = 24;
+        static constexpr unsigned int kFirstSliceFlagOffset = 0;
+        static constexpr unsigned int kMaxHeaderLength = 24;
     };
 
     class IDRSliceSegmentLayer : public SliceSegmentLayer {

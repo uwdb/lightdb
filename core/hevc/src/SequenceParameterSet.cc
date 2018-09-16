@@ -1,8 +1,6 @@
 #include "Nal.h"
 #include "Emulation.h"
 #include "SequenceParameterSet.h"
-#include "Profile.h"
-#include "Golombs.h"
 
 namespace lightdb {
 
@@ -51,15 +49,7 @@ namespace lightdb {
         CalculateSizes();
     }
 
-    bytestring SequenceParameterSet::GetBytes() const {
-        return AddEmulationPreventionAndMarker(data_, GetHeaderSize(), data_.size() / 8);
-    }
-
-    unsigned long SequenceParameterSet::GetMaxPicOrder() const {
-        return log2_max_pic_order_cnt_lsb_;
-    }
-
-    void SequenceParameterSet::SetDimensions(const std::pair<unsigned int, unsigned int> dimensions) {
+    void SequenceParameterSet::SetDimensions(const std::pair<unsigned int, unsigned int> &dimensions) {
         assert(dimensions.first > 0 && dimensions.second > 0);
 
         // The dimensions are width first, then height, so we must reverse the
@@ -85,24 +75,6 @@ namespace lightdb {
         dimensions_.first = static_cast<unsigned long>(dimensions.first);
         dimensions_.second = static_cast<unsigned long>(dimensions.second);
         CalculateSizes();
-    }
-
-    void SequenceParameterSet::SetGeneralLevelIDC(const unsigned int value) {
-        auto profile_size = GetSizeInBits(metadata_.GetValue("sps_max_sub_layer_minus1"));
-        assert (profile_size % 8 == 0);
-        data_.SetByte(GetHeaderSize() + kSizeBeforeProfile + profile_size / 8 - kGeneralLevelIDCSize, static_cast<unsigned char>(value));
-    }
-
-    size_t SequenceParameterSet::GetAddressLength() const {
-        return address_length_in_bits_;
-    }
-
-    const std::pair<unsigned long, unsigned long> SequenceParameterSet::GetTileDimensions() const {
-        return dimensions_;
-    }
-
-    const std::vector<size_t>& SequenceParameterSet::GetAddresses() const {
-        return addresses_;
     }
 
     void SequenceParameterSet::CalculateSizes() {

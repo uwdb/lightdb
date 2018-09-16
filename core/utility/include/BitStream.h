@@ -207,9 +207,7 @@ namespace lightdb {
             }
 
             BitStream(const BitStream& other) = default;
-            BitStream(BitStream&& other) = default;
-            //BitStream& operator= (const BitStream& other) = default;
-            //BitStream& operator= (BitStream&& other) = default;
+            BitStream(BitStream&& other) noexcept = default;
             ~BitStream() = default;
 
         private:

@@ -5,6 +5,8 @@
 #include "BitStream.h"
 #include "BitArray.h"
 #include "Context.h"
+#include "Profile.h"
+#include "Emulation.h"
 #include <vector>
 
 
@@ -28,43 +30,57 @@ namespace lightdb {
          * @param dimensions A length two array, the first element being the height and the second
          * being the width
          */
-        void SetDimensions(const std::pair<unsigned int, unsigned int> dimensions);
+        void SetDimensions(const std::pair<unsigned int, unsigned int> &dimensions);
 
         /**
          *
          * @return An array representing the tile dimensions, height first, then width.
          * Note that changing this array changes this header's tile dimensions
          */
-        const std::pair<unsigned long, unsigned long> GetTileDimensions() const;
+        inline const std::pair<unsigned long, unsigned long>& GetTileDimensions() const {
+            return dimensions_;
+        }
 
         /**
          * Sets the general level IDC value in the byte stream to be value, converting value to a byte
          * @param value The new general level IDC value
          */
-        void SetGeneralLevelIDC(const unsigned int value);
+        inline void SetGeneralLevelIDC(const unsigned int value) {
+            auto profile_size = GetSizeInBits(metadata_.GetValue("sps_max_sub_layer_minus1"));
+            assert (profile_size % 8 == 0);
+            data_.SetByte(GetHeaderSize() + kSizeBeforeProfile + profile_size / 8 - kGeneralLevelIDCSize, static_cast<unsigned char>(value));
+        }
 
         /**
          *
          * @return The address length in bits
          */
-        size_t GetAddressLength() const;
+        inline size_t GetAddressLength() const {
+            return address_length_in_bits_;
+        }
 
         /**
          *
          * @return The log2_max_pic_order_cnt_lsb_ for this Nal
          */
-        unsigned long GetMaxPicOrder() const;
+        inline unsigned long GetMaxPicOrder() const {
+            return log2_max_pic_order_cnt_lsb_;
+        }
 
         /**
          *
          * @return A string with the bytes of this Nal
          */
-        bytestring GetBytes() const override;
+        inline bytestring GetBytes() const override {
+            return AddEmulationPreventionAndMarker(data_, GetHeaderSize(), data_.size() / 8);
+        }
 
         /**
          * @return A vector containing the tile addresses
          */
-         const std::vector<size_t>& GetAddresses() const;
+         inline const std::vector<size_t>& GetAddresses() const {
+            return addresses_;
+        }
 
     private:
 
@@ -77,9 +93,9 @@ namespace lightdb {
         std::pair<unsigned long, unsigned long> dimensions_;
         unsigned long log2_max_pic_order_cnt_lsb_;
 
-        static const int kSizeBeforeProfile = 1;
-        static const int kGeneralLevelIDCSize = 1;
-        static const int kNumDimensions = 2;
+        static constexpr unsigned int kSizeBeforeProfile = 1;
+        static constexpr unsigned int kGeneralLevelIDCSize = 1;
+        static constexpr unsigned int kNumDimensions = 2;
 
     };
 }

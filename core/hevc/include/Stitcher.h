@@ -16,8 +16,8 @@ namespace lightdb {
          * @param data A vector with each element being the bytestring of a tile. All data is moved from this vector, rendering it useless post
          * processing
          */
-        Stitcher(const Context &context, std::vector<bytestring> &data)
-                : tiles_(data), context_(context), headers_(context_, GetNals().front())
+        Stitcher(Context context, std::vector<bytestring> &data)
+                : tiles_(data), context_(std::move(context)), headers_(context_, GetNals().front())
         { }
 
         /**
@@ -47,12 +47,12 @@ namespace lightdb {
          * @param first Whether or not this is the first tile being processed
          * @return The nals that are segments for this tile
          */
-        std::vector<bytestring> GetSegmentNals(const unsigned long tile_num, unsigned long *num_bytes, unsigned long *num_keyframes, bool first);
+        std::vector<bytestring> GetSegmentNals(unsigned long tile_num, unsigned long *num_bytes, unsigned long *num_keyframes, bool first);
 
-        std::vector<bytestring> tiles_;
+        const std::vector<bytestring> tiles_;
         std::vector<std::vector<bytestring>> tile_nals_;
-        Context context_;
-        Headers headers_;
+        const Context context_;
+        const Headers headers_;
     };
 
 }

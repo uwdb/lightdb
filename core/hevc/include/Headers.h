@@ -20,7 +20,7 @@ namespace lightdb {
          * @param context The context of the nals
          * @param nals The byte streams of the nals
          */
-        Headers(Context &context, std::vector<bytestring> nals);
+        Headers(const Context &context, std::vector<bytestring> nals);
 
         /**
          *
@@ -33,19 +33,25 @@ namespace lightdb {
          *
          * @return The VideoParameterSet header
          */
-        std::shared_ptr<VideoParameterSet> GetVideo() const;
+        inline std::shared_ptr<VideoParameterSet> GetVideo() const {
+            return std::dynamic_pointer_cast<VideoParameterSet>(headers_[video_]);
+        }
 
         /**
          *
          * @return The SequenceParameterSet header
          */
-        std::shared_ptr<SequenceParameterSet> GetSequence() const;
+        inline std::shared_ptr<SequenceParameterSet> GetSequence() const {
+            return std::dynamic_pointer_cast<SequenceParameterSet>(headers_[sequence_]);
+        }
 
         /**
          *
          * @return The PictureParameterSet header
          */
-        std::shared_ptr<PictureParameterSet> GetPicture() const;
+        inline std::shared_ptr<PictureParameterSet> GetPicture() const {
+            return std::dynamic_pointer_cast<PictureParameterSet>(headers_[picture_]);
+        }
 
         static constexpr unsigned int kNumHeaders = 3u;
 

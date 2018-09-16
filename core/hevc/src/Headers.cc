@@ -2,7 +2,7 @@
 
 namespace lightdb {
 
-	Headers::Headers(Context &context, std::vector<bytestring> nals)  {
+	Headers::Headers(const Context &context, std::vector<bytestring> nals)  {
 	    auto i = 0u;
 
 	    // No need to check if it < nals.end() since any well formed stream
@@ -31,17 +31,5 @@ namespace lightdb {
 	    	bytes.insert(bytes.end(), header_bytes.begin(), header_bytes.end());
 	    }
 	    return bytes;
-	}
-
-    std::shared_ptr<PictureParameterSet> Headers::GetPicture() const {
-	    return std::dynamic_pointer_cast<PictureParameterSet>(headers_[picture_]);
-	}
-
-    std::shared_ptr<SequenceParameterSet> Headers::GetSequence() const {
-		return std::dynamic_pointer_cast<SequenceParameterSet>(headers_[sequence_]);
-	}
-
-    std::shared_ptr<VideoParameterSet> Headers::GetVideo() const {
-		return std::dynamic_pointer_cast<VideoParameterSet>(headers_[video_]);
 	}
 }

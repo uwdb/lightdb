@@ -26,21 +26,21 @@ namespace lightdb {
          * @return The tile dimensions. Note that this gives the user the ability to change the dimensions
          */
         // TODO change to using dimensions=std::pair
-        inline const std::pair<unsigned int, unsigned int> GetTileDimensions() {
+        inline const std::pair<unsigned int, unsigned int> GetTileDimensions() const {
             return tile_dimensions_;
         }
         /**
          *
          * @return The video dimensions. Note that this gives the user the ability to change the dimensions
          */
-        inline const std::pair<unsigned int, unsigned int>& GetVideoDimensions() {
+        inline const std::pair<unsigned int, unsigned int>& GetVideoDimensions() const {
             return video_dimensions_;
         }
 
     private:
 
-        std::pair<unsigned int, unsigned int> tile_dimensions_;
-        std::pair<unsigned int, unsigned int> video_dimensions_;
+        const std::pair<unsigned int, unsigned int> tile_dimensions_;
+        const std::pair<unsigned int, unsigned int> video_dimensions_;
 
     };
 

@@ -5,8 +5,8 @@
 using lightdb::utility::BitArray;
 using lightdb::RemoveEmulationPrevention;
 using lightdb::AddEmulationPreventionAndMarker;
-using lightdb::GetNalMarker;
 using lightdb::bytestring;
+using lightdb::Nal;
 
 class EmulationPreventionTestFixture : public testing::Test {
     public:
@@ -183,8 +183,7 @@ TEST_F(EmulationPreventionTestFixture, testEmulation) {
     }
 
     bytestring added = AddEmulationPreventionAndMarker(removed, 0, removed.size() / 8);
-    bytestring nal_marker = GetNalMarker();
-    bytes.insert(bytes.begin(), nal_marker.begin(), nal_marker.end());
+    bytes.insert(bytes.begin(), Nal::kNalMarker.begin(), Nal::kNalMarker.end());
     ASSERT_EQ(added, bytes);
 }
 
@@ -261,7 +260,6 @@ TEST_F(EmulationPreventionTestFixture, testEmulationOffset) {
     }
 
     bytestring added = AddEmulationPreventionAndMarker(removed, 6, 28);
-    bytestring nal_marker = GetNalMarker();
-    bytes.insert(bytes.begin(), nal_marker.begin(), nal_marker.end());
+    bytes.insert(bytes.begin(), Nal::kNalMarker.begin(), Nal::kNalMarker.end());
     ASSERT_EQ(added, bytes);
 }

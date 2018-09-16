@@ -11,8 +11,7 @@ namespace lightdb {
 
         inline bytestring GetBytes() const override {
             bytestring data = Nal::GetBytes();
-            bytestring nal_marker = GetNalMarker();
-            data.insert(data.begin(), nal_marker.begin(), nal_marker.end());
+            data.insert(data.begin(), kNalMarker.begin(), kNalMarker.end());
             return data;
         }
     };

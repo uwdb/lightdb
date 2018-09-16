@@ -3,11 +3,22 @@
 
 #include "Context.h"
 #include "Encoding.h"
+#include "NalType.h"
 
 namespace lightdb {
 
     class Headers;
     class SliceSegmentLayer;
+
+    /**
+     *
+     * @param data The byte stream
+     * @return The type of the byte stream as defined in NalType.h
+     */
+    inline unsigned int PeekType(const bytestring &data) {
+        assert(!data.empty());
+        return (static_cast<unsigned char>(data[0]) & 0x7Fu) >> 1;
+    }
 
     class Nal {
      public:
@@ -17,95 +28,124 @@ namespace lightdb {
          * @param context The context of the Nal
          * @param data The bytes representing the Nal
          */
-        Nal(const Context &context, const lightdb::bytestring &data);
+        Nal(Context context, const lightdb::bytestring &data)
+                : context_(std::move(context)),
+                  byte_data_(data),
+                  type_(PeekType(data)),
+                  is_header_(IsHeader()) {
+            CHECK_EQ(ForbiddenZero(), 0);
+        }
 
         /**
          *
          * @return The context associated with this Nal
          */
-        Context GetContext() const;
+        inline const Context& GetContext() const {
+            return context_;
+        }
 
         /**
          *
          * @return True if the nal represents a SequenceParameterSet, false otherwise
          */
-        bool IsSequence() const;
+        inline bool IsSequence() const {
+            return type_ == NalUnitSPS;
+        }
 
         /**
          *
          * @return True if the nal represents a PictureParameterSet, false otherwise
          */
-        bool IsPicture() const;
+        inline bool IsPicture() const {
+            return type_ == NalUnitPPS;
+        }
 
         /**
          *
          * @return True if the nal represents a VideoParameterSet, false otherwise
          */
-        bool IsVideo() const;
+        inline bool IsVideo() const {
+            return type_ == NalUnitVPS;
+        }
 
         /**
          *
          * @return True if the nal represents a header, false otherwise
          */
-        bool IsHeader() const;
+        inline bool IsHeader() const {
+            return IsSequence() || IsPicture() || IsVideo();
+        }
 
         /**
          *
          * @return The bytestring that represents this Nal
          */
-        virtual bytestring GetBytes() const;
+        inline virtual bytestring GetBytes() const {
+            return byte_data_;
+        }
+
+        /**
+ * @return A string representing a nal marker
+ */
+        inline bytestring GetNalMarker() {
+            return bytestring{0, 0, 1};
+        }
+
+        static constexpr std::array<char, 3> kNalMarker{0, 0, 1};
+        static constexpr unsigned int kNalHeaderSize = 5u;
+        static constexpr unsigned int kNalMarkerSize = kNalMarker.size();
 
      private:
 
-        unsigned int ForbiddenZero() const;
+        inline unsigned int ForbiddenZero() const {
+            return byte_data_[kForbiddenZeroIndex] & kForbiddenZeroMask;
+        }
 
         static constexpr const unsigned int kForbiddenZeroIndex = 0u;
         static constexpr const unsigned int kForbiddenZeroMask = 0x80u;
 
-        Context context_;
-        bytestring byte_data_;
-        unsigned int type_;
-        bool is_header_;
+        const Context context_;
+        const bytestring byte_data_;
+        const unsigned int type_;
+        const bool is_header_;
     };
 
 /**
  *
  * @return The size of the header for a Nal in bytes
  */
-size_t GetHeaderSize();
+inline size_t GetHeaderSize() {
+    return Nal::kNalHeaderSize - Nal::kNalMarkerSize;
+}
 
 /**
  *
  * @return The size of the header for a Nal in bits
  */
-size_t GetHeaderSizeInBits();
-
-/**
- *
- * @param data The byte stream
- * @return The type of the byte stream as defined in NalType.h
- */
-unsigned int PeekType(const bytestring &data);
+inline size_t GetHeaderSizeInBits() {
+    return GetHeaderSize() * CHAR_BIT;
+}
 
 /**
  *
  * @param data The byte stream
  * @return True if the byte stream represents a segment, false otherwise
  */
-bool IsSegment(const bytestring &data);
+inline bool IsSegment(const bytestring &data) {
+    auto type = PeekType(data);
+    return type == NalUnitCodedSliceIDRWRADL ||
+           type == NalUnitCodedSliceTrailR;
+}
 
 /**
  *
  * @param data The byte stream
  * @return True if the byte stream represents a key frame, false otherwise
  */
-bool IsKeyframe(const bytestring &data);
+inline bool IsKeyframe(const bytestring &data) {
+    return PeekType(data) == NalUnitCodedSliceIDRWRADL;
+}
 
-
-/**
- * @return A string representing a nal marker
- */
-bytestring GetNalMarker();
 
 /**
  * Returns a Nal with type based on the value returned by PeekType on data. Since this takes no
@@ -125,9 +165,6 @@ std::shared_ptr<Nal> Load(const Context &context, const bytestring &data);
  * @return A Nal with the correct type
  */
 SliceSegmentLayer Load(const Context &context, const bytestring &data, const Headers &headers);
-
-static constexpr unsigned int kNalHeaderSize = 5u;
-static constexpr unsigned int kNalMarkerSize = 3u;
 }
 
 #endif //LIGHTDB_NAL_H

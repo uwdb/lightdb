@@ -8,13 +8,19 @@ namespace lightdb {
   class Opaque : public Nal {
   public:
 
-      Opaque(const Context &context, const bytestring &data) : Nal(context, data) {}
+      Opaque(const Context &context, const bytestring &data)
+              : Nal(context, data)
+      { }
 
       /**
        *
        * @return A string wtih the bytes of this Nal
        */
-      bytestring GetBytes() const override;
+      inline bytestring GetBytes() const override {
+          auto data = Nal::GetBytes();
+          data.insert(data.begin(), kNalMarker.begin(), kNalMarker.end());
+          return data;
+      }
   };
 
 }

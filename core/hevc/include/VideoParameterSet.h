@@ -32,19 +32,29 @@ namespace lightdb {
          * Sets the general level IDC value in the byte stream to be value, converting value to a byte
          * @param value The new general level IDC value
          */
-        void SetGeneralLevelIDC(const unsigned char value);
+        inline void SetGeneralLevelIDC(const unsigned char value) {
+                // Profile size is in bits, so must be converted to bytes
+                data_[kSizeBeforeProfile + profile_size_ / 8 - kGeneralLevelIDCSize] = value;
+        }
 
         /**
          * Returns the general level IDC value
          * @return
          */
-        unsigned int GetGeneralLevelIDC() const;
+        inline unsigned int GetGeneralLevelIDC() const {
+                return static_cast<unsigned char>(data_[kSizeBeforeProfile + profile_size_ / 8 - kGeneralLevelIDCSize]);
+        }
 
         /**
          *
          * @return A string with the bytes of this Nal
          */
-        bytestring GetBytes() const override;
+        inline bytestring GetBytes() const override {
+                bytestring bytes(kNalMarker.size() + data_.size());
+                copy(kNalMarker.begin(), kNalMarker.end(), bytes.begin());
+                copy(data_.begin(), data_.end(), bytes.begin() + kNalMarker.size());
+                return bytes;
+        }
 
     private:
 
@@ -53,7 +63,9 @@ namespace lightdb {
          * @return The value necessary to pass to the GetSizeInBits method to
          * calculate the profile size
          */
-        unsigned int VPSMaxSubLayersMinus1() const;
+        inline unsigned int VPSMaxSubLayersMinus1() const {
+                return data_[GetHeaderSize() + kVPSMaxSubLayersMinus1Offset] & kVPSMaxSubLayersMinus1Mask;
+        }
 
         bytestring data_;
         unsigned long profile_size_;

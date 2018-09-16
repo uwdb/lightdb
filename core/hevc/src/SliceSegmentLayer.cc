@@ -6,19 +6,6 @@
 
 namespace lightdb {
 
-
-    bytestring SliceSegmentLayer::GetBytes() const {
-        return AddEmulationPreventionAndMarker(data_, GetHeaderSize(), kMaxHeaderLength);
-    }
-
-    size_t SliceSegmentLayer::GetAddress() const {
-        return address_;
-    }
-
-    utility::BitStream& SliceSegmentLayer::GetBitStream() {
-        return metadata_;
-    }
-
     void SliceSegmentLayer::SetAddress(const size_t address) {
         address_ = address;
         // Make sure it's byte aligned
