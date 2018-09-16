@@ -2,7 +2,7 @@
 #include <list>
 #include <iostream>
 
-namespace lightdb {
+namespace lightdb::hevc {
 
     BitArray RemoveEmulationPrevention(const bytestring &data, const unsigned long start, const unsigned long end) {
         std::list<long> emulation_indices;
@@ -65,7 +65,7 @@ namespace lightdb {
         return bits;
     }
 
-    bytestring AddEmulationPreventionAndMarker(const BitArray data, const unsigned long start, const unsigned long end) {
+    bytestring AddEmulationPreventionAndMarker(const BitArray &data, const unsigned long start, const unsigned long end) {
         std::list<long> emulation_indices;
 
         auto zero_count = 0u;
@@ -117,5 +117,5 @@ namespace lightdb {
         }
         return bytes;
     }
-}
+}; //namespace lightdb::hevc
 

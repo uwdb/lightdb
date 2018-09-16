@@ -2,7 +2,7 @@
 #include "Emulation.h"
 #include "SequenceParameterSet.h"
 
-namespace lightdb {
+namespace lightdb::hevc {
 
     SequenceParameterSet::SequenceParameterSet(const Context &context, const bytestring &data)
             : Nal(context, data),
@@ -114,5 +114,5 @@ namespace lightdb {
         }
         assert(addresses_.size() == tile_dimensions.first * tile_dimensions.second);
     }
-}
+}; //namespace lightdb::hevc
 

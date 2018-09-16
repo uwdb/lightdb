@@ -1,6 +1,6 @@
 #include "Headers.h"
 
-namespace lightdb {
+namespace lightdb::hevc {
 
 	Headers::Headers(const Context &context, std::vector<bytestring> nals)  {
 	    auto i = 0u;
@@ -32,4 +32,4 @@ namespace lightdb {
 	    }
 	    return bytes;
 	}
-}
+}; //namespace lightdb::hevc

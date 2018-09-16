@@ -2,7 +2,7 @@
 #include "SliceSegmentLayer.h"
 #include <list>
 
-namespace lightdb {
+namespace lightdb::hevc {
 
     //TODO typedef nested type
     std::vector<std::vector<bytestring>> Stitcher::GetNals() {
@@ -118,4 +118,4 @@ namespace lightdb {
         }
         return result;
     }
-}
+}; //namespace lightdb::hevc

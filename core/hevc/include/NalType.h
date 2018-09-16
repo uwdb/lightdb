@@ -1,7 +1,7 @@
 #ifndef LIGHTDB_NALTYPE_H
 #define LIGHTDB_NALTYPE_H
 
-namespace lightdb {
+namespace lightdb::hevc {
 
     constexpr unsigned int NalUnitCodedSliceTrailN = 0;
     constexpr unsigned int NalUnitCodedSliceTrailR = 1;
@@ -79,6 +79,6 @@ namespace lightdb {
     constexpr unsigned int NalUnitUnspecified63 = 63;
     constexpr unsigned int NalUnitInvalid = 64;
     
-}
+} //namespace lightdb::hevc
 
 #endif //LIGHTDB_NALTYPE_H

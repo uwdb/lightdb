@@ -3,7 +3,7 @@
 
 #include <utility>
 
-namespace lightdb {
+namespace lightdb::hevc {
 
     class Context {
     public:
@@ -44,6 +44,6 @@ namespace lightdb {
 
     };
 
-}
+}; //namespace lightdb::hevc
 
 #endif //LIGHTDB_CONTEXT_H

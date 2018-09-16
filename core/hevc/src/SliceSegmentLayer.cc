@@ -4,7 +4,7 @@
 #include "SequenceParameterSet.h"
 #include "SliceSegmentLayer.h"
 
-namespace lightdb {
+namespace lightdb::hevc {
 
     void SliceSegmentLayer::SetAddress(const size_t address) {
         address_ = address;
@@ -85,4 +85,4 @@ namespace lightdb {
         GetBitStream().ByteAlign(0);
         GetBitStream().MarkPosition("end");
     }
-}
+}; //namespace lightdb::hevc

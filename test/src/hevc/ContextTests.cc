@@ -7,7 +7,7 @@ class ContextTestFixture : public testing::Test {
 TEST_F(ContextTestFixture, testConstructor) {
     const std::pair tile_dimensions{2, 3};
     const std::pair video_dimensions{4, 5};
-    lightdb::Context context(tile_dimensions, video_dimensions);
+    lightdb::hevc::Context context(tile_dimensions, video_dimensions);
 
     ASSERT_EQ(context.GetTileDimensions().first,   2);
     ASSERT_EQ(context.GetTileDimensions().second,  3);

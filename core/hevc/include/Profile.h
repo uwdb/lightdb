@@ -3,7 +3,7 @@
 
 #include <cassert>
 
-namespace lightdb {
+namespace lightdb::hevc {
 
     static constexpr unsigned int kBaseSizeInBits = 96u;
 
@@ -23,6 +23,6 @@ namespace lightdb {
             assert (size % 8 == 0);
             return size;
     }
-}; //namespace lightdb
+}; //namespace lightdb::hevc
 
 #endif //LIGHTDB_PROFILE_H

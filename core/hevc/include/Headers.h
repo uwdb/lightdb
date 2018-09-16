@@ -6,7 +6,7 @@
 #include "VideoParameterSet.h"
 #include "PictureParameterSet.h"
 
-namespace lightdb {
+namespace lightdb::hevc {
 
     class VideoParameterSet;
     class PictureParameterSet;
@@ -61,6 +61,6 @@ namespace lightdb {
         unsigned int video_;
         std::vector<std::shared_ptr<Nal>> headers_;
     };
-}
+}; //namespace lightdb::hevc
 
 #endif //LIGHTDB_HEADERS_H

@@ -3,10 +3,10 @@
 #include <gtest/gtest.h>
 
 using lightdb::BitArray;
-using lightdb::RemoveEmulationPrevention;
-using lightdb::AddEmulationPreventionAndMarker;
 using lightdb::bytestring;
-using lightdb::Nal;
+using lightdb::hevc::RemoveEmulationPrevention;
+using lightdb::hevc::AddEmulationPreventionAndMarker;
+using lightdb::hevc::Nal;
 
 class EmulationPreventionTestFixture : public testing::Test {
     public:

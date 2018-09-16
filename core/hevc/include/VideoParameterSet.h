@@ -9,7 +9,7 @@
 #include <cassert>
 
 
-namespace lightdb {
+namespace lightdb::hevc {
     class VideoParameterSet : public Nal {
     public:
 
@@ -76,6 +76,6 @@ namespace lightdb {
         static constexpr unsigned int kGeneralLevelIDCSize = 1u;
 
     };
-}
+}; //namespace lightdb::hevc
 
 #endif //LIGHTDB_VIDEOPARAMETERSET_H

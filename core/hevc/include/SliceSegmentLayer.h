@@ -8,7 +8,7 @@
 #include "Emulation.h"
 
 
-namespace lightdb {
+namespace lightdb::hevc {
     // Defined in 7.3.6.1 and 7.3.2.9
     class SliceSegmentLayer : public Nal {
     public:
@@ -93,6 +93,6 @@ namespace lightdb {
         TrailRSliceSegmentLayer(const Context &context, const bytestring &data, const Headers &headers);
 
     };
-}
+}; //namespace lightdb::hevc
 
 #endif //LIGHTDB_SLICESEGMENTLAYER_H

@@ -4,7 +4,7 @@
 #include "BitArray.h"
 #include "Nal.h"
 
-namespace lightdb {
+namespace lightdb::hevc {
 
         /**
          * Removes the emulation_prevention_three byte from "data" starting at the byte at
@@ -17,7 +17,7 @@ namespace lightdb {
          * @return A bit stream representing the entirety of data, with the emulation_prevention_three
          * bytes removed
          */
-        BitArray RemoveEmulationPrevention(const bytestring &data, const unsigned long start, const unsigned long end);
+        BitArray RemoveEmulationPrevention(const bytestring &data, unsigned long start, unsigned long end);
 
         /**
          * Adds the emulation_prevention_three byte to "data" starting at the byte at
@@ -30,7 +30,7 @@ namespace lightdb {
          * @return A string of bytes representing the entirety of data with the nal marker
          * at the front, with the emulation_prevention_three bytes added
          */
-        bytestring AddEmulationPreventionAndMarker(const BitArray data, const unsigned long start, const unsigned long end);
+        bytestring AddEmulationPreventionAndMarker(const BitArray &data, unsigned long start, unsigned long end);
 
-}
+}; //namespace lightdb::hevc
 #endif //LIGHTDB_EMULATION_H

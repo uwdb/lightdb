@@ -2,7 +2,7 @@
 #include "Emulation.h"
 #include "Golombs.h"
 
-namespace lightdb {
+namespace lightdb::hevc {
     void PictureParameterSet::SetTileDimensions(const std::pair<unsigned long, unsigned long>& dimensions, const bool loop_filter_enabled) {
         if (dimensions.first == tile_dimensions_.first &&
             dimensions.second == tile_dimensions_.second) {
@@ -35,5 +35,5 @@ namespace lightdb {
 
         tile_dimensions_ = dimensions;
     }
-}
+}; //namespace lightdb::hevc
 

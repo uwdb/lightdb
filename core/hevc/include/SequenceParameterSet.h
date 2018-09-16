@@ -10,7 +10,7 @@
 #include <vector>
 
 
-namespace lightdb {
+namespace lightdb::hevc {
 
     // Described in 7.3.2.2
 
@@ -98,6 +98,6 @@ namespace lightdb {
         static constexpr unsigned int kNumDimensions = 2;
 
     };
-}
+}; //namespace lightdb::hevc
 
 #endif //LIGHTDB_SEQUENCEPARAMETERSET_H

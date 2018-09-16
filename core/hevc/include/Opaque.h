@@ -3,7 +3,7 @@
 
 #include "Nal.h"
 
-namespace lightdb {
+namespace lightdb::hevc {
 
   class Opaque : public Nal {
   public:
@@ -23,6 +23,6 @@ namespace lightdb {
       }
   };
 
-}
+}; //namespace lightdb::hevc
 
 #endif //LIGHTDB_OPAQUE_H

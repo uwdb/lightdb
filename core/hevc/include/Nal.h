@@ -5,7 +5,7 @@
 #include "Encoding.h"
 #include "NalType.h"
 
-namespace lightdb {
+namespace lightdb::hevc {
 
     class Headers;
     class SliceSegmentLayer;
@@ -165,6 +165,7 @@ std::shared_ptr<Nal> Load(const Context &context, const bytestring &data);
  * @return A Nal with the correct type
  */
 SliceSegmentLayer Load(const Context &context, const bytestring &data, const Headers &headers);
-}
+
+}; //namespace lightdb::hevc
 
 #endif //LIGHTDB_NAL_H

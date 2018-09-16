@@ -5,7 +5,7 @@
 #include "Context.h"
 #include <vector>
 
-namespace lightdb {
+namespace lightdb::hevc {
     class Stitcher {
      public:
 
@@ -55,6 +55,6 @@ namespace lightdb {
         const Headers headers_;
     };
 
-}
+}; //namespace lightdb::hevc
 
 #endif //LIGHTDB_STITCHER_H

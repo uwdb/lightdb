@@ -6,7 +6,7 @@
 #include "AccessDelimiter.h"
 #include "Opaque.h"
 
-namespace lightdb {
+namespace lightdb::hevc {
     std::shared_ptr<Nal> Load(const Context &context, const bytestring &data) {
         switch(PeekType(data)) {
             case NalUnitSPS:
@@ -32,4 +32,4 @@ namespace lightdb {
                 throw InvalidArgumentError(std::string("Unrecognized SliceSegmentLayer type ") + std::to_string(PeekType(data)), "data");
         }
     }
-}
+}; //namespace lightdb::hevc

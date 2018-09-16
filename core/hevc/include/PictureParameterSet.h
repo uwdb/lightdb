@@ -6,7 +6,7 @@
 #include "BitStream.h"
 #include "Emulation.h"
 
-namespace lightdb {
+namespace lightdb::hevc {
     // Defined in 7.3.2.3
     class PictureParameterSet : public Nal {
     public:
@@ -92,6 +92,6 @@ namespace lightdb {
         BitStream metadata_;
         std::pair<unsigned long, unsigned long> tile_dimensions_;
     };
-}
+}; //namespace lightdb::hevc
 
 #endif //LIGHTDB_PICTUREPARAMETERSET_H
