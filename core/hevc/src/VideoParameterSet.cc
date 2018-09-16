@@ -4,10 +4,9 @@
 namespace lightdb {
 
     bytestring VideoParameterSet::GetBytes() const {
-        auto nal_marker = GetNalMarker();
-        bytestring bytes(nal_marker.size() + data_.size());
-        copy(nal_marker.begin(), nal_marker.end(), bytes.begin());
-        copy(data_.begin(), data_.end(), bytes.begin() + nal_marker.size());
+        bytestring bytes(kNalMarker.size() + data_.size());
+        copy(kNalMarker.begin(), kNalMarker.end(), bytes.begin());
+        copy(data_.begin(), data_.end(), bytes.begin() + kNalMarker.size());
         return bytes;
     }
 
