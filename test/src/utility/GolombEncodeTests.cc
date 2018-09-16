@@ -2,7 +2,7 @@
 #include "Golombs.h"
 #include <gtest/gtest.h>
 
-using lightdb::utility::BitArray;
+using lightdb::BitArray;
 using lightdb::EncodeGolombs;
 using std::vector;
 

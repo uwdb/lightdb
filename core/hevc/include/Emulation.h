@@ -17,7 +17,7 @@ namespace lightdb {
          * @return A bit stream representing the entirety of data, with the emulation_prevention_three
          * bytes removed
          */
-        utility::BitArray RemoveEmulationPrevention(const bytestring &data, const unsigned long start, const unsigned long end);
+        BitArray RemoveEmulationPrevention(const bytestring &data, const unsigned long start, const unsigned long end);
 
         /**
          * Adds the emulation_prevention_three byte to "data" starting at the byte at
@@ -30,7 +30,7 @@ namespace lightdb {
          * @return A string of bytes representing the entirety of data with the nal marker
          * at the front, with the emulation_prevention_three bytes added
          */
-        bytestring AddEmulationPreventionAndMarker(const utility::BitArray data, const unsigned long start, const unsigned long end);
+        bytestring AddEmulationPreventionAndMarker(const BitArray data, const unsigned long start, const unsigned long end);
 
 }
 #endif //LIGHTDB_EMULATION_H

@@ -2,7 +2,7 @@
 #include "Emulation.h"
 #include <gtest/gtest.h>
 
-using lightdb::utility::BitArray;
+using lightdb::BitArray;
 using lightdb::RemoveEmulationPrevention;
 using lightdb::AddEmulationPreventionAndMarker;
 using lightdb::bytestring;

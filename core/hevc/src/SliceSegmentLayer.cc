@@ -14,7 +14,7 @@ namespace lightdb {
         // The header is the end of the metadata, so move the portion before that into
         // the header array
         auto header_end = metadata_.GetValue("end");
-        utility::BitArray header_bits(header_end);
+        BitArray header_bits(header_end);
         move(data_.begin(), data_.begin() + header_end, header_bits.begin());
 
         // Convert the header size from bytes to bits, add the offset
@@ -39,7 +39,7 @@ namespace lightdb {
         header_bits.ByteAlign();
         // The new size of the data is the size of the new header plus the size of the data
         // minus the old header size
-        utility::BitArray new_data(header_bits.size() + data_.size() - header_end);
+        BitArray new_data(header_bits.size() + data_.size() - header_end);
         move(header_bits.begin(), header_bits.end(), new_data.begin());
         move(data_.begin() + header_end, data_.end(), new_data.begin() + header_bits.size());
         data_ = new_data;

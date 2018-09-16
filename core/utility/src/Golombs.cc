@@ -3,8 +3,8 @@
 #include <list>
 #include <cmath>
 
-using lightdb::utility::BitArray;
-using lightdb::utility::BitStream;
+using lightdb::BitArray;
+using lightdb::BitStream;
 
 namespace lightdb {
 

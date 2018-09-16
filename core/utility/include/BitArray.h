@@ -5,7 +5,7 @@
 #include <iostream>
 #include <climits>
 
-namespace lightdb::utility {
+namespace lightdb {
 
     class BitArray : public std::vector<bool> {
 
@@ -99,6 +99,6 @@ namespace lightdb::utility {
             }
         }
     };
-}; //namespace lightdb::utility
+}; //namespace lightdb
 
 #endif //LIGHTDB_BITARRAY_H

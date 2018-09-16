@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <climits>
 
-using lightdb::utility::BitArray;
+using lightdb::BitArray;
 
 static const unsigned long kArraySize = 64u;
 

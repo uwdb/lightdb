@@ -1,6 +1,6 @@
 #include "BitArray.h"
 
-namespace lightdb::utility {
+namespace lightdb {
 
     void BitArray::Insert(const size_t location, size_t value, const size_t value_size) {
         CheckBounds(location, 0, size());

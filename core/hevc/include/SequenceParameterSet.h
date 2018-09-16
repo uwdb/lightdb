@@ -86,8 +86,8 @@ namespace lightdb {
 
         void CalculateSizes();
 
-        utility::BitArray data_;
-        utility::BitStream metadata_;
+        BitArray data_;
+        BitStream metadata_;
         size_t address_length_in_bits_;
         std::vector<size_t> addresses_;
         std::pair<unsigned long, unsigned long> dimensions_;

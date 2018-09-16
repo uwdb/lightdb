@@ -1,7 +1,7 @@
 #include "BitStream.h"
 #include <gtest/gtest.h>
 
-using lightdb::utility::BitStream;
+using lightdb::BitStream;
 static constexpr unsigned int kDataSize = 50u;
 
 class BitStreamTestFixture : public testing::Test {

@@ -88,8 +88,8 @@ namespace lightdb {
         }
 
     private:
-        utility::BitArray data_;
-        utility::BitStream metadata_;
+        BitArray data_;
+        BitStream metadata_;
         std::pair<unsigned long, unsigned long> tile_dimensions_;
     };
 }

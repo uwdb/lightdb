@@ -4,7 +4,7 @@
 
 namespace lightdb {
 
-    utility::BitArray RemoveEmulationPrevention(const bytestring &data, const unsigned long start, const unsigned long end) {
+    BitArray RemoveEmulationPrevention(const bytestring &data, const unsigned long start, const unsigned long end) {
         std::list<long> emulation_indices;
         auto zero_count = 0u;
         auto index = start;
@@ -41,7 +41,7 @@ namespace lightdb {
         }
 
         auto set_size = (data.size() - emulation_indices.size()) * CHAR_BIT;
-        utility::BitArray bits(set_size);
+        BitArray bits(set_size);
         auto bit_index = 0u;
         auto str_index = 0u;
 
@@ -65,7 +65,7 @@ namespace lightdb {
         return bits;
     }
 
-    bytestring AddEmulationPreventionAndMarker(const utility::BitArray data, const unsigned long start, const unsigned long end) {
+    bytestring AddEmulationPreventionAndMarker(const BitArray data, const unsigned long start, const unsigned long end) {
         std::list<long> emulation_indices;
 
         auto zero_count = 0u;

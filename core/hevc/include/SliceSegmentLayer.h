@@ -55,14 +55,14 @@ namespace lightdb {
         ~SliceSegmentLayer() = default;
 
     protected:
-        inline utility::BitStream& GetBitStream() {
+        inline BitStream& GetBitStream() {
             return metadata_;
         }
 
     private:
-        utility::BitArray data_;
+        BitArray data_;
         const Headers headers_;
-        utility::BitStream metadata_;
+        BitStream metadata_;
         size_t address_;
 
         static constexpr unsigned int kFirstSliceFlagOffset = 0;
