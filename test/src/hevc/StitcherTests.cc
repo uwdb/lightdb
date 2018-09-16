@@ -1,36 +1,127 @@
 #include "Context.h"
 #include "Stitcher.h"
+#include "AssertVideo.h"
+#include "functional.h"
 #include <gtest/gtest.h>
 
+using lightdb::bytestring;
+
 class StitcherTestFixture : public testing::Test {
+protected:
+    static constexpr unsigned int frames = 600;
+    static constexpr char const * kOutputFilename = "out.hevc";
+
+    static bytestring load_tile(const size_t index) {
+        return load_tile(tile_filename(index));
+    }
+
+private:
+    static std::string tile_filename(const size_t index) {
+        return std::string("resources/tiles/tile-" + std::to_string(index) + ".hevc");
+    }
+
+    static bytestring load_tile(const std::string &filename) {
+        std::ifstream stream{filename};
+        bytestring data((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+
+        EXPECT_GT(data.size(), 0);
+        return data;
+    }
 };
 
-TEST_F(StitcherTestFixture, testStitch) {
-    const std::vector<std::string> filenames{"tile0.hevc", "tile1.hevc", "tile2.hevc", "tile3.hevc"};
-    const std::string output_filename{"out.hevc"};
-    std::vector<lightdb::bytestring> tiles(filenames.size());
+TEST_F(StitcherTestFixture, testStitch2x1) {
+    auto rows = 2u, columns = 1u;
+    auto height = 512u, width = 960u;
+    auto indexes = { 0u,
+                     4u};
+    auto tiles = lightdb::functional::transform<bytestring>(
+            indexes.begin(), indexes.end(),
+            [](auto i) { return load_tile(i); });
 
-    for (auto i = 0ul; i < filenames.size(); i++) {
-        std::ifstream istrm;
-        istrm.open(filenames[i]);
-        std::stringstream buffer;
-        buffer << istrm.rdbuf();
-        std::string tile = buffer.str();
-        tiles[i] = std::vector<char>(tile.begin(), tile.end());
-        ASSERT_GT(tiles[i].size(), 0);
+    {
+        lightdb::Context context({rows, columns}, {height, width});
+        lightdb::Stitcher stitcher(context, tiles);
+        std::ofstream out(kOutputFilename);
+
+        for (auto chunk : stitcher.GetStitchedSegments())
+            out << chunk;
     }
 
-    std::pair<unsigned int, unsigned int> tile_dimensions(2, 2);
-    std::pair<unsigned int, unsigned int> video_dimensions(1920, 1080);
+    EXPECT_VIDEO_VALID(kOutputFilename);
+    EXPECT_VIDEO_FRAMES(kOutputFilename, frames);
+    EXPECT_VIDEO_RESOLUTION(kOutputFilename, rows*height - 4, columns*width);
+    EXPECT_EQ(remove(kOutputFilename), 0);
+}
 
-    lightdb::Context context(tile_dimensions, video_dimensions);
-    lightdb::Stitcher stitcher(context, tiles);
-    lightdb::bytestring stitched = stitcher.GetStitchedSegments();
+TEST_F(StitcherTestFixture, testStitch1x2) {
+    auto rows = 1u, columns = 2u;
+    auto height = 512u, width = 960u;
+    auto indexes = { 0u, 1u };
+    auto tiles = lightdb::functional::transform<bytestring>(
+            indexes.begin(), indexes.end(),
+            [](auto i) { return load_tile(i); });
 
-    std::ofstream ostrm;
-    ostrm.open(output_filename);
-    for (auto c : stitched) {
-        ostrm << c;
+    {
+        lightdb::Context context({rows, columns}, {height, width});
+        lightdb::Stitcher stitcher(context, tiles);
+        std::ofstream out(kOutputFilename);
+
+        for (auto chunk : stitcher.GetStitchedSegments())
+            out << chunk;
     }
-    ostrm.close();
+
+    EXPECT_VIDEO_VALID(kOutputFilename);
+    EXPECT_VIDEO_FRAMES(kOutputFilename, frames);
+    EXPECT_VIDEO_RESOLUTION(kOutputFilename, rows*height - 4, columns*width);
+    EXPECT_EQ(remove(kOutputFilename), 0);
+}
+
+TEST_F(StitcherTestFixture, testStitch2x2) {
+    auto rows = 2u, columns = 2u;
+    auto height = 512u, width = 960u;
+    auto indexes = { 0u,  1u,
+                     4u,  5u};
+    auto tiles = lightdb::functional::transform<bytestring>(
+            indexes.begin(), indexes.end(),
+            [](auto i) { return load_tile(i); });
+
+    {
+        lightdb::Context context({rows, columns}, {height, width});
+        lightdb::Stitcher stitcher(context, tiles);
+        std::ofstream out(kOutputFilename);
+
+        for (auto chunk : stitcher.GetStitchedSegments())
+            out << chunk;
+    }
+
+    EXPECT_VIDEO_VALID(kOutputFilename);
+    EXPECT_VIDEO_FRAMES(kOutputFilename, frames);
+    EXPECT_VIDEO_RESOLUTION(kOutputFilename, rows*height - 4, columns*width);
+    EXPECT_EQ(remove(kOutputFilename), 0);
+}
+
+TEST_F(StitcherTestFixture, testStitch4x4) {
+    auto rows = 4u, columns = 4u;
+    auto height = 512u, width = 960u;
+    auto indexes = { 0u,  1u,  2u,  3u,
+                     4u,  5u,  6u,  7u,
+                     8u,  9u, 10u, 11u,
+                    12u, 13u, 14u, 15u};
+    auto tiles = lightdb::functional::transform<bytestring>(
+            indexes.begin(), indexes.end(),
+            [](auto i) { return load_tile(i); });
+
+   {
+       lightdb::Context context({rows, columns}, {height, width});
+       lightdb::Stitcher stitcher(context, tiles);
+       std::ofstream out(kOutputFilename);
+
+       for (auto chunk : stitcher.GetStitchedSegments())
+           out << chunk;
+    }
+
+    EXPECT_VIDEO_VALID(kOutputFilename);
+    EXPECT_VIDEO_FRAMES(kOutputFilename, frames);
+    EXPECT_VIDEO_RESOLUTION(kOutputFilename, rows*height - 4, columns*width);
+    EXPECT_EQ(remove(kOutputFilename), 0);
 }
