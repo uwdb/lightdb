@@ -1,6 +1,4 @@
 #include "PictureParameterSet.h"
-#include "Emulation.h"
-#include "Golombs.h"
 
 namespace lightdb::hevc {
     void PictureParameterSet::SetTileDimensions(const std::pair<unsigned long, unsigned long>& dimensions, const bool loop_filter_enabled) {

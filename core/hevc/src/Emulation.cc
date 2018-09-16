@@ -1,6 +1,5 @@
 #include "Emulation.h"
 #include <list>
-#include <iostream>
 
 namespace lightdb::hevc {
 
