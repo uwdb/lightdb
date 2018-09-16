@@ -158,8 +158,8 @@ public:
                             "preproc64_lowlat.ptx";
             #elif INTPTR_MAX == INT32_MAX
                     "preproc32_lowlat.ptx";
-                    #else
-                        #error Unknown pointer size or missing size macros!
+            #else
+                #error Unknown pointer size or missing size macros!
             #endif
 
         CUmodule module_;
