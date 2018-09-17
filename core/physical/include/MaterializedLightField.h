@@ -82,7 +82,7 @@ namespace lightdb::physical {
 
     class CPUEncodedFrameData: public EncodedFrameData {
     public:
-        explicit CPUEncodedFrameData(const Codec &codec, const std::vector<char> &data)
+        explicit CPUEncodedFrameData(const Codec &codec, const bytestring &data)
                 : EncodedFrameData(DeviceType::CPU, codec, data.begin(), data.end()),
                   packet_(data)
         { }

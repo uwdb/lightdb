@@ -32,8 +32,9 @@ public:
     CPUtoGPUTransfer(const LightFieldReference &logical,
                 PhysicalLightFieldReference &parent,
                 const execution::GPU &gpu)
-            : GPUOperator(logical, {parent}, gpu, []() { return Configuration{320, 240, 0, 0, 0, {30, 1}}; })
-    { }
+            : GPUOperator(logical, {parent}, gpu, []() { return Configuration{320, 240, 0, 0, 0, {30, 1}}; }) {
+        LOG(ERROR) << "CPU->GPU transfer operator has hardcoded size of 320x240, this will break";
+    }
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if(iterators()[0] != iterators()[0].eos()) {

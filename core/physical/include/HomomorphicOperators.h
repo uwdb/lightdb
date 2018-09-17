@@ -2,6 +2,7 @@
 #define LIGHTDB_HOMOMORPHICOPERATORS_H
 
 #include "PhysicalOperators.h"
+#include "Stitcher.h"
 
 namespace lightdb::physical {
 
@@ -12,37 +13,33 @@ public:
                                             const unsigned int rows, const unsigned int columns)
             : PhysicalLightField(logical, parents, DeviceType::CPU),
               rows_(rows), columns_(columns),
-              configuration_(get_configuration(parents, rows_, columns_))
+              configuration_(get_configuration(parents, rows_, columns_)),
+              materializedData_(rows * columns)
     {
         LOG(WARNING) << "Ignored myriad preconditions on homomorphic angular union";
     }
 
-    std::ofstream tmpfile[64];
-
-
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if(!any_parent_eos()) {
-            std::optional<physical::MaterializedLightFieldReference> data;
-            static auto tmpindex = 0u;
 
-            if(tmpindex == 0u) {
-                for(auto i = 0u; i < iterators().size(); i++)
-                    tmpfile[i] = std::ofstream(std::string("homoout") + std::to_string(i) + ".hevc");
-            }
-
-            for(auto &it: iterators()) {
-                data = it++;
-                tmpindex++;
-
-                if(data.has_value()) {
-                    auto &encoded = data.value().downcast<CPUEncodedFrameData>();
-                    printf("hout %lu\n", encoded.value().size());
-                    std::copy(encoded.value().begin(),encoded.value().end(),std::ostreambuf_iterator<char>(tmpfile[tmpindex % iterators().size()]));
+            // Materialize everything :(
+            for (auto index = 0u; index < iterators().size(); index++)
+                if (iterators()[index] != iterators()[index].eos()) {
+                    auto next = (iterators()[index]++);
+                    const auto &data = next.downcast<CPUEncodedFrameData>().value();
+                    materializedData_[index].insert(std::end(materializedData_[index]), data.begin(), data.end());
                 }
-            }
-            return data;
-        }
-        return {};
+            return CPUEncodedFrameData(codec(), bytestring{});
+        } else if(!materializedData_.empty()) {
+            lightdb::hevc::Context context({rows_, columns_},
+                                           {configuration().height / rows_,
+                                            configuration().width / columns_});
+            lightdb::hevc::Stitcher stitcher(context, materializedData_);
+            materializedData_.clear();
+
+            return CPUEncodedFrameData(codec(), stitcher.GetStitchedSegments());
+        } else
+            return {};
     }
 
     const Codec &codec() const override { return Codec::hevc(); }
@@ -51,6 +48,7 @@ public:
 private:
     const unsigned int rows_, columns_;
     const Configuration configuration_;
+    std::vector<bytestring> materializedData_;
 
     static const Configuration get_configuration(
             std::vector<PhysicalLightFieldReference>& sources,
