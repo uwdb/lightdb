@@ -245,6 +245,27 @@ namespace lightdb::logical {
         const Codec codec_;
         const ColorSpace &colorSpace_;
     };
+
+    class StoredLightField : public LightField {
+    public:
+        explicit StoredLightField(const LightFieldReference &source,
+                                  std::string name,
+                                  Codec codec=Codec::hevc())
+                : LightField(source),
+                  name_(std::move(name)),
+                  codec_(std::move(codec))
+        { }
+
+        void accept(LightFieldVisitor &visitor) override { LightField::accept<StoredLightField>(visitor); }
+
+        const std::string& name() const { return name_; }
+        const Codec& codec() const { return codec_; }
+
+    private:
+        const std::string name_;
+        const Codec codec_;
+    };
+
 } // namespace lightdb::logical
 
 #endif //LIGHTDB_MODEL_H

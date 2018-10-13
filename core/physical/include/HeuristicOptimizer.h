@@ -22,7 +22,8 @@ namespace lightdb::optimization {
                      make_rule<ChooseMap>(),
                      make_rule<ChoosePartition>(),
                      make_rule<ChooseSubquery>(),
-                     make_rule<ChooseEncoders>() }; }
+                     make_rule<ChooseEncoders>(),
+                     make_rule<ChooseStore>()}; }
     };
 }
 

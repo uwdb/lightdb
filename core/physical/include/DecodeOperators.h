@@ -14,7 +14,10 @@ public:
     explicit GPUDecode(const LightFieldReference &logical,
                        PhysicalLightFieldReference source,
                        const execution::GPU &gpu)
-            : GPUDecode(logical, source, source.expect_downcast<EncodedVideoInterface>(), gpu)
+            : GPUDecode(logical,
+                        source,
+                        source.expect_downcast<EncodedVideoInterface>(),
+                        gpu)
     { }
 
     GPUDecode(const GPUDecode &) = delete;

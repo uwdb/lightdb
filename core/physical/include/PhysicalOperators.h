@@ -240,7 +240,7 @@ namespace lightdb {
             virtual ~EncodedVideoInterface() = default;
 
             virtual const Codec &codec() const = 0;
-            virtual const Configuration &configuration() const = 0;
+            virtual const Configuration &configuration() = 0;
         };
     } // namespace physical
 } // namespace lightdb

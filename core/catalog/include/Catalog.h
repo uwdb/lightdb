@@ -10,6 +10,7 @@
 
 namespace lightdb {
     class LightField;
+    class PhysicalLightField;
     namespace logical { class Algebra; }
     using LightFieldReference = shared_reference<LightField, logical::Algebra>;
 
@@ -55,6 +56,7 @@ namespace lightdb {
             static const Catalog &instance(Catalog catalog) { return instance_.emplace(catalog); }
 
             LightFieldReference get(const std::string &name) const;
+            void save(const std::string& name, PhysicalLightField&) const;
 
             class Metadata {
                 friend class Catalog;

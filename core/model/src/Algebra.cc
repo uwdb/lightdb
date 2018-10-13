@@ -1,5 +1,4 @@
 #include "Algebra.h"
-#include "LightField.h"
 #include "Model.h"
 
 using namespace lightdb::catalog;
@@ -13,42 +12,36 @@ namespace lightdb::logical {
         return catalog.get(name);
     }
 
-    LightFieldReference Algebra::Select(const Volume &volume)
-    {
+    LightFieldReference Algebra::Select(const Volume &volume) {
         return LightFieldReference::make<SubsetLightField>(this_, volume);
     }
 
-    LightFieldReference Algebra::Select(const SpatiotemporalDimension dimension, const SpatiotemporalRange &range)
-    {
+    LightFieldReference Algebra::Select(const SpatiotemporalDimension dimension, const SpatiotemporalRange &range) {
         Volume volume(this_->volume().bounding());
         volume.set(dimension, range);
         return LightFieldReference::make<SubsetLightField>(this_, volume);
     }
 
-    LightFieldReference Algebra::Select(const ThetaRange &range)
-    {
+    LightFieldReference Algebra::Select(const ThetaRange &range) {
         Volume volume(this_->volume().bounding());
         volume.theta(range);
         return LightFieldReference::make<SubsetLightField>(this_, volume);
     }
 
-    LightFieldReference Algebra::Select(const PhiRange &range)
-    {
+    LightFieldReference Algebra::Select(const PhiRange &range) {
         Volume volume(this_->volume().bounding());
         volume.phi(range);
         return LightFieldReference::make<SubsetLightField>(this_, volume);
     }
 
-    void Algebra::Store(const std::string &name)
-    {
-        throw NotImplementedError(); //TODO
+    LightFieldReference Algebra::Store(const std::string &name, const Codec &codec) {
+        return LightFieldReference::make<StoredLightField>(this_, name, codec);
     }
 
     LightFieldReference Algebra::Encode(const Codec &codec) {
         return LightFieldReference::make<logical::EncodedLightField>(
                 this_, codec, this_->volume().bounding(), this_->colorSpace());
     }
-
 
     LightFieldReference Algebra::Union(const LightFieldReference other) {
         return LightFieldReference::make<logical::CompositeLightField>(std::vector<LightFieldReference>{this_, other});

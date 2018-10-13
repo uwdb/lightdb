@@ -15,9 +15,10 @@
 #include "IdentityOperators.h"
 #include "HomomorphicOperators.h"
 #include "SubsetOperators.h"
+#include "StoreOperators.h"
 
 namespace lightdb::optimization {
-    class ChooseMaterializedScans: public OptimizerRule {
+    class ChooseMaterializedScans : public OptimizerRule {
     public:
         using OptimizerRule::OptimizerRule;
 
@@ -385,7 +386,7 @@ namespace lightdb::optimization {
         }
     };
 
-    class ChooseSubquery: public OptimizerRule {
+    class ChooseSubquery : public OptimizerRule {
     public:
         bool visit(const logical::SubqueriedLightField &node) override {
             auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
@@ -401,6 +402,48 @@ namespace lightdb::optimization {
             if(!plan().has_physical_assignment(node)) {
                 plan().emplace<physical::GPUAngularSubquery>(plan().lookup(node), hardcoded_parent,
                                                              plan().environment());
+                return true;
+            }
+            return false;
+        }
+    };
+
+    class ChooseStore : public OptimizerRule {
+    public:
+        using OptimizerRule::OptimizerRule;
+
+        PhysicalLightFieldReference Encode(const logical::StoredLightField &node, PhysicalLightFieldReference parent) {
+            if(parent.is<physical::GPUAngularSubquery>() && parent.downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
+                return plan().emplace<physical::CPUIdentity>(plan().lookup(node), parent);
+            } else if(parent.is<physical::GPUOperator>()) {
+                return plan().emplace<physical::GPUEncode>(plan().lookup(node), parent, Codec::hevc());
+            } else if(parent.is<physical::CPUMap>() && parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name()) {
+                return plan().emplace<physical::CPUIdentity>(plan().lookup(node), parent);
+            } else {
+                auto gpu = plan().environment().gpus()[0];
+                auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(plan().lookup(node), parent, gpu);
+                return plan().emplace<physical::GPUEncode>(plan().lookup(node), transfer, Codec::hevc());
+            }
+        }
+
+        bool visit(const logical::StoredLightField &node) override {
+            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                    node.parents().begin(), node.parents().end(),
+                    [this](auto &parent) { return plan().assignments(parent); });
+
+            if(physical_parents.empty())
+                return false;
+
+            //TODO clean this up, shouldn't just be randomly picking last parent
+            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>()
+                                    ? physical_parents[0]
+                                    : physical_parents[physical_parents.size() - 1];
+
+            if(!plan().has_physical_assignment(node)) {
+                LOG(WARNING) << "Randomly picking HEVC as codec";
+
+                auto encode = Encode(node, hardcoded_parent);
+                plan().emplace<physical::Store>(plan().lookup(node), encode);
                 return true;
             }
             return false;

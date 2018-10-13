@@ -52,6 +52,28 @@ TEST_F(VisitorTestFixture, testFoo) {
     coordinator.save(plan, "dout.hevc");
 }
 
+TEST_F(VisitorTestFixture, testBar) {
+/*    auto left = Scan("red10");
+    auto right = Scan("red10");
+    auto unioned = left.Union(right);
+    auto encoded = unioned.Encode();
+    */
+    //auto foo = dlopen("/home/bhaynes/projects/yolo/cmake-build-debug/libyolo.so", RTLD_LAZY | RTLD_GLOBAL);
+    //printf( "Could not open file : %s\n", dlerror() );
+
+    auto name = "red10"; //std::getenv("TLFNAME");
+    auto input = Scan(name);
+    auto stored = input.Store("postred10");
+
+    auto environment = LocalEnvironment();
+    auto coordinator = Coordinator();
+    Plan plan = HeuristicOptimizer(environment).optimize(stored);
+
+    print_plan(plan);
+
+    coordinator.save(plan, "dout.hevc");
+}
+
 TEST_F(VisitorTestFixture, testInterpolateDiscretizeMap) {
     auto yolo = lightdb::extensibility::Load("yolo");
 

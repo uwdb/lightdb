@@ -19,6 +19,7 @@ namespace lightdb {
         class SubqueriedLightField;
         class ExternalLightField;
         class EncodedLightField;
+        class StoredLightField;
     }
 
     class LightFieldVisitor {
@@ -36,6 +37,7 @@ namespace lightdb {
         virtual void visit(const logical::SubqueriedLightField &) {}
         virtual void visit(const logical::ExternalLightField &) {}
         virtual void visit(const logical::EncodedLightField &) {}
+        virtual void visit(const logical::StoredLightField &) {}
 
     protected:
         LightFieldVisitor() = default;
@@ -75,6 +77,7 @@ namespace lightdb {
         virtual State visit(const logical::SubqueriedLightField &) { return {}; }
         virtual State visit(const logical::ExternalLightField &) { return {}; }
         virtual State visit(const logical::EncodedLightField &) { return {}; }
+        virtual State visit(const logical::StoredLightField &) { return {}; }
 
         virtual State visit(State state, const LightField &field) { return state + visit(field); }
         virtual State visit(State state, const logical::ConstantLightField &field) { return state + visit(field); }
@@ -89,6 +92,7 @@ namespace lightdb {
         virtual State visit(State state, const logical::SubqueriedLightField &field) {return state + visit(field); }
         virtual State visit(State state, const logical::ExternalLightField &field) { return state + visit(field); }
         virtual State visit(State state, const logical::EncodedLightField &field) { return state + visit(field); }
+        virtual State visit(State state, const logical::StoredLightField &field) { return state + visit(field); }
 
         class AdaptedVisitor: public LightFieldVisitor {
         public:
@@ -109,6 +113,7 @@ namespace lightdb {
             void visit(const logical::SubqueriedLightField &field) final { state_ = visitor_.visit(state_, field); }
             void visit(const logical::ExternalLightField &field) final { state_ = visitor_.visit(state_, field); }
             void visit(const logical::EncodedLightField &field) final  { state_ = visitor_.visit(state_, field); }
+            void visit(const logical::StoredLightField &field) final  { state_ = visitor_.visit(state_, field); }
 
             State result() const { return state_; }
 

@@ -43,7 +43,7 @@ public:
     }
 
     const Codec &codec() const override { return Codec::hevc(); }
-    const Configuration &configuration() const override { return configuration_; }
+    const Configuration &configuration() override { return configuration_; }
 
 private:
     const unsigned int rows_, columns_;

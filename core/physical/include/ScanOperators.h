@@ -8,7 +8,9 @@ namespace lightdb::physical {
 class ScanSingleFile: public PhysicalLightField, public EncodedVideoInterface {
 public:
     explicit ScanSingleFile(const LightFieldReference &logical, const catalog::Stream &stream)
-            : ScanSingleFile(logical, logical->downcast<logical::ScannedLightField>(), stream)
+            : ScanSingleFile(logical,
+                             logical->downcast<logical::ScannedLightField>(),
+                             stream)
     { }
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
@@ -19,7 +21,7 @@ public:
     }
 
     const Codec &codec() const override { return stream_.codec(); }
-    const Configuration &configuration() const override { return stream_.configuration(); }
+    const Configuration &configuration() override { return stream_.configuration(); }
 
 private:
     explicit ScanSingleFile(const LightFieldReference &logical,
