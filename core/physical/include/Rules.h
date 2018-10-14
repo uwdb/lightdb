@@ -57,6 +57,13 @@ namespace lightdb::optimization {
                 auto logical = plan().lookup(node);
                 auto &scan = plan().emplace<physical::ScanSingleFile>(logical, stream);
                 auto decode = plan().emplace<physical::GPUDecode>(logical, scan, gpu);
+
+                auto children = plan().children(plan().lookup(node));
+                if(children.size() > 1) {
+                    auto tees = physical::TeedPhysicalLightFieldAdapter::make(decode, children.size());
+                    for(auto index = 0u; index < children.size(); index++)
+                        plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
+                }
                 return true;
             }
             return false;
@@ -413,36 +420,36 @@ namespace lightdb::optimization {
         using OptimizerRule::OptimizerRule;
 
         PhysicalLightFieldReference Encode(const logical::StoredLightField &node, PhysicalLightFieldReference parent) {
+            auto logical = plan().lookup(node);
+
             if(parent.is<physical::GPUAngularSubquery>() && parent.downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
-                return plan().emplace<physical::CPUIdentity>(plan().lookup(node), parent);
+                return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent.is<physical::GPUOperator>()) {
-                return plan().emplace<physical::GPUEncode>(plan().lookup(node), parent, Codec::hevc());
+                return plan().emplace<physical::GPUEncode>(logical, parent, Codec::hevc());
             } else if(parent.is<physical::CPUMap>() && parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name()) {
-                return plan().emplace<physical::CPUIdentity>(plan().lookup(node), parent);
-            } else {
+                return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent->device() != physical::DeviceType::GPU){
                 auto gpu = plan().environment().gpus()[0];
-                auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(plan().lookup(node), parent, gpu);
-                return plan().emplace<physical::GPUEncode>(plan().lookup(node), transfer, Codec::hevc());
-            }
+                auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, parent, gpu);
+                return plan().emplace<physical::GPUEncode>(logical, transfer, Codec::hevc());
+            } else if(!parent.is<physical::GPUOperator>()) {
+                auto gpuop = plan().emplace<physical::GPUOperatorAdapter>(parent);
+                return plan().emplace<physical::GPUEncode>(logical, gpuop, Codec::hevc());
+            } else
+                return plan().emplace<physical::GPUEncode>(logical, parent, Codec::hevc());
         }
 
         bool visit(const logical::StoredLightField &node) override {
             auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
                     node.parents().begin(), node.parents().end(),
-                    [this](auto &parent) { return plan().assignments(parent); });
+                    [this](auto &parent) { return plan().unassigned(parent); });
 
             if(physical_parents.empty())
                 return false;
-
-            //TODO clean this up, shouldn't just be randomly picking last parent
-            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>()
-                                    ? physical_parents[0]
-                                    : physical_parents[physical_parents.size() - 1];
-
-            if(!plan().has_physical_assignment(node)) {
+            else if(!plan().has_physical_assignment(node)) {
                 LOG(WARNING) << "Randomly picking HEVC as codec";
 
-                auto encode = Encode(node, hardcoded_parent);
+                auto encode = Encode(node, physical_parents[0]);
                 plan().emplace<physical::Store>(plan().lookup(node), encode);
                 return true;
             }

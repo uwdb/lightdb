@@ -19,7 +19,7 @@ public:
     std::vector<PhysicalLightFieldReference> submit(const optimization::Plan &plan)
     {
         const auto &sinks = plan.sinks();
-        return functional::transform<PhysicalLightFieldReference>(sinks.begin(), sinks.end(), [plan](auto &sink) { return plan.leaf(sink); });
+        return functional::flatmap<std::vector<PhysicalLightFieldReference>>(sinks.begin(), sinks.end(), [plan](auto &sink) { return plan.unassigned(sink); });
     }
 
     void save(const optimization::Plan &plan, const std::string &filename)

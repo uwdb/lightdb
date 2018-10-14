@@ -70,18 +70,39 @@ namespace lightdb::optimization {
                    : std::vector<PhysicalLightFieldReference>{};
         }
 
-        PhysicalLightFieldReference leaf(const LightFieldReference &reference) const {
+        std::vector<PhysicalLightFieldReference> unassigned(const LightFieldReference &reference, const bool global=true) const {
             auto assignments = this->assignments(reference);
-            std::set<PhysicalLightField*> nonleaves;
-            for(auto &assignment: assignments)
+            std::set<PhysicalLightField*> nonleafs;
+            std::vector<PhysicalLightFieldReference> leafs;
+
+            for(const auto &assignment: assignments)
                 for(auto& parent: assignment->parents())
-                    nonleaves.insert(&*parent);
+                    nonleafs.insert(&*parent);
 
-            for(auto &assignment: assignments)
-                if(nonleaves.find(&*assignment) == nonleaves.end())
-                    return assignment;
+            for(const auto &assignment: assignments)
+                if(nonleafs.find(&*assignment) == nonleafs.end())
+                    leafs.push_back(assignment);
 
-            throw InvalidArgumentError("Reference has no leaf assignment.", "reference");
+            //TODO this is like O(n^999) :-/
+            if(global)
+                for (const auto &child: children(reference))
+                    for (const auto &assignment: this->assignments(child))
+                        for (const auto &parent: assignment->parents())
+                            for (auto index = 0u; index < leafs.size(); index++)
+                                if (parent == leafs[index])
+                                    leafs.erase(leafs.begin() + index--);
+            return leafs;
+        }
+
+        std::vector<LightFieldReference> children(const LightFieldReference &reference) const {
+            std::vector<LightFieldReference> children;
+
+            for(const auto &node: nodes_)
+                for(const LightFieldReference &parent: node.second->parents())
+                    if(parent == reference)
+                        children.push_back(node.second);
+
+            return children;
         }
 
         const auto& physical() const { return physical_; }

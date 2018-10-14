@@ -7,6 +7,7 @@
 #include "Configuration.h"
 #include <experimental/filesystem>
 #include <utility>
+#include <fstream>
 
 namespace lightdb {
     class LightField;
@@ -18,7 +19,9 @@ namespace lightdb {
         class Stream {
         public:
             Stream(std::experimental::filesystem::path path, Codec codec, Configuration configuration)
-                    : path_(std::move(path)), codec_(std::move(codec)), configuration_(std::move(configuration))
+                    : path_(std::move(path)),
+                      codec_(std::move(codec)),
+                      configuration_(std::move(configuration))
             { }
 
             const std::experimental::filesystem::path& path() const { return path_; }
@@ -29,6 +32,19 @@ namespace lightdb {
             const std::experimental::filesystem::path path_;
             const Codec codec_;
             const Configuration configuration_;
+        };
+
+        class OutputStream: public Stream {
+        public:
+            OutputStream(const std::experimental::filesystem::path &path, const Codec &codec, const Configuration &configuration)
+                    : Stream(path, codec, configuration),
+                      stream_(path)
+            { }
+
+            std::ofstream& stream() { return stream_; }
+
+        private:
+            std::ofstream stream_;
         };
 
         class Catalog {
@@ -56,7 +72,8 @@ namespace lightdb {
             static const Catalog &instance(Catalog catalog) { return instance_.emplace(catalog); }
 
             LightFieldReference get(const std::string &name) const;
-            void save(const std::string& name, PhysicalLightField&) const;
+            //void save(const std::string& name, PhysicalLightField&) const;
+            OutputStream create(const std::string& name, const Codec &codec, const Configuration &configuration) const;
 
             class Metadata {
                 friend class Catalog;

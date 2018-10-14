@@ -18,28 +18,18 @@ namespace lightdb::catalog {
             return LightFieldReference::make<logical::ScannedLightField>(Metadata{*this, name, path});
     }
 
-    void Catalog::save(const std::string& name, PhysicalLightField& sink) const {
+    OutputStream Catalog::create(const std::string& name, const Codec &codec, const Configuration &configuration) const {
         auto path = filesystem::absolute(path_ / name);
         auto metadataFilename = path / metadataFilename_;
         auto streamFilename = path / "stream0.hevc";
 
-        LOG(INFO) << "Assuming HEVC codec";
-        LOG(INFO) << "Assuming version 0";
         if(!filesystem::exists(path))
             filesystem::create_directory(path);
 
-        std::ofstream file(streamFilename);
-        std::optional<physical::MaterializedLightFieldReference> packet;
-
-        while((packet = sink.read()).has_value()) {
-            auto &encoded = packet.value().downcast<physical::CPUEncodedFrameData>();
-            std::copy(encoded.value().begin(),encoded.value().end(),std::ostreambuf_iterator<char>(file));
-        }
-
-        LOG(INFO) << "Creating metadata symlink instead of doing it correctly";
-        symlink(streamFilename.c_str(), metadataFilename.c_str());
+        LOG(INFO) << "Assuming TLF version 0";
+        LOG(ERROR) << "Not creating catalog metadata";
+        return OutputStream(streamFilename, codec, configuration);
     }
-
 
     std::vector<Stream> Catalog::get_streams(const filesystem::path &path) {
         LOG(WARNING) << "Using unimplemented stub Catalog::get_streams";

@@ -15,9 +15,13 @@ public:
     { }
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
-        LOG(INFO) << "Storing to ambient catalog";
-        catalog::Catalog::instance().save(store_.name(), *parent_);
-        return std::nullopt;
+        if(!all_parent_eos()) {
+            auto data = iterators()[0]++;
+            auto &encoded = data.downcast<physical::CPUEncodedFrameData>();
+            std::copy(encoded.value().begin(),encoded.value().end(), std::ostreambuf_iterator<char>(output_->stream()));
+            return data;
+        } else
+            return std::nullopt;
     }
 
     const Codec &codec() const override { return store_.codec(); }
@@ -30,13 +34,16 @@ private:
             : PhysicalLightField(logical, {parent}, DeviceType::CPU),
               store_(store),
               parent_(parent),
-              configuration_([this]() { return parent_.downcast<EncodedVideoInterface>().configuration(); }) {
+              configuration_([this]() { return parent_.downcast<EncodedVideoInterface>().configuration(); }),
+              output_([this]() { return catalog::Catalog::instance().create(store_.name(), parent_.downcast<EncodedVideoInterface>().codec(), configuration_); }) {
+        LOG(INFO) << "Storing to ambient catalog";
         CHECK_EQ(parents().size(), 1);
     }
 
     const logical::StoredLightField &store_;
     PhysicalLightFieldReference parent_;
     lazy<Configuration> configuration_;
+    lazy<catalog::OutputStream> output_;
 };
 
 } // namespace lightdb::physical
