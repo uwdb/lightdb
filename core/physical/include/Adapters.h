@@ -43,7 +43,17 @@ private:
 class GPUOperatorAdapter: public GPUOperator {
 public:
     explicit GPUOperatorAdapter(const PhysicalLightFieldReference &source)
-            : GPUOperatorAdapter(source, FindGPUOperatorAncestor(source))
+            : GPUOperatorAdapter(source, {})
+    { }
+
+    explicit GPUOperatorAdapter(const PhysicalLightFieldReference &source,
+                                PhysicalLightFieldReference parent)
+            : GPUOperatorAdapter(source, std::vector<PhysicalLightFieldReference>{parent})
+    { }
+
+    explicit GPUOperatorAdapter(const PhysicalLightFieldReference &source,
+                                const std::vector<PhysicalLightFieldReference> &parents)
+            : GPUOperatorAdapter(source, FindGPUOperatorAncestor(source), parents)
     { }
 
     GPUOperatorAdapter(GPUOperatorAdapter &) = default;
@@ -57,8 +67,11 @@ public:
     }
 
 private:
-    GPUOperatorAdapter(const PhysicalLightFieldReference &source, GPUOperator &op)
-            : GPUOperator(source->logical(), {},
+    GPUOperatorAdapter(const PhysicalLightFieldReference &source,
+                       GPUOperator &op,
+                       std::vector<PhysicalLightFieldReference> parents)
+            : GPUOperator(source->logical(),
+                          parents,
                           op.gpu(),
                           [&op]() { return op.configuration(); }),
               source_(source)
