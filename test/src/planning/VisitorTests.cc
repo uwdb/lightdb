@@ -1,9 +1,6 @@
 #include "HeuristicOptimizer.h"
-#include "Coordinator.h"
 #include "Greyscale.h"
 #include "Display.h"
-#include "HomomorphicOperators.h"
-#include "VisitorTemp2.h"
 #include "extension.h"
 #include <gtest/gtest.h>
 
