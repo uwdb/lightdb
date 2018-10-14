@@ -83,13 +83,14 @@ struct EncodeBuffer
 
     ~EncodeBuffer() {
         NVENCSTATUS status;
+        CUresult result;
 
         if((status = encoder.api().NvEncDestroyBitstreamBuffer(output_buffer.bitstreamBuffer)) != NV_ENC_SUCCESS)
-            printf("log NvEncDestroyBitstreamBuffer\n"); //TODO log
-        else if((encoder.api().NvEncUnregisterResource(input_buffer.registered_resource)) != NV_ENC_SUCCESS)
-            printf("log NvEncUnregisterResource\n"); //TODO log
-        else if(cuMemFree(input_buffer.NV12devPtr) != CUDA_SUCCESS)
-            printf("log cuMemFree\n"); //TODO log
+            LOG(ERROR) << "Call to NvEncDestroyBitstreamBuffer failed with status " << status;
+        else if((status = encoder.api().NvEncUnregisterResource(input_buffer.registered_resource)) != NV_ENC_SUCCESS)
+            LOG(ERROR) << "Call to NvEncUnregisterResource failed with status " << status;
+        else if((result = cuMemFree(input_buffer.NV12devPtr)) != CUDA_SUCCESS)
+            LOG(ERROR) << "Call to cuMemFree failed with result " << result;
     }
 
     //TODO These arguments should be GPUFrame

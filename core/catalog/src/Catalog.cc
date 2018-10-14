@@ -32,8 +32,6 @@ namespace lightdb::catalog {
     }
 
     std::vector<Stream> Catalog::get_streams(const filesystem::path &path) {
-        LOG(WARNING) << "Using unimplemented stub Catalog::get_streams";
-        LOG(WARNING) << "Using hardcoded configuration";
         LOG(WARNING) << "Using hardcoded first stream for video configuration";
 
         const size_t index = 0;
