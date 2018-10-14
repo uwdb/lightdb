@@ -7,34 +7,47 @@ namespace lightdb::execution {
 
 class Coordinator {
 public:
-    PhysicalLightField& submit(const optimization::Plan &plan)
+    template<unsigned int Index>
+    PhysicalLightField& submit(const optimization::Plan &plan) {
+        auto assignments = submit(plan);
+
+        CHECK_GE(assignments.size(), Index);
+
+        return *assignments[Index];
+    }
+
+    std::vector<PhysicalLightFieldReference> submit(const optimization::Plan &plan)
     {
-        if(plan.sinks().size() != 1)
-            throw NotImplementedError("Executing with more than one sink not yet supported.");
-        else if(plan.assignments(plan.sinks()[0]).empty())
-            throw NotImplementedError("Cannot execute with no assignment for sink");
-        //else if(plan.assignments(plan.sinks()[0]).size() > 1)
-         //   throw NotImplementedError("Executing with more than one sink assignment not yet supported.");
-
         const auto &sinks = plan.sinks();
-        const auto &assignments = plan.assignments(sinks[0]);
+        return functional::transform<PhysicalLightFieldReference>(sinks.begin(), sinks.end(), [plan](auto &sink) { return plan.leaf(sink); });
+    }
 
-        if(assignments.size() > 1)
-            LOG(WARNING) << "Found more than one sink assignment; randomly selecting last one.";
-
-        return *assignments[assignments.size() - 1];
+    void save(const optimization::Plan &plan, const std::string &filename)
+    {
+        save(plan, std::vector<std::string>{filename});
     }
 
     //TODO this should be in the algebra, returning an external TLF
-    void save(const optimization::Plan &plan, const std::string &filename)
+    void save(const optimization::Plan &plan, const std::vector<std::string> &filenames)
     {
-        std::ofstream file(filename);
-        auto &output = submit(plan);
+        auto outputs = submit(plan);
+        auto iterators = functional::transform<PhysicalLightField::iterator>(outputs.begin(), outputs.end(), [](auto &out) { return out->begin(); });
+        auto streams = functional::transform<std::ofstream>(filenames.begin(), filenames.end(), [](auto &filename) { return std::ofstream(filename); });
 
-        for(const auto &data: output)
-        {
-            auto &encoded = data.downcast<physical::CPUEncodedFrameData>();
-            std::copy(encoded.value().begin(),encoded.value().end(),std::ostreambuf_iterator<char>(file));
+        CHECK_EQ(iterators.size(), streams.size());
+
+        while(!iterators.empty()) {
+            for(auto index = 0u; index < iterators.size(); index++) {
+                if(iterators[index] != iterators[index].eos()) {
+                    auto encoded = (iterators[index]++).downcast<physical::CPUEncodedFrameData>();
+                    std::copy(encoded.value().begin(), encoded.value().end(),
+                              std::ostreambuf_iterator<char>(streams[index]));
+                } else {
+                    iterators.erase(iterators.begin() + index);
+                    streams.erase(streams.begin() + index);
+                    index--;
+                }
+            }
         }
     }
 };

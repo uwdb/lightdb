@@ -53,15 +53,23 @@ TEST_F(VisitorTestFixture, testFoo) {
 }
 
 TEST_F(VisitorTestFixture, testBar) {
-/*    auto left = Scan("red10");
-    auto right = Scan("red10");
-    auto unioned = left.Union(right);
-    auto encoded = unioned.Encode();
-    */
-    //auto foo = dlopen("/home/bhaynes/projects/yolo/cmake-build-debug/libyolo.so", RTLD_LAZY | RTLD_GLOBAL);
-    //printf( "Could not open file : %s\n", dlerror() );
+    auto name = "red10";
+    auto input = Scan(name);
+    auto input2 = Scan(name);
+    auto stored = input.Store("postred10_2");
+    auto stored2 = input.Store("postred10_3");
 
-    auto name = "red10"; //std::getenv("TLFNAME");
+    auto environment = LocalEnvironment();
+    auto coordinator = Coordinator();
+    Plan plan = HeuristicOptimizer(environment).optimize({stored, stored2});
+
+    print_plan(plan);
+
+    coordinator.save(plan, std::vector<std::string>{"dout1.hevc", "dout2.hevc"});
+}
+
+TEST_F(VisitorTestFixture, testScanStore) {
+    auto name = "red10";
     auto input = Scan(name);
     auto stored = input.Store("postred10");
 
@@ -69,9 +77,7 @@ TEST_F(VisitorTestFixture, testBar) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(stored);
 
-    print_plan(plan);
-
-    coordinator.save(plan, "dout.hevc");
+    coordinator.save(plan, "dout1.hevc");
 }
 
 TEST_F(VisitorTestFixture, testInterpolateDiscretizeMap) {

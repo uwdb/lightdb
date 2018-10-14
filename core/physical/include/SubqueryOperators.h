@@ -46,7 +46,7 @@ private:
     inline LightFieldReference ExecuteSubquery(const size_t index);
     inline PhysicalLightField::iterator ExecutePlan() {
         LOG(WARNING) << "Arbitrarily creating new coordinator for subquery execution";
-        return execution::Coordinator().submit(subplan_).begin();
+        return execution::Coordinator().submit<0>(subplan_).begin();
     }
 
     const execution::Environment &environment_;

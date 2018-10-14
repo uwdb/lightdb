@@ -23,6 +23,7 @@ namespace lightdb::catalog {
         auto metadataFilename = path / metadataFilename_;
         auto streamFilename = path / "stream0.hevc";
 
+        LOG(INFO) << "Assuming HEVC codec";
         LOG(INFO) << "Assuming version 0";
         if(!filesystem::exists(path))
             filesystem::create_directory(path);

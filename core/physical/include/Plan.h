@@ -70,10 +70,24 @@ namespace lightdb::optimization {
                    : std::vector<PhysicalLightFieldReference>{};
         }
 
-        LightFieldReference lookup(const LightField &node) const { return nodes_.at(&node); }
-        const std::vector<LightFieldReference>& sinks() const { return sinks_; }
+        PhysicalLightFieldReference leaf(const LightFieldReference &reference) const {
+            auto assignments = this->assignments(reference);
+            std::set<PhysicalLightField*> nonleaves;
+            for(auto &assignment: assignments)
+                for(auto& parent: assignment->parents())
+                    nonleaves.insert(&*parent);
+
+            for(auto &assignment: assignments)
+                if(nonleaves.find(&*assignment) == nonleaves.end())
+                    return assignment;
+
+            throw InvalidArgumentError("Reference has no leaf assignment.", "reference");
+        }
+
         const auto& physical() const { return physical_; }
         const auto& environment() const { return environment_; }
+        LightFieldReference lookup(const LightField &node) const { return nodes_.at(&node); }
+        const std::vector<LightFieldReference>& sinks() const { return sinks_; }
 
     private:
         const execution::Environment environment_;
