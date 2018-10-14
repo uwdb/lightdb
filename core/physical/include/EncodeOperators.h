@@ -15,7 +15,7 @@
 
 namespace lightdb::physical {
 
-class GPUEncode : public GPUUnaryOperator<GPUDecodedFrameData> {
+class GPUEncode : public GPUUnaryOperator<GPUDecodedFrameData>, public EncodedVideoInterface {
 public:
     static constexpr size_t kDefaultGopSize = 30;
 
@@ -47,6 +47,11 @@ public:
             return {CPUEncodedFrameData(codec_, writer_->dequeue())};
         } else
             return std::nullopt;
+    }
+
+    const Codec &codec() const override { return codec_; }
+    const Configuration &configuration() override {
+        return GPUUnaryOperator<GPUDecodedFrameData>::configuration();
     }
 
 private:
