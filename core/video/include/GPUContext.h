@@ -11,7 +11,7 @@ public:
     explicit GPUContext(const unsigned int deviceId): device_(0), owned_(true) {
         CUresult result;
 
-        if(!ensureInitialized())
+        if(!Initialize())
             throw GpuRuntimeError("GPU context initialization failed");
         else if((result = cuCtxGetCurrent(&context_)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuCtxGetCurrent failed", result);
@@ -57,20 +57,21 @@ public:
         }
     }
 
+    static bool Initialize() {
+        CUresult result;
+
+        if(isInitialized)
+            return true;
+        else if((result = cuInit(0, __CUDA_API_VERSION, nullptr)) != CUDA_SUCCESS)
+            throw GpuCudaRuntimeError("Call to cuInit failed", result);
+        else if(cuvidInit(0) != CUDA_SUCCESS)
+            throw GpuCudaRuntimeError("Call to cuvidInit failed", result);
+        else
+            return (isInitialized = true);
+    }
+
 private:
     static bool isInitialized;
-    static bool ensureInitialized() {
-            CUresult result;
-
-            if(isInitialized)
-                return true;
-            else if((result = cuInit(0, __CUDA_API_VERSION, nullptr)) != CUDA_SUCCESS)
-                throw GpuCudaRuntimeError("Call to cuInit failed", result);
-            else if(cuvidInit(0) != CUDA_SUCCESS)
-                throw GpuCudaRuntimeError("Call to cuvidInit failed", result);
-            else
-                return (isInitialized = true);
-        }
 
     CUdevice device_;
     CUcontext context_ = nullptr;

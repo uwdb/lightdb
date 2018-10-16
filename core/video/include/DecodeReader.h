@@ -99,10 +99,11 @@ public:
             throw GpuRuntimeError("FileDecodeReader only supports 4:2:0 chroma");
     }
 
+    FileDecodeReader(const FileDecodeReader&) = delete;
     FileDecodeReader(FileDecodeReader&& other) = default;
 
-    CUVIDEOFORMAT format() const override { return format_; }
-    const std::string &filename() const { return filename_; }
+    inline CUVIDEOFORMAT format() const override { return format_; }
+    inline const std::string &filename() const { return filename_; }
 
     std::optional<DecodeReaderPacket> read() override {
         DecodeReaderPacket packet;
@@ -113,9 +114,9 @@ public:
 
         if(packets_->pop(packet)) {
             decoded_bytes_ += packet.payload_size;
-            return packet;
+            return {packet};
         } else {
-            LOG(INFO) << "Decoded " << decoded_bytes_ << " bytes";
+            LOG(INFO) << "Decoded " << decoded_bytes_ << " bytes from " << filename();
             return {};
         }
     }
@@ -156,6 +157,8 @@ private:
                 0
         };
 
+        if(!GPUContext::Initialize())
+            throw GpuCudaRuntimeError("Could not initialize CUDA runtime", CUDA_ERROR_NOT_INITIALIZED);
         if((status = cuvidCreateVideoSource(&source, filename, &videoSourceParameters)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuvidCreateVideoSource failed", status);
         else if((status = cuvidSetVideoSourceState(source, cudaVideoState_Started)) != CUDA_SUCCESS)
