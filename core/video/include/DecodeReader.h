@@ -121,7 +121,7 @@ public:
         }
     }
 
-    bool isComplete() const override {
+    inline bool isComplete() const override {
         return !packets_->read_available() && cuvidGetVideoSourceState(source_) != cudaVideoState_Started;
     }
 

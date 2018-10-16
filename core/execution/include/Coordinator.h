@@ -28,8 +28,7 @@ public:
     }
 
     //TODO this should be in the algebra, returning an external TLF
-    void save(const optimization::Plan &plan, const std::vector<std::string> &filenames)
-    {
+    void save(const optimization::Plan &plan, const std::vector<std::string> &filenames) {
         auto outputs = submit(plan);
         auto iterators = functional::transform<PhysicalLightField::iterator>(outputs.begin(), outputs.end(), [](auto &out) { return out->begin(); });
         auto streams = functional::transform<std::ofstream>(filenames.begin(), filenames.end(), [](auto &filename) { return std::ofstream(filename); });
@@ -46,6 +45,7 @@ public:
                     iterators.erase(iterators.begin() + index);
                     streams.erase(streams.begin() + index);
                     index--;
+                    LOG(INFO) << "Sink complete; " << iterators.size() << " remaining";
                 }
             }
         }

@@ -160,5 +160,6 @@ bool CUVIDFrameQueue::dequeue(void *pData) {
 void CUVIDFrameQueue::releaseFrame(const void *pPicParams) {
 
   const auto *pInfo = (const CUVIDPARSERDISPINFO *)(pPicParams);
+  assert(pInfo->picture_index >= 0 && static_cast<unsigned int>(pInfo->picture_index) < cnMaximumSize);
   aIsFrameInUse_[pInfo->picture_index] = false;
 }
