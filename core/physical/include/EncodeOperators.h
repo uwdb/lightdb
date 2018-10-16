@@ -28,8 +28,8 @@ public:
               encodeConfiguration_([this, gop_size]() {
                   return EncodeConfiguration{configuration(), codec_.nvidiaId().value(), gop_size}; }),
               encoder_([this]() { return VideoEncoder(context(), encodeConfiguration_, lock()); }),
-              encodeSession_([this]() { return VideoEncoderSession(encoder_, writer_); }),
-              writer_([this]() { return MemoryEncodeWriter(encoder_->api()); }) {}
+              writer_([this]() { return MemoryEncodeWriter(encoder_->api()); }),
+              encodeSession_([this]() { return VideoEncoderSession(encoder_, writer_); }) { }
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if (iterator() != iterator().eos()) {
@@ -58,8 +58,8 @@ private:
     const Codec codec_;
     lazy <EncodeConfiguration> encodeConfiguration_;
     lazy <VideoEncoder> encoder_;
-    lazy <VideoEncoderSession> encodeSession_;
     lazy <MemoryEncodeWriter> writer_;
+    lazy <VideoEncoderSession> encodeSession_;
 };
 
 }; // namespace lightdb::physical

@@ -27,7 +27,7 @@ namespace lightdb::catalog {
             filesystem::create_directory(path);
 
         LOG(INFO) << "Assuming TLF version 0";
-        LOG(ERROR) << "Not creating catalog metadata";
+        LOG(WARNING) << "Not creating catalog metadata";
         return OutputStream(streamFilename, codec, configuration);
     }
 
