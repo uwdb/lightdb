@@ -17,7 +17,20 @@ public:
             : GPUDecode(logical,
                         source,
                         source.expect_downcast<EncodedVideoInterface>(),
-                        gpu)
+                        gpu,
+                        std::chrono::milliseconds(1u))
+    { }
+
+    template<typename Rep, typename Period>
+    explicit GPUDecode(const LightFieldReference &logical,
+                       PhysicalLightFieldReference source,
+                       const execution::GPU &gpu,
+                       const std::chrono::duration<Rep, Period> &poll_duration)
+            : GPUDecode(logical,
+                        source,
+                        source.expect_downcast<EncodedVideoInterface>(),
+                        gpu,
+                        poll_duration)
     { }
 
     GPUDecode(const GPUDecode &) = delete;
@@ -31,7 +44,7 @@ public:
 
         if(!decoder_->frame_queue().isComplete())
             do {
-                auto frame = session_->decode(poll_duration);
+                auto frame = session_->decode(poll_duration_);
                 if (frame.has_value())
                     frames.emplace_back(frame.value());
             } while(!decoder_->frame_queue().isEmpty() &&
@@ -45,11 +58,14 @@ public:
     }
 
 protected:
+    template<typename Rep, typename Period>
     explicit GPUDecode(const LightFieldReference &logical,
                        const PhysicalLightFieldReference &source,
                        EncodedVideoInterface &encoded,
-                       const execution::GPU &gpu)
+                       const execution::GPU &gpu,
+                       std::chrono::duration<Rep, Period> poll_duration)
             : GPUUnaryOperator(logical, source, gpu, [&encoded](){return encoded.configuration(); }),
+              poll_duration_(poll_duration),
               decode_configuration_([&encoded, this]() {
                   return DecodeConfiguration{configuration(), encoded.codec().cudaId().value()}; }),
               queue_([this]() { return CUVIDFrameQueue(lock()); }),
@@ -61,8 +77,7 @@ protected:
     }
 
 private:
-    static constexpr auto poll_duration = std::chrono::milliseconds(100u);
-
+    const std::chrono::microseconds poll_duration_;
     lazy<DecodeConfiguration> decode_configuration_;
     lazy<CUVIDFrameQueue> queue_;
     lazy<CudaDecoder> decoder_;

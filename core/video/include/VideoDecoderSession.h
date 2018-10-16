@@ -32,7 +32,7 @@ public:
         return DecodedFrame(decoder_, decoder_.frame_queue().dequeue_wait<CUVIDPARSERDISPINFO>());
     }
 
-    template<typename Rep, typename Period, size_t interval=8>
+    template<typename Rep, typename Period, size_t interval=4>
     std::optional<DecodedFrame> decode(std::chrono::duration<Rep, Period> duration) {
         std::shared_ptr<CUVIDPARSERDISPINFO> packet;
 
