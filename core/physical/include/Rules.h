@@ -213,23 +213,21 @@ namespace lightdb::optimization {
         using OptimizerRule::OptimizerRule;
 
         bool visit(const logical::SubsetLightField &node) override {
-            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
-                    node.parents().begin(), node.parents().end(),
-                    [this](auto &parent) { return plan().assignments(parent); });
-
-            if(physical_parents.empty())
-                return false;
-
-            //TODO clean this up, shouldn't just be randomly picking last parent
-            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>() || physical_parents[0].is<physical::CPUtoGPUTransfer>()
-                                    ? physical_parents[0]
-                                    : physical_parents[physical_parents.size() - 1];
-
             if(!plan().has_physical_assignment(node)) {
-                if(hardcoded_parent->device() != physical::DeviceType::GPU)
+                auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                        node.parents().begin(), node.parents().end(),
+                        [this](auto &parent) { return plan().unassigned(parent); });
+
+                if(physical_parents.empty())
+                    return false;
+
+                auto &physical_parent = physical_parents[0];
+
+                if(physical_parent->device() != physical::DeviceType::GPU)
+                //if(hardcoded_parent->device() != physical::DeviceType::GPU)
                     throw std::runtime_error("Hardcoded support only for GPU selection"); //TODO
-                LOG(ERROR) << "Assuming angular selection without actually checking";
-                plan().emplace<physical::GPUAngularSubframe>(plan().lookup(node), hardcoded_parent);
+                LOG(WARNING) << "Assuming angular selection without actually checking";
+                plan().emplace<physical::GPUAngularSubframe>(plan().lookup(node), physical_parent);
                 return true;
             }
             return false;
@@ -440,13 +438,14 @@ namespace lightdb::optimization {
         }
 
         bool visit(const logical::StoredLightField &node) override {
-            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
-                    node.parents().begin(), node.parents().end(),
-                    [this](auto &parent) { return plan().unassigned(parent); });
+            if(!plan().has_physical_assignment(node)) {
+                auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                        node.parents().begin(), node.parents().end(),
+                        [this](auto &parent) { return plan().unassigned(parent); });
 
-            if(physical_parents.empty())
-                return false;
-            else if(!plan().has_physical_assignment(node)) {
+                if(physical_parents.empty())
+                    return false;
+
                 LOG(WARNING) << "Randomly picking HEVC as codec";
 
                 auto encode = Encode(node, physical_parents[0]);
