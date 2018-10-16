@@ -96,8 +96,12 @@ namespace lightdb {
          * Skips the next bit in the stream, checking that it is a 1
          */
         inline BitStream &SkipTrue() {
-            auto bit = NextBits();
-            assert (bit);
+            #ifndef NDEBUG
+                auto bit = NextBits();
+                assert (bit);
+            #else
+                NextBits();
+            #endif
             return *this;
         }
 
@@ -105,8 +109,12 @@ namespace lightdb {
          * Skips the next bit in the stream, checking that it is a 0
          */
         inline BitStream &SkipFalse() {
-            auto bit = NextBits();
-            assert (!bit);
+            #ifndef NDEBUG
+                auto bit = NextBits();
+                assert (!bit);
+            #else
+                NextBits();
+            #endif
             return *this;
         }
 

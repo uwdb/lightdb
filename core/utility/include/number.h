@@ -149,6 +149,7 @@ namespace lightdb {
                     return static_cast<real_type>(rational_times_real_);
                 default:
                     assert(false);
+                    return 0;
             }
         }
 
@@ -202,6 +203,7 @@ namespace lightdb {
                     return rational_times_real_.to_string();
                 default:
                     assert(false);
+                    return 0;
             }
         }
 
