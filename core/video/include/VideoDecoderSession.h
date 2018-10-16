@@ -5,6 +5,7 @@
 #include "DecodeReader.h"
 #include <cuda.h>
 #include <thread>
+#include <chrono>
 
 template<typename Input=DecodeReader::iterator>
 class VideoDecoderSession {
@@ -29,6 +30,20 @@ public:
 
     DecodedFrame decode() {
         return DecodedFrame(decoder_, decoder_.frame_queue().dequeue_wait<CUVIDPARSERDISPINFO>());
+    }
+
+    template<typename Rep, typename Period, size_t interval=8>
+    std::optional<DecodedFrame> decode(std::chrono::duration<Rep, Period> duration) {
+        std::shared_ptr<CUVIDPARSERDISPINFO> packet;
+
+        for(auto begin = std::chrono::system_clock::now();
+            std::chrono::system_clock::now() - begin < duration;
+            std::this_thread::sleep_for(duration / interval)) {
+                if((packet = decoder_.frame_queue().try_dequeue<CUVIDPARSERDISPINFO>()) != nullptr)
+                    return {DecodedFrame(decoder_, packet)};
+            }
+
+        return std::nullopt;
     }
 
     const CudaDecoder &decoder() const { return decoder_; }
@@ -73,14 +88,13 @@ private:
             .pfnSequenceCallback = HandleVideoSequence,
             .pfnDecodePicture = HandlePictureDecode,
             .pfnDisplayPicture = HandlePictureDisplay,
-            0
+            nullptr
         };
 
         decoder.frame_queue().reset();
 
-        if ((status = cuvidCreateVideoParser(&parser, &parameters)) != CUDA_SUCCESS) {
+        if ((status = cuvidCreateVideoParser(&parser, &parameters)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuvidCreateVideoParser failed", status);
-        }
 
         return parser;
     }
@@ -93,15 +107,13 @@ private:
 
         if(decoder == nullptr)
             LOG(ERROR) << "Unexpected null decoder during video decode (HandleVideoSequence)";
-
         else if ((format->codec != decoder->configuration().codec) ||
-            ((static_cast<unsigned int>(format->display_area.right - format->display_area.left)) != decoder->configuration().width) ||
-            ((static_cast<unsigned int>(format->display_area.bottom - format->display_area.top)) != decoder->configuration().height) ||
-            (format->coded_width < decoder->configuration().width) ||
-            (format->coded_height < decoder->configuration().height) ||
-            (format->chroma_format != decoder->configuration().chroma_format)) {
+                 ((static_cast<unsigned int>(format->display_area.right - format->display_area.left)) != decoder->configuration().width) ||
+                 ((static_cast<unsigned int>(format->display_area.bottom - format->display_area.top)) != decoder->configuration().height) ||
+                 (format->coded_width < decoder->configuration().width) ||
+                 (format->coded_height < decoder->configuration().height) ||
+                 (format->chroma_format != decoder->configuration().chroma_format))
             throw GpuRuntimeError("Video format changed but not currently supported");
-        }
 
         return 1;
     }

@@ -101,7 +101,7 @@ public:
     }
 
     template<typename T>
-    const std::shared_ptr<T> dequeue() {
+    const std::shared_ptr<T> try_dequeue() {
         T data;
 
         return dequeue(&data)
@@ -132,7 +132,6 @@ public:
   explicit CUVIDFrameQueue(CUvideoctxlock ctxLock);
 
   void enqueue(const void *pData) override;
-  //virtual bool dequeue(CUVIDPARSERDISPINFO *data) { return dequeue(static_cast<void*>(data)); }
 
   const std::shared_ptr<CUVIDPARSERDISPINFO> dequeue() {
       return static_cast<FrameQueue*>(this)->try_dequeue<CUVIDPARSERDISPINFO>();

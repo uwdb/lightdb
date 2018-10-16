@@ -30,10 +30,12 @@ public:
             << "Decode configuration output surfaces is low, limiting throughput";
 
         if(!decoder_->frame_queue().isComplete())
-            do
-                frames.emplace_back(session_->decode());
-            while(!decoder_->frame_queue().isEmpty() &&
-                  !decoder_->frame_queue().isEndOfDecode() &&
+            do {
+                auto frame = session_->decode(poll_duration);
+                if (frame.has_value())
+                    frames.emplace_back(frame.value());
+            } while(!decoder_->frame_queue().isEmpty() &&
+                    !decoder_->frame_queue().isEndOfDecode() &&
                     frames.size() <= decode_configuration_->output_surfaces / 4);
 
         if(!frames.empty() || !decoder_->frame_queue().isComplete())
@@ -59,6 +61,8 @@ protected:
     }
 
 private:
+    static constexpr auto poll_duration = std::chrono::milliseconds(100u);
+
     lazy<DecodeConfiguration> decode_configuration_;
     lazy<CUVIDFrameQueue> queue_;
     lazy<CudaDecoder> decoder_;
