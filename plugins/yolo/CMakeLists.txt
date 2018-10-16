@@ -11,6 +11,7 @@ include_directories(/home/bhaynes/projects/visualcloud/core/utility/include)
 include_directories(/home/bhaynes/projects/darknet/include)
 include_directories(/opt/nvidia/Video_Codec_SDK_7.1.9/Samples/common/inc)
 include_directories(/opt/intel/compilers_and_libraries_2018.3.222/linux/ipp/include)
+include_directories(/usr/local/cuda-8.0/include)
 
 link_directories(/home/bhaynes/projects/darknet)
 link_directories(/home/bhaynes/projects/visualcloud/core)
@@ -19,7 +20,7 @@ set(YOLO_LIB_DEPENDENCIES ${YOLO_LIB_DEPENDENCIES} visualcloud)
 set(YOLO_LIB_DEPENDENCIES ${YOLO_LIB_DEPENDENCIES} darknet)
 set(YOLO_LIB_DEPENDENCIES ${YOLO_LIB_DEPENDENCIES} ipps ippi ippcc)
 
-add_library(yolo SHARED udf.cc udf.h stb_image_write.h)
+add_library(yolo SHARED udf.cc udf.h)
 
 target_link_libraries(yolo ${YOLO_LIB_DEPENDENCIES})
 

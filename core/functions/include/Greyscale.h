@@ -7,7 +7,7 @@ namespace lightdb {
     class Greyscale : public functor::unaryfunctor {
         class GPU : public functor::unaryfunction {
         public:
-            GPU() : functor::unaryfunction(physical::DeviceType::GPU, Codec::raw()) {}
+            GPU() : functor::unaryfunction(physical::DeviceType::GPU, Codec::raw(), true) {}
 
             shared_reference <LightField> operator()(LightField &input) override {
                 auto &data = dynamic_cast<physical::GPUDecodedFrameData&>(input);

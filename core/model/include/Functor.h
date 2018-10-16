@@ -27,19 +27,22 @@ namespace lightdb {
         template<std::size_t n>
         class naryfunction: public functor::internal::_nary_builder<LightField&, std::make_index_sequence<n>> {
         public:
-            explicit naryfunction(const physical::DeviceType deviceType, Codec codec)
+            explicit naryfunction(const physical::DeviceType deviceType, Codec codec, const bool determistic)
                     : deviceType_(deviceType),
-                      codec_(std::move(codec))
+                      codec_(std::move(codec)),
+                      determistic_(determistic)
             { }
 
             virtual ~naryfunction() = default;
 
             const Codec& codec() const { return codec_; }
             physical::DeviceType device() const { return deviceType_; }
+            bool determistic() const { return determistic_; }
 
         private:
             const physical::DeviceType deviceType_;
             const Codec codec_;
+            const bool determistic_;
         };
 
         template<std::size_t n>

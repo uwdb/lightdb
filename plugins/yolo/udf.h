@@ -24,7 +24,8 @@ class YOLO: public lightdb::functor::unaryfunctor {
             float hierarchical_threshold=0.5f,
             float nms=0.45f)
                 : lightdb::functor::unaryfunction(lightdb::physical::DeviceType::CPU,
-                                                  lightdb::Codec::boxes()),
+                                                  lightdb::Codec::boxes(),
+                                                  true),
                   network_(load_network(const_cast<char*>(configuration_path.c_str()),
                                         const_cast<char*>(weights_path.c_str()), 0)),
                   metadata_(get_metadata(const_cast<char*>(metadata_path.c_str()))),
