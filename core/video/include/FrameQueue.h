@@ -93,7 +93,7 @@ public:
 
     template<typename T>
     const std::shared_ptr<T> dequeue_wait() {
-        std::shared_ptr<T> data(new T, [this](T *data) { this->releaseFrame(data); });
+        std::shared_ptr<T> data(new T, [this](T *data) { this->releaseFrame(data); delete data; });
 
         while(!dequeue(data.get()))
             std::this_thread::yield();
@@ -102,10 +102,11 @@ public:
 
     template<typename T>
     const std::shared_ptr<T> dequeue() {
-        std::shared_ptr<T> data(new T, [this](T *data) { this->releaseFrame(data); });
-        return dequeue(data.get())
-                ? data
-                : nullptr;
+        T data;
+
+        return dequeue(&data)
+            ? std::shared_ptr<T>(new T{data}, [this](T *d) { this->releaseFrame(d); delete d; })
+            : nullptr;
     }
 
 protected:
@@ -134,7 +135,7 @@ public:
   //virtual bool dequeue(CUVIDPARSERDISPINFO *data) { return dequeue(static_cast<void*>(data)); }
 
   const std::shared_ptr<CUVIDPARSERDISPINFO> dequeue() {
-      return static_cast<FrameQueue*>(this)->dequeue<CUVIDPARSERDISPINFO>();
+      return static_cast<FrameQueue*>(this)->try_dequeue<CUVIDPARSERDISPINFO>();
   }
 
     //TODO this was protected, move back after debugging
