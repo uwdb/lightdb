@@ -230,6 +230,20 @@ namespace lightdb::optimization {
     public:
         using OptimizerRule::OptimizerRule;
 
+        PhysicalLightFieldReference AngularSelection(const logical::SubsetLightField &node,
+                                                     PhysicalLightFieldReference parent) {
+            if(parent->device() == physical::DeviceType::GPU)
+                return plan().emplace<physical::GPUAngularSubframe>(plan().lookup(node), parent);
+            else
+                throw std::runtime_error("Hardcoded support only for GPU angular selection"); //TODO
+        }
+
+        PhysicalLightFieldReference TemporalSelection(const logical::SubsetLightField &node,
+                                                      PhysicalLightFieldReference parent) {
+            LOG(WARNING) << "Assuming temporal selection parent is encoded video without actually checking";
+            return plan().emplace<physical::FrameSubset>(plan().lookup(node), parent);
+        }
+
         bool visit(const logical::SubsetLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
                 auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
@@ -239,13 +253,24 @@ namespace lightdb::optimization {
                 if(physical_parents.empty())
                     return false;
 
-                auto &physical_parent = physical_parents[0];
+                auto selection = physical_parents[0];
+                auto dimensions = node.dimensions();
 
-                if(physical_parent->device() != physical::DeviceType::GPU)
-                //if(hardcoded_parent->device() != physical::DeviceType::GPU)
-                    throw std::runtime_error("Hardcoded support only for GPU selection"); //TODO
-                LOG(WARNING) << "Assuming angular selection without actually checking";
-                plan().emplace<physical::GPUAngularSubframe>(plan().lookup(node), physical_parent);
+                // Handle theta/phi
+                selection = dimensions.find(Dimension::Theta) != dimensions.end() ||
+                            dimensions.find(Dimension::Phi) != dimensions.end()
+                    ? AngularSelection(node, selection)
+                    : selection;
+
+                selection = dimensions.find(Dimension::Time) != dimensions.end()
+                    ? TemporalSelection(node, selection)
+                    : selection;
+
+                if(dimensions.find(Dimension::X) != dimensions.end() ||
+                        dimensions.find(Dimension::Y) != dimensions.end() ||
+                        dimensions.find(Dimension::Z) != dimensions.end())
+                    throw std::runtime_error("Missing support only for spatial selection"); //TODO
+
                 return true;
             }
             return false;
