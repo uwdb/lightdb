@@ -241,7 +241,10 @@ namespace lightdb::optimization {
         PhysicalLightFieldReference TemporalSelection(const logical::SubsetLightField &node,
                                                       PhysicalLightFieldReference parent) {
             LOG(WARNING) << "Assuming temporal selection parent is encoded video without actually checking";
-            return plan().emplace<physical::FrameSubset>(plan().lookup(node), parent);
+            if(parent->device() == physical::DeviceType::GPU)
+                return plan().emplace<physical::FrameSubset>(plan().lookup(node), parent);
+            else
+                throw std::runtime_error("Hardcoded support only for GPU temporal selection"); //TODO
         }
 
         bool visit(const logical::SubsetLightField &node) override {
@@ -269,7 +272,7 @@ namespace lightdb::optimization {
                 if(dimensions.find(Dimension::X) != dimensions.end() ||
                         dimensions.find(Dimension::Y) != dimensions.end() ||
                         dimensions.find(Dimension::Z) != dimensions.end())
-                    throw std::runtime_error("Missing support only for spatial selection"); //TODO
+                    throw std::runtime_error("Missing support for spatial selection"); //TODO
 
                 return true;
             }
