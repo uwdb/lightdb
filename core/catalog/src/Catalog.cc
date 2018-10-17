@@ -13,7 +13,7 @@ namespace lightdb::catalog {
         auto metadataFilename = path / metadataFilename_;
 
         if(!filesystem::exists(metadataFilename))
-            throw CatalogError("Light field does not exist", name);
+            throw CatalogError(std::string("Light field ") + name + " does not exist in catalog " + path_.string(), name);
         else
             return LightFieldReference::make<logical::ScannedLightField>(Metadata{*this, name, path});
     }
