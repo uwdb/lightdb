@@ -70,9 +70,7 @@ namespace lightdb {
                     throw CatalogError("No ambient catalog specified", "instance");
             }
             static const Catalog &instance(Catalog catalog) { return instance_.emplace(catalog); }
-
             LightFieldReference get(const std::string &name) const;
-            //void save(const std::string& name, PhysicalLightField&) const;
             OutputStream create(const std::string& name, const Codec &codec, const Configuration &configuration) const;
 
             class Metadata {
@@ -81,9 +79,9 @@ namespace lightdb {
                 Metadata(const Catalog &catalog, std::string name, std::experimental::filesystem::path path)
                         : catalog_(catalog), name_(std::move(name)), path_(std::move(path)),
                         //TODO grab boxes and load volume/geometry, detect colorspace
-                          codec_(Codec::h264()),
                           volume_({{0, 0}, {0, 0}, {0, 0}, {0, 10}, ThetaRange::limits(), PhiRange::limits()}),
                           colorSpace_(YUVColorSpace::instance()),
+                        //TODO move geometry to streams
                           geometry_(EquirectangularGeometry(EquirectangularGeometry::Samples())),
                           streams_(get_streams(path_))
                 { }
@@ -99,11 +97,10 @@ namespace lightdb {
                 const Catalog &catalog_;
                 const std::string name_;
                 const std::experimental::filesystem::path path_;
-                const Codec codec_;
                 const Volume volume_;
                 const ColorSpace colorSpace_;
                 const GeometryReference geometry_;
-                std::vector<Stream> streams_;
+                const std::vector<Stream> streams_;
             };
 
         private:
@@ -114,6 +111,7 @@ namespace lightdb {
             static constexpr const char *metadataFilename_ = "metadata.mp4";
             static std::optional<Catalog> instance_;
             static std::vector<Stream> get_streams(const std::experimental::filesystem::path&);
+            inline Catalog::Metadata metadata(const std::string &name) const;
         };
     } //namespace catalog
 } //namespace lightdb

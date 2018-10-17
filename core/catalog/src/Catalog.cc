@@ -8,6 +8,11 @@ namespace filesystem = ::std::experimental::filesystem;
 namespace lightdb::catalog {
     std::optional<Catalog> Catalog::instance_;
 
+    Catalog::Metadata Catalog::metadata(const std::string &name) const {
+        auto path = filesystem::absolute(path_ / name);
+        return Catalog::Metadata{*this, name, path};
+    }
+
     LightFieldReference Catalog::get(const std::string &name) const {
         auto path = filesystem::absolute(path_ / name);
         auto metadataFilename = path / metadataFilename_;
@@ -15,7 +20,7 @@ namespace lightdb::catalog {
         if(!filesystem::exists(metadataFilename))
             throw CatalogError(std::string("Light field ") + name + " does not exist in catalog " + path_.string(), name);
         else
-            return LightFieldReference::make<logical::ScannedLightField>(Metadata{*this, name, path});
+            return LightFieldReference::make<logical::ScannedLightField>(metadata(name));
     }
 
     OutputStream Catalog::create(const std::string& name, const Codec &codec, const Configuration &configuration) const {
