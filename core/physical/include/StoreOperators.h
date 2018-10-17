@@ -5,7 +5,7 @@
 
 namespace lightdb::physical {
 
-class Store: public PhysicalLightField, public EncodedVideoInterface  {
+class Store: public PhysicalLightField, public EncodedVideoInterface {
 public:
     explicit Store(const LightFieldReference &logical,
                    PhysicalLightFieldReference &parent)
@@ -38,6 +38,7 @@ private:
               output_([this]() { return catalog::Catalog::instance().create(store_.name(), parent_.downcast<EncodedVideoInterface>().codec(), configuration_); }) {
         LOG(INFO) << "Storing to ambient catalog";
         CHECK_EQ(parents().size(), 1);
+        CHECK(parent_.is<EncodedVideoInterface>()) << "Store only supports internally persisting encoded video.";
     }
 
     const logical::StoredLightField &store_;
