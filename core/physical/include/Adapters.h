@@ -124,7 +124,6 @@ TeedPhysicalLightFieldAdapter(const PhysicalLightFieldReference &source,
         return (*this)[index].downcast<PhysicalToLogicalLightFieldAdapter>().source();
     }
 
-private:
     class TeedPhysicalLightField: public PhysicalLightField {
     public:
         TeedPhysicalLightField(std::shared_ptr<std::mutex> mutex,
@@ -171,6 +170,7 @@ private:
         std::shared_ptr<std::vector<std::queue<MaterializedLightFieldReference>>> queues_;
     };
 
+private:
     std::vector<LightFieldReference> tees_;
 };
 

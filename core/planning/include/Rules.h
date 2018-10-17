@@ -75,32 +75,34 @@ namespace lightdb::optimization {
         using OptimizerRule::OptimizerRule;
 
         bool visit(const logical::EncodedLightField &node) override {
-            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
-                    node.parents().begin(), node.parents().end(),
-                    [this](auto &parent) { return plan().assignments(parent); });
-
-            if(physical_parents.empty())
-                return false;
-
-            //TODO clean this up, shouldn't just be randomly picking last parent
-            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>()
-                                   ? physical_parents[0]
-                                   : physical_parents[physical_parents.size() - 1];
-
             if(!plan().has_physical_assignment(node)) {
+                auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                        node.parents().begin(), node.parents().end(),
+                        [this](auto &parent) { return plan().unassigned(parent); });
+
+                if(physical_parents.empty())
+                    return false;
+
+                //TODO clean this up, shouldn't just be randomly picking last parent
+                auto physical_parent = physical_parents[0];
+                auto logical = plan().lookup(node);
+
                 LOG(WARNING) << "Randomly picking HEVC as codec";
-                if(hardcoded_parent.is<physical::GPUAngularSubquery>() && hardcoded_parent.downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>())
-                    plan().emplace<physical::CPUIdentity>(plan().lookup(node), hardcoded_parent);
-                    //plan().emplace<physical::HomomorphicUniformTile>(plan().lookup(node), hardcoded_parent, 4, 4);
-                else if(hardcoded_parent.is<physical::GPUOperator>())
-                    plan().emplace<physical::GPUEncode>(plan().lookup(node), hardcoded_parent, Codec::hevc());
+                if(physical_parent.is<physical::GPUAngularSubquery>() && physical_parent.downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>())
+                    plan().emplace<physical::CPUIdentity>(logical, physical_parent);
+                    //plan().emplace<physical::HomomorphicUniformTile>(logical, hardcoded_parent, 4, 4);
+                else if(physical_parent.is<physical::GPUOperator>())
+                    plan().emplace<physical::GPUEncode>(logical, physical_parent, Codec::hevc());
                 //else if(hardcoded_parent.is<physical::GPUScanMemory>() && hardcoded_parent->device() == physical::DeviceType::GPU)
-                //    plan().emplace<physical::GPUEncode>(plan().lookup(node), hardcoded_parent, Codec::hevc());
-                else if(hardcoded_parent.is<physical::CPUMap>() && hardcoded_parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
-                    plan().emplace<physical::CPUIdentity>(plan().lookup(node), hardcoded_parent);
+                //    plan().emplace<physical::GPUEncode>(logical, hardcoded_parent, Codec::hevc());
+                else if(physical_parent.is<physical::CPUMap>() && physical_parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
+                    plan().emplace<physical::CPUIdentity>(logical, physical_parent);
+                //TODO this is silly -- every physical operator should declare an output type and we should just use that
+                else if(physical_parent.is<physical::TeedPhysicalLightFieldAdapter::TeedPhysicalLightField>() && physical_parent->parents()[0].is<physical::CPUMap>() && physical_parent->parents()[0].downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
+                    plan().emplace<physical::CPUIdentity>(logical, physical_parent);
                 else {
                     auto gpu = plan().environment().gpus()[0];
-                    auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(plan().lookup(node), hardcoded_parent, gpu);
+                    auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, physical_parent, gpu);
                     plan().emplace<physical::GPUEncode>(plan().lookup(node), transfer, Codec::hevc());
                 }
                 return true;
@@ -183,26 +185,42 @@ namespace lightdb::optimization {
     public:
         using OptimizerRule::OptimizerRule;
 
+        PhysicalLightFieldReference Map(const logical::TransformedLightField &node, PhysicalLightFieldReference parent) {
+            auto logical = plan().lookup(node);
+
+            if(!node.functor()->has_implementation(physical::DeviceType::GPU)) {
+                auto transfer = plan().emplace<physical::GPUtoCPUTransfer>(plan().lookup(node), parent);
+                return plan().emplace<physical::CPUMap>(plan().lookup(node), transfer, *node.functor());
+            } else
+                return plan().emplace<physical::GPUMap>(plan().lookup(node), parent, *node.functor());
+        }
+
+
         bool visit(const logical::TransformedLightField &node) override {
-            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
-                    node.parents().begin(), node.parents().end(),
-                    [this](auto &parent) { return plan().assignments(parent); });
-
-            if(physical_parents.empty())
-                return false;
-
-            //TODO clean this up, shouldn't just be randomly picking last parent
-            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>() || physical_parents[0].is<physical::CPUtoGPUTransfer>()
-                                   ? physical_parents[0]
-                                   : physical_parents[physical_parents.size() - 1];
-
             if(!plan().has_physical_assignment(node)) {
-                if(!node.functor()->has_implementation(physical::DeviceType::GPU)) {
-                    auto transfer = plan().emplace<physical::GPUtoCPUTransfer>(plan().lookup(node), hardcoded_parent);
-                    plan().emplace<physical::CPUMap>(plan().lookup(node), transfer, *node.functor());
-                } else
-                    plan().emplace<physical::GPUMap>(plan().lookup(node), hardcoded_parent, *node.functor());
-                return true;
+                auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                        node.parents().begin(), node.parents().end(),
+                        [this](auto &parent) { return plan().unassigned(parent); });
+
+                if(!physical_parents.empty()) {
+                    auto mapped = Map(node, physical_parents[0]);
+
+                    //TODO what if function isn't determistic?!
+
+                    auto children = plan().children(plan().lookup(node));
+                    if(children.size() > 1) {
+                        auto tees = physical::TeedPhysicalLightFieldAdapter::make(mapped, children.size());
+                        for(auto index = 0u; index < children.size(); index++) {
+                            if(mapped->device() == physical::DeviceType::CPU)
+                                plan().assign(plan().lookup(node), tees->physical(index));
+                            else if(mapped->device() == physical::DeviceType::GPU)
+                                plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), mapped);
+                            else
+                                throw InvalidArgumentError("No rule support for device type.", "node");
+                        }
+                    }
+                    return true;
+                }
             }
             return false;
         }
@@ -420,13 +438,18 @@ namespace lightdb::optimization {
         PhysicalLightFieldReference Encode(const logical::StoredLightField &node, PhysicalLightFieldReference parent) {
             auto logical = plan().lookup(node);
 
+            // Can we leverage the ChooseEncode rule to automatically do this stuff, which is an exact duplicate?
+
             if(parent.is<physical::GPUAngularSubquery>() && parent.downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent.is<physical::GPUOperator>()) {
                 return plan().emplace<physical::GPUEncode>(logical, parent, Codec::hevc());
             } else if(parent.is<physical::CPUMap>() && parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
-            } else if(parent->device() != physical::DeviceType::GPU){
+                //TODO this is silly -- every physical operator should declare an output type and we should just use that
+            } else if(parent.is<physical::TeedPhysicalLightFieldAdapter::TeedPhysicalLightField>() && parent->parents()[0].is<physical::CPUMap>() && parent->parents()[0].downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name()) {
+                return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent->device() != physical::DeviceType::GPU) {
                 auto gpu = plan().environment().gpus()[0];
                 auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, parent, gpu);
                 return plan().emplace<physical::GPUEncode>(logical, transfer, Codec::hevc());

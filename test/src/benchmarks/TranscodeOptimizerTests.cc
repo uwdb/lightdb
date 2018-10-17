@@ -1,7 +1,6 @@
 #include "HeuristicOptimizer.h"
 #include "Coordinator.h"
 #include "Display.h"
-#include "VisitorTemp2.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
