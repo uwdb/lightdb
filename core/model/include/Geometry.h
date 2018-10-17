@@ -33,6 +33,11 @@ namespace lightdb {
         Phi
     };
 
+    namespace Dimensions {
+        static const Dimension All[] = {Dimension::X, Dimension::Y, Dimension::Z, Dimension::Time,
+                                        Dimension::Theta, Dimension::Phi};
+    };
+
     typedef number angle; //TODO change to union double/rational/inf-precision type, also add to Spatiotemporal range
 
     class UnknownRange;

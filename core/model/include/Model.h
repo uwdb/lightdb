@@ -16,6 +16,7 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <set>
 #include <numeric>
 #include <optional>
 #include <stdexcept>
@@ -94,6 +95,17 @@ namespace lightdb::logical {
                                      [volume](auto &v) { return v & volume; },
                                      [volume](auto &v) { return volume.has_nonempty_intersection(v); })})
         { }
+
+        std::set<Dimension> dimensions() const {
+            std::set<Dimension> values;
+
+            std::copy_if(std::begin(Dimensions::All), std::end(Dimensions::All),
+                         std::inserter(values, values.begin()),
+                         [this](const auto &d) {
+                             return volume().bounding().get(d) != parents()[0]->volume().bounding().get(d); });
+
+            return values;
+        }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<SubsetLightField>(visitor); }
     };
