@@ -1,5 +1,5 @@
-#ifndef YOLO_LIBRARY_H
-#define YOLO_LIBRARY_H
+#ifndef LIGHTDB_YOLO_LIBRARY_H
+#define LIGHTDB_YOLO_LIBRARY_H
 
 #include "Functor.h"
 
@@ -73,4 +73,4 @@ public:
     YOLO() : lightdb::functor::unaryfunctor("YOLO", CPU()) { }
 };
 
-#endif
+#endif // LIGHTDB_YOLO_LIBRARY_H

@@ -53,7 +53,7 @@ shared_reference<LightField> YOLO::CPU::operator()(LightField& input) {
             for(auto j = 0u; j < metadata_.classes; j++)
                 if(probabilities_[i][j] > 0.001)
                     {
-                    printf("%s,%.0f,%.0f,%.0f,%.0f,%.3f\n", metadata_.names[j], boxes_[i].x, boxes_[i].y, boxes_[i].w, boxes_[i].h, probabilities_[i][j]);
+                    //printf("%s,%.0f,%.0f,%.0f,%.0f,%.3f\n", metadata_.names[j], boxes_[i].x, boxes_[i].y, boxes_[i].w, boxes_[i].h, probabilities_[i][j]);
                     output.insert(output.end(), reinterpret_cast<char*>(&boxes_[i]),
                                                 reinterpret_cast<char*>(&boxes_[i + 1]));
                     }
