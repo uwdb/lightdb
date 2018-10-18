@@ -9,6 +9,7 @@
 #include "errors.h"
 #include "dynlink_nvcuvid.h"
 #include <mutex>
+#include <utility>
 
 //TODO move into lightdb namespace
 
@@ -277,8 +278,7 @@ public:
     unsigned int width() const override { return DecodedFrame::width(); }
 
 private:
-    static std::pair<CUdeviceptr, unsigned int> map_frame(const DecodedFrame &frame)
-    {
+    static std::pair<CUdeviceptr, unsigned int> map_frame(const DecodedFrame &frame) {
         CUresult result;
         CUdeviceptr handle;
         unsigned int pitch;
@@ -298,13 +298,25 @@ private:
 class LocalFrame: public Frame {
 public:
     LocalFrame(const LocalFrame &frame)
-        : Frame(frame),
-          data_(frame.data_)
+        : LocalFrame(frame, frame.data_)
+    { }
+
+    LocalFrame(const LocalFrame &frame, const lightdb::bytestring &data)
+            : LocalFrame(frame, std::make_shared<lightdb::bytestring>(data.begin(), data.end()))
+    { }
+
+    LocalFrame(const LocalFrame &frame, const size_t size)
+            : LocalFrame(frame, std::make_shared<lightdb::bytestring>(size, 0))
+    { }
+
+    LocalFrame(const LocalFrame &frame, std::shared_ptr<lightdb::bytestring> data)
+            : Frame(frame),
+              data_(std::move(data))
     { }
 
     explicit LocalFrame(const CudaFrame &source)
         : Frame(source),
-          data_(std::make_shared<lightdb::bytestring>(width() * height() * 3 / 2))
+          data_(std::make_shared<lightdb::bytestring>(width() * height() * 3 / 2, 0))
     {
         CUresult status;
         auto params = CUDA_MEMCPY2D {
