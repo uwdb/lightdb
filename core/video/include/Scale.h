@@ -13,50 +13,46 @@ class GPUScale {
 public:
     class NV12 {
     public:
+        NV12(const GPUContext &context, const std::experimental::filesystem::path &module_path)
+              : module_(nullptr),
+                function_(nullptr),
+                luma2DTexture_(nullptr),
+                chroma2DTexture_(nullptr),
+                owned_(true) {
+            CUresult result;
 
-    NV12(const GPUContext &context, const std::experimental::filesystem::path &module_path)
-          : module_(nullptr),
-            function_(nullptr),
-            luma2DTexture_(nullptr),
-            chroma2DTexture_(nullptr),
-            owned_(true)
-    {
-        CUresult result;
+            printf("%s\n", std::experimental::filesystem::absolute(module_path / module_filename).c_str());
+            if((result = cuModuleLoad(&module_, std::experimental::filesystem::absolute(module_path / module_filename).c_str())) != CUDA_SUCCESS)
+                throw GpuCudaRuntimeError("Could not load NV12 scale module", result);
+            else if((result = cuModuleGetFunction(&function_, module_, function_name)) != CUDA_SUCCESS)
+                throw GpuCudaRuntimeError("Could not load NV12 scale function", result);
+            else if((luma2DTexture_ = create_texture(module_, "luma_tex", CU_AD_FORMAT_UNSIGNED_INT8, 1)) == nullptr)
+                throw GpuCudaRuntimeError("Unable to allocate NV12 luma texture", result);
+            else if((chroma2DTexture_ = create_texture(module_, "chroma_tex", CU_AD_FORMAT_UNSIGNED_INT8, 2)) == nullptr)
+                throw GpuCudaRuntimeError("Unable to allocate NV12 chrome texture", result);
+        }
 
-        printf("%s\n", std::experimental::filesystem::absolute(module_path / module_filename).c_str());
-        if((result = cuModuleLoad(&module_, std::experimental::filesystem::absolute(module_path / module_filename).c_str())) != CUDA_SUCCESS)
-            throw GpuCudaRuntimeError("Could not load NV12 scale module", result);
-        else if((result = cuModuleGetFunction(&function_, module_, function_name)) != CUDA_SUCCESS)
-            throw GpuCudaRuntimeError("Could not load NV12 scale function", result);
-        else if((luma2DTexture_ = create_texture(module_, "luma_tex", CU_AD_FORMAT_UNSIGNED_INT8, 1)) == nullptr)
-            throw GpuCudaRuntimeError("Unable to allocate NV12 luma texture", result);
-        else if((chroma2DTexture_ = create_texture(module_, "chroma_tex", CU_AD_FORMAT_UNSIGNED_INT8, 2)) == nullptr)
-            throw GpuCudaRuntimeError("Unable to allocate NV12 chrome texture", result);
-    }
+        NV12(const NV12&) = delete;
+        NV12(NV12&& other) noexcept
+            : module_(other.module_),
+              function_(other.function_),
+              luma2DTexture_(other.luma2DTexture_),
+              chroma2DTexture_(other.chroma2DTexture_),
+              owned_(true)
+        { other.owned_ = false; }
 
-    NV12(const NV12&) = delete;
-    NV12(NV12&& other) noexcept
-        : module_(other.module_),
-          function_(other.function_),
-          luma2DTexture_(other.luma2DTexture_),
-          chroma2DTexture_(other.chroma2DTexture_),
-          owned_(true)
-    { other.owned_ = false; }
+        ~NV12() {
+            CUresult result;
 
-    ~NV12()
-    {
-        CUresult result;
+            if(owned_ && luma2DTexture_ != nullptr && (result = cuTexRefDestroy(luma2DTexture_)) != CUDA_SUCCESS)
+                LOG(WARNING) << "Swallowed attempt to destroy NV12 scale luma texture: " << result;
+            if(owned_ && chroma2DTexture_ != nullptr && (result = cuTexRefDestroy(chroma2DTexture_)) != CUDA_SUCCESS)
+                LOG(WARNING) << "Swallowed attempt to destroy NV12 scale chroma texture: " << result;
+            if(owned_ && module_ != nullptr && (result = cuModuleUnload(module_)) != CUDA_SUCCESS)
+                LOG(WARNING) << "Swallowed attempt to unload NV12 scale module: " << result;
+        }
 
-        if(owned_ && luma2DTexture_ != nullptr && (result = cuTexRefDestroy(luma2DTexture_)) != CUDA_SUCCESS)
-            LOG(WARNING) << "Swallowed attempt to destroy NV12 scale luma texture: " << result;
-        if(owned_ && chroma2DTexture_ != nullptr && (result = cuTexRefDestroy(chroma2DTexture_)) != CUDA_SUCCESS)
-            LOG(WARNING) << "Swallowed attempt to destroy NV12 scale chroma texture: " << result;
-        if(owned_ && module_ != nullptr && (result = cuModuleUnload(module_)) != CUDA_SUCCESS)
-            LOG(WARNING) << "Swallowed attempt to unload NV12 scale module: " << result;
-    }
-
-        void scale(VideoLock &lock, const CudaFrameReference &input, CudaFrameReference &output) const
-        {
+        void scale(VideoLock &lock, const CudaFrameReference &input, CudaFrameReference &output) const {
             scale(lock,
                   input->handle(), output->handle(),
                   input->width(),  input->pitch(),  input->height(),
@@ -67,8 +63,7 @@ public:
         void scale(VideoLock &lock, CUdeviceptr input, CUdeviceptr output,
                    unsigned int srcWidth, unsigned int srcPitch, unsigned int srcHeight,
                    unsigned int dstWidth, unsigned int dstPitch, unsigned int dstHeight,
-                   unsigned int maxWidth, unsigned int maxHeight) const
-        {
+                   unsigned int maxWidth, unsigned int maxHeight) const {
         std::lock_guard mlock(lock);
 
         CUresult result;
@@ -133,24 +128,24 @@ public:
             throw GpuCudaRuntimeError("Scale kernel failed", result);
         else if((result = cuStreamQuery(nullptr)) != CUDA_SUCCESS && result != CUDA_ERROR_NOT_READY)
             throw GpuCudaRuntimeError("Scale cuStreamQuery", result);
-    }
+        }
 
     private:
 
-    static CUtexref create_texture(CUmodule hModule, const char *name, CUarray_format format, int components, unsigned int flags = CU_TRSF_READ_AS_INTEGER)
-    {
-        CUresult result;
-        CUtexref texture;
+        static CUtexref create_texture(CUmodule hModule, const char *name, CUarray_format format, int components,
+                                       unsigned int flags = CU_TRSF_READ_AS_INTEGER) {
+            CUresult result;
+            CUtexref texture;
 
-        if((result = cuModuleGetTexRef(&texture, hModule, name)) != CUDA_SUCCESS)
-            throw GpuCudaRuntimeError("Error in NV12 scale cuModuleGetTexRef", result);
-        else if((result = cuTexRefSetFormat(texture, format, components)) != CUDA_SUCCESS)
-            throw GpuCudaRuntimeError("Error in NV12 scale cuTexRefSetFormat", result);
-        else if((result = cuTexRefSetFlags(texture, flags)) != CUDA_SUCCESS)
-            throw GpuCudaRuntimeError("Error in NV12 scale cuTexRefSetFlags", result);
-        else
-            return texture;
-    }
+            if((result = cuModuleGetTexRef(&texture, hModule, name)) != CUDA_SUCCESS)
+                throw GpuCudaRuntimeError("Error in NV12 scale cuModuleGetTexRef", result);
+            else if((result = cuTexRefSetFormat(texture, format, components)) != CUDA_SUCCESS)
+                throw GpuCudaRuntimeError("Error in NV12 scale cuTexRefSetFormat", result);
+            else if((result = cuTexRefSetFlags(texture, flags)) != CUDA_SUCCESS)
+                throw GpuCudaRuntimeError("Error in NV12 scale cuTexRefSetFlags", result);
+            else
+                return texture;
+        }
 
         constexpr static const char* function_name = "Scale_Bilinear_NV12";
         constexpr static const char* module_filename =
