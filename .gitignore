@@ -46,6 +46,7 @@ CTestTestfile.cmake
 # CUDA
 cuda-*.send
 cuda-*.recv
+*.ptx
 
 # Google Test
 Testing/
