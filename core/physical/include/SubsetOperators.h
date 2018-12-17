@@ -113,7 +113,7 @@ private:
         const auto delay = logical()->volume().bounding().t().start() - parent().logical()->volume().bounding().t().start();
         const auto delay_frames = static_cast<unsigned long>(configuration().framerate * delay);
 
-        CHECK_GT(delay, 0);
+        CHECK_GE(delay, 0);
         CHECK_EQ(static_cast<double>(configuration().framerate * delay), delay_frames);
 
         return delay_frames;
