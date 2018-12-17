@@ -41,9 +41,18 @@ namespace lightdb::catalog {
 
         const size_t index = 0;
         auto metadata = utility::StreamMetadata(path / metadataFilename_, index, false);
-        auto hardcoded_hevc_path = filesystem::absolute(path / "stream0.hevc");
-        auto hardcoded_h264_path = filesystem::absolute(path / "stream0.h264");
-        return {Stream{filesystem::exists(hardcoded_hevc_path) ? hardcoded_hevc_path : hardcoded_h264_path, metadata.codec(), metadata.configuration()}};
+
+        filesystem::path stream_filename;
+        if(filesystem::exists(filesystem::absolute(path / "stream0.hevc")))
+            stream_filename = filesystem::absolute(path / "stream0.hevc");
+        else if(filesystem::exists(filesystem::absolute(path / "stream0.h264")))
+            stream_filename = filesystem::absolute(path / "stream0.h264");
+        else if(filesystem::exists(filesystem::absolute(path / "stream0.boxes"))) {
+            stream_filename = filesystem::absolute(path / "stream0.boxes");
+            metadata.codec_ = "boxs"; //TODO
+        }
+
+        return {Stream{stream_filename, metadata.codec(), metadata.configuration()}};
     }
 
 } // namespace lightdb::catalog

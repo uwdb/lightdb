@@ -41,6 +41,7 @@ include_directories(${CUDA_INCLUDE_DIRS})
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${CUDA_nvcuvenc_LIBRARY})
 
 #TODO add FindLLV.cmake; clean this up
+#TODO Do we still depend on OpenCV outside of plugins?
 find_package(OpenCV REQUIRED)
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${OPENCV_LIBS} opencv_features2d)
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} lfv)
