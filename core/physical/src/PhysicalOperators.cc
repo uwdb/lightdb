@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <UnionTranscoder.h>
 
+#include "EncodeOperators.h"
+
 namespace lightdb {
     PhysicalLightField::iterator PhysicalLightField::iterator::eos_instance_{};
 

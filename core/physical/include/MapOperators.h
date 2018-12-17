@@ -52,35 +52,36 @@ private:
     const functor::unaryfunctor transform_;
 };
 
-    class CPUMap: public PhysicalLightField {
-    public:
-        CPUMap(const LightFieldReference &logical,
-               PhysicalLightFieldReference &parent,
-               const functor::unaryfunctor &transform)
-                : PhysicalLightField(logical, {parent}, physical::DeviceType::CPU),
-                  transform_(transform)
-        { }
+class CPUMap: public PhysicalLightField {
+public:
+    CPUMap(const LightFieldReference &logical,
+           PhysicalLightFieldReference &parent,
+           const functor::unaryfunctor &transform)
+            : PhysicalLightField(logical, {parent}, physical::DeviceType::CPU),
+              transform_(transform)
+    { }
 
 
-        std::optional<physical::MaterializedLightFieldReference> read() override {
-            if(iterators()[0] != iterators()[0].eos()) {
-                auto input = iterators()[0]++;
-                auto &data = input.downcast<CPUDecodedFrameData>();
-                auto &transform = transform_(DeviceType::CPU);
+    std::optional<physical::MaterializedLightFieldReference> read() override {
+        if(iterators()[0] != iterators()[0].eos()) {
+            auto input = iterators()[0]++;
+            auto &data = input.downcast<CPUDecodedFrameData>();
+            auto &transform = transform_(DeviceType::CPU);
 
-                auto result = transform(data);
-                auto &field = static_cast<LightField&>(result);
-                auto &output = dynamic_cast<MaterializedLightField&>(field);
-                return static_cast<physical::MaterializedLightFieldReference>(output);
-            } else
-                return {};
-        }
+            auto result = transform(data);
+            auto &field = static_cast<LightField&>(result);
+            auto &output = dynamic_cast<MaterializedLightField&>(field);
+            return static_cast<physical::MaterializedLightFieldReference>(output);
+        } else
+            return {};
+    }
 
-        const functor::unaryfunctor transform() const { return transform_; }
+    const functor::unaryfunctor transform() const { return transform_; }
 
-    private:
-        const functor::unaryfunctor transform_;
-    };
+private:
+    const functor::unaryfunctor transform_;
+};
+
 } // lightdb::physical
 
 #endif //LIGHTDB_MAPOPERATORS_H
