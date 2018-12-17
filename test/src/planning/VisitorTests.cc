@@ -20,6 +20,21 @@ protected:
     Catalog catalog;
 };
 
+TEST_F(VisitorTestFixture, testBaz) {
+    auto name = "red10";
+    auto input = Scan(name);
+    auto temporal = input.Select(SpatiotemporalDimension::Time, TemporalRange{2, 5});
+    auto encoded = temporal.Encode();
+
+    auto environment = LocalEnvironment();
+    auto coordinator = Coordinator();
+    Plan plan = HeuristicOptimizer(environment).optimize(encoded);
+
+    print_plan(plan);
+
+    coordinator.save(plan, "out.hevc");
+}
+
 TEST_F(VisitorTestFixture, testFoo) {
 /*    auto left = Scan("red10");
     auto right = Scan("red10");
