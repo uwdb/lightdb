@@ -45,10 +45,13 @@ class Blur: public lightdb::functor::unaryfunctor {
             }
         }
 
+
+        unsigned int kernel_size(unsigned int kernel_size) { return kernel_size_ = kernel_size; }
+
         lightdb::shared_reference<lightdb::LightField> operator()(lightdb::LightField& field) override;
 
     private:
-        const unsigned int kernel_size_;
+        unsigned int kernel_size_;
         unsigned int rgb_size_;
         unsigned int frame_size_;
         std::vector<unsigned char> rgb_;
