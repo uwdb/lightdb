@@ -3,6 +3,7 @@
 
 #include "PhysicalOperators.h"
 #include "EncodeOperators.h"
+#include "Rectangles.h"
 
 namespace lightdb::physical {
 
@@ -63,6 +64,95 @@ private:
                     functional::flatmap_iterator<GPUFrameReference,
                                                  PhysicalLightField::downcast_iterator<GPUDecodedFrameData>>>>> frames_;
 };
+
+
+template<typename Transform, typename Data>
+class GPUOverlayUnion : public GPUOperator {
+public:
+    explicit GPUOverlayUnion(const LightFieldReference &logical,
+                             std::vector<PhysicalLightFieldReference> &parents)
+            : GPUOperator(logical, parents,
+                          parents.back().downcast<GPUOperator>().gpu(),
+                          [this]() { return this->parents().back().downcast<GPUOperator>().configuration(); }),
+              transform_([this]() { return Transform(context()); }),
+              groups_(lazy<PhysicalLightField::iterator*>{[this]() { return &iterators()[0]; }})
+    { }
+
+    GPUOverlayUnion(const GPUUnion &) = delete;
+
+    std::optional<physical::MaterializedLightFieldReference> read() override {
+        if(!any_parent_eos()) {
+            GPUDecodedFrameData output;
+            auto video = (iterators().back()++).downcast<GPUDecodedFrameData>();
+
+            for(auto &frame: video.frames()) {
+                auto values = groups_++;
+                auto unioned = transform_.value().nv12().draw(lock(), frame->cuda(), values);
+                output.frames().emplace_back(unioned);
+            }
+
+            return {output};
+        } else
+            return {};
+    }
+
+private:
+    class GroupById {
+    public:
+        explicit GroupById(lazy<PhysicalLightField::iterator*> iterator)
+                : index_(0u),
+                  current_id_(0u),
+                  buffer_(MaterializedLightFieldReference::make<CPUDecodedFrameData>()),
+                  iterator_(std::move(iterator))
+        { }
+
+        std::vector<Data> operator++(int) {
+            std::optional<Data> value;
+            std::vector<Data> values;
+
+            while((value = peek()).has_value() && value.value().id == current_id_)
+                values.emplace_back(next());
+
+            if((value = peek()).has_value())
+                current_id_ = value.value().id;
+
+            return values;
+        }
+
+    private:
+        Data next() {
+            auto value = peek().value();
+            index_++;
+            return value;
+        }
+
+        std::optional<Data> peek() {
+            if(index_ >= frames().size()) {
+                buffer_ = (*iterator_.value())++;
+                index_ = 0u;
+            }
+
+            if(!frames().empty())
+                return *reinterpret_cast<const Data*>(frames().at(index_)->data().data());
+            else
+                return std::nullopt;
+        }
+
+        inline std::vector<LocalFrameReference>& frames() { return data().frames(); }
+        inline CPUDecodedFrameData& data() { return buffer_.downcast<CPUDecodedFrameData>(); }
+
+        size_t index_;
+        unsigned int current_id_;
+        MaterializedLightFieldReference buffer_;
+        lazy<PhysicalLightField::iterator*> iterator_;
+    };
+
+
+    lazy<Transform> transform_;
+    GroupById groups_;
+};
+
+using GPUBoxOverlayUnion = GPUOverlayUnion<video::GPURectangleOverlay, Rectangle>;
 
 } // lightdb::physical
 
