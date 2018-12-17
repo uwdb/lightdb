@@ -1,7 +1,10 @@
 #include "udf.h"
 #include "ipp.h"
+#include "Rectangle.h"
 
 using namespace lightdb;
+
+static unsigned int frame_index = 0;
 
 YOLO::CPU::CPU()
         : CPU("/home/bhaynes/projects/darknet/cfg/tiny-yolo.cfg",
@@ -17,6 +20,7 @@ shared_reference<LightField> YOLO::CPU::operator()(LightField& input) {
     auto &data = dynamic_cast<physical::CPUDecodedFrameData&>(input);
 
     for(auto& frame: data.frames()) {
+        frame_index++;
         Allocate(frame->height(), frame->width(), channels);
 
         auto y_data = reinterpret_cast<const unsigned char*>(frame->data().data());
@@ -48,14 +52,21 @@ shared_reference<LightField> YOLO::CPU::operator()(LightField& input) {
                        boxes_,
                        probabilities_);
 
-        if(true)
+        Rectangle box{frame_index - 1, 0, 0, 0, 0};
+        output.insert(output.end(), reinterpret_cast<char*>(&box),
+                                    reinterpret_cast<char*>(&box) + sizeof(Rectangle));
+
         for(auto i = 0u; i < box_count_; i++)
             for(auto j = 0u; j < metadata_.classes; j++)
                 if(probabilities_[i][j] > 0.001)
                     {
-                    //printf("%s,%.0f,%.0f,%.0f,%.0f,%.3f\n", metadata_.names[j], boxes_[i].x, boxes_[i].y, boxes_[i].w, boxes_[i].h, probabilities_[i][j]);
-                    output.insert(output.end(), reinterpret_cast<char*>(&boxes_[i]),
-                                                reinterpret_cast<char*>(&boxes_[i + 1]));
+                    box = {frame_index - 1,
+                           static_cast<unsigned int>(boxes_[i].x - boxes_[i].w / 2),
+                           static_cast<unsigned int>(boxes_[i].y - boxes_[i].h / 2),
+                           static_cast<unsigned int>(boxes_[i].w),
+                           static_cast<unsigned int>(boxes_[i].h)};
+                    output.insert(output.end(), reinterpret_cast<char*>(&box),
+                                                reinterpret_cast<char*>(&box) + sizeof(Rectangle));
                     }
         }
 
