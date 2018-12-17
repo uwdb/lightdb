@@ -5,12 +5,12 @@
 
 namespace lightdb::physical {
 
-class ScanSingleFile: public PhysicalLightField, public EncodedVideoInterface {
+class ScanSingleFileToGPU: public PhysicalLightField, public EncodedVideoInterface {
 public:
-    explicit ScanSingleFile(const LightFieldReference &logical, const catalog::Stream &stream)
-            : ScanSingleFile(logical,
-                             logical->downcast<logical::ScannedLightField>(),
-                             stream)
+    explicit ScanSingleFileToGPU(const LightFieldReference &logical, const catalog::Stream &stream)
+            : ScanSingleFileToGPU(logical,
+                                  logical->downcast<logical::ScannedLightField>(),
+                                  stream)
     { }
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
@@ -24,9 +24,9 @@ public:
     const Configuration &configuration() override { return stream_.configuration(); }
 
 private:
-    explicit ScanSingleFile(const LightFieldReference &logical,
-                            const logical::ScannedLightField &scanned,
-                            catalog::Stream stream)
+    explicit ScanSingleFileToGPU(const LightFieldReference &logical,
+                                 const logical::ScannedLightField &scanned,
+                                 catalog::Stream stream)
             : PhysicalLightField(logical, DeviceType::GPU),
               stream_(std::move(stream)),
               scanned_(scanned),
@@ -36,6 +36,46 @@ private:
     const catalog::Stream stream_;
     const logical::ScannedLightField &scanned_;
     lazy<FileDecodeReader> reader_;
+};
+
+template<size_t Size=131072>
+class ScanSingleFile: public PhysicalLightField, public EncodedVideoInterface {
+public:
+    explicit ScanSingleFile(const LightFieldReference &logical, const catalog::Stream &stream)
+            : ScanSingleFile(logical,
+                             logical->downcast<logical::ScannedLightField>(),
+                             stream)
+    { }
+
+    std::optional<physical::MaterializedLightFieldReference> read() override {
+        if(!reader_->eof()) {
+            reader_->read(buffer_.data(), buffer_.size());
+            return {CPUEncodedFrameData(stream_.codec(), buffer_)};
+
+        } else {
+            reader_->close();
+            return {};
+        }
+    }
+
+    const Codec &codec() const override { return stream_.codec(); }
+    const Configuration &configuration() override { return stream_.configuration(); }
+
+private:
+    explicit ScanSingleFile(const LightFieldReference &logical,
+                            const logical::ScannedLightField &scanned,
+                            catalog::Stream stream)
+            : PhysicalLightField(logical, DeviceType::CPU),
+              stream_(std::move(stream)),
+              scanned_(scanned),
+              buffer_(Size, 0),
+              reader_([this]() { return std::ifstream(stream_.path()); })
+    { }
+
+    const catalog::Stream stream_;
+    const logical::ScannedLightField &scanned_;
+    lightdb::bytestring buffer_;
+    lazy<std::ifstream> reader_;
 };
 
 } // namespace lightdb::physical
