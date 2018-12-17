@@ -14,7 +14,7 @@ public:
     GPUDownsampleResolution(const LightFieldReference &logical,
                             PhysicalLightFieldReference &parent,
                             IntervalGeometry geometry)
-            : GPUDownsampleResolution(logical, parent, std::vector<IntervalGeometry>({geometry}))
+            : GPUDownsampleResolution(logical, parent, std::vector<IntervalGeometry>({std::move(geometry)}))
     { }
 
     GPUDownsampleResolution(const LightFieldReference &logical,

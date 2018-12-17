@@ -305,6 +305,11 @@ public:
             : LocalFrame(frame, std::make_shared<lightdb::bytestring>(data.begin(), data.end()))
     { }
 
+    LocalFrame(unsigned int height, unsigned int width, const lightdb::bytestring &data)
+            : Frame(height, width, NV_ENC_PIC_STRUCT_FRAME),
+              data_(std::make_shared<lightdb::bytestring>(data.begin(), data.end()))
+    { }
+
     LocalFrame(const LocalFrame &frame, const size_t size)
             : LocalFrame(frame, std::make_shared<lightdb::bytestring>(size, 0))
     { }
@@ -345,7 +350,7 @@ public:
             throw GpuCudaRuntimeError("Call to cuMemcpy2D failed", status);
     }
 
-    unsigned char operator()(size_t x, size_t y) const { return data_->at(x + y * width()); }
+    virtual unsigned char operator()(size_t x, size_t y) const { return data_->at(x + y * width()); }
     const lightdb::bytestring& data() const { return *data_; }
 
 private:

@@ -36,6 +36,8 @@ namespace lightdb::utility {
                 return Codec::h264();
             else if(codec_ == "hevc")
                 return Codec::hevc();
+            else if(codec_ == "boxs")
+                return Codec::boxes();
             else
                 throw NotImplementedError("StreamMetadata does not support codec conversion");
         }

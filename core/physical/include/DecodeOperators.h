@@ -84,6 +84,36 @@ private:
     lazy<VideoDecoderSession<downcast_iterator<CPUEncodedFrameData>>> session_;
 };
 
+template<typename T>
+class CPUFixedLengthRecordDecode : public PhysicalLightField {
+public:
+    CPUFixedLengthRecordDecode(const LightFieldReference &logical,
+                               const PhysicalLightFieldReference &source)
+            : PhysicalLightField(logical, {source}, DeviceType::CPU) {
+        CHECK_EQ(source->device(), DeviceType::CPU);
+    }
+
+    CPUFixedLengthRecordDecode(const CPUFixedLengthRecordDecode &) = delete;
+    CPUFixedLengthRecordDecode(CPUFixedLengthRecordDecode&&) noexcept = default;
+
+    std::optional<physical::MaterializedLightFieldReference> read() override {
+        if(iterators()[0] != iterators()[0].eos()) {
+            CPUDecodedFrameData output;
+            auto input = iterators()[0]++;
+            auto &data = input.downcast<CPUEncodedFrameData>();
+
+            for(auto *current = data.value().data(),
+                     *end = current + data.value().size();
+                  current < end;
+                  current += sizeof(T))
+                output.frames().emplace_back(LocalFrameReference::make<LocalFrame>(0u, 0u, lightdb::bytestring(current, current + sizeof(T))));
+
+            return output;
+        } else
+            return {};
+    }
+};
+
 } // namespace lightdb::physical
 
 #endif //LIGHTDB_DECODEOPERATORS_H
