@@ -210,7 +210,8 @@ namespace lightdb {
         template<typename tolerance=std::pico, typename T>
         inline bool epsilon_equal(const T &other) const noexcept {
             if(type_ == type::rational && other.type_ == type::rational)
-                return (rational_ - other) < rational{tolerance::num, tolerance::den};
+               return (rational_ > other.rational_ ? (rational_ - other.rational_) : (other - rational_))
+                          < rational{tolerance::num, tolerance::den};
             else
                 return lightdb::epsilon_equal<tolerance>(static_cast<real_type>(*this), other);
         }
