@@ -33,7 +33,7 @@ protected:
               owned_(true)
     { other.owned_ = false; }
 
-    ~CudaKernel() {
+    virtual ~CudaKernel() {
         CUresult result;
 
         if(owned_ && module_ != nullptr && (result = cuModuleUnload(module_)) != CUDA_SUCCESS)
@@ -53,6 +53,10 @@ protected:
         else if((result = cuStreamQuery(nullptr)) != CUDA_SUCCESS && result != CUDA_ERROR_NOT_READY)
             throw GpuCudaRuntimeError("Kernel cuStreamQuery", result);
     }
+
+protected:
+    const CUmodule module() const { return module_; }
+    bool owned() const { return owned_; }
 
 private:
     CUmodule module_;

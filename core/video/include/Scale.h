@@ -11,45 +11,33 @@ namespace lightdb::video {
 
 class GPUScale {
 public:
-    class NV12 {
+    class NV12: public CudaKernel {
     public:
-        NV12(const GPUContext &context, const std::experimental::filesystem::path &module_path)
-              : module_(nullptr),
-                function_(nullptr),
-                luma2DTexture_(nullptr),
-                chroma2DTexture_(nullptr),
-                owned_(true) {
-            CUresult result;
 
-            printf("%s\n", std::experimental::filesystem::absolute(module_path / module_filename).c_str());
-            if((result = cuModuleLoad(&module_, std::experimental::filesystem::absolute(module_path / module_filename).c_str())) != CUDA_SUCCESS)
-                throw GpuCudaRuntimeError("Could not load NV12 scale module", result);
-            else if((result = cuModuleGetFunction(&function_, module_, function_name)) != CUDA_SUCCESS)
-                throw GpuCudaRuntimeError("Could not load NV12 scale function", result);
-            else if((luma2DTexture_ = create_texture(module_, "luma_tex", CU_AD_FORMAT_UNSIGNED_INT8, 1)) == nullptr)
-                throw GpuCudaRuntimeError("Unable to allocate NV12 luma texture", result);
-            else if((chroma2DTexture_ = create_texture(module_, "chroma_tex", CU_AD_FORMAT_UNSIGNED_INT8, 2)) == nullptr)
-                throw GpuCudaRuntimeError("Unable to allocate NV12 chrome texture", result);
+        NV12(const GPUContext &context, const std::experimental::filesystem::path &module_path)
+              : CudaKernel(context, module_path, module_filename, function_name),
+                luma2DTexture_(nullptr),
+                chroma2DTexture_(nullptr) {
+            if((luma2DTexture_ = create_texture(module(), "luma_tex", CU_AD_FORMAT_UNSIGNED_INT8, 1)) == nullptr)
+                throw GpuCudaRuntimeError("Unable to allocate NV12 luma texture", CUDA_ERROR_UNKNOWN);
+            else if((chroma2DTexture_ = create_texture(module(), "chroma_tex", CU_AD_FORMAT_UNSIGNED_INT8, 2)) == nullptr)
+                throw GpuCudaRuntimeError("Unable to allocate NV12 chroma texture", CUDA_ERROR_UNKNOWN);
         }
 
         NV12(const NV12&) = delete;
         NV12(NV12&& other) noexcept
-            : module_(other.module_),
-              function_(other.function_),
+            : CudaKernel(std::move(other)),
               luma2DTexture_(other.luma2DTexture_),
-              chroma2DTexture_(other.chroma2DTexture_),
-              owned_(true)
-        { other.owned_ = false; }
+              chroma2DTexture_(other.chroma2DTexture_)
+        { }
 
-        ~NV12() {
+        ~NV12() override {
             CUresult result;
 
-            if(owned_ && luma2DTexture_ != nullptr && (result = cuTexRefDestroy(luma2DTexture_)) != CUDA_SUCCESS)
+            if(owned() && luma2DTexture_ != nullptr && (result = cuTexRefDestroy(luma2DTexture_)) != CUDA_SUCCESS)
                 LOG(WARNING) << "Swallowed attempt to destroy NV12 scale luma texture: " << result;
-            if(owned_ && chroma2DTexture_ != nullptr && (result = cuTexRefDestroy(chroma2DTexture_)) != CUDA_SUCCESS)
+            if(owned() && chroma2DTexture_ != nullptr && (result = cuTexRefDestroy(chroma2DTexture_)) != CUDA_SUCCESS)
                 LOG(WARNING) << "Swallowed attempt to destroy NV12 scale chroma texture: " << result;
-            if(owned_ && module_ != nullptr && (result = cuModuleUnload(module_)) != CUDA_SUCCESS)
-                LOG(WARNING) << "Swallowed attempt to unload NV12 scale module: " << result;
         }
 
         void scale(VideoLock &lock, const CudaFrameReference &input, CudaFrameReference &output) const {
@@ -105,7 +93,7 @@ public:
         if((result = cuTexRefSetFilterMode(chroma2DTexture_, CU_TR_FILTER_MODE_LINEAR)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Scale chroma call to cuTexRefSetFilterMode", result);
         if((result = cuTexRefSetAddress2D(chroma2DTexture_, &chroma_description, input + (maxHeight + srcTop/2)*srcPitch, srcPitch)) != CUDA_SUCCESS)
-            throw GpuCudaRuntimeError("Scale chroma call to chroma2DTexture_", result);
+            throw GpuCudaRuntimeError("Scale chroma call to chroma2DTexture", result);
 
 
         auto dstUVOffset = dstHeight * dstPitch;// maxHeight * srcPitch;
@@ -121,13 +109,7 @@ public:
         dim3 block(256, 1, 1);
         dim3 grid((dstRight + 255) >> 8, (dstBottom + 1) >> 1, 1);
 
-        if((result = cuLaunchKernel(function_, grid.x, grid.y, grid.z,
-                                block.x, block.y, block.z,
-                                0,
-                                nullptr, args, nullptr)) != CUDA_SUCCESS)
-            throw GpuCudaRuntimeError("Scale kernel failed", result);
-        else if((result = cuStreamQuery(nullptr)) != CUDA_SUCCESS && result != CUDA_ERROR_NOT_READY)
-            throw GpuCudaRuntimeError("Scale cuStreamQuery", result);
+        invoke(lock, block, grid, args);
         }
 
     private:
@@ -157,11 +139,8 @@ public:
                 #error Unknown pointer size or missing size macros!
             #endif
 
-        CUmodule module_;
-        CUfunction function_;
         CUtexref luma2DTexture_;   // YYYY 2D PL texture (uchar1)
         CUtexref chroma2DTexture_; // UVUV 2D PL texture (uchar2)
-        bool owned_;
     };
 
     explicit GPUScale(const GPUContext &context)
