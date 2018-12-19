@@ -310,9 +310,9 @@ namespace lightdb::optimization {
                     ? AngularSelection(node, selection)
                     : selection;
 
-                //selection = dimensions.find(Dimension::Time) != dimensions.end()
-                //    ? TemporalSelection(node, selection)
-                //    : selection;
+                selection = dimensions.find(Dimension::Time) != dimensions.end()
+                    ? TemporalSelection(node, selection)
+                    : selection;
 
                 if(dimensions.find(Dimension::X) != dimensions.end() ||
                         dimensions.find(Dimension::Y) != dimensions.end() ||

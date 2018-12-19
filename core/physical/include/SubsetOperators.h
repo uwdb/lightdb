@@ -80,10 +80,10 @@ public:
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if (iterator() != iterator().eos()) {
             auto packet = iterator()++;
-            auto data = packet.downcast<GPUDecodedFrameData>();
+            auto &data = packet.downcast<GPUDecodedFrameData>();
 
             // Got more frames than we're delaying for, so cut the first (delay remaining) frames
-            if(delay_frames_ >= 0 && delay_frames_ <= data.frames().size()) {
+            if(delay_frames_ > 0 && delay_frames_ <= data.frames().size()) {
                 data.frames().erase(data.frames().begin(), data.frames().begin() + delay_frames_);
                 delay_frames_.value() = 0; // Set to zero in case we need to adjust for pending_frames below
             }

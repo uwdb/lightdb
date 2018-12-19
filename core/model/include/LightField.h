@@ -27,6 +27,11 @@ namespace lightdb {
 
     public:
         template<typename T>
+        inline T& downcast() {
+            return dynamic_cast<T&>(*this);
+        }
+
+        template<typename T>
         inline const T& downcast() const {
             return dynamic_cast<const T&>(*this);
         }

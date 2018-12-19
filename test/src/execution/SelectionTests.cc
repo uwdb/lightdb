@@ -1,7 +1,6 @@
 #include "HeuristicOptimizer.h"
 #include "Display.h"
 #include "AssertVideo.h"
-#include <gtest/gtest.h>
 
 using namespace lightdb;
 using namespace lightdb::logical;
