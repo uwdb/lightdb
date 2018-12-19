@@ -154,7 +154,7 @@ TEST_F(Q6aTestFixture, testQ6auadetrac) {
 TEST_F(Q6aTestFixture, testQ6a_scale1) {
     Catalog::instance(visualroad);
 
-    auto duplicates = 4;
+    auto duplicates = 4u;
     auto name = "scale1";
     std::vector<LightFieldReference> sinks;
     std::vector<std::string> outputs;
@@ -176,7 +176,7 @@ TEST_F(Q6aTestFixture, testQ6a_scale1) {
 TEST_F(Q6aTestFixture, testQ6a_scale2) {
     Catalog::instance(visualroad);
 
-    auto duplicates = 8;
+    auto duplicates = 8u;
     auto name = "scale1";
     std::vector<LightFieldReference> sinks;
     std::vector<std::string> outputs;
@@ -198,7 +198,7 @@ TEST_F(Q6aTestFixture, testQ6a_scale2) {
 TEST_F(Q6aTestFixture, testQ6a_scale4) {
     Catalog::instance(visualroad);
 
-    auto duplicates = 16;
+    auto duplicates = 16u;
     auto name = "scale1";
     std::vector<LightFieldReference> sinks;
     std::vector<std::string> outputs;
@@ -220,7 +220,7 @@ TEST_F(Q6aTestFixture, testQ6a_scale4) {
 TEST_F(Q6aTestFixture, testQ6a_scale8) {
     Catalog::instance(visualroad);
 
-    auto duplicates = 32;
+    auto duplicates = 32u;
     auto name = "scale1";
     std::vector<LightFieldReference> sinks;
     std::vector<std::string> outputs;

@@ -50,10 +50,11 @@ TEST_F(VisitorTestFixture, testFoo) {
     auto continuous = input.Interpolate(Dimension::Theta, interpolation::Linear());
     auto smalltheta = continuous.Discretize(Dimension::Theta, rational_times_real({2, 416}, PI));
     auto small = smalltheta.Discretize(Dimension::Phi, rational_times_real({1, 416}, PI));
-    auto gray = small.Map(yolo);
-    //auto gray = input.Map(lightdb::Greyscale);
+//    auto gray = small.Map(yolo);
+    auto gray = small.Map(lightdb::Greyscale);
     //auto gray = input.Map(yolo);
-    auto encoded = gray.Encode(Codec::boxes());
+    //auto encoded = gray.Encode(Codec::boxes());
+    auto encoded = gray.Encode(); //Codec::boxes());
 
     auto environment = LocalEnvironment();
     auto coordinator = Coordinator();
