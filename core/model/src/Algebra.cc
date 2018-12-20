@@ -56,7 +56,7 @@ namespace lightdb::logical {
         return LightFieldReference::make<logical::RotatedLightField>(this_, theta, phi);
     }
 
-    LightFieldReference Algebra::Partition(const Dimension dimension, const number interval) {
+    LightFieldReference Algebra::Partition(const Dimension dimension, const number& interval) {
         return LightFieldReference::make<logical::PartitionedLightField>(this_, dimension, interval);
 
     }
@@ -70,7 +70,7 @@ namespace lightdb::logical {
         return LightFieldReference::make<logical::DiscretizedLightField>(this_, geometry);
     }
 
-    LightFieldReference Algebra::Discretize(const Dimension dimension, const number interval) {
+    LightFieldReference Algebra::Discretize(const Dimension dimension, const number& interval) {
         return Discretize(GeometryReference::make<IntervalGeometry>(dimension, interval));
     }
 
