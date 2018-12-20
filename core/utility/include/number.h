@@ -178,7 +178,11 @@ namespace lightdb {
                     rational_times_real_ = other.rational_times_real_;
                     break;
                 default:
-                    assert(false);
+                    // This case should never be executed, and we want to keep noexcept
+                    #pragma GCC diagnostic push
+                    #pragma GCC diagnostic ignored "-Wterminate"
+                    throw std::logic_error("Unimplemented assignment for type.");
+                    #pragma GCC diagnostic pop
             }
             return *this;
         }
