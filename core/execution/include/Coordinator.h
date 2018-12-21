@@ -2,6 +2,7 @@
 #define LIGHTDB_COORDINATOR_H
 
 #include "Plan.h"
+#include "Pool.h"
 #include "progress.h"
 
 namespace lightdb::execution {
@@ -48,7 +49,6 @@ public:
                     streams.erase(streams.begin() + index);
                     index--;
                     progress++;
-                    LOG(INFO) << "Sink complete; " << iterators.size() << " remaining";
                 }
             }
         }

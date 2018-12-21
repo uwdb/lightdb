@@ -14,7 +14,7 @@ public:
     ~Progress();
 
     void label(const std::string &label);
-    void progress(int current, int total);
+    void display(int current, const std::string &label = "", int total = -1);
     void total(int total);
     void reset();
     void finish();
