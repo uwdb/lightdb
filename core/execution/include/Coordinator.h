@@ -2,6 +2,7 @@
 #define LIGHTDB_COORDINATOR_H
 
 #include "Plan.h"
+#include "progress.h"
 
 namespace lightdb::execution {
 
@@ -32,6 +33,7 @@ public:
         auto outputs = submit(plan);
         auto iterators = functional::transform<PhysicalLightField::iterator>(outputs.begin(), outputs.end(), [](auto &out) { return out->begin(); });
         auto streams = functional::transform<std::ofstream>(filenames.begin(), filenames.end(), [](auto &filename) { return std::ofstream(filename); });
+        Progress progress(static_cast<int>(iterators.size()));
 
         CHECK_EQ(iterators.size(), streams.size());
 
@@ -45,6 +47,7 @@ public:
                     iterators.erase(iterators.begin() + index);
                     streams.erase(streams.begin() + index);
                     index--;
+                    progress++;
                     LOG(INFO) << "Sink complete; " << iterators.size() << " remaining";
                 }
             }
