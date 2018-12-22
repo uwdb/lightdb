@@ -163,41 +163,14 @@ private:
 };
 
 template<typename T>
-class AddressableMixin {
+class AddressableMixin : public std::enable_shared_from_this<T> {
 public:
-    virtual ~AddressableMixin() {
-        Unregister(static_cast<shared_reference<T, AddressableMixin>&>(*this));
-    }
+    void PostConstruct(const shared_reference<T, AddressableMixin>& instance) { }
 
-    void PostConstruct(const shared_reference<T, AddressableMixin>& instance) {
-        Register(static_cast<const std::shared_ptr<T>&>(instance));
-    }
-
-    static shared_reference<T, AddressableMixin> get(const T& instance) {
-        auto weak = lookup_.at(&instance);
-        auto shared = weak.lock();
-        return shared_reference<T, AddressableMixin>(shared);
+    shared_reference<T, AddressableMixin> get() {
+        return shared_reference<T, AddressableMixin>(this->shared_from_this());
     };
-
-private:
-    static void Register(const std::shared_ptr<T>& pointer) {
-        if(pointer != nullptr)
-            lookup_.emplace(std::make_pair(&*pointer, std::weak_ptr<T>(pointer)));
-    }
-
-    static void Unregister(const shared_reference<T, AddressableMixin>& instance) {
-        Unregister(static_cast<const std::shared_ptr<T>&>(instance));
-    }
-    static void Unregister(const std::shared_ptr<T>& pointer) {
-        if(pointer != nullptr && pointer.unique())
-            lookup_.erase(&*pointer);
-    }
-
-    static std::unordered_map<const T*, std::weak_ptr<T>> lookup_;
 };
-
-template<typename T>
-std::unordered_map<const T*, std::weak_ptr<T>> AddressableMixin<T>::lookup_{};
 
 } // namespace lightdb
 

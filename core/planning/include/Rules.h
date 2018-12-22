@@ -33,7 +33,9 @@ namespace lightdb::optimization {
 
                 //Removed this line without actually testing the consequences
                 //plan().emplace<physical::GPUScanMemory>(ref, mref);
-                plan().emplace<physical::GPUOperatorAdapter>(mref);
+                //plan().emplace<physical::GPUOperatorAdapter>(mref);
+                // Made this change without testing it -- when is this rule fired?
+                plan().emplace<physical::MaterializedToPhysicalOperatorAdapter>(ref, mref);
                 return true;
             } else if(node.is<physical::PhysicalToLogicalLightFieldAdapter>()) {
                 auto ref = plan().lookup(node);

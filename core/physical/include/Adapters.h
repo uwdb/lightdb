@@ -9,6 +9,48 @@
 
 namespace lightdb::physical {
 
+    class MaterializedToPhysicalOperatorAdapter: public PhysicalLightField {
+    public:
+        explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference logical,
+                                                       const MaterializedLightFieldReference &source)
+                : MaterializedToPhysicalOperatorAdapter(logical, source, {})
+        { }
+
+        explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference logical,
+                                                       const MaterializedLightFieldReference &source,
+                                                       const PhysicalLightFieldReference &parent)
+                : MaterializedToPhysicalOperatorAdapter(logical, source, std::vector<PhysicalLightFieldReference>{parent})
+        { }
+
+        explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference logical,
+                                                       const MaterializedLightFieldReference &source,
+                                                       const std::vector<PhysicalLightFieldReference> &parents)
+                : PhysicalLightField(logical,
+                                     parents,
+                                     source->device()),
+                  source_(source),
+                  read_(false)
+        { }
+
+        MaterializedToPhysicalOperatorAdapter(const MaterializedToPhysicalOperatorAdapter &) = default;
+        MaterializedToPhysicalOperatorAdapter(MaterializedToPhysicalOperatorAdapter &&) = default;
+
+        ~MaterializedToPhysicalOperatorAdapter() override = default;
+
+        std::optional<physical::MaterializedLightFieldReference> read() override {
+            if(!read_) {
+                read_ = false;
+                return {source_};
+            } else
+                return {};
+        }
+
+    private:
+        MaterializedLightFieldReference source_;
+        bool read_;
+    };
+
+
 class PhysicalToLogicalLightFieldAdapter: public LightField {
 public:
     explicit PhysicalToLogicalLightFieldAdapter(const PhysicalLightFieldReference &physical)
@@ -31,8 +73,6 @@ public:
 private:
     PhysicalLightFieldReference physical_;
 };
-
-//using StreamingLightField = PhysicalToLogicalLightFieldAdapter;
 
 /*
  * Converts a GPU-based physical light field into one that implements GPUOperator.

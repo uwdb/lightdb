@@ -3,13 +3,14 @@
 
 #include "Encoding.h"
 #include "DecodeReader.h"
+#include "Pool.h"
 #include "Frame.h"
 #include "Codec.h"
 #include <utility>
 
 namespace lightdb::physical {
     class MaterializedLightField;
-    using MaterializedLightFieldReference = shared_reference<MaterializedLightField>;
+    using MaterializedLightFieldReference = shared_reference<MaterializedLightField, pool::BufferPoolEntry<MaterializedLightField>>;
 
     enum DeviceType {
         CPU,
