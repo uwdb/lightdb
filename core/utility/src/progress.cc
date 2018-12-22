@@ -6,8 +6,6 @@ namespace lightdb {
 
 Progress::Progress(const int total, const std::string &label)
     : bar_(std::make_unique<tqdm>()), current_(0), total_(total) {
-    if(std::getenv("DISPLAY") != nullptr)
-        bar_->disable_colors();
     this->label(label);
     this->total(total);
 }
