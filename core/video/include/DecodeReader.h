@@ -129,16 +129,6 @@ private:
     static int CUDAAPI HandleVideoData(void *userData, CUVIDSOURCEDATAPACKET *packet) {
         auto *packets = static_cast<boost::lockfree::spsc_queue<DecodeReaderPacket>*>(userData);
 
-        CUVIDSOURCEDATAPACKET *copy = new CUVIDSOURCEDATAPACKET{
-                .flags = packet->flags,
-                .payload_size = packet->payload_size,
-                .payload =
-                new unsigned char[packet->payload_size],
-                .timestamp = packet->timestamp
-        };
-        memcpy(const_cast<unsigned char*>(copy->payload), const_cast<unsigned char*>(packet->payload),
-               packet->payload_size);
-
         while(!packets->push(DecodeReaderPacket(*packet)))
             std::this_thread::yield();
 
