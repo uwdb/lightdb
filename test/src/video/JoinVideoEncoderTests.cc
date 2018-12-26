@@ -8,9 +8,9 @@ class JoinVideoEncoderTestFixture : public testing::Test {
 public:
     JoinVideoEncoderTestFixture()
         : context(0),
-          decodeConfiguration1K(1024, 512,  24, 1024*1024, cudaVideoCodec_H264),
-          decodeConfiguration2K(1920, 1080, 24, 1024*1024, cudaVideoCodec_H264),
-          decodeConfiguration4K(3840, 2160, 24, 1024*1024, cudaVideoCodec_H264)
+          decodeConfiguration1K(1024, 512,  24, 1024*1024, lightdb::Codec::h264()),
+          decodeConfiguration2K(1920, 1080, 24, 1024*1024, lightdb::Codec::h264()),
+          decodeConfiguration4K(3840, 2160, 24, 1024*1024, lightdb::Codec::h264())
     { }
 
 protected:

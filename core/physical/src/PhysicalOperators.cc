@@ -56,7 +56,8 @@ namespace lightdb {
             GPUContext context(0);
 
             //context.AttachToThread();
-            DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
+            //DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
+            DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, Codec::h264()};
             /*std::vector<EncodeConfiguration> encodeConfigurations(
                     rows() * columns(),
                     EncodeConfiguration{video_.metadata().height/rows(), video_.metadata().width/columns(),
@@ -277,7 +278,8 @@ namespace lightdb {
             GPUContext context(0);
 
             //context.AttachToThread();
-            DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
+            //DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
+            DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, Codec::h264()};
             //TODO why CBR?
             EncodeConfiguration encodeConfiguration{Configuration{right - left, bottom - top, 0, 0, bitrate, {static_cast<unsigned int>(video_.metadata().framerate.numerator()), static_cast<unsigned int>(video_.metadata().framerate.denominator())}},
                                                     NV_ENC_HEVC, gop, NV_ENC_PARAMS_RC_CBR};
@@ -311,7 +313,8 @@ namespace lightdb {
             auto start = std::chrono::steady_clock::now();
             GPUContext context(0);
 
-            DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
+            //DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
+            DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, Codec::h264()};
             //TODO why CBR?
             //EncodeConfiguration encodeConfiguration{video_.metadata().height, video_.metadata().width,
             //                                        NV_ENC_HEVC, video_.metadata().framerate, (unsigned int)gop, bitrate, NV_ENC_PARAMS_RC_CBR};
@@ -347,7 +350,8 @@ namespace lightdb {
             auto start = std::chrono::steady_clock::now();
             GPUContext context(0);
 
-            DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
+            //DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, cudaVideoCodec_H264};
+            DecodeConfiguration decodeConfiguration{video_.metadata().width, video_.metadata().height, video_.metadata().framerate, Codec::h264()};
             //TODO why CBR?
             //EncodeConfiguration encodeConfiguration{video_.metadata().height, video_.metadata().width,
             //                                        NV_ENC_HEVC, video_.metadata().framerate, (unsigned int)gop, bitrate, NV_ENC_PARAMS_RC_CBR};
@@ -402,8 +406,10 @@ namespace lightdb {
             auto start = std::chrono::steady_clock::now();
             GPUContext context(0);
 
-            DecodeConfiguration leftDecodeConfiguration{left_.metadata().width, left_.metadata().height, left_.metadata().framerate, cudaVideoCodec_H264};
-            DecodeConfiguration rightDecodeConfiguration{right_.metadata().width, right_.metadata().height, right_.metadata().framerate, cudaVideoCodec_H264};
+            DecodeConfiguration leftDecodeConfiguration{left_.metadata().width, left_.metadata().height, left_.metadata().framerate, Codec::h264()};
+            //DecodeConfiguration leftDecodeConfiguration{left_.metadata().width, left_.metadata().height, left_.metadata().framerate, cudaVideoCodec_H264};
+            //DecodeConfiguration rightDecodeConfiguration{right_.metadata().width, right_.metadata().height, right_.metadata().framerate, cudaVideoCodec_H264};
+            DecodeConfiguration rightDecodeConfiguration{right_.metadata().width, right_.metadata().height, right_.metadata().framerate, Codec::h264()};
             std::vector<DecodeConfiguration> decodeConfigurations{leftDecodeConfiguration, rightDecodeConfiguration};
             //TODO why CBR?
             //EncodeConfiguration encodeConfiguration{left_.metadata().height, left_.metadata().width,

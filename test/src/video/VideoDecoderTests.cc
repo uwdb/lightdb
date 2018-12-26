@@ -8,7 +8,7 @@ class VideoDecoderTestFixture : public testing::Test {
 public:
     VideoDecoderTestFixture()
         : context(0),
-          configuration{1920, 1080, 30, cudaVideoCodec_H264},
+          configuration{1920, 1080, 30, lightdb::Codec::h264()},
           lock(context),
           queue(lock)
     {}

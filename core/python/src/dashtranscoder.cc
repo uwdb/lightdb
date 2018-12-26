@@ -33,7 +33,7 @@ public:
              unsigned int gop_length, unsigned long bitrate, NV_ENC_PARAMS_RC_MODE rcmode, unsigned int deviceId)
       : context(deviceId),
         encodeConfiguration(Configuration{width, height, 0, 0, bitrate, {fps, 1}}, codec, preset.data(), gop_length, rcmode),
-        decodeConfiguration(encodeConfiguration, decodeCodec),
+        decodeConfiguration(encodeConfiguration, lightdb::Codec::hevc()), //decodeCodec),
         gpuTranscoder(context, decodeConfiguration, encodeConfiguration) {
       //: gpuTranscoder(height, width, codec, preset, fps, gop_length, bitrate, rcmode, deviceId) {
     //if (gpuTranscoder.initialize() != 0)

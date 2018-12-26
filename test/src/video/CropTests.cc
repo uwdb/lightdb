@@ -8,7 +8,7 @@ class CropperTestFixture : public testing::Test {
 public:
     CropperTestFixture()
         : context(0),
-          decodeConfiguration{1920, 1080, 24, cudaVideoCodec_H264}
+          decodeConfiguration{1920, 1080, 24, lightdb::Codec::h264()}
     {}
 
 protected:

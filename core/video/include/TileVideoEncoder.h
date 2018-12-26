@@ -75,7 +75,7 @@ public:
         auto dropOrDuplicate = alignment.dropOrDuplicate(framesDecoded++, framesEncoded);
 
         auto decodedFrame = decodeSession.decode();
-        auto processedFrame = transform(lock_, decodedFrame);
+        auto &processedFrame = transform(lock_, decodedFrame);
 
         for (auto i = 0; i <= dropOrDuplicate; i++, framesEncoded++) {
           for(auto j = 0u; j < sessions.size(); j++) {

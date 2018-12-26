@@ -3,6 +3,7 @@
 
 #include "EncodeAPI.h"
 #include "VideoLock.h"
+#include "Codec.h"
 #include "number.h"
 #include <string>
 
@@ -29,8 +30,6 @@ struct Configuration {
         unsigned int left, top;
     } offset;
 };
-
-//typedef struct Configuration DecodeConfiguration;
 
 struct EncodeConfiguration: public Configuration
 {
@@ -87,47 +86,6 @@ struct EncodeConfiguration: public Configuration
         this->max_height = model.max_height != 0 && model.max_height < height ? height : model.max_height;
         this->max_width = model.max_width != 0 && model.max_width < width ? width : model.max_width;
     }
-/*
-    EncodeConfiguration(const unsigned int height, const unsigned int width,
-                        const EncodeCodec codec, const lightdb::rational &fps,
-                        const unsigned int gop_length, const size_t bitrate,
-                        const NV_ENC_PARAMS_RC_MODE rateControlMode=NV_ENC_PARAMS_RC_CONSTQP) :
-            EncodeConfiguration(height, width, 0, 0, codec, NV_ENC_PRESET_DEFAULT_GUID,
-                                FrameRate{fps}, gop_length, bitrate, rateControlMode)
-    { }
-
-    EncodeConfiguration(const unsigned int height, const unsigned int width,
-                        const EncodeCodec codec, const unsigned int fps,
-                        const unsigned int gop_length, const size_t bitrate,
-                        const NV_ENC_PARAMS_RC_MODE rateControlMode=NV_ENC_PARAMS_RC_CONSTQP) :
-            EncodeConfiguration(height, width, 0, 0, codec, NV_ENC_PRESET_DEFAULT_GUID,
-                                {fps, 1}, gop_length, bitrate, rateControlMode)
-    { }
-
-    EncodeConfiguration(const unsigned int height, const unsigned int width,
-                        const EncodeCodec codec, const std::string &preset, const unsigned int fps,
-                        const unsigned int gop_length, const size_t bitrate,
-                        const NV_ENC_PARAMS_RC_MODE rateControlMode=NV_ENC_PARAMS_RC_CONSTQP) :
-            EncodeConfiguration(height, width, 0, 0, codec, EncodeAPI::GetPresetGUID(preset.c_str(), codec),
-                                {fps, 1}, gop_length, bitrate, rateControlMode)
-    { }
-
-    EncodeConfiguration(const unsigned int height, const unsigned int width,
-                        const EncodeCodec codec, GUID preset, const unsigned int fps,
-                        const unsigned int gop_length, const size_t bitrate,
-                        const NV_ENC_PARAMS_RC_MODE rateControlMode=NV_ENC_PARAMS_RC_CONSTQP) :
-            EncodeConfiguration(height, width, 0, 0, codec, preset, {fps, 1}, gop_length, bitrate, rateControlMode)
-    { }
-
-    EncodeConfiguration(const unsigned int height, const unsigned int width,
-                        const unsigned int max_height, const unsigned int max_width,
-                        const EncodeCodec codec, const std::string &preset, const unsigned int fps,
-                        const unsigned int gop_length, const size_t bitrate,
-                        const NV_ENC_PARAMS_RC_MODE rateControlMode=NV_ENC_PARAMS_RC_CONSTQP) :
-            EncodeConfiguration(height, width, max_height, max_width, codec,
-                                EncodeAPI::GetPresetGUID(preset.c_str(), codec),
-                                {fps, 1}, gop_length, bitrate, rateControlMode)
-    { }*/
 
     EncodeConfiguration(const Configuration &configuration,
                         const EncodeCodec codec,
@@ -194,7 +152,7 @@ struct EncodeConfiguration: public Configuration
 };
 
 struct DecodeConfiguration: public Configuration {
-    cudaVideoCodec codec;
+    lightdb::Codec codec;
     cudaVideoChromaFormat chroma_format;
     cudaVideoSurfaceFormat output_format;
     unsigned long output_surfaces;
@@ -205,14 +163,14 @@ struct DecodeConfiguration: public Configuration {
     DecodeConfiguration(const unsigned int height, const unsigned int width,
                         const unsigned int max_height, const unsigned int max_width,
                         const lightdb::rational &fps,
-                        const cudaVideoCodec codec,
+                        const lightdb::Codec &codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
                         const unsigned long output_surfaces = 32,
                         const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
-            : DecodeConfiguration({height, width, max_height, max_width, 0, FrameRate{fps}},
+            : DecodeConfiguration({width, height, max_width, max_height, 0, FrameRate{fps}},
                                   codec, chroma_format, output_format, output_surfaces, decode_surfaces,
                                   creation_flags, deinterlace_mode)
     { }
@@ -220,21 +178,21 @@ struct DecodeConfiguration: public Configuration {
     DecodeConfiguration(const unsigned int height, const unsigned int width,
                         const unsigned int max_height, const unsigned int max_width,
                         const lightdb::rational &fps, const unsigned int bitrate,
-                        const cudaVideoCodec codec,
+                        const lightdb::Codec &codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
                         const unsigned long output_surfaces = 32,
                         const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
-            : DecodeConfiguration({height, width, max_height, max_width, 0, FrameRate{fps}},
+            : DecodeConfiguration({width, height, max_width, max_height, 0, FrameRate{fps}},
                                   codec, chroma_format, output_format, output_surfaces, decode_surfaces,
                                   creation_flags, deinterlace_mode)
     { }
 
     DecodeConfiguration(const unsigned int height, const unsigned int width,
                         const unsigned int fps, const unsigned int bitrate,
-                        const cudaVideoCodec codec,
+                        const lightdb::Codec &codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
                         const unsigned long output_surfaces = 32,
@@ -247,7 +205,7 @@ struct DecodeConfiguration: public Configuration {
 
     DecodeConfiguration(const unsigned int height, const unsigned int width,
                         const lightdb::rational &fps, const unsigned int bitrate,
-                        const cudaVideoCodec codec,
+                        const lightdb::Codec &codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
                         const unsigned long output_surfaces = 32,
@@ -260,7 +218,7 @@ struct DecodeConfiguration: public Configuration {
 
     DecodeConfiguration(const unsigned int height, const unsigned int width,
                         const lightdb::rational &fps,
-                        const cudaVideoCodec codec,
+                        const lightdb::Codec &codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
                         const unsigned long output_surfaces = 32,
@@ -271,22 +229,8 @@ struct DecodeConfiguration: public Configuration {
                                   chroma_format, output_format, output_surfaces, creation_flags, deinterlace_mode)
     { }
 
-    explicit DecodeConfiguration(const CUVIDEOFORMAT &video_format,
-                        const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
-                        const unsigned long output_surfaces = 32,
-                        const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
-                        const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
-            : DecodeConfiguration({video_format.coded_width, video_format.coded_height,
-                                   video_format.coded_width, video_format.coded_height, video_format.bitrate,
-                                   {video_format.frame_rate.numerator, video_format.frame_rate.denominator} },
-                                  video_format.codec,
-                                  video_format.chroma_format,
-                                  output_format, output_surfaces, decode_surfaces,
-                                  creation_flags, deinterlace_mode)
-    { }
-
     DecodeConfiguration(const Configuration &configuration,
-                        const cudaVideoCodec codec,
+                        lightdb::Codec codec,
                         const cudaVideoChromaFormat chroma_format = cudaVideoChromaFormat_420,
                         const cudaVideoSurfaceFormat output_format = cudaVideoSurfaceFormat_NV12,
                         const unsigned long output_surfaces = 32,
@@ -294,7 +238,7 @@ struct DecodeConfiguration: public Configuration {
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
             : Configuration{configuration},
-              codec(codec), chroma_format(chroma_format),
+              codec(std::move(codec)), chroma_format(chroma_format),
               output_format(output_format),
               output_surfaces(output_surfaces),
               decode_surfaces(decode_surfaces != 0 ? decode_surfaces : DefaultDecodeSurfaces()),
@@ -317,12 +261,14 @@ struct DecodeConfiguration: public Configuration {
             throw InvalidArgumentError("Left must be less than frame width", "left");
         else if(top > height)
             throw InvalidArgumentError("Top must be less than frame height", "top");
+        else if(!codec.cudaId().has_value())
+            throw GpuCudaRuntimeError("Codec does not have a CUDA equivalent", CUDA_ERROR_INVALID_VALUE);
         else
             return {
                     .ulWidth = width,
                     .ulHeight = height,
                     .ulNumDecodeSurfaces = decode_surfaces,
-                    .CodecType = codec,
+                    .CodecType = codec.cudaId().value(),
                     .ChromaFormat = chroma_format,
                     .ulCreationFlags = creation_flags,
                     .bitDepthMinus8 = 0,
@@ -346,29 +292,29 @@ struct DecodeConfiguration: public Configuration {
 
 private:
     unsigned int DefaultDecodeSurfaces() const {
-        unsigned long decode_surfaces;
+        unsigned int decode_surfaces;
 
-        if ((codec == cudaVideoCodec_H264) ||
-            (codec == cudaVideoCodec_H264_SVC) ||
-            (codec == cudaVideoCodec_H264_MVC)) {
+        if ((codec.cudaId() == cudaVideoCodec_H264) ||
+            (codec.cudaId() == cudaVideoCodec_H264_SVC) ||
+            (codec.cudaId() == cudaVideoCodec_H264_MVC)) {
             // Assume worst-case of 20 decode surfaces for H264
             decode_surfaces = 20;
-        } else if (codec == cudaVideoCodec_VP9) {
+        } else if (codec.cudaId() == cudaVideoCodec_VP9) {
             decode_surfaces = 12;
-        } else if (codec == cudaVideoCodec_HEVC) {
+        } else if (codec.cudaId() == cudaVideoCodec_HEVC) {
             // ref HEVC spec: A.4.1 General tier and level limits
-            auto MaxLumaPS = 35651584u; // currently assuming level 6.2, 8Kx4K
-            auto MaxDpbPicBuf = 6;
-            auto PicSizeInSamplesY = width * height;
+            auto maxLumaPS = 35651584u; // currently assuming level 6.2, 8Kx4K
+            auto maxDpbPicBuf = 6u;
+            auto picSizeInSamplesY = width * height;
             unsigned int MaxDpbSize;
-            if (PicSizeInSamplesY <= (MaxLumaPS >> 2))
-                MaxDpbSize = MaxDpbPicBuf * 4;
-            else if (PicSizeInSamplesY <= (MaxLumaPS >> 1))
-                MaxDpbSize = MaxDpbPicBuf * 2;
-            else if (PicSizeInSamplesY <= ((3 * MaxLumaPS) >> 2))
-                MaxDpbSize = (MaxDpbPicBuf * 4) / 3;
+            if (picSizeInSamplesY <= (maxLumaPS >> 2))
+                MaxDpbSize = maxDpbPicBuf * 4;
+            else if (picSizeInSamplesY <= (maxLumaPS >> 1))
+                MaxDpbSize = maxDpbPicBuf * 2;
+            else if (picSizeInSamplesY <= ((3 * maxLumaPS) >> 2))
+                MaxDpbSize = (maxDpbPicBuf * 4) / 3;
             else
-                MaxDpbSize = MaxDpbPicBuf;
+                MaxDpbSize = maxDpbPicBuf;
             MaxDpbSize = MaxDpbSize < 16 ? MaxDpbSize : 16;
             decode_surfaces = MaxDpbSize + 4;
         } else {

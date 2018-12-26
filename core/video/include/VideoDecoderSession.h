@@ -78,7 +78,7 @@ private:
         CUresult status;
         CUvideoparser parser = nullptr;
         CUVIDPARSERPARAMS parameters = {
-            .CodecType = decoder.configuration().codec,
+            .CodecType = decoder.configuration().codec.cudaId().value(),
             .ulMaxNumDecodeSurfaces = decoder.configuration().decode_surfaces,
             .ulClockRate = 0,
             .ulErrorThreshold = 0,
@@ -107,7 +107,7 @@ private:
 
         if(decoder == nullptr)
             LOG(ERROR) << "Unexpected null decoder during video decode (HandleVideoSequence)";
-        else if ((format->codec != decoder->configuration().codec) ||
+        else if ((format->codec != decoder->configuration().codec.cudaId()) ||
                  ((static_cast<unsigned int>(format->display_area.right - format->display_area.left)) != decoder->configuration().width) ||
                  ((static_cast<unsigned int>(format->display_area.bottom - format->display_area.top)) != decoder->configuration().height) ||
                  (format->coded_width < decoder->configuration().width) ||

@@ -9,7 +9,7 @@ public:
     TranscoderTestFixture()
         : context(0),
           encodeConfiguration({1920, 1080, 0, 0, 1024*1024, {24, 1}}, NV_ENC_HEVC, 30),
-          decodeConfiguration(encodeConfiguration, cudaVideoCodec_H264),
+          decodeConfiguration(encodeConfiguration, lightdb::Codec::h264()),
           transcoder(context, decodeConfiguration, encodeConfiguration)
     {}
 
@@ -176,7 +176,7 @@ TEST_F(TranscoderTestFixture, testTranscoderWithMultipleTransform) {
 
 TEST_F(TranscoderTestFixture, testTranscoderAt4K) {
     EncodeConfiguration encodeConfiguration({3840, 2160, 0, 0, 4*1024*1024, {30, 1}}, NV_ENC_HEVC, 30);
-    DecodeConfiguration decodeConfiguration(encodeConfiguration, cudaVideoCodec_H264);
+    DecodeConfiguration decodeConfiguration(encodeConfiguration, lightdb::Codec::h264());
     FileDecodeReader reader("resources/test-pattern-4K.h264");
     FileEncodeWriter writer(transcoder.encoder().api(), FILENAME(0));
     Transcoder transcoder(context, decodeConfiguration, encodeConfiguration);

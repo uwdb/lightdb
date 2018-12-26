@@ -67,7 +67,7 @@ protected:
             : GPUUnaryOperator(logical, source, gpu, [&encoded](){return encoded.configuration(); }),
               poll_duration_(poll_duration),
               decode_configuration_([&encoded, this]() {
-                  return DecodeConfiguration{configuration(), encoded.codec().cudaId().value()}; }),
+                  return DecodeConfiguration{configuration(), encoded.codec()}; }),
               queue_([this]() { return CUVIDFrameQueue(lock()); }),
               decoder_([this]() { return CudaDecoder(decode_configuration_, queue_, lock()); }),
               session_([this]() {

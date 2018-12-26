@@ -11,7 +11,7 @@ public:
     TilerVideoEncoderTestFixture()
         : context(0),
           encodeConfiguration({1920, 1080, 0, 0, 1024*1024, {24, 1}}, NV_ENC_HEVC, 30),
-          decodeConfiguration(encodeConfiguration, cudaVideoCodec_H264)
+          decodeConfiguration(encodeConfiguration, lightdb::Codec::h264())
     { }
 
 protected:
@@ -245,7 +245,7 @@ TEST_F(TilerVideoEncoderTestFixture, test6x8) {
 TEST_F(TilerVideoEncoderTestFixture, test2x2_at_4K) {
     const auto rows = 2, columns = 2;
     EncodeConfiguration encodeConfiguration({3840, 2160, 0, 0, 8*1024*1024, {30, 1}}, NV_ENC_HEVC, 30);
-    DecodeConfiguration decodeConfiguration(encodeConfiguration, cudaVideoCodec_H264);
+    DecodeConfiguration decodeConfiguration(encodeConfiguration, lightdb::Codec::h264());
 
     TileVideoEncoder tiler(context, decodeConfiguration, encodeConfiguration, rows, columns);
     FileDecodeReader reader("resources/test-pattern-4K.h264");
@@ -273,7 +273,7 @@ TEST_F(TilerVideoEncoderTestFixture, test2x2_at_4K) {
 TEST_F(TilerVideoEncoderTestFixture, test4x4_at_4K) {
     const auto rows = 4, columns = 4;
     EncodeConfiguration encodeConfiguration({3840, 2160, 0, 0, 1024*1024, {30, 1}}, NV_ENC_HEVC, 30);
-    DecodeConfiguration decodeConfiguration(encodeConfiguration, cudaVideoCodec_H264);
+    DecodeConfiguration decodeConfiguration(encodeConfiguration, lightdb::Codec::h264());
 
     TileVideoEncoder tiler(context, decodeConfiguration, encodeConfiguration, rows, columns);
     FileDecodeReader reader("resources/test-pattern-4K.h264");
@@ -301,7 +301,7 @@ TEST_F(TilerVideoEncoderTestFixture, test4x4_at_4K) {
 TEST_F(TilerVideoEncoderTestFixture, test6x8_at_4K) {
     const auto rows = 6, columns = 8;
     EncodeConfiguration encodeConfiguration({3840, 2160, 0, 0, 8*1024*1024, {30, 1}}, NV_ENC_HEVC, 30);
-    DecodeConfiguration decodeConfiguration(encodeConfiguration, cudaVideoCodec_H264);
+    DecodeConfiguration decodeConfiguration(encodeConfiguration, lightdb::Codec::h264());
 
     TileVideoEncoder tiler(context, decodeConfiguration, encodeConfiguration, rows, columns);
     FileDecodeReader reader("resources/test-pattern-4K.h264");
