@@ -27,11 +27,13 @@ namespace lightdb {
             return value;
         }
 
+        Codec(Codec&&) = default;
+        Codec(const Codec&) = default;
+
         const std::string& name() const { return name_; }
         const std::string& fourcc() const { return fourcc_; }
         const std::optional<EncodeCodec>& nvidiaId() const { return nvidiaId_; }
         const std::optional<cudaVideoCodec>& cudaId() const { return cudaId_; }
-
 
         bool operator==(const Codec &other) const {
             return name_ == other.name_ &&

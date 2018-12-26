@@ -92,7 +92,7 @@ namespace lightdb {
             if(left != nullptr && right != nullptr &&
                     static_cast<const LightField*>(left)->volume().bounding() == static_cast<const LightField*>(right)->volume().bounding() &&
                left->filename() == right->filename() &&
-               left->metadata().codec().name() == format) {
+               left->metadata().codec.name() == format) {
                 auto lf = composite->parents()[0];
                 auto sp = static_cast<const std::shared_ptr<LightField>>(lf);
                 auto vlf = std::static_pointer_cast<logical::PanoramicVideoLightField>(sp);
@@ -112,7 +112,7 @@ namespace lightdb {
             if(subset != nullptr && video != nullptr &&
                     subset->volume().components().size() == 1 &&
                     subset->volume().components()[0] == static_cast<const LightField*>(video)->volume().bounding() &&
-                    video->metadata().codec().name() == format) {
+                    video->metadata().codec.name() == format) {
                 auto lf = lightfield->parents()[0];
                 auto sp = static_cast<const std::shared_ptr<LightField>>(lf);
                 auto vlf = std::static_pointer_cast<logical::PanoramicVideoLightField>(sp);
@@ -127,7 +127,7 @@ namespace lightdb {
         //template<typename ColorSpace>
         static std::optional<EncodedLightField> applyIdentityTranscode(LightFieldReference lightfield, const std::string &format) {
             auto *video = dynamic_cast<logical::PanoramicVideoLightField*>(&*lightfield);
-            if(video != nullptr && video->metadata().codec().name() == format) {
+            if(video != nullptr && video->metadata().codec.name() == format) {
                 auto sp = static_cast<const std::shared_ptr<LightField>>(lightfield);
                 auto vlf = std::static_pointer_cast<logical::PanoramicVideoLightField>(sp);
                 auto elf = std::static_pointer_cast<EncodedLightFieldData>(vlf);

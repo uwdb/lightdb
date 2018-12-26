@@ -56,10 +56,10 @@ namespace lightdb::logical {
         inline number framerate() const { return {rational(30, 1)}; } //TODO hardcoded...
 
         inline size_t duration() const { return 99; } //TODO remove hardcoded value
-        inline utility::StreamMetadata metadata() const {
-            return (metadata_.has_value()
+        inline DecodeConfiguration metadata() const {
+            return *(metadata_ != nullptr
                     ? metadata_
-                    : (metadata_ = utility::StreamMetadata(filename(), 0, true))).value();
+                    : (metadata_ = new DecodeConfiguration(utility::ffmpeg::GetStreamConfiguration(filename(), 0, true))));
         }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<ConstantLightField>(visitor); }
@@ -74,7 +74,7 @@ namespace lightdb::logical {
         //TODO drop filename after adding StreamDecodeReader in Physical.cc
         // Can make SingletonEncodedLightField be a replacement for this class; one for in-memory, one for on-disk
         const IntervalGeometry geometry_;
-        mutable std::optional<utility::StreamMetadata> metadata_;
+        mutable DecodeConfiguration* metadata_;
     };
 
     class PlanarTiledVideoLightField : public DiscreteLightField, public SingletonFileEncodedLightField {
@@ -96,10 +96,10 @@ namespace lightdb::logical {
         inline rational framerate() const { return rational(30, 1); } //TODO hardcoded...
 
         inline size_t duration() const { return 20; } //TODO remove hardcoded value
-        inline utility::StreamMetadata metadata() const {
-            return (metadata_.has_value()
+        inline DecodeConfiguration metadata() const {
+            return *(metadata_ != nullptr
                     ? metadata_
-                    : (metadata_ = utility::StreamMetadata(filename(), 0, true))).value();
+                    : (metadata_ = new DecodeConfiguration(utility::ffmpeg::GetStreamConfiguration(filename(), 0, true))));
         }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<ConstantLightField>(visitor); }
@@ -109,7 +109,7 @@ namespace lightdb::logical {
         // Can make SingletonEncodedLightField be a replacement for this class; one for in-memory, one for on-disk, one for streaming
         //const Volume volume_;
         const size_t rows_, columns_;
-        mutable std::optional<utility::StreamMetadata> metadata_;
+        mutable DecodeConfiguration* metadata_;
     };
 };
 #endif //LIGHTDB_OLDMODEL_H

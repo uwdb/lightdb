@@ -152,13 +152,13 @@ struct EncodeConfiguration: public Configuration
 };
 
 struct DecodeConfiguration: public Configuration {
-    lightdb::Codec codec;
-    cudaVideoChromaFormat chroma_format;
-    cudaVideoSurfaceFormat output_format;
-    unsigned long output_surfaces;
-    unsigned int decode_surfaces;
-    unsigned long creation_flags;
-    cudaVideoDeinterlaceMode deinterlace_mode;
+    const lightdb::Codec codec;
+    const cudaVideoChromaFormat chroma_format;
+    const cudaVideoSurfaceFormat output_format;
+    const unsigned long output_surfaces;
+    const unsigned int decode_surfaces;
+    const unsigned long creation_flags;
+    const cudaVideoDeinterlaceMode deinterlace_mode;
 
     DecodeConfiguration(const unsigned int height, const unsigned int width,
                         const unsigned int max_height, const unsigned int max_width,
@@ -225,8 +225,7 @@ struct DecodeConfiguration: public Configuration {
                         const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
-            : DecodeConfiguration(height, width, height, width, fps, 0, codec,
-                                  chroma_format, output_format, output_surfaces, creation_flags, deinterlace_mode)
+            : DecodeConfiguration(height, width, height, width, fps, 0, codec,chroma_format, output_format, output_surfaces, creation_flags, deinterlace_mode)
     { }
 
     DecodeConfiguration(const Configuration &configuration,
@@ -245,6 +244,9 @@ struct DecodeConfiguration: public Configuration {
               creation_flags(creation_flags),
               deinterlace_mode(deinterlace_mode)
     { }
+
+    DecodeConfiguration(DecodeConfiguration&&) = default;
+    DecodeConfiguration(const DecodeConfiguration&) = default;
 
     CUVIDDECODECREATEINFO AsCuvidCreateInfo(VideoLock &lock, const unsigned int left = 0, const unsigned int top = 0) const {
         return AsCuvidCreateInfo(lock.get());
