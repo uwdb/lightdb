@@ -40,7 +40,7 @@ namespace lightdb::catalog {
         LOG(WARNING) << "Using hardcoded first stream for video configuration";
 
         const size_t index = 0;
-        auto metadata = utility::StreamMetadata(path / metadataFilename_, index, false);
+        auto configuration = utility::ffmpeg::GetStreamConfiguration(path / metadataFilename_, index, false);
 
         filesystem::path stream_filename;
         if(filesystem::exists(filesystem::absolute(path / "stream0.hevc")))
@@ -49,10 +49,11 @@ namespace lightdb::catalog {
             stream_filename = filesystem::absolute(path / "stream0.h264");
         else if(filesystem::exists(filesystem::absolute(path / "stream0.boxes"))) {
             stream_filename = filesystem::absolute(path / "stream0.boxes");
-            metadata.codec_ = "boxs"; //TODO
+            //TODO
+            return {Stream{stream_filename, Codec::boxes(), static_cast<Configuration&>(configuration)}};
         }
 
-        return {Stream{stream_filename, metadata.codec(), metadata.configuration()}};
+        return {Stream{stream_filename, configuration.codec, static_cast<Configuration&>(configuration)}};
     }
 
 } // namespace lightdb::catalog
