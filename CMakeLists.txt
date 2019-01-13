@@ -5,6 +5,8 @@ SET(BOOST_MIN_VERSION "1.64.0")
 # Set the cmake Module path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
+include(DownloadProject)
+
 # Set shared library suffix
 if(APPLE)
   set(SHARED_LIB_SUFFIX ".dylib")
@@ -68,6 +70,10 @@ set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${FFMPEG_LIBRARIES})
 find_package(GTest)
 find_package (Glog REQUIRED)
 #find_package(ClangTidy)
+
+find_package(Bento4 REQUIRED)
+include_directories(${Bento4_INCLUDE_DIRS})
+add_subdirectory(${Bento4_SOURCE_DIR})
 
 # Enable testing
 enable_testing()
