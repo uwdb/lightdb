@@ -5,8 +5,7 @@ using namespace lightdb;
 
 class VolumeTestFixture : public testing::Test {
 public:
-    VolumeTestFixture()
-    { }
+    VolumeTestFixture() = default;
 };
 
 TEST_F(VolumeTestFixture, testConstructor) {

@@ -1,3 +1,4 @@
+/*
 #include "AssertTime.h"
 #include "AssertVideo.h"
 #include "Transcoder.h"
@@ -191,3 +192,4 @@ TEST_F(TranscoderTestFixture, testTranscoderAt4K) {
     EXPECT_VIDEO_QUALITY(FILENAME(0), reader.filename(), DEFAULT_PSNR);
     EXPECT_EQ(remove(FILENAME(0).c_str()), 0);
 }
+*/

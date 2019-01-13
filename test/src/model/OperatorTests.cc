@@ -8,8 +8,7 @@ using namespace lightdb::logical;
 
 class OperatorTestFixture : public testing::Test {
 public:
-    OperatorTestFixture()
-    { }
+    OperatorTestFixture() = default;
 };
 
 TEST_F(OperatorTestFixture, testDecode) {

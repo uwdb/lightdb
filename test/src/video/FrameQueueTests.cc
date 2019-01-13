@@ -55,13 +55,13 @@ TEST_F(FrameQueueTestFixture, testEnqueueDequeue) {
 TEST_F(FrameQueueTestFixture, testMultipleEnqueue) {
   CUVIDPARSERDISPINFO parameters = {.picture_index = 0};
 
-  for (unsigned int i = 0; i < queue.cnMaximumSize; i++, parameters.picture_index++) {
+  for (unsigned int i = 0; i < FrameQueue::cnMaximumSize; i++, parameters.picture_index++) {
     queue.enqueue(&parameters);
   }
 
   ASSERT_FALSE(queue.isEmpty());
 
-  for (unsigned int i = 0; i < queue.cnMaximumSize; i++) {
+  for (unsigned int i = 0; i < FrameQueue::cnMaximumSize; i++) {
     auto frame = queue.dequeue();
     ASSERT_NE(nullptr, frame);
     ASSERT_EQ(frame->picture_index, i);

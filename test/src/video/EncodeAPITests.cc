@@ -24,7 +24,7 @@ TEST_F(EncodeAPITestFixture, testConstructor) {
 
 TEST_F(EncodeAPITestFixture, testPresetGUIDs) {
     const auto* preset = "hq";
-    auto preset_guid = encoder.api().GetPresetGUID(preset, NV_ENC_HEVC);
+    auto preset_guid = EncodeAPI::GetPresetGUID(preset, NV_ENC_HEVC);
 
     ASSERT_EQ(preset_guid, NV_ENC_PRESET_HQ_GUID);
 
@@ -35,7 +35,7 @@ TEST_F(EncodeAPITestFixture, testEncodeFrame) {
     {
         EncodeBuffer encodeBuffer(encoder);
 
-        std::scoped_lock{encodeBuffer};
+        std::scoped_lock lock{encodeBuffer};
         EXPECT_EQ(encoder.api().NvEncEncodeFrame(&encodeBuffer, nullptr, NV_ENC_PIC_STRUCT_FRAME), NV_ENC_SUCCESS);
     }
 }

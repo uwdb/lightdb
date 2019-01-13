@@ -3,7 +3,6 @@
 
 class ColorTestFixture : public testing::Test {
 public:
-    ColorTestFixture()
-    { }
+    ColorTestFixture() = default;
 };
 

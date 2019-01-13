@@ -1,3 +1,4 @@
+/*
 #include <dynlink_nvcuvid.h>
 #include <Configuration.h>
 #include "TileVideoEncoder.h"
@@ -330,3 +331,4 @@ TEST_F(TilerVideoEncoderTestFixture, testOddTileSize) {
     const auto rows = 8, columns = 1;
     EXPECT_ANY_THROW(TileVideoEncoder(context, decodeConfiguration, encodeConfiguration, rows, columns));
 }
+*/
