@@ -146,8 +146,6 @@ private:
     const int descriptor;
 };
 
-
-
 class FileEncodeWriter: public EncodeWriter {
 public:
     FileEncodeWriter(VideoEncoder &encoder, const std::string &filename)
