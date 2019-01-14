@@ -123,7 +123,7 @@ private:
         const auto duration = logical()->volume().bounding().t().magnitude();
         const auto pending_frames = static_cast<unsigned long>(configuration().framerate * duration);
 
-        CHECK_GT(duration, 0);
+        CHECK_GE(duration, 0);
         CHECK_EQ(static_cast<double>(configuration().framerate * duration), pending_frames);
 
         return pending_frames;
