@@ -295,7 +295,7 @@ namespace lightdb {
             return bounding_;
         }
 
-        const Volume bounding() const { return bounding_; }
+        const Volume& bounding() const { return bounding_; }
         const std::vector<Volume>& components() const { return components_; }
 
     private:
