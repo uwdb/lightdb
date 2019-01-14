@@ -19,16 +19,29 @@ namespace lightdb::optimization {
             : environment_(environment)
         { }
 
+        static const Optimizer &instance()
+        {
+            if(instance_ != nullptr)
+                return *instance_;
+            else
+                throw InvalidArgumentError("No ambient optimizer specified", "instance");
+        }
+        template<typename TOptimizer, typename... Args>
+        static const Optimizer &instance(Args &&... args) {
+            return *(instance_ = std::make_unique<TOptimizer>(args...));
+        }
+
+
         const Plan optimize(const LightFieldReference &source,
-                            size_t iteration_limit=std::numeric_limits<size_t>::max())
+                            size_t iteration_limit=std::numeric_limits<size_t>::max()) const
             { return optimize(std::vector<LightFieldReference>{source}, iteration_limit); }
         const Plan optimize(const std::vector<LightFieldReference> &sources,
-                            size_t iteration_limit=std::numeric_limits<size_t>::max())
+                            size_t iteration_limit=std::numeric_limits<size_t>::max()) const
             { return optimize(sources.begin(), sources.end(), iteration_limit); }
 
         template<typename InputIterator>
         const Plan optimize(InputIterator first, const InputIterator last,
-                            size_t iteration_limit=std::numeric_limits<size_t>::max()) {
+                            size_t iteration_limit=std::numeric_limits<size_t>::max()) const {
             Plan plan(environment(), first, last);
             bool modified;
             auto _rules = rules();
@@ -44,13 +57,14 @@ namespace lightdb::optimization {
         const execution::Environment environment() const noexcept { return environment_; }
 
     protected:
-        virtual const rule_vector rules() = 0;
+        virtual const rule_vector rules() const = 0;
 
-        template<typename T, typename... _Args>
-        auto make_rule(_Args &&... args) { return std::make_shared<T>(args...); }
+        template<typename T, typename... Args>
+        auto make_rule(Args &&... args) const { return std::make_shared<T>(args...); }
 
     private:
-        const execution::Environment &environment_;
+        static std::unique_ptr<Optimizer> instance_;
+        const execution::Environment environment_;
     };
 
     class OptimizerRule : public StatefulLightFieldVisitor<bool> {

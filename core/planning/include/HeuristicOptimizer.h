@@ -11,7 +11,7 @@ namespace lightdb::optimization {
         using Optimizer::Optimizer;
 
     protected:
-        const rule_vector rules() override {
+        const rule_vector rules() const override {
             return { make_rule<ChooseMaterializedScans>(),
                      make_rule<ChooseDecoders>(),
                      make_rule<ChooseUnion>(),
