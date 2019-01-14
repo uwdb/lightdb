@@ -126,6 +126,8 @@ private:
         CHECK_GE(duration, 0);
         CHECK_EQ(static_cast<double>(configuration().framerate * duration), pending_frames);
 
+        LOG_IF(WARNING, pending_frames == 0) << "Subset op has zero pending frames; optimizer should have just omitted it";
+
         return pending_frames;
     }
 
