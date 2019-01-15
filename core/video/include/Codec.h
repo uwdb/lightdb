@@ -47,7 +47,8 @@ namespace lightdb {
         }
 
     private:
-        explicit Codec(std::string name, std::string fourcc, EncodeCodec nvidiaId={}, cudaVideoCodec cudaId={}) noexcept
+        explicit Codec(std::string name, std::string fourcc,
+                std::optional<EncodeCodec> nvidiaId={}, std::optional<cudaVideoCodec> cudaId={}) noexcept
                 : name_(std::move(name)), fourcc_(std::move(fourcc)), nvidiaId_{nvidiaId}, cudaId_{cudaId}
         { CHECK_EQ(fourcc_.size(), 4); }
 
