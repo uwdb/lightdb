@@ -29,7 +29,10 @@ public:
                   return EncodeConfiguration{configuration(), codec_.nvidiaId().value(), gop_size}; }),
               encoder_([this]() { return VideoEncoder(context(), encodeConfiguration_, lock()); }),
               writer_([this]() { return MemoryEncodeWriter(encoder_->api()); }),
-              encodeSession_([this]() { return VideoEncoderSession(encoder_, writer_); }) { }
+              encodeSession_([this]() { return VideoEncoderSession(encoder_, writer_); }) {
+        if(!codec.nvidiaId().has_value())
+            throw GpuRuntimeError("Requested codec does not have an Nvidia encode id");
+    }
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if (iterator() != iterator().eos()) {
