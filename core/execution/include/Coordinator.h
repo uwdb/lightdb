@@ -31,9 +31,17 @@ public:
 
     //TODO this should be in the algebra, returning an external TLF
     void save(const optimization::Plan &plan, const std::vector<std::string> &filenames) {
+        auto streams = functional::transform<std::ofstream>(filenames.begin(), filenames.end(), [](auto &filename) { return std::ofstream(filename); });
+        return save(plan, functional::transform<std::ostream*>(streams.begin(), streams.end(), [](auto &s) { return &s; }));
+    }
+
+    void save(const optimization::Plan &plan, std::ostream& stream) {
+        return save(plan, std::vector<std::ostream*>{&stream});
+    }
+
+    void save(const optimization::Plan &plan, std::vector<std::ostream*> streams) {
         auto outputs = submit(plan);
         auto iterators = functional::transform<PhysicalLightField::iterator>(outputs.begin(), outputs.end(), [](auto &out) { return out->begin(); });
-        auto streams = functional::transform<std::ofstream>(filenames.begin(), filenames.end(), [](auto &filename) { return std::ofstream(filename); });
         Progress progress(static_cast<int>(iterators.size()));
 
         CHECK_EQ(iterators.size(), streams.size());
@@ -43,7 +51,7 @@ public:
                 if(iterators[index] != iterators[index].eos()) {
                     auto encoded = (iterators[index]++).downcast<physical::CPUEncodedFrameData>();
                     std::copy(encoded.value().begin(), encoded.value().end(),
-                              std::ostreambuf_iterator<char>(streams[index]));
+                              std::ostreambuf_iterator<char>(*streams[index]));
                 } else {
                     iterators.erase(iterators.begin() + index);
                     streams.erase(streams.begin() + index);
