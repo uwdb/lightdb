@@ -7,11 +7,11 @@
 
 namespace lightdb::physical {
 
-class GPUUnion : public GPUOperator {
+class GPUTileUnion : public GPUOperator {
 public:
-    explicit GPUUnion(const LightFieldReference &logical,
-                      std::vector<PhysicalLightFieldReference> &parents,
-                      const unsigned int rows, const unsigned int columns)
+    explicit GPUTileUnion(const LightFieldReference &logical,
+                          std::vector<PhysicalLightFieldReference> &parents,
+                          const unsigned int rows, const unsigned int columns)
             : GPUOperator(logical, parents,
                           parents[0].downcast<GPUOperator>().gpu(),
                           [this, rows, columns]() {
@@ -22,7 +22,7 @@ public:
                       functional::transform<functional::flatmap_iterator<GPUFrameReference, PhysicalLightField::downcast_iterator<GPUDecodedFrameData>>>(iterators().begin(), iterators().end(), [](PhysicalLightField::iterator &it) { return functional::make_flatmap_iterator<GPUFrameReference>(it.downcast<GPUDecodedFrameData>()); })); })
     { }
 
-    GPUUnion(const GPUUnion &) = delete;
+    GPUTileUnion(const GPUTileUnion &) = delete;
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if(!any_parent_eos()) {
@@ -78,7 +78,7 @@ public:
               groups_(lazy<PhysicalLightField::iterator*>{[this]() { return &iterators()[0]; }})
     { }
 
-    GPUOverlayUnion(const GPUUnion &) = delete;
+    GPUOverlayUnion(const GPUOverlayUnion &) = delete;
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if(!any_parent_eos()) {

@@ -187,8 +187,7 @@ namespace lightdb::optimization {
                             throw InvalidArgumentError("No rule support for device type.", "node");
                     }
                 }
-
-
+                
                 return true;
             }
         }
