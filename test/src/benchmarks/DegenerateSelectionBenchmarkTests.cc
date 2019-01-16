@@ -1,4 +1,4 @@
-#include "Operators.h"
+//#include "Operators.h"
 #include "PhysicalOperators.h"
 #include <gtest/gtest.h>
 #include <AssertVideo.h>
@@ -26,10 +26,10 @@ public:
 
         auto start = steady_clock::now();
 
-        Decode(source)
+/*        Decode(source)
                 >> Select(Volume{Point3D::zero(), {0, 20}, ThetaRange::limits(), PhiRange::limits()})
                 >> Encode("h264")
-                >> Store(name);
+                >> Store(name);*/
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
 

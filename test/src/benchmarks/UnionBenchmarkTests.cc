@@ -1,4 +1,4 @@
-#include "Operators.h"
+//#include "Operators.h"
 #include "PhysicalOperators.h"
 #include <gtest/gtest.h>
 #include <AssertVideo.h>
@@ -33,19 +33,19 @@ public:
         auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + 'K';
 
         LOG(INFO) << "Creating stitchable HEVC input";
-        Decode(source + ".h264")
+/*        Decode(source + ".h264")
                 >> Encode("hevc")
-                >> Store(source + ".hevc");
+                >> Store(source + ".hevc");*/
 
         auto start = steady_clock::now();
 
-        auto left = Decode(source + ".hevc", {0, temptodouble(pi)}).apply();
+/*        auto left = Decode(source + ".hevc", {0, temptodouble(pi)}).apply();
         auto right = Decode(source + ".hevc", {0, temptodouble(pi)}).apply()
                 >> Rotate(temptodouble(pi), 0);
 
         auto result = (left | right)
                 >> Encode()
-                >> Store(name);
+                >> Store(name);*/
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
 
@@ -62,12 +62,12 @@ public:
 
         auto start = steady_clock::now();
 
-        auto left = Decode(source1, {0, temptodouble(pi)}).apply();
+/*        auto left = Decode(source1, {0, temptodouble(pi)}).apply();
         auto right = Decode(source2, {0, temptodouble(pi)}).apply();
 
         auto result = (left | right)
                 >> Encode()
-                >> Store(name);
+                >> Store(name);*/
 
         LOG(INFO) << source1 << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
 
@@ -83,12 +83,12 @@ public:
 
         auto start = steady_clock::now();
 
-        auto left = Decode(source).apply();
+/*        auto left = Decode(source).apply();
         auto right = Decode(source).apply();
 
         auto result = (left | right)
                 >> Encode("h264")
-                >> Store(name);
+                >> Store(name);*/
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
 

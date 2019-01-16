@@ -1,11 +1,11 @@
-#include "Operators.h"
+//#include "Operators.h"
 #include "PhysicalOperators.h"
 #include <gtest/gtest.h>
 #include <AssertVideo.h>
 
 using namespace lightdb;
 using namespace std::chrono;
-
+/*
 class PanoramicTilingBenchmarkTestFixture : public testing::Test {
 public:
     PanoramicTilingBenchmarkTestFixture()
@@ -85,3 +85,4 @@ TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_venice_4K) {
 TEST_F(PanoramicTilingBenchmarkTestFixture, test360TilingBenchmark_coaster_4K) {
     tilingBenchmark("coaster", 4, 2700, 2048, 3840, 4, 4);
 }
+*/

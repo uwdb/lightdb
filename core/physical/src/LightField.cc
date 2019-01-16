@@ -1,6 +1,5 @@
 #include "PhysicalOperators.h"
-#include "OldPhysicalOperators.h"
-#include "Operators.h"
+//#include "Operators.h"
 #include <LFVideo.h>
 #include <glog/logging.h>
 
@@ -9,7 +8,7 @@ namespace lightdb {
         //static CLFVideo lfv("/home/bhaynes/projects/light-field-video/data/cats/");
 
         //template<typename ColorSpace>
-        EncodedLightField PlanarTiledToVideoLightField::apply(const std::string &format) {
+/*        EncodedLightField PlanarTiledToVideoLightField::apply(const std::string &format) {
             CLFVideo lfv("/home/bhaynes/projects/light-field-video/data/cats/");
 
             auto frames = 100u;
@@ -31,7 +30,7 @@ namespace lightdb {
 
             return SingletonFileEncodedLightField::create("planar.h264", {{x_, x_,}, {y_, y_}, {0, 0}, {0, duration}, theta_, phi_});
         }
-
+*/
         //template class PlanarTiledToVideoLightField<YUVColorSpace>;
     } // namespace physical
 } // namespace lightdb

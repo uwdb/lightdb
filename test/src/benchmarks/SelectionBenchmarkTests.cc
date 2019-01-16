@@ -1,4 +1,4 @@
-#include "Operators.h"
+//#include "Operators.h"
 #include "PhysicalOperators.h"
 #include <gtest/gtest.h>
 #include <AssertVideo.h>
@@ -37,10 +37,10 @@ public:
 
         auto start = steady_clock::now();
 
-        Decode(source)
+/*        Decode(source)
                 >> Select(Volume{Point3D::zero(), TemporalRange::limits(), theta, phi})
                 >> Encode()
-                >> Store(name);
+                >> Store(name);*/
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
 
@@ -59,10 +59,10 @@ public:
 
         auto start = steady_clock::now();
 
-        Decode(source)
+/*        Decode(source)
                 >> Select({Point3D::zero(), range, ThetaRange::limits(), PhiRange::limits()})
                 >> Encode()
-                >> Store(name);
+                >> Store(name);*/
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
 

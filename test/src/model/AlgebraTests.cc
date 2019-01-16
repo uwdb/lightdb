@@ -1,4 +1,4 @@
-#include "Operators.h"
+#include "Model.h"
 #include "Greyscale.h"
 #include "AssertUtility.h"
 #include <gtest/gtest.h>

@@ -1,6 +1,6 @@
 //#include "Tiler.h"
 #include "EncodeAPI.h"
-#include "Transcoder.h"
+//#include "Transcoder.h"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
@@ -19,7 +19,7 @@
 #include <thread>
 #include <unistd.h>
 
-#include "TileVideoEncoder.h"
+//#include "TileVideoEncoder.h"
 #include <ctime>
 #include <fstream>
 #include <vector>
@@ -27,6 +27,7 @@
 class Constants {};
 
 namespace Python {
+    /*
 class Transcoder {
 public:
   Transcoder(unsigned int height, unsigned int width, EncodeCodec codec, cudaVideoCodec decodeCodec, std::string preset, unsigned int fps,
@@ -240,4 +241,5 @@ BOOST_PYTHON_MODULE(dashtranscoder) {
   constants.attr("H264") = static_cast<unsigned int>(NV_ENC_H264);
   constants.attr("H265") = static_cast<unsigned int>(NV_ENC_HEVC);
 }
-}
+*/
+     }

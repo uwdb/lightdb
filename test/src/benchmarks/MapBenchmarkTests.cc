@@ -1,4 +1,4 @@
-#include "Operators.h"
+//#include "Operators.h"
 #include "PhysicalOperators.h"
 #include <gtest/gtest.h>
 #include <AssertVideo.h>
@@ -19,10 +19,10 @@ public:
 
         auto start = steady_clock::now();
 
-        Decode(source)
+/*        Decode(source)
 //TODO temp while updating functors                >> Map(lightdb::Greyscale())
                 >> Encode()
-                >> Store(name);
+                >> Store(name);*/
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
 
@@ -37,10 +37,10 @@ public:
 
         auto start = steady_clock::now();
 
-        Decode(source)
+/*        Decode(source)
 //TODO temp while updating functors                >> Map(lightdb::GaussianBlur())
                 >> Encode()
-                >> Store(name);
+                >> Store(name);*/
 
         LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
 

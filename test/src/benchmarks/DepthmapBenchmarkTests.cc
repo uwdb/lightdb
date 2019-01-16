@@ -1,4 +1,4 @@
-#include "Operators.h"
+//#include "Operators.h"
 #include "PhysicalOperators.h"
 #include <gtest/gtest.h>
 #include <AssertVideo.h>
@@ -24,10 +24,10 @@ public:
 TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_CPU) {
     auto start = steady_clock::now();
 
-    Decode(source)
+/*    Decode(source)
 //TODO temp while updating functors            >> Map(lightdb::DepthmapCPU())
             >> Encode()
-            >> Store(name);
+            >> Store(name);*/
 
     LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
 
@@ -40,10 +40,10 @@ TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_CPU) {
 TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_GPU) {
     auto start = steady_clock::now();
 
-    Decode(source)
+/*    Decode(source)
 //TODO temp while updating functors            >> Map(lightdb::DepthmapGPU())
             >> Encode()
-            >> Store(name);
+            >> Store(name);*/
 
     LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
 
@@ -56,10 +56,10 @@ TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_GPU) {
 TEST_F(DepthmapBenchmarkTestFixture, testDepthmap_FPGA) {
     auto start = steady_clock::now();
 
-    Decode(source)
+/*    Decode(source)
 //TODO temp while updating functors            >> Map(lightdb::DepthmapFPGA())
             >> Encode()
-            >> Store(name);
+            >> Store(name);*/
 
     LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
 

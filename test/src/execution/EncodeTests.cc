@@ -1,5 +1,3 @@
-#include "Operators.h"
-#include "PhysicalOperators.h"
 #include "HeuristicOptimizer.h"
 #include "Catalog.h"
 #include "AssertVideo.h"
