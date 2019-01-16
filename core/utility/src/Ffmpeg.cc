@@ -21,6 +21,10 @@ namespace lightdb::utility::ffmpeg {
         char error[AV_ERROR_MAX_STRING_SIZE];
         std::unique_ptr<std::exception> exception = nullptr;
 
+        //TODO these are deprecated in newer ffmpeg versions and should be omitted
+        av_register_all();
+        avcodec_register_all();
+
         AVFormatContext* context = avformat_alloc_context();
 
         try {

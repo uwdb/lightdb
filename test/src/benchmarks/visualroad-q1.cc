@@ -26,7 +26,7 @@ protected:
     Catalog vrdetrac;
 
     static bool initialize() {
-        google::InitGoogleLogging("LightDB");
+        //google::InitGoogleLogging("LightDB");
         google::SetCommandLineOption("GLOG_minloglevel", "5");
         return true;
     }
