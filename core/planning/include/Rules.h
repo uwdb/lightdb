@@ -98,23 +98,21 @@ namespace lightdb::optimization {
                 auto physical_parent = physical_parents[0];
                 auto logical = plan().lookup(node);
 
-                LOG(WARNING) << "Randomly picking HEVC as codec";
                 if(physical_parent.is<physical::GPUAngularSubquery>() && physical_parent.downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>())
                     plan().emplace<physical::CPUIdentity>(logical, physical_parent);
-                    //plan().emplace<physical::HomomorphicUniformTile>(logical, hardcoded_parent, 4, 4);
-                else if(physical_parent.is<physical::GPUOperator>())
-                    plan().emplace<physical::GPUEncode>(logical, physical_parent, Codec::hevc());
-                //else if(hardcoded_parent.is<physical::GPUScanMemory>() && hardcoded_parent->device() == physical::DeviceType::GPU)
-                //    plan().emplace<physical::GPUEncode>(logical, hardcoded_parent, Codec::hevc());
+                else if(physical_parent.is<physical::GPUOperator>() && node.codec().nvidiaId().has_value())
+                    plan().emplace<physical::GPUEncode>(logical, physical_parent, node.codec());
+                else if(physical_parent.is<physical::GPUOperator>() && node.codec() == Codec::raw())
+                    plan().emplace<physical::GPUtoCPUTransfer>(plan().lookup(node), physical_parent);
                 else if(physical_parent.is<physical::CPUMap>() && physical_parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
                     plan().emplace<physical::CPUIdentity>(logical, physical_parent);
                 //TODO this is silly -- every physical operator should declare an output type and we should just use that
                 else if(physical_parent.is<physical::TeedPhysicalLightFieldAdapter::TeedPhysicalLightField>() && physical_parent->parents()[0].is<physical::CPUMap>() && physical_parent->parents()[0].downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
                     plan().emplace<physical::CPUIdentity>(logical, physical_parent);
-                else {
+                else if(physical_parent->device() == physical::DeviceType::CPU) {
                     auto gpu = plan().environment().gpus()[0];
                     auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, physical_parent, gpu);
-                    plan().emplace<physical::GPUEncode>(plan().lookup(node), transfer, Codec::hevc());
+                    plan().emplace<physical::GPUEncode>(plan().lookup(node), transfer, node.codec());
                 }
                 return true;
             } else {
