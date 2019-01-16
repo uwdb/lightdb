@@ -57,6 +57,29 @@ private:
     }
 };
 
+class GPUEnsureFrameCropped : public GPUUnaryOperator<GPUDecodedFrameData> {
+public:
+    explicit GPUEnsureFrameCropped(const LightFieldReference &logical,
+                                   PhysicalLightFieldReference &parent)
+            : GPUUnaryOperator(logical, parent) { }
+
+    std::optional<physical::MaterializedLightFieldReference> read() override {
+        if (iterator() != iterator().eos()) {
+            auto decoded = iterator()++;
+            std::vector<GPUFrameReference> output;
+
+            for (const auto &frame: decoded.frames()) {
+                output.emplace_back(GPUFrameReference::make<CudaFrame>(configuration().height, configuration().width, NV_ENC_PIC_STRUCT_FRAME));
+                output.back().downcast<CudaFrame>().copy(lock(), *frame->cuda(), configuration().offset.top, configuration().offset.left);
+            }
+
+            return GPUDecodedFrameData(output);
+        } else
+            return std::nullopt;
+    }
+};
+
+
 class FrameSubset: public GPUUnaryOperator<GPUDecodedFrameData> {
 public:
     explicit FrameSubset(const LightFieldReference &logical,
