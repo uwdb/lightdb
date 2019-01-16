@@ -103,7 +103,7 @@ namespace lightdb::optimization {
                 else if(physical_parent.is<physical::GPUOperator>() && node.codec().nvidiaId().has_value())
                     plan().emplace<physical::GPUEncode>(logical, physical_parent, node.codec());
                 else if(physical_parent.is<physical::GPUOperator>() && node.codec() == Codec::raw())
-                    plan().emplace<physical::GPUtoCPUTransfer>(plan().lookup(node), physical_parent);
+                    plan().emplace<physical::GPUEnsureFrameCropped>(plan().lookup(node), physical_parent);
                 else if(physical_parent.is<physical::CPUMap>() && physical_parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
                     plan().emplace<physical::CPUIdentity>(logical, physical_parent);
                 //TODO this is silly -- every physical operator should declare an output type and we should just use that
@@ -113,7 +113,8 @@ namespace lightdb::optimization {
                     auto gpu = plan().environment().gpus()[0];
                     auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, physical_parent, gpu);
                     plan().emplace<physical::GPUEncode>(plan().lookup(node), transfer, node.codec());
-                }
+                } else
+                    return false;
                 return true;
             } else {
 
