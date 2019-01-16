@@ -49,8 +49,9 @@ public:
         while(!iterators.empty()) {
             for(auto index = 0u; index < iterators.size(); index++) {
                 if(iterators[index] != iterators[index].eos()) {
-                    auto encoded = (iterators[index]++).downcast<physical::CPUEncodedFrameData>();
-                    std::copy(encoded.value().begin(), encoded.value().end(),
+                    auto next = iterators[index]++;
+                    auto &data = next.downcast<physical::SerializableData>();
+                    std::copy(data.value().begin(), data.value().end(),
                               std::ostreambuf_iterator<char>(*streams[index]));
                 } else {
                     iterators.erase(iterators.begin() + index);
