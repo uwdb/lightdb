@@ -113,8 +113,7 @@ namespace lightdb::physical {
     class CPUDecodedFrameData: public SerializableData {
     public:
         CPUDecodedFrameData()
-                : SerializableData(DeviceType::CPU),
-                  frames_{}
+                : CPUDecodedFrameData(std::vector<LocalFrameReference>{})
         { }
 
         explicit CPUDecodedFrameData(std::vector<LocalFrameReference> frames)
@@ -123,21 +122,19 @@ namespace lightdb::physical {
         { }
 
         CPUDecodedFrameData(const CPUDecodedFrameData& other)
-                : SerializableData(DeviceType::CPU),
-                  frames_(other.frames_)
+                : CPUDecodedFrameData(other.frames_)
         { }
 
         CPUDecodedFrameData(CPUDecodedFrameData &&other) noexcept
-                : SerializableData(DeviceType::CPU),
-                  frames_{std::move(other.frames_)}
+                : CPUDecodedFrameData(std::move(other.frames_))
         { }
 
-        const bytestring& value() override {
-            std::scoped_lock lock{mutex_};
-            value_.clear();
-            std::for_each(frames().begin(), frames().end(),
-                    [this](const auto &f) { value_.insert(value_.end(), f->data().begin(), f->data().end()); });
-            return value_;
+        const bytestring& value() {
+            if(serialized_.empty())
+                std::for_each(frames().begin(), frames().end(),
+                              [this](const auto &f) { serialized_.insert(serialized_.end(),
+                                      f->data().begin(), f->data().end()); });
+            return serialized_;
         }
 
 
@@ -148,38 +145,49 @@ namespace lightdb::physical {
 
     private:
         std::vector<LocalFrameReference> frames_{};
-        bytestring value_;
-        std::mutex mutex_;
+        bytestring serialized_;
     };
 
-    class GPUDecodedFrameData: public MaterializedLightField {
+    class GPUDecodedFrameData: public SerializableData {
     public:
         GPUDecodedFrameData()
-                : MaterializedLightField(DeviceType::GPU),
+                : SerializableData(DeviceType::GPU),
                   frames_{}
         { }
 
         explicit GPUDecodedFrameData(std::vector<GPUFrameReference> frames)
-                : MaterializedLightField(DeviceType::GPU),
+                : SerializableData(DeviceType::GPU),
                   frames_(std::move(frames))
         { }
 
         GPUDecodedFrameData(const GPUDecodedFrameData& other)
-                : MaterializedLightField(DeviceType::GPU),
+                : SerializableData(DeviceType::GPU),
                   frames_(other.frames_)
         { }
 
         GPUDecodedFrameData(GPUDecodedFrameData &&other) noexcept
-                : MaterializedLightField(DeviceType::GPU),
+                : SerializableData(DeviceType::GPU),
                   frames_{std::move(other.frames_)}
         { }
 
         inline std::vector<GPUFrameReference>& frames() noexcept { return frames_; }
+        inline const std::vector<GPUFrameReference>& frames() const noexcept { return frames_; }
         inline explicit operator std::vector<GPUFrameReference>&() noexcept { return frames_; }
         inline explicit operator MaterializedLightFieldReference() override { return MaterializedLightFieldReference::make<GPUDecodedFrameData>(*this); }
 
+        const bytestring& value() override {
+            if(serialized_.empty())
+                std::for_each(frames().begin(), frames().end(),
+                              [this](const auto &gpu_frame) {
+                                  LocalFrame cpu_frame{*gpu_frame->cuda()};
+                                  serialized_.insert(serialized_.end(),
+                                                     cpu_frame.data().begin(), cpu_frame.data().end()); });
+            return serialized_;
+        }
+
     private:
         std::vector<GPUFrameReference> frames_{};
+        bytestring serialized_;
     };
 
     template<typename BaseType>
