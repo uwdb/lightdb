@@ -45,6 +45,7 @@ TEST_F(SelectionTestFixture, testSelectThetaPhi) {
     EXPECT_VIDEO_VALID(output);
     EXPECT_VIDEO_FRAMES(output, 250);
     EXPECT_VIDEO_RESOLUTION(output, 240 / 4, 320 / 4);
+    EXPECT_VIDEO_RED(output);
     EXPECT_EQ(remove(output), 0);
 }
 
@@ -63,6 +64,7 @@ TEST_F(SelectionTestFixture, testSelectPhiTheta) {
     EXPECT_VIDEO_VALID(output);
     EXPECT_VIDEO_FRAMES(output, 250);
     EXPECT_VIDEO_RESOLUTION(output, 240 / 4, 320 / 4);
+    EXPECT_VIDEO_RED(output);
     EXPECT_EQ(remove(output), 0);
 }
 
@@ -80,6 +82,7 @@ TEST_F(SelectionTestFixture, testSelectPhi) {
     EXPECT_VIDEO_VALID(output);
     EXPECT_VIDEO_FRAMES(output, 250);
     EXPECT_VIDEO_RESOLUTION(output, 240 / 4, 320);
+    EXPECT_VIDEO_RED(output);
     EXPECT_EQ(remove(output), 0);
 }
 
@@ -97,6 +100,7 @@ TEST_F(SelectionTestFixture, testSelectTheta) {
     EXPECT_VIDEO_VALID(output);
     EXPECT_VIDEO_FRAMES(output, 250);
     EXPECT_VIDEO_RESOLUTION(output, 240, 320 / 4);
+    EXPECT_VIDEO_RED(output);
     EXPECT_EQ(remove(output), 0);
 }
 
@@ -114,6 +118,7 @@ TEST_F(SelectionTestFixture, testTemporalSelect) {
     EXPECT_VIDEO_VALID(output);
     EXPECT_VIDEO_FRAMES(output, 25 * 3);
     EXPECT_VIDEO_RESOLUTION(output, 240, 320);
+    EXPECT_VIDEO_RED(output);
     EXPECT_EQ(remove(output), 0);
 }
 
@@ -132,6 +137,7 @@ TEST_F(SelectionTestFixture, testThetaTemporalSelect) {
     EXPECT_VIDEO_VALID(output);
     EXPECT_VIDEO_FRAMES(output, 25 * 3);
     EXPECT_VIDEO_RESOLUTION(output, 240, 320 / 4);
+    EXPECT_VIDEO_RED(output);
     EXPECT_EQ(remove(output), 0);
 }
 
@@ -150,6 +156,7 @@ TEST_F(SelectionTestFixture, testTemporalThetaSelect) {
     EXPECT_VIDEO_VALID(output);
     EXPECT_VIDEO_FRAMES(output, 25 * 3);
     EXPECT_VIDEO_RESOLUTION(output, 240, 320 / 4);
+    EXPECT_VIDEO_RED(output);
     EXPECT_EQ(remove(output), 0);
 }
 

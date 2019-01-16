@@ -118,25 +118,36 @@ using std::to_string;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#define _RGB_COMMAND(filename, reference_filename, threshold) \
+#define DEFAULT_RGB_THRESHOLD 8
+
+#define _RGB_COMMAND(filename, red, blue, green, threshold) \
      (std::string("resources/assert-rgb.py ") + \
                      (filename) + ' ' + \
-                     (reference_filename) + ' ' + \
+                     std::to_string(red) + ',' + std::to_string(blue) + ',' + std::to_string(green) + ' ' + \
                      std::to_string(threshold))
 
-#define ASSERT_VIDEO_MEAN_RGB(filename, reference_filename, threshold) { \
-    auto command = _RGB_COMMAND(filename, reference_filename, threshold); \
+#define ASSERT_VIDEO_RGB(filename, red, blue, green, threshold) { \
+    auto command = _RGB_COMMAND(filename, red, blue, green, threshold); \
     ASSERT_EQ(system(command.c_str()), 0) \
-        << (filename) << ": unexpected mean RGB difference (expected >=" << (threshold) << ')'; }
+        << (filename) << ": unexpected RGB variation (expected <=" << (threshold) << ')'; }
 
-#define EXPECT_VIDEO_MEAN_RGB(filename, reference_filename, threshold) { \
-    auto command = _RGB_COMMAND(filename, reference_filename, threshold); \
+#define EXPECT_VIDEO_RGB(filename, red, blue, green, threshold) { \
+    auto command = _RGB_COMMAND(filename, red, blue, green, threshold); \
     EXPECT_EQ(system(command.c_str()), 0) \
-        << (filename) << ": unexpected mean RGB difference (expected >=" << (threshold) << ')'; }
+        << (filename) << ": unexpected RGB variation (expected <=" << (threshold) << ')'; }
+
+#define ASSERT_VIDEO_RED(filename) ASSERT_VIDEO_RGB(filename, 255, 0, 0, DEFAULT_RGB_THRESHOLD)
+#define ASSERT_VIDEO_GREEN(filename) ASSERT_VIDEO_RGB(filename, 0, 255, 0, DEFAULT_RGB_THRESHOLD)
+#define ASSERT_VIDEO_BLUE(filename) ASSERT_VIDEO_RGB(filename, 0, 0, 255, DEFAULT_RGB_THRESHOLD)
+
+#define EXPECT_VIDEO_RED(filename) EXPECT_VIDEO_RGB(filename, 255, 0, 0, DEFAULT_RGB_THRESHOLD)
+#define EXPECT_VIDEO_GREEN(filename) EXPECT_VIDEO_RGB(filename, 0, 255, 0, DEFAULT_RGB_THRESHOLD)
+#define EXPECT_VIDEO_BLUE(filename) EXPECT_VIDEO_RGB(filename, 0, 0, 255, DEFAULT_RGB_THRESHOLD)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 CudaFrame CREATE_BLACK_FRAME(const Configuration &);
 void ASSERT_BLACK_FRAME(const DecodedFrame &);
+std::string TRANSCODE_RAW_TO_H264(const std::string& filename, size_t height, size_t width, size_t framerate);
 
 #endif //LIGHTDB_ASSERTVIDEO_H

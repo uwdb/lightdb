@@ -52,7 +52,8 @@ TEST_F(SemanticTestFixture, testDecode) {
     auto plan = Optimizer::instance().optimize(e);
     Coordinator().save(plan, output);
 
-    EXPECT_VIDEO_MEAN_RGB(output, l.downcast<ScannedLightField>().metadata().streams()[0].path().string(), 0);
+    ASSERT_VIDEO_RGB(output, 255, 0, 0, 4);
+//   EXPECT_VIDEO_MEAN_RGB(output, l.downcast<ScannedLightField>().metadata().streams()[0].path().string(), 0);
     //EXPECT_EQ(remove(output), 0);
 
     //ASSERT_EQ(result.size(), 1);
