@@ -19,7 +19,8 @@ public:
             auto data = input.downcast<GPUDecodedFrameData>();
 
             for(auto &frame: data.frames())
-                output.frames().emplace_back(LocalFrame{*frame->cuda()});
+                output.frames().emplace_back(LocalFrame{*frame->cuda(),
+                                                        parents().front().downcast<GPUOperator>().configuration()});
 
             return {output};
         } else
