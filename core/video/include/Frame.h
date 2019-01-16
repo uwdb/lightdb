@@ -320,13 +320,16 @@ public:
     { }
 
     explicit LocalFrame(const CudaFrame &source)
-        : Frame(source),
+    : LocalFrame(source, Configuration{source.height(), source.width(), 0, 0, 0, {0, 1}, {0, 0}}) { }
+
+    explicit LocalFrame(const CudaFrame &source, const Configuration &configuration)
+        : Frame(configuration, NV_ENC_PIC_STRUCT_FRAME),
           data_(std::make_shared<lightdb::bytestring>(width() * height() * 3 / 2, 0))
     {
         CUresult status;
         auto params = CUDA_MEMCPY2D {
-            .srcXInBytes = 0,
-            .srcY = 0,
+            .srcXInBytes = configuration.offset.left,
+            .srcY = configuration.offset.top,
             .srcMemoryType = CU_MEMORYTYPE_DEVICE,
             .srcHost = nullptr,
             .srcDevice = source.handle(),

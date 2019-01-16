@@ -47,23 +47,33 @@ namespace lightdb::physical {
 
     class SerializableData: public MaterializedLightField {
     public:
-        virtual const bytestring& value() const { return *value_; }
+        virtual const bytestring& value() = 0;
 
     protected:
-        SerializableData(DeviceType device, bytestring &value)
-            : SerializableData(device, value.begin(), value.end())
+        SerializableData(DeviceType device)
+                : MaterializedLightField(device)
+        { }
+    };
+
+    class SerializedData: public SerializableData {
+    public:
+        virtual const bytestring& value() { return *value_; }
+
+    protected:
+        SerializedData(DeviceType device, bytestring &value)
+            : SerializedData(device, value.begin(), value.end())
         { }
 
         template<typename Input>
-        SerializableData(DeviceType device, Input begin, Input end)
-                : MaterializedLightField(device), value_(std::make_unique<bytestring>(begin, end))
+        SerializedData(DeviceType device, Input begin, Input end)
+                : SerializableData(device), value_(std::make_unique<bytestring>(begin, end))
         { }
 
     private:
         const std::shared_ptr<bytestring> value_;
     };
 
-    class EncodedFrameData: public SerializableData {
+    class EncodedFrameData: public SerializedData {
     protected:
         EncodedFrameData(const DeviceType device, const Codec &codec, const bytestring &value)
                 : EncodedFrameData(device, codec, value.begin(), value.end())
@@ -71,7 +81,7 @@ namespace lightdb::physical {
 
         template<typename Input>
         EncodedFrameData(const DeviceType device, Codec codec, Input begin, const Input end)
-                : SerializableData(device, begin, end), codec_(std::move(codec))
+                : SerializedData(device, begin, end), codec_(std::move(codec))
         { }
 
     public:
@@ -100,34 +110,46 @@ namespace lightdb::physical {
         const DecodeReaderPacket packet_;
     };
 
-    class CPUDecodedFrameData: public MaterializedLightField {
+    class CPUDecodedFrameData: public SerializableData {
     public:
         CPUDecodedFrameData()
-                : MaterializedLightField(DeviceType::CPU),
+                : SerializableData(DeviceType::CPU),
                   frames_{}
         { }
 
         explicit CPUDecodedFrameData(std::vector<LocalFrameReference> frames)
-                : MaterializedLightField(DeviceType::CPU),
+                : SerializableData(DeviceType::CPU),
                   frames_(std::move(frames))
         { }
 
         CPUDecodedFrameData(const CPUDecodedFrameData& other)
-                : MaterializedLightField(DeviceType::CPU),
+                : SerializableData(DeviceType::CPU),
                   frames_(other.frames_)
         { }
 
         CPUDecodedFrameData(CPUDecodedFrameData &&other) noexcept
-                : MaterializedLightField(DeviceType::CPU),
+                : SerializableData(DeviceType::CPU),
                   frames_{std::move(other.frames_)}
         { }
 
+        const bytestring& value() override {
+            std::scoped_lock lock{mutex_};
+            value_.clear();
+            std::for_each(frames().begin(), frames().end(),
+                    [this](const auto &f) { value_.insert(value_.end(), f->data().begin(), f->data().end()); });
+            return value_;
+        }
+
+
         inline std::vector<LocalFrameReference>& frames() noexcept { return frames_; }
+        inline const std::vector<LocalFrameReference>& frames() const noexcept { return frames_; }
         inline explicit operator std::vector<LocalFrameReference>&() noexcept { return frames_; }
         inline explicit operator MaterializedLightFieldReference() override { return MaterializedLightFieldReference::make<CPUDecodedFrameData>(*this); }
 
     private:
         std::vector<LocalFrameReference> frames_{};
+        bytestring value_;
+        std::mutex mutex_;
     };
 
     class GPUDecodedFrameData: public MaterializedLightField {
