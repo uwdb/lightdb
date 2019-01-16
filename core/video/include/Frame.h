@@ -320,7 +320,7 @@ public:
     { }
 
     explicit LocalFrame(const CudaFrame &source)
-    : LocalFrame(source, Configuration{source.height(), source.width(), 0, 0, 0, {0, 1}, {0, 0}}) { }
+    : LocalFrame(source, Configuration{source.width(), source.height(), 0, 0, 0, {0, 1}, {0, 0}}) { }
 
     explicit LocalFrame(const CudaFrame &source, const Configuration &configuration)
         : Frame(configuration, NV_ENC_PIC_STRUCT_FRAME),
