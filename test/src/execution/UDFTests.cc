@@ -13,8 +13,10 @@ using namespace lightdb::execution;
 class UDFTestFixture : public testing::Test {
 public:
     UDFTestFixture()
-            : catalog("resources")
-    { Catalog::instance(catalog); }
+            : catalog("resources") {
+        Catalog::instance(catalog);
+        Optimizer::instance<HeuristicOptimizer>(LocalEnvironment());
+    }
 
 protected:
     Catalog catalog;
@@ -28,16 +30,11 @@ TEST_F(UDFTestFixture, testGreyscale) {
     auto gray = input.Map(lightdb::Greyscale);
     auto encoded = gray.Encode();
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize(encoded);
-
-    print_plan(plan);
-
-    coordinator.save(plan, output);
+    auto plan = Optimizer::instance().optimize(encoded);
+    Coordinator().save(plan, output);
 
     EXPECT_VIDEO_VALID(output);
-    EXPECT_VIDEO_FRAMES(output, 600);
+    EXPECT_VIDEO_FRAMES(output, 250);
     EXPECT_VIDEO_RESOLUTION(output, 240, 320);
     EXPECT_EQ(remove(output), 0);
 }
@@ -52,16 +49,11 @@ TEST_F(UDFTestFixture, testDrawtext) {
     auto annotated = input.Map(drawtext);
     auto encoded = annotated.Encode();
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize(encoded);
-
-    print_plan(plan);
-
-    coordinator.save(plan, output);
+    auto plan = Optimizer::instance().optimize(encoded);
+    Coordinator().save(plan, output);
 
     EXPECT_VIDEO_VALID(output);
-    EXPECT_VIDEO_FRAMES(output, 600);
+    EXPECT_VIDEO_FRAMES(output, 250);
     EXPECT_VIDEO_RESOLUTION(output, 240, 320);
     EXPECT_EQ(remove(output), 0);
 
