@@ -15,6 +15,7 @@
 
 namespace lightdb::physical {
 
+// Just update the physical configuration, don't actual go ahead and copy the subframes
 class GPUAngularSubframe: public GPUUnaryOperator<GPUDecodedFrameData> {
 public:
     explicit GPUAngularSubframe(const LightFieldReference &logical,
