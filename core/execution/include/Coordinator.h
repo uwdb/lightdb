@@ -18,25 +18,29 @@ public:
         return *assignments[Index];
     }
 
-    std::vector<PhysicalLightFieldReference> submit(const optimization::Plan &plan)
-    {
+    std::vector<PhysicalLightFieldReference> submit(const optimization::Plan &plan) {
         const auto &sinks = plan.sinks();
         return functional::flatmap<std::vector<PhysicalLightFieldReference>>(sinks.begin(), sinks.end(), [plan](auto &sink) { return plan.unassigned(sink); });
     }
 
-    void save(const optimization::Plan &plan, const std::string &filename)
-    {
+    void save(const optimization::Plan &plan, const std::string &filename) {
         save(plan, std::vector<std::string>{filename});
     }
 
     //TODO this should be in the algebra, returning an external TLF
     void save(const optimization::Plan &plan, const std::vector<std::string> &filenames) {
         auto streams = functional::transform<std::ofstream>(filenames.begin(), filenames.end(), [](auto &filename) { return std::ofstream(filename); });
-        return save(plan, functional::transform<std::ostream*>(streams.begin(), streams.end(), [](auto &s) { return &s; }));
+        save(plan, functional::transform<std::ostream*>(streams.begin(), streams.end(), [](auto &s) { return &s; }));
     }
 
     void save(const optimization::Plan &plan, std::ostream& stream) {
-        return save(plan, std::vector<std::ostream*>{&stream});
+        save(plan, std::vector<std::ostream*>{&stream});
+    }
+
+    std::string save(const optimization::Plan &plan) {
+        std::ostringstream stream;
+        save(plan, std::vector<std::ostream*>{&stream});
+        return stream.str();
     }
 
     void save(const optimization::Plan &plan, std::vector<std::ostream*> streams) {
