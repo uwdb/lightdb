@@ -26,7 +26,7 @@ protected:
     Catalog visualroad;
 
     static bool initialize() {
-        google::InitGoogleLogging("LightDB");
+        //google::InitGoogleLogging("LightDB");
         google::SetCommandLineOption("GLOG_minloglevel", "5");
         return true;
     }
@@ -51,7 +51,8 @@ TEST_F(Q2cTestFixture, testQ2cduplicate) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    coordinator.save(plan, outputs);
+    //coordinator.save(plan, outputs);
+    FAIL(); //TODO
 }
 
 TEST_F(Q2cTestFixture, testQ2cunique) {

@@ -109,9 +109,10 @@ TEST_F(VisitorTestFixture, testInterpolateDiscretizeMap) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(encoded);
 
-    print_plan(plan);
+    //print_plan(plan);
 
-    coordinator.save(plan, "dout.hevc");
+    //coordinator.save(plan, "dout.hevc");
+    FAIL();
 }
 
 TEST_F(VisitorTestFixture, testPartitionEncode) {
@@ -158,7 +159,8 @@ TEST_F(VisitorTestFixture, testPartitionSubqueryUnion) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(encoded);
 
-    print_plan(plan);
+    //print_plan(plan);
 
-    coordinator.save(plan, "out.hevc");
+    //coordinator.save(plan, "out.hevc");
+    FAIL();
 }

@@ -30,6 +30,7 @@ public:
         EXPECT_VIDEO_FRAMES(name, frames);
         EXPECT_VIDEO_RESOLUTION(name, height, width);
         EXPECT_EQ(remove(name), 0);*/
+        FAIL();
     }
 
     void testMapGaussianBlur(std::string dataset, size_t size, size_t frames, size_t height, size_t width) {
@@ -48,6 +49,7 @@ public:
         EXPECT_VIDEO_FRAMES(name, frames);
         EXPECT_VIDEO_RESOLUTION(name, height, width);
         EXPECT_EQ(remove(name), 0);*/
+        FAIL();
     }
 };
 

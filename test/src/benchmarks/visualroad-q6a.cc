@@ -28,7 +28,7 @@ protected:
     Catalog uadetrac;
 
     static bool initialize() {
-        google::InitGoogleLogging("LightDB");
+        //google::InitGoogleLogging("LightDB");
         google::SetCommandLineOption("GLOG_minloglevel", "5");
         return true;
     }
@@ -72,9 +72,10 @@ TEST_F(Q6aTestFixture, testQ6aduplicate) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
-    coordinator.save(plan, {duplicates, "out"});
+    //coordinator.save(plan, {duplicates, "out"});
+    FAIL();
 }
 
 TEST_F(Q6aTestFixture, testQ6arandom) {
@@ -94,9 +95,10 @@ TEST_F(Q6aTestFixture, testQ6arandom) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
-    coordinator.save(plan, {duplicates, "out"});
+    //coordinator.save(plan, {duplicates, "out"});
+    FAIL(); //TODO test works, but takes forever
 }
 
 TEST_F(Q6aTestFixture, testQ6avrdetrac) {
@@ -168,7 +170,7 @@ TEST_F(Q6aTestFixture, testQ6a_scale1) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
     coordinator.save(plan, {duplicates, "out"});
 }
@@ -190,7 +192,7 @@ TEST_F(Q6aTestFixture, testQ6a_scale2) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
     coordinator.save(plan, {duplicates, "out"});
 }
@@ -212,7 +214,7 @@ TEST_F(Q6aTestFixture, testQ6a_scale4) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
     coordinator.save(plan, {duplicates, "out"});
 }
@@ -234,7 +236,7 @@ TEST_F(Q6aTestFixture, testQ6a_scale8) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
     coordinator.save(plan, {duplicates, "out"});
 }

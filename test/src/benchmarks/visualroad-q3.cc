@@ -26,7 +26,7 @@ protected:
     Catalog vrdetrac;
 
     static bool initialize() {
-        google::InitGoogleLogging("LightDB");
+        //google::InitGoogleLogging("LightDB");
         google::SetCommandLineOption("GLOG_minloglevel", "5");
         return true;
     }
@@ -52,9 +52,10 @@ TEST_F(Q3TestFixture, testQ3duplicate) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
-    coordinator.save(plan, {duplicates, "out"});
+    //coordinator.save(plan, {duplicates, "out"});
+    FAIL(); //TODO
 }
 
 TEST_F(Q3TestFixture, testQ3random) {
@@ -78,9 +79,10 @@ TEST_F(Q3TestFixture, testQ3random) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
-    coordinator.save(plan, {duplicates, "out"});
+    //coordinator.save(plan, {duplicates, "out"});
+    FAIL(); //TODO
 }
 
 TEST_F(Q3TestFixture, testQ3vrdetrac) {
@@ -113,7 +115,8 @@ TEST_F(Q3TestFixture, testQ3vrdetrac) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    coordinator.save(plan, {names.size(), "out"});
+    //coordinator.save(plan, {names.size(), "out"});
+    FAIL(); //TODO
 }
 
 TEST_F(Q3TestFixture, testQ3uadetrac) {
@@ -146,7 +149,8 @@ TEST_F(Q3TestFixture, testQ3uadetrac) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    coordinator.save(plan, {names.size(), "out"});
+    //coordinator.save(plan, {names.size(), "out"});
+    FAIL(); //TODO
 }
 
 TEST_F(Q3TestFixture, testQ3_scale1) {

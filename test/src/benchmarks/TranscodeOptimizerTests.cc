@@ -24,9 +24,9 @@ public:
 
         Plan plan = HeuristicOptimizer(environment).optimize(encoded);
 
-        print_plan(plan);
-
+        //TODO this plan doesn't use GOP?
         coordinator.save(plan, "out.hevc");
+        FAIL(); //TODO
     }
 
 protected:
@@ -50,8 +50,6 @@ TEST_F(TranscodeOptimizerTestFixture, testTranscode) {
     auto coordinator = Coordinator();
 
     Plan plan = HeuristicOptimizer(environment).optimize(encoded);
-
-    print_plan(plan);
 
     coordinator.save(plan, "out.hevc");
 }

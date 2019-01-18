@@ -26,7 +26,7 @@ protected:
     Catalog vrdetrac;
 
     static bool initialize() {
-        google::InitGoogleLogging("LightDB");
+        //google::InitGoogleLogging("LightDB");
         google::SetCommandLineOption("GLOG_minloglevel", "5");
         return true;
     }
@@ -53,9 +53,10 @@ TEST_F(Q4TestFixture, testQ4duplicate) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
-    coordinator.save(plan, {duplicates, "out"});
+    //coordinator.save(plan, {duplicates, "out"});
+    FAIL(); //TODO this test actually works, but disabled because it takes 8 minutes
 }
 
 TEST_F(Q4TestFixture, testQ4random) {
@@ -79,7 +80,8 @@ TEST_F(Q4TestFixture, testQ4random) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    coordinator.save(plan, {duplicates, "out"});
+    //coordinator.save(plan, {duplicates, "out"});
+    FAIL(); //TODO
 }
 
 TEST_F(Q4TestFixture, testQ4vrdetrac) {
@@ -112,7 +114,8 @@ TEST_F(Q4TestFixture, testQ4vrdetrac) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    coordinator.save(plan, {names.size(), "out"});
+    //coordinator.save(plan, {names.size(), "out"});
+    FAIL(); //TODO test works fine but takes forever
 }
 
 TEST_F(Q4TestFixture, testQ4uadetrac) {
@@ -145,7 +148,8 @@ TEST_F(Q4TestFixture, testQ4uadetrac) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    coordinator.save(plan, {names.size(), "out"});
+    //coordinator.save(plan, {names.size(), "out"});
+    FAIL(); //TODO test works fine but takes forever
 }
 
 TEST_F(Q4TestFixture, testQ4_scale1) {

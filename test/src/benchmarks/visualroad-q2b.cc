@@ -53,10 +53,11 @@ TEST_F(Q2bTestFixture, testQ2bduplicate) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
     //Temporarily disabled, was core dumping
     //coordinator.save(plan, {duplicates, "out"});
+    FAIL(); //TODO
 }
 
 TEST_F(Q2bTestFixture, testQ2buadetrac) {
@@ -83,9 +84,10 @@ TEST_F(Q2bTestFixture, testQ2buadetrac) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
-    coordinator.save(plan, {names.size(), "out"});
+    //coordinator.save(plan, {names.size(), "out"});
+    FAIL(); //TODO
 }
 
 TEST_F(Q2bTestFixture, testQ2bvrdetrac) {
@@ -112,11 +114,12 @@ TEST_F(Q2bTestFixture, testQ2bvrdetrac) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
-    coordinator.save(plan, {names.size(), "out"});
+    //coordinator.save(plan, {names.size(), "out"});
+    FAIL(); //TODO
 
-    printf("Done\n");
+    //printf("Done\n");
 }
 
 TEST_F(Q2bTestFixture, testQ2brandom) {
@@ -138,9 +141,10 @@ TEST_F(Q2bTestFixture, testQ2brandom) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
-    coordinator.save(plan, {duplicates, "out"});
+    //coordinator.save(plan, {duplicates, "out"});
+    FAIL(); //TODO
 }
 
 TEST_F(Q2bTestFixture, testQ2b_scale1) {
@@ -163,7 +167,7 @@ TEST_F(Q2bTestFixture, testQ2b_scale1) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
     coordinator.save(plan, {duplicates, "out"});
 }
@@ -188,7 +192,7 @@ TEST_F(Q2bTestFixture, testQ2b_scale2) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
     coordinator.save(plan, {duplicates, "out"});
 }
@@ -213,7 +217,7 @@ TEST_F(Q2bTestFixture, testQ2b_scale4) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
     coordinator.save(plan, {duplicates, "out"});
 }
@@ -238,7 +242,7 @@ TEST_F(Q2bTestFixture, testQ2b_scale8) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
+    //print_plan(plan);
 
     coordinator.save(plan, {duplicates, "out"});
 }

@@ -19,6 +19,7 @@ target_link_libraries(
     lightdb_static ${LIGHTDB_LIB_DEPENDENCIES}
 )
 add_test(lightdb_test lightdb_test)
+enable_testing()
 
 # Copy test files to output directory
 file(COPY resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
