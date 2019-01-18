@@ -4,6 +4,7 @@
 #include "spsc_queue.h"
 #include <cuda.h>
 #include <thread>
+#include <experimental/filesystem>
 
 struct DecodeReaderPacket: public CUVIDSOURCEDATAPACKET {
 public:
@@ -52,7 +53,7 @@ public:
             if (!(current_ = reader_->read()).has_value())
                 eos_ = true;
         }
-        DecodeReaderPacket operator++(int)
+        const DecodeReaderPacket operator++(int)
         {
             auto value = **this;
             ++*this;
@@ -100,7 +101,27 @@ public:
     }
 
     FileDecodeReader(const FileDecodeReader&) = delete;
-    FileDecodeReader(FileDecodeReader&& other) = default;
+    FileDecodeReader(FileDecodeReader&& other) noexcept
+        : filename_(std::move(other.filename_)),
+          packets_(std::move(other.packets_)),
+          source_(other.source_),
+          format_(other.format_),
+          decoded_bytes_(other.decoded_bytes_) {
+          other.source_ = nullptr;
+    }
+
+    ~FileDecodeReader() {
+        CUresult status;
+
+        if(source_ == nullptr)
+            ;
+        else if((status = cuvidSetVideoSourceState(source_, cudaVideoState_Stopped)) != CUDA_SUCCESS)
+            LOG(ERROR) << "Swallowed cuvidSetVideoSourceState failure (" << status << ')';
+        else if((status = cuvidDestroyVideoSource(source_)) != CUDA_SUCCESS)
+            LOG(ERROR) << "Swallowed cuvidDestroyVideoSource failure (" << status << ')';
+        else
+            source_ = nullptr;
+    }
 
     inline CUVIDEOFORMAT format() const override { return format_; }
     inline const std::string &filename() const { return filename_; }
@@ -147,7 +168,9 @@ private:
                 0
         };
 
-        if(!GPUContext::Initialize())
+        if(!std::experimental::filesystem::exists(filename))
+            throw InvalidArgumentError("File does not exist", "filename");
+        else if(!GPUContext::Initialize())
             throw GpuCudaRuntimeError("Could not initialize CUDA runtime", CUDA_ERROR_NOT_INITIALIZED);
         if((status = cuvidCreateVideoSource(&source, filename, &videoSourceParameters)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuvidCreateVideoSource failed", status);
