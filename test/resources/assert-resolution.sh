@@ -1,7 +1,7 @@
 #!/bin/bash
 
-WIDTH=$(ffprobe -v error -of flat -show_entries stream=width $1 | cut -d = -f 2 | head -n 1)
-HEIGHT=$(ffprobe -v error -of flat -show_entries stream=height $1 | cut -d = -f 2 | head -n 1)
+WIDTH=$(ffprobe -v error -of flat -show_frames $1 | grep width | cut -d = -f 2 | head -n 1)
+HEIGHT=$(ffprobe -v error -of flat -show_frames $1 | grep height | cut -d = -f 2 | head -n 1)
 
 if [ $? -ne 0 ];
 then
