@@ -32,9 +32,17 @@ private:
 class LocalEnvironment: public Environment {
 public:
     LocalEnvironment()
-            : Environment({GPU(0)})
-    {
-        LOG(INFO) << "Local environment hardcoded with one stub GPU; should detect them.";
+            : Environment(GetLocalGPUs())
+    { }
+
+private:
+    static std::vector<GPU> GetLocalGPUs() {
+        std::vector<GPU> gpus;
+        size_t count = GPUContext::device_count();
+
+        for(auto index = 0u; index < count; index++)
+            gpus.emplace_back(GPU{index});
+        return gpus;
     }
 };
 

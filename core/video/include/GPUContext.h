@@ -70,6 +70,20 @@ public:
             return (isInitialized = true);
     }
 
+    static size_t device_count() {
+        CUresult result;
+        int count;
+
+        if(!GPUContext::Initialize())
+            throw GpuRuntimeError("GPU context initialization failed");
+        else if((result = cuDeviceGetCount(&count)) != CUDA_SUCCESS)
+            throw GpuCudaRuntimeError("Call to cuDeviceGetCount failed", result);
+        else
+            CHECK_GE(count, 0);
+
+        return static_cast<size_t>(count);
+    }
+
 private:
     static bool isInitialized;
 
