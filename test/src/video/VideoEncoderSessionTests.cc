@@ -1,4 +1,5 @@
 #include "VideoEncoderSession.h"
+#include "TestResources.h"
 #include "AssertVideo.h"
 #include <gtest/gtest.h>
 
@@ -46,7 +47,7 @@ TEST_F(VideoEncoderSessionTestFixture, testEncodeSingleFrame) {
     EXPECT_VIDEO_VALID(FILENAME);
     EXPECT_VIDEO_FRAMES(FILENAME, 1);
     EXPECT_VIDEO_RESOLUTION(FILENAME, configuration.height, configuration.width);
-    EXPECT_VIDEO_QUALITY(FILENAME, "resources/black.h264", DEFAULT_PSNR, 0, 0, configuration.width, configuration.height);
+    EXPECT_VIDEO_QUALITY(FILENAME, Resources.videos.black.name, DEFAULT_PSNR, 0, 0, configuration.width, configuration.height);
 
     EXPECT_EQ(remove(FILENAME), 0);
     EXPECT_EQ(cuMemFree(blackFrame.handle()), CUDA_SUCCESS);
