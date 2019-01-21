@@ -1,5 +1,6 @@
 #include "Model.h"
 #include "Greyscale.h"
+#include "TestResources.h"
 #include "AssertUtility.h"
 #include <gtest/gtest.h>
 
@@ -10,7 +11,7 @@ using namespace lightdb::catalog;
 class AlgebraTestFixture : public testing::Test {
 public:
     AlgebraTestFixture()
-        : catalog("resources")
+        : catalog(Resources.catalog_name)
     { Catalog::instance(catalog); }
 
 protected:
@@ -18,7 +19,7 @@ protected:
 };
 
 TEST_F(AlgebraTestFixture, testScanAmbient) {
-    auto l = Scan("red10");
+    auto l = Scan(Resources.red10.name);
 
     ASSERT_TYPE(*l, ScannedLightField);
     ASSERT_EQ(l->volume().components().size(), 1);
@@ -27,8 +28,8 @@ TEST_F(AlgebraTestFixture, testScanAmbient) {
 }
 
 TEST_F(AlgebraTestFixture, testScanExplicit) {
-    Catalog catalog("resources");
-    auto l = Scan(catalog, "red10");
+    Catalog catalog(Resources.catalog_name);
+    auto l = Scan(catalog, Resources.red10.name);
 
     ASSERT_TYPE(*l, ScannedLightField);
     ASSERT_EQ(l->volume().components().size(), 1);
@@ -41,7 +42,7 @@ TEST_F(AlgebraTestFixture, testScanInvalid) {
 }
 
 TEST_F(AlgebraTestFixture, testSelect) {
-    auto l = Scan("red10").Select(Point6D::zero());
+    auto l = Scan(Resources.red10.name).Select(Point6D::zero());
 
     ASSERT_TYPE(*l, SubsetLightField);
     ASSERT_EQ(l->volume().components().size(), 1);
@@ -49,8 +50,8 @@ TEST_F(AlgebraTestFixture, testSelect) {
 }
 
 TEST_F(AlgebraTestFixture, testUnion) {
-    auto left = Scan("red10");
-    auto right = Scan("red10");
+    auto left = Scan(Resources.red10.name);
+    auto right = Scan(Resources.red10.name);
     auto unioned = left.Union(right);
 
     ASSERT_TYPE(*unioned, CompositeLightField);
@@ -65,8 +66,8 @@ TEST_F(AlgebraTestFixture, testUnion) {
 }
 
 TEST_F(AlgebraTestFixture, testUnionVector) {
-    auto left = Scan("red10");
-    auto right = Scan("red10");
+    auto left = Scan(Resources.red10.name);
+    auto right = Scan(Resources.red10.name);
     auto unioned = left.Union({right});
 
     ASSERT_TYPE(*unioned, CompositeLightField);
@@ -80,7 +81,7 @@ TEST_F(AlgebraTestFixture, testUnionVector) {
 }
 
 TEST_F(AlgebraTestFixture, testRotate) {
-    auto l = Scan("red10").Rotate(1, 2);
+    auto l = Scan(Resources.red10.name).Rotate(1, 2);
 
     ASSERT_TYPE(*l, RotatedLightField);
     ASSERT_EQ(l->downcast<RotatedLightField>().offset().theta(), 1);
@@ -90,10 +91,10 @@ TEST_F(AlgebraTestFixture, testRotate) {
 
 TEST_F(AlgebraTestFixture, testTemporalPartition) {
     // Interval of zero is invalid
-    ASSERT_THROW(Scan("red10").Partition(Dimension::Time, 0), lightdb::errors::_InvalidArgument);
+    ASSERT_THROW(Scan(Resources.red10.name).Partition(Dimension::Time, 0), lightdb::errors::_InvalidArgument);
 
-    auto l = Scan("red10").Select(SpatiotemporalDimension::Time, {0, 10})
-                          .Partition(Dimension::Time, 1);
+    auto l = Scan(Resources.red10.name).Select(SpatiotemporalDimension::Time, {0, 10})
+                                       .Partition(Dimension::Time, 1);
 
     ASSERT_TYPE(*l, PartitionedLightField);
     ASSERT_EQ(l->downcast<PartitionedLightField>().dimension(), Dimension::Time);
@@ -102,7 +103,7 @@ TEST_F(AlgebraTestFixture, testTemporalPartition) {
 }
 
 TEST_F(AlgebraTestFixture, testInterpolate) {
-    auto l = Scan("red10")
+    auto l = Scan(Resources.red10.name)
             .Select(SpatiotemporalDimension::Time, {0, 10})
             .Interpolate(Dimension::Time, interpolation::Linear());
 
@@ -112,7 +113,7 @@ TEST_F(AlgebraTestFixture, testInterpolate) {
 }
 
 TEST_F(AlgebraTestFixture, testDiscretize) {
-    auto l = Scan("red10")
+    auto l = Scan(Resources.red10.name)
             .Select(SpatiotemporalDimension::Time, {0, 10})
             .Discretize(Dimension::Time, 1);
 
@@ -124,7 +125,7 @@ TEST_F(AlgebraTestFixture, testDiscretize) {
 }
 
 TEST_F(AlgebraTestFixture, testMap) {
-    auto l = Scan("red10")
+    auto l = Scan(Resources.red10.name)
             .Select(SpatiotemporalDimension::Time, {0, 10})
             .Map(Greyscale);
 
