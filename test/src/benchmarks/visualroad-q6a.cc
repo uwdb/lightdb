@@ -124,7 +124,8 @@ TEST_F(Q6aTestFixture, testQ6avrdetrac) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    coordinator.save(plan, {names.size(), "out"});
+    //coordinator.save(plan, {names.size(), "out"});
+    FAIL(); //TODO test works fine but is slow
 }
 
 TEST_F(Q6aTestFixture, testQ6auadetrac) {
@@ -150,7 +151,8 @@ TEST_F(Q6aTestFixture, testQ6auadetrac) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    coordinator.save(plan, {names.size(), "out"});
+    //coordinator.save(plan, {names.size(), "out"});
+    FAIL(); //TODO test works fine, disabled for perf
 }
 
 TEST_F(Q6aTestFixture, testQ6a_scale1) {

@@ -11,7 +11,7 @@ template<typename Input=DecodeReader::iterator>
 class VideoDecoderSession {
 public:
     VideoDecoderSession(CudaDecoder& decoder, Input reader, const Input end)
-            : decoder_(decoder),
+            : decoder_(RestartDecoder(decoder)),
               worker_{std::make_unique<std::thread>(&VideoDecoderSession::DecodeAll, std::ref(decoder), reader, end)}
     { }
 
@@ -74,6 +74,11 @@ protected:
     }
 
 private:
+    static CudaDecoder& RestartDecoder(CudaDecoder& decoder) {
+        decoder.frame_queue().reset();
+        return decoder;
+    }
+
     static CUvideoparser CreateParser(CudaDecoder &decoder) {
         CUresult status;
         CUvideoparser parser = nullptr;
@@ -90,8 +95,6 @@ private:
             .pfnDisplayPicture = HandlePictureDisplay,
             nullptr
         };
-
-        decoder.frame_queue().reset();
 
         if ((status = cuvidCreateVideoParser(&parser, &parameters)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuvidCreateVideoParser failed", status);

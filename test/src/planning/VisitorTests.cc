@@ -30,7 +30,7 @@ TEST_F(VisitorTestFixture, testBaz) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(encoded);
 
-    print_plan(plan);
+    //print_plan(plan);
 
     coordinator.save(plan, "out.hevc");
 }
@@ -60,7 +60,7 @@ TEST_F(VisitorTestFixture, testFoo) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(encoded);
 
-    print_plan(plan);
+    //print_plan(plan);
 
     coordinator.save(plan, "dout.hevc");
 }
@@ -76,7 +76,7 @@ TEST_F(VisitorTestFixture, testBar) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize({stored, stored2});
 
-    print_plan(plan);
+    //print_plan(plan);
 
     coordinator.save(plan, std::vector<std::string>{"dout1.hevc", "dout2.hevc"});
 }
@@ -125,7 +125,7 @@ TEST_F(VisitorTestFixture, testPartitionEncode) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(encoded);
 
-    print_plan(plan);
+    //print_plan(plan);
 
     coordinator.save(plan, "out.hevc");
 }
@@ -141,7 +141,7 @@ TEST_F(VisitorTestFixture, testPartitionPartitionEncode) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(encoded);
 
-    print_plan(plan);
+    //print_plan(plan);
 
     coordinator.save(plan, "out.hevc");
 }

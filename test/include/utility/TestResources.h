@@ -20,6 +20,14 @@ struct {
         const size_t framerate = 25;
     } green10;
 
+    struct {
+        struct {
+            const std::string name = "resources/black.h264";
+            const unsigned int height = 2160;
+            const unsigned int width = 3840;
+        } black;
+    } videos;
+
     const std::string catalog_name = "resources";
 } Resources;
 
