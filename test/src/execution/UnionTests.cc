@@ -21,7 +21,6 @@ protected:
     Catalog catalog;
 };
 
-/*
 TEST_F(UnionTestFixture, testEmptyUnion) {
     auto input = Scan(Resources.red10.name);
     auto zero = input.Select(Point6D::zero());
@@ -32,6 +31,7 @@ TEST_F(UnionTestFixture, testEmptyUnion) {
     ASSERT_EQ(Coordinator().save(plan), "");
 }
 
+/*
 TEST_F(UnionTestFixture, testSelfUnion) {
 }
 

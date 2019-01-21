@@ -21,6 +21,6 @@ set(Bento4_FOUND TRUE)
 file(GLOB Bento4_INCLUDE_DIRS "${Bento4_SOURCE_DIR}/Source/C++/*")
 
 if(Bento4_FIND_REQUIRED AND NOT Bento4_FOUND)
-  message(FATAL_ERROR "Could not find the clang-tidy utility.")
+  message(FATAL_ERROR "Could not find the Bento4 library.")
 endif()
 

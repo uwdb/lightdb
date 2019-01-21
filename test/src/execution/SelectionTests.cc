@@ -19,6 +19,7 @@ public:
 
 protected:
     Catalog catalog;
+    const char* output_filename = "out.hevc";
 };
 
 TEST_F(SelectionTestFixture, testEmptySelection) {
@@ -32,133 +33,110 @@ TEST_F(SelectionTestFixture, testEmptySelection) {
 }
 
 TEST_F(SelectionTestFixture, testSelectThetaPhi) {
-    auto output = "out.hevc";
-
     auto input = Scan(Resources.red10.name);
     auto theta = input.Select(ThetaRange{0, rational_times_real({2, 4}, PI)});
     auto phi = theta.Select(PhiRange{0, rational_times_real({1, 4}, PI)});
     auto encoded = phi.Encode();
 
     auto plan = Optimizer::instance().optimize(encoded);
-    //Coordinator().save(plan, output);
-    FAIL();
+    Coordinator().save(plan, output_filename);
 
-    EXPECT_VIDEO_VALID(output);
-    EXPECT_VIDEO_FRAMES(output, Resources.red10.frames);
-    EXPECT_VIDEO_RESOLUTION(output, Resources.red10.height / 4, Resources.red10.width / 4);
-    EXPECT_VIDEO_RED(output);
-    EXPECT_EQ(remove(output), 0);
+    EXPECT_VIDEO_VALID(output_filename);
+    EXPECT_VIDEO_FRAMES(output_filename, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(output_filename, Resources.red10.height / 4, Resources.red10.width / 4);
+    EXPECT_VIDEO_RED(output_filename);
+    EXPECT_EQ(remove(output_filename), 0);
 }
 
 TEST_F(SelectionTestFixture, testSelectPhiTheta) {
-    auto output = "out.hevc";
-/*
     auto input = Scan(Resources.red10.name);
     auto phi = input.Select(PhiRange{0, rational_times_real({1, 4}, PI)});
     auto theta = phi.Select(ThetaRange{0, rational_times_real({2, 4}, PI)});
     auto encoded = theta.Encode();
 
     auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, output);
+    Coordinator().save(plan, output_filename);
 
-    EXPECT_VIDEO_VALID(output);
-    EXPECT_VIDEO_FRAMES(output, Resources.red10.frames);
-    EXPECT_VIDEO_RESOLUTION(output, Resources.red10.height / 4, Resources.red10.width / 4);
-    EXPECT_VIDEO_RED(output);
-    EXPECT_EQ(remove(output), 0);
-    */
-FAIL();
+    EXPECT_VIDEO_VALID(output_filename);
+    EXPECT_VIDEO_FRAMES(output_filename, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(output_filename, Resources.red10.height / 4, Resources.red10.width / 4);
+    EXPECT_VIDEO_RED(output_filename);
+    EXPECT_EQ(remove(output_filename), 0);
 }
 
 TEST_F(SelectionTestFixture, testSelectPhi) {
-    /*auto output = "out.hevc";
-
     auto input = Scan(Resources.red10.name);
     auto phi = input.Select(PhiRange{0, rational_times_real({1, 4}, PI)});
     auto encoded = phi.Encode();
 
     auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, output);
+    Coordinator().save(plan, output_filename);
 
-    EXPECT_VIDEO_VALID(output);
-    EXPECT_VIDEO_FRAMES(output, Resources.red10.frames);
-    EXPECT_VIDEO_RESOLUTION(output, Resources.red10.height / 4, Resources.red10.width);
-    EXPECT_VIDEO_RED(output);
-    EXPECT_EQ(remove(output), 0);*/
-    FAIL();
+    EXPECT_VIDEO_VALID(output_filename);
+    EXPECT_VIDEO_FRAMES(output_filename, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(output_filename, Resources.red10.height / 4, Resources.red10.width);
+    EXPECT_VIDEO_RED(output_filename);
+    EXPECT_EQ(remove(output_filename), 0);
 }
 
 TEST_F(SelectionTestFixture, testSelectTheta) {
-    auto output = "out.hevc";
-
     auto input = Scan(Resources.red10.name);
     auto theta = input.Select(ThetaRange{0, rational_times_real({2, 4}, PI)});
     auto encoded = theta.Encode();
 
-//    auto plan = Optimizer::instance().optimize(encoded);
-    //Coordinator().save(plan, output);
-    FAIL();
+    auto plan = Optimizer::instance().optimize(encoded);
+    Coordinator().save(plan, output_filename);
 
-    EXPECT_VIDEO_VALID(output);
-    EXPECT_VIDEO_FRAMES(output, Resources.red10.frames);
-    EXPECT_VIDEO_RESOLUTION(output, Resources.red10.height, Resources.red10.width / 4);
-    EXPECT_VIDEO_RED(output);
-    EXPECT_EQ(remove(output), 0);
+    EXPECT_VIDEO_VALID(output_filename);
+    EXPECT_VIDEO_FRAMES(output_filename, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(output_filename, Resources.red10.height, Resources.red10.width / 4);
+    EXPECT_VIDEO_RED(output_filename);
+    EXPECT_EQ(remove(output_filename), 0);
 }
 
 TEST_F(SelectionTestFixture, testTemporalSelect) {
-    auto output = "out.hevc";
-
-    /*auto input = Scan(Resources.red10.name);
+    auto input = Scan(Resources.red10.name);
     auto temporal = input.Select(SpatiotemporalDimension::Time, TemporalRange{2, 5});
     auto encoded = temporal.Encode();
 
     auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, output);
+    Coordinator().save(plan, output_filename);
 
-    EXPECT_VIDEO_VALID(output);
-    EXPECT_VIDEO_FRAMES(output, Resources.red10.framerate * 3);
-    EXPECT_VIDEO_RESOLUTION(output, Resources.red10.height, Resources.red10.width);
-    EXPECT_VIDEO_RED(output);
-    EXPECT_EQ(remove(output), 0);*/
-    FAIL();
+    EXPECT_VIDEO_VALID(output_filename);
+    EXPECT_VIDEO_FRAMES(output_filename, Resources.red10.framerate * 3);
+    EXPECT_VIDEO_RESOLUTION(output_filename, Resources.red10.height, Resources.red10.width);
+    EXPECT_VIDEO_RED(output_filename);
+    EXPECT_EQ(remove(output_filename), 0);
 }
 
 TEST_F(SelectionTestFixture, testThetaTemporalSelect) {
-    auto output = "out.hevc";
-
     auto input = Scan(Resources.red10.name);
     auto theta = input.Select(ThetaRange{0, rational_times_real({2, 4}, PI)});
     auto temporal = theta.Select(SpatiotemporalDimension::Time, TemporalRange{2, 5});
     auto encoded = temporal.Encode();
 
     auto plan = Optimizer::instance().optimize(encoded);
-    //Coordinator().save(plan, output);
-    FAIL(); //TODO
+    Coordinator().save(plan, output_filename);
 
-    EXPECT_VIDEO_VALID(output);
-    EXPECT_VIDEO_FRAMES(output, Resources.red10.framerate * 3);
-    EXPECT_VIDEO_RESOLUTION(output, Resources.red10.height, Resources.red10.width / 4);
-    EXPECT_VIDEO_RED(output);
-    EXPECT_EQ(remove(output), 0);
+    EXPECT_VIDEO_VALID(output_filename);
+    EXPECT_VIDEO_FRAMES(output_filename, Resources.red10.framerate * 3);
+    EXPECT_VIDEO_RESOLUTION(output_filename, Resources.red10.height, Resources.red10.width / 4);
+    EXPECT_VIDEO_RED(output_filename);
+    EXPECT_EQ(remove(output_filename), 0);
 }
 
 TEST_F(SelectionTestFixture, testTemporalThetaSelect) {
-/*    auto output = "out.hevc";
-
     auto input = Scan(Resources.red10.name);
     auto temporal = input.Select(SpatiotemporalDimension::Time, TemporalRange{2, 5});
     auto theta = temporal.Select(ThetaRange{0, rational_times_real({2, 4}, PI)});
     auto encoded = theta.Encode();
 
     auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, output);
+    Coordinator().save(plan, output_filename);
 
-    EXPECT_VIDEO_VALID(output);
-    EXPECT_VIDEO_FRAMES(output, Resources.red10.framerate * 3);
-    EXPECT_VIDEO_RESOLUTION(output, Resources.red10.height, Resources.red10.width / 4);
-    EXPECT_VIDEO_RED(output);
-    EXPECT_EQ(remove(output), 0);
-    */
-    FAIL();
+    EXPECT_VIDEO_VALID(output_filename);
+    EXPECT_VIDEO_FRAMES(output_filename, Resources.red10.framerate * 3);
+    EXPECT_VIDEO_RESOLUTION(output_filename, Resources.red10.height, Resources.red10.width / 4);
+    EXPECT_VIDEO_RED(output_filename);
+    EXPECT_EQ(remove(output_filename), 0);
 }
