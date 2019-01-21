@@ -11,10 +11,6 @@ public:
     CatalogTestFixture() = default;
 };
 
-TEST_F(CatalogTestFixture, testNoAmbientCatalog) {
-    ASSERT_THROW(Catalog::instance(), errors::_CatalogError);
-}
-
 TEST_F(CatalogTestFixture, testAmbientCatalog) {
     Catalog::instance(Catalog{Resources.catalog_name});
     ASSERT_NO_THROW(Catalog::instance());
