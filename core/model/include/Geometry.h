@@ -221,6 +221,8 @@ namespace lightdb {
                     TemporalRange::limits(),
                     ThetaRange::limits(), PhiRange::limits()}; }
 
+        static constexpr const Volume zero() { return {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}}; };
+
     private:
         SpatialRange x_;
         SpatialRange y_;
@@ -286,7 +288,9 @@ namespace lightdb {
                 : components_({volume}), bounding_(volume) {}
 
         explicit CompositeVolume(const std::vector<Volume> &volumes)
-                : components_(asserts::CHECK_NONEMPTY(volumes)),
+                : components_(!volumes.empty()
+                                ? volumes
+                                : std::vector<Volume>{Volume::zero()}),
                   bounding_(std::accumulate(volumes.begin() + 1, volumes.end(), volumes[0],
                                            [](auto &result, auto &current) { return current | result; }))
         { }
