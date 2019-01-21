@@ -152,22 +152,26 @@ namespace lightdb::physical {
     public:
         GPUDecodedFrameData()
                 : SerializableData(DeviceType::GPU),
-                  frames_{}
+                  frames_{},
+                  serialized_{}
         { }
 
         explicit GPUDecodedFrameData(std::vector<GPUFrameReference> frames)
                 : SerializableData(DeviceType::GPU),
-                  frames_(std::move(frames))
+                  frames_(std::move(frames)),
+                  serialized_{}
         { }
 
         GPUDecodedFrameData(const GPUDecodedFrameData& other)
                 : SerializableData(DeviceType::GPU),
-                  frames_(other.frames_)
+                  frames_(other.frames_),
+                  serialized_{}
         { }
 
         GPUDecodedFrameData(GPUDecodedFrameData &&other) noexcept
                 : SerializableData(DeviceType::GPU),
-                  frames_{std::move(other.frames_)}
+                  frames_{std::move(other.frames_)},
+                  serialized_{}
         { }
 
         inline std::vector<GPUFrameReference>& frames() noexcept { return frames_; }
