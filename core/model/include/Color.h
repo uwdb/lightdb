@@ -54,7 +54,7 @@ namespace lightdb
         virtual explicit operator bytestring() const = 0;
 
         template<typename TargetColor>
-        explicit operator TargetColor() const { return TargetColor{static_cast<YUVColor>(*this)}; }
+        explicit operator TargetColor() const;
 
         virtual const ColorSpace colorSpace() const = 0;
 
