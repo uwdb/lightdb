@@ -18,6 +18,9 @@
 #define CatalogError(message, name) \
     ::lightdb::errors::_CatalogError(message, name, __FILE__, __LINE__, __func__)
 
+#define CoordinatorError(message) \
+    ::lightdb::errors::_CoordinatorError(message, __FILE__, __LINE__, __func__)
+
 #define FfmpegRuntimeError(message)                \
     ::lightdb::errors::_FfmpegRuntimeError(message, __FILE__, __LINE__, __func__)
 
@@ -114,6 +117,19 @@ namespace lightdb::errors {
 
     private:
         const std::string name_;
+    };
+
+
+    class _CoordinatorError: public LightDBError<std::runtime_error> {
+    public:
+        _CoordinatorError(const std::string &message, const char* file, int line, const char* function)
+                : LightDBError(message, file, line, function)
+        {  }
+
+    protected:
+        void log() const override {
+            LOG(ERROR) << "Coordinator:" << what() << " (" << function() << ':' << file() << ':' << line() << ')';
+        }
     };
 
 
