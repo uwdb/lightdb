@@ -170,7 +170,7 @@ struct DecodeConfiguration: public Configuration {
                         const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
-            : DecodeConfiguration({width, height, max_width, max_height, 0, FrameRate{fps}},
+            : DecodeConfiguration({width, height, max_width, max_height, 0, FrameRate{fps}, {0, 0}},
                                   codec, chroma_format, output_format, output_surfaces, decode_surfaces,
                                   creation_flags, deinterlace_mode)
     { }
@@ -185,7 +185,7 @@ struct DecodeConfiguration: public Configuration {
                         const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
-            : DecodeConfiguration({width, height, max_width, max_height, 0, FrameRate{fps}},
+            : DecodeConfiguration({width, height, max_width, max_height, 0, FrameRate{fps}, {0, 0}},
                                   codec, chroma_format, output_format, output_surfaces, decode_surfaces,
                                   creation_flags, deinterlace_mode)
     { }
@@ -279,7 +279,7 @@ struct DecodeConfiguration: public Configuration {
                             .left = static_cast<short>(left),
                             .top = static_cast<short>(top),
                             .right = static_cast<short>(width - left),
-                            .bottom = static_cast<const short>(height - top),
+                            .bottom = static_cast<short>(height - top),
                     },
                     .OutputFormat = output_format,
                     .DeinterlaceMode = deinterlace_mode,
@@ -287,7 +287,7 @@ struct DecodeConfiguration: public Configuration {
                     .ulTargetHeight = height,
                     .ulNumOutputSurfaces = output_surfaces,
                     .vidLock = lock,
-                    .target_rect = {0},
+                    .target_rect = {0, 0, 0, 0},
                     .Reserved2 = {0}
             };
     }

@@ -51,11 +51,11 @@ protected:
                                     nullptr, args, nullptr)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Kernel failed", result);
         else if((result = cuStreamQuery(nullptr)) != CUDA_SUCCESS && result != CUDA_ERROR_NOT_READY)
-            throw GpuCudaRuntimeError("Kernel cuStreamQuery", result);
+            throw GpuCudaRuntimeError("Kernel cuStreamQuery failed", result);
     }
 
 protected:
-    const CUmodule module() const { return module_; }
+    CUmodule module() const { return module_; }
     bool owned() const { return owned_; }
 
 private:

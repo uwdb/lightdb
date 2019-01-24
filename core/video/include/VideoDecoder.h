@@ -52,7 +52,7 @@ public:
           cuvidDestroyDecoder(handle());
   }
 
-  const CUvideodecoder handle() const { return handle_; }
+  CUvideodecoder handle() const { return handle_; }
   VideoLock &lock() const {return lock_; }
 
 protected:

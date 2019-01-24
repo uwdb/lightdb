@@ -33,7 +33,7 @@ public:
     CPUtoGPUTransfer(const LightFieldReference &logical,
                 PhysicalLightFieldReference &parent,
                 const execution::GPU &gpu)
-            : GPUOperator(logical, {parent}, gpu, []() { return Configuration{960, 540, 0, 0, 0, {30, 1}}; }) {
+            : GPUOperator(logical, {parent}, gpu, []() { return Configuration{960, 540, 0, 0, 0, {30, 1}, {}}; }) {
         LOG(ERROR) << "CPU->GPU transfer operator has hardcoded size of 960x540, this will break";
     }
 

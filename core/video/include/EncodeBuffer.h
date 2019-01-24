@@ -49,7 +49,9 @@ struct EncodeBuffer
 
     // TODO is this size reasonable?
     explicit EncodeBuffer(VideoEncoder &encoder, size_t size=4*1024*1024)
-            : output_buffer{0}, input_buffer{0}, encoder(encoder), size(size) {
+            : output_buffer{},
+              input_buffer{},
+              encoder(encoder), size(size) {
         NVENCSTATUS status;
         CUresult result;
 

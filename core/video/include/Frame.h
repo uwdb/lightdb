@@ -286,7 +286,8 @@ private:
                 .progressive_frame = frame.parameters().progressive_frame,
                 .second_field = 0,
                 .top_field_first = frame.parameters().top_field_first,
-                .unpaired_field = frame.parameters().progressive_frame == 1 || frame.parameters().repeat_first_field <= 1};
+                .unpaired_field = frame.parameters().progressive_frame == 1 || frame.parameters().repeat_first_field <= 1,
+                0, 0, 0, 0, 0, 0, 0, {}, {}};
         if((result = cuvidMapVideoFrame(frame.decoder().handle(), frame.parameters().picture_index,
                                         &handle, &pitch, &mapParameters)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuvidMapVideoFrame failed", result);

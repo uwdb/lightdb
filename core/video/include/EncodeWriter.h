@@ -14,7 +14,8 @@ public:
                 .doNotWait = 0,
                 .ltrFrame = 0,
                 .reservedBitFields = 0,
-                .outputBitstream = buffer.output_buffer.bitstreamBuffer
+                .outputBitstream = buffer.output_buffer.bitstreamBuffer,
+                0, 0, 0, 0, 0, 0, 0, 0, NV_ENC_PIC_TYPE_UNKNOWN, NV_ENC_PIC_STRUCT_FRAME, 0, 0, 0, 0, {}
         };
 
         if (buffer.output_buffer.bitstreamBuffer == nullptr && !buffer.output_buffer.EOSFlag) {

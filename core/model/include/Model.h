@@ -92,8 +92,8 @@ namespace lightdb::logical {
                              CompositeVolume{functional::transform_if<Volume>(
                                      lightfield->volume().components().begin(),
                                      lightfield->volume().components().end(),
-                                     [volume](auto &v) { return v & volume; },
-                                     [volume](auto &v) { return volume.has_nonempty_intersection(v); })})
+                                     [&volume](const auto &v) { return v & volume; },
+                                     [&volume](const auto &v) { return volume.has_nonempty_intersection(v); })})
         { }
 
         std::set<Dimension> dimensions() const {

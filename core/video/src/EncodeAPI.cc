@@ -488,7 +488,7 @@ NVENCSTATUS EncodeAPI::NvEncDestroyEncoder()
 
 NVENCSTATUS EncodeAPI::ResetEncoder()
 {
-    NV_ENC_RECONFIGURE_PARAMS parameters = {0};
+    NV_ENC_RECONFIGURE_PARAMS parameters = {};
     parameters.version = NV_ENC_RECONFIGURE_PARAMS_VER;
     parameters.resetEncoder = 1;
     //parameters.forceIDR = 1;

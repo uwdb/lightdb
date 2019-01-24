@@ -93,7 +93,7 @@ private:
             .pfnSequenceCallback = HandleVideoSequence,
             .pfnDecodePicture = HandlePictureDecode,
             .pfnDisplayPicture = HandlePictureDisplay,
-            nullptr
+            {}, nullptr
         };
 
         if ((status = cuvidCreateVideoParser(&parser, &parameters)) != CUDA_SUCCESS)

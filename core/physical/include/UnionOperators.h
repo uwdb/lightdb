@@ -54,7 +54,7 @@ private:
 
         const auto &configuration = parents()[0].downcast<GPUOperator>().configuration();
         return Configuration{configuration.width * columns, configuration.height * rows, 0, 0,
-                             configuration.bitrate, configuration.framerate};
+                             configuration.bitrate, configuration.framerate, configuration.offset};
     }
 
     const unsigned int rows_, columns_;

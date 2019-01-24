@@ -63,7 +63,7 @@ private:
                              configuration.max_width * columns,
                              configuration.max_height * rows,
                              configuration.bitrate,
-                             configuration.framerate};
+                             configuration.framerate, {}};
     }
 };
 

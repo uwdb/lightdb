@@ -39,7 +39,7 @@ private:
                       return parent_.downcast<EncodedVideoInterface>().configuration();
                   else {
                       LOG(ERROR) << "Using stub configuration because CPUOperators don't yet carry a configuration instance.  This is horrible."; //TODO
-                      return Configuration{1, 1, 0, 0, 0, {1, 1}};
+                      return Configuration{1, 1, 0, 0, 0, {1, 1}, {}};
                   }
               }),
               output_([this]() { return catalog::Catalog::instance().create(store_.name(), store_.codec(), configuration_); }) {

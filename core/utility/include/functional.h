@@ -49,7 +49,7 @@ namespace lightdb::functional {
         std::vector<T> values;
         std::copy_if(begin, end, std::back_inserter(values), p);
         return values;
-    };
+    }
 
     template<typename T, typename InputIterator, typename OutputIterator, typename UnaryFunction, typename Predicate>
     OutputIterator transform_if(
@@ -60,7 +60,7 @@ namespace lightdb::functional {
             if(p(*begin))
                 *output++ = f(*begin);
         return output;
-    };
+    }
 
     template<typename T, typename InputIterator, typename UnaryFunction, typename Predicate>
     std::vector<T> transform_if(const InputIterator begin, const InputIterator end,
@@ -70,7 +70,7 @@ namespace lightdb::functional {
         values.reserve(std::distance(begin, end));
         transform_if<T>(begin, end, std::back_inserter(values), f, p);
         return values;
-    };
+    }
 
     template<typename T, typename Input, typename TContainer=std::vector<T>>
     class flatmap_iterator {

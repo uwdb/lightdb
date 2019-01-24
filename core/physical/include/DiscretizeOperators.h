@@ -79,7 +79,7 @@ private:
         return Configuration{static_cast<unsigned int>(theta_samples),
                              static_cast<unsigned int>(phi_samples),
                              base.max_width, base.max_height,
-                             base.bitrate, base.framerate};
+                             base.bitrate, base.framerate, {}};
     }
 
     std::vector<IntervalGeometry> geometries_;
