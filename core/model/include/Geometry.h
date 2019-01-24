@@ -171,12 +171,12 @@ namespace lightdb {
         inline const ThetaRange& theta() const { return theta_; }
         inline const PhiRange& phi() const { return phi_; }
 
-        inline const SpatialRange& x(const SpatialRange& value) { return x_ = value; }
-        inline const SpatialRange& y(const SpatialRange& value) { return y_ = value; }
-        inline const SpatialRange& z(const SpatialRange& value) { return z_ = value; }
+        inline const SpatialRange& x(const SpatialRange& value)   { return x_ = value; }
+        inline const SpatialRange& y(const SpatialRange& value)   { return y_ = value; }
+        inline const SpatialRange& z(const SpatialRange& value)   { return z_ = value; }
         inline const TemporalRange& t(const TemporalRange& value) { return t_ = value; }
-        inline const ThetaRange& theta(const ThetaRange& value) { return theta_ = value; }
-        inline const PhiRange& phi(const PhiRange& value) { return phi_ = value; }
+        inline const ThetaRange& theta(const ThetaRange& value)   { return theta_ = value; }
+        inline const PhiRange& phi(const PhiRange& value)         { return phi_ = value; }
 
         UnknownRange get(Dimension dimension) const;
         Volume& set(SpatiotemporalDimension dimension, const SpatiotemporalRange &range);
@@ -202,7 +202,7 @@ namespace lightdb {
         }
 
         inline Volume operator&(const Volume &other) const {
-            return {x() & other.x(), y() &other.y(), z() & other.z(), t() & other.t(),
+            return {x() & other.x(), y() & other.y(), z() & other.z(), t() & other.t(),
                     theta() & other.theta(), phi() & other.phi()};
         }
 
@@ -221,7 +221,7 @@ namespace lightdb {
                     TemporalRange::limits(),
                     ThetaRange::limits(), PhiRange::limits()}; }
 
-        static constexpr const Volume zero() { return {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}}; };
+        static constexpr Volume zero() { return {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}}; }
 
     private:
         SpatialRange x_;
@@ -291,7 +291,7 @@ namespace lightdb {
                 : components_(!volumes.empty()
                                 ? volumes
                                 : std::vector<Volume>{Volume::zero()}),
-                  bounding_(std::accumulate(volumes.begin() + 1, volumes.end(), volumes[0],
+                  bounding_(std::accumulate(components_.begin() + 1, components_.end(), components_.front(),
                                            [](auto &result, auto &current) { return current | result; }))
         { }
 
@@ -458,7 +458,7 @@ namespace lightdb {
             return this->defined_at<std::pico>(point);
         }
 
-        inline constexpr const Dimension dimension() const { return dimension_; }
+        inline constexpr Dimension dimension() const { return dimension_; }
         inline constexpr const number interval() const { return interval_; }
         inline constexpr std::optional<unsigned long> size() const {
             if(dimension() == Dimension::Theta)
