@@ -31,9 +31,7 @@ public:
 
             auto &transform = transform_(DeviceType::GPU);
             auto output = transform(input);
-            auto &field = static_cast<LightField&>(output);
-            auto &data = dynamic_cast<MaterializedLightField&>(field);
-            return static_cast<physical::MaterializedLightFieldReference>(data);
+            return dynamic_cast<MaterializedLightField&>(*output).ref();
         } else
             return {};
     }
@@ -61,17 +59,14 @@ public:
               transform_(transform)
     { }
 
-
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if(iterators()[0] != iterators()[0].eos()) {
             auto input = iterators()[0]++;
             auto &data = input.downcast<CPUDecodedFrameData>();
             auto &transform = transform_(DeviceType::CPU);
 
-            auto result = transform(data);
-            auto &field = static_cast<LightField&>(result);
-            auto &output = dynamic_cast<MaterializedLightField&>(field);
-            return static_cast<physical::MaterializedLightFieldReference>(output);
+            auto output = transform(data);
+            return dynamic_cast<MaterializedLightField&>(*output).ref();
         } else
             return {};
     }

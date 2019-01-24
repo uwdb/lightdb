@@ -29,8 +29,10 @@ namespace lightdb::physical {
         MaterializedLightField& operator=(const MaterializedLightField&) = default;
         MaterializedLightField& operator=(MaterializedLightField&&)      = default;
 
-        explicit virtual operator MaterializedLightFieldReference() = 0;
-        void accept(LightFieldVisitor& visitor) override { visitor.visit(*this); }
+        inline explicit operator MaterializedLightFieldReference() const { return ref(); }
+        inline void accept(LightFieldVisitor& visitor) override { visitor.visit(*this); }
+
+        virtual MaterializedLightFieldReference ref() const = 0;
 
         DeviceType device() const { return device_; }
 
@@ -104,7 +106,7 @@ namespace lightdb::physical {
         { }
 
         inline explicit operator const DecodeReaderPacket() const noexcept { return packet_; }
-        inline explicit operator MaterializedLightFieldReference() override { return MaterializedLightFieldReference::make<CPUEncodedFrameData>(*this); }
+        inline MaterializedLightFieldReference ref() const override { return MaterializedLightFieldReference::make<CPUEncodedFrameData>(*this); }
 
     private:
         const DecodeReaderPacket packet_;
@@ -141,7 +143,7 @@ namespace lightdb::physical {
         inline std::vector<LocalFrameReference>& frames() noexcept { return frames_; }
         inline const std::vector<LocalFrameReference>& frames() const noexcept { return frames_; }
         inline explicit operator std::vector<LocalFrameReference>&() noexcept { return frames_; }
-        inline explicit operator MaterializedLightFieldReference() override { return MaterializedLightFieldReference::make<CPUDecodedFrameData>(*this); }
+        inline MaterializedLightFieldReference ref() const override { return MaterializedLightFieldReference::make<CPUDecodedFrameData>(*this); }
 
     private:
         std::vector<LocalFrameReference> frames_{};
@@ -177,7 +179,7 @@ namespace lightdb::physical {
         inline std::vector<GPUFrameReference>& frames() noexcept { return frames_; }
         inline const std::vector<GPUFrameReference>& frames() const noexcept { return frames_; }
         inline explicit operator std::vector<GPUFrameReference>&() noexcept { return frames_; }
-        inline explicit operator MaterializedLightFieldReference() override { return MaterializedLightFieldReference::make<GPUDecodedFrameData>(*this); }
+        inline MaterializedLightFieldReference ref() const override { return MaterializedLightFieldReference::make<GPUDecodedFrameData>(*this); }
 
         const bytestring& value() override {
             if(serialized_.empty())
@@ -204,7 +206,7 @@ namespace lightdb::physical {
               interpolator_(interpolator)
         { }
 
-        inline explicit operator MaterializedLightFieldReference() override { return MaterializedLightFieldReference::make<InterpolatedData<BaseType>>(*this); }
+        inline MaterializedLightFieldReference ref() const override { return MaterializedLightFieldReference::make<InterpolatedData<BaseType>>(*this); }
 
     private:
         const MaterializedLightFieldReference base_;
