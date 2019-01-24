@@ -14,7 +14,7 @@ namespace lightdb::hevc {
             // Necessary so that unsigned comparison is performed
             //TODO add ubytestring?
                 auto c = static_cast<unsigned char>(*it);
-                if (found && 0 <= c && c <= 3) {
+                if (found && c <= 3) {
                     // If in the previous iteration we encountered the byte sequence and now we are at a 0, 1, 2, or 3
                     // mark that we should remove the three encountered in the previous index and reset the counts
                     emulation_indices.push_back(index - 1);

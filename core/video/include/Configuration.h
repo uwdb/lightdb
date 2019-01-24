@@ -144,7 +144,7 @@ struct EncodeConfiguration: public Configuration
             gopLength(gop_length),
             numB(b_frames),
             pictureStruct(picture_struct),
-            videoBufferingVerifier{0, 0},
+            videoBufferingVerifier{},
             quantization{28, "", rateControlMode, i_qfactor, b_qfactor, i_qoffset, b_qoffset},
             intraRefresh{false, 0, 0},
             flags{false, false, false, false}
@@ -170,7 +170,7 @@ struct DecodeConfiguration: public Configuration {
                         const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
-            : DecodeConfiguration({width, height, max_width, max_height, 0, FrameRate{fps}, {0, 0}},
+            : DecodeConfiguration({width, height, max_width, max_height, 0, FrameRate{fps}, {}},
                                   codec, chroma_format, output_format, output_surfaces, decode_surfaces,
                                   creation_flags, deinterlace_mode)
     { }
@@ -185,7 +185,7 @@ struct DecodeConfiguration: public Configuration {
                         const unsigned int decode_surfaces = 0,
                         const unsigned long creation_flags = cudaVideoCreate_PreferCUVID,
                         const cudaVideoDeinterlaceMode deinterlace_mode = cudaVideoDeinterlaceMode_Weave)
-            : DecodeConfiguration({width, height, max_width, max_height, 0, FrameRate{fps}, {0, 0}},
+            : DecodeConfiguration({width, height, max_width, max_height, 0, FrameRate{fps}, {}},
                                   codec, chroma_format, output_format, output_surfaces, decode_surfaces,
                                   creation_flags, deinterlace_mode)
     { }
@@ -287,7 +287,7 @@ struct DecodeConfiguration: public Configuration {
                     .ulTargetHeight = height,
                     .ulNumOutputSurfaces = output_surfaces,
                     .vidLock = lock,
-                    .target_rect = {0, 0, 0, 0},
+                    .target_rect = {},
                     .Reserved2 = {0}
             };
     }
