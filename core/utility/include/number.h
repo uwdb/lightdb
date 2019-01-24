@@ -1,49 +1,50 @@
 #ifndef LIGHTDB_NUMBER_H
 #define LIGHTDB_NUMBER_H
 
-#include "errors.h"
-#include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/relative_difference.hpp>
 #include <boost/rational.hpp>
+#include <variant>
 #include <ratio>
 
 namespace lightdb {
     static constexpr const long double PI = 3.141592653589793238512808959406186204433;
     static constexpr const long double TWOPI = 2*PI;
 
-    #define _LOGICAL_RATIONAL_OPERATOR(op)                                                       \
-    inline bool operator op(const rational& other) const noexcept {                              \
+    #define _LOGICAL_RATIONAL_OPERATOR(op)                   \
+    bool operator op(const rational& other) const noexcept { \
         return static_cast<rational_base>(*this) op static_cast<rational_base>(other); }
 
-    #define _ARITHMATIC_RATIONAL_OPERATOR(op)                                                    \
-    inline rational operator op(const rational& other) const {                                   \
+    #define _ARITHMATIC_RATIONAL_OPERATOR(op)                  \
+    inline rational operator op(const rational& other) const { \
         return rational{static_cast<rational_base>(*this) op static_cast<rational_base>(other)}; }
 
 
-    #define _LOGICAL_REAL_OPERATOR(op)                                                           \
-    inline bool operator op(const number& other) const noexcept {                                \
-        return type_ == type::rational && other.type_ == type::rational                          \
-            ? rational_ op other.rational_                                                       \
-            : static_cast<const real_type>(*this) op static_cast<const real_type>(other); }      \
-    inline bool operator op(const rational& other) const noexcept {                              \
-        return type_ == type::rational                                                           \
-            ? rational_ op other                                                                 \
-            : static_cast<const real_type>(*this) op static_cast<const real_type>(other); }      \
-    template<typename T>                                                                         \
-    inline bool operator op(const T& other) const noexcept {                                     \
-        return static_cast<const real_type>(*this) op static_cast<const real_type>(other); }
+    #define _LOGICAL_REAL_OPERATOR(op)                       \
+    constexpr bool operator op(const number& other) const noexcept {   \
+        if(value_.index() == other.value_.index())           \
+            return value_ op other.value_;                   \
+        else                                                 \
+            return static_cast<real_type>(*this) op          \
+                   static_cast<real_type>(other); }          \
+    bool operator op(const rational& other) const noexcept { \
+        return std::holds_alternative<rational>(value_)      \
+            ? std::get<rational>(value_) op other            \
+            : static_cast<real_type>(*this) op static_cast<real_type>(other); } \
+    template<typename T>                                     \
+    constexpr bool operator op(const T& other) const noexcept {        \
+        return static_cast<real_type>(*this) op static_cast<real_type>(other); }
 
-    #define _ARITHMATIC_REAL_OPERATOR(op)                                                        \
-    constexpr inline number operator op(const number& other) const noexcept {                    \
-        if(type_ == type::rational && other.type_ == type::rational)                             \
-            return number{rational_ op other.rational_};                                         \
-        else                                                                                     \
-            return number{static_cast<const real_type>(*this) op                                 \
-                              static_cast<const real_type>(other)};  }
+    #define _ARITHMATIC_REAL_OPERATOR(op)                                     \
+    constexpr inline number operator op(const number& other) const noexcept { \
+        if(value_.index() == other.value_.index() && std::holds_alternative<rational>(value_)) \
+            return number{std::get<rational>(value_) op std::get<rational>(other.value_)}; \
+        else                                                                  \
+            return number{static_cast<real_type>(*this) op                    \
+                              static_cast<real_type>(other)};  }
 
-    #define _ARITHMATIC_FREE_REAL_OPERATOR(op)                                                   \
-    template<typename T>                                                                         \
-    constexpr inline number operator op(const T &left, const number &right) noexcept {           \
+    #define _ARITHMATIC_FREE_REAL_OPERATOR(op)                                         \
+    template<typename T>                                                               \
+    constexpr inline number operator op(const T &left, const number &right) noexcept { \
             return number{left} op right; }
 
     using real_type = long double;
@@ -56,14 +57,12 @@ namespace lightdb {
         constexpr rational(const rational_type numerator) noexcept : rational_base(numerator) { }
         rational(const rational_type numerator, const rational_type denominator) noexcept
                 : rational_base(numerator, denominator) { }
-        constexpr rational(const rational &other) noexcept
-                : rational_base(other)
-        { }
+        constexpr rational(const rational &other) noexcept = default;
 
-        inline explicit operator double() const noexcept {
+        constexpr inline explicit operator double() const noexcept {
             return numerator() / static_cast<double>(denominator());
         }
-        inline explicit operator real_type() const noexcept {
+        constexpr inline explicit operator real_type() const noexcept {
             return numerator() / static_cast<real_type>(denominator());
         }
 
@@ -93,17 +92,34 @@ namespace lightdb {
         constexpr rational_times_real(const rational_times_real&) noexcept = default;
         constexpr rational_times_real(rational_times_real&&) noexcept = default;
 
-        inline explicit operator double() const noexcept {
+        inline constexpr explicit operator double() const noexcept {
             return static_cast<double>(static_cast<real_type>(*this));
         }
-        inline explicit operator real_type() const noexcept {
+        inline constexpr explicit operator real_type() const noexcept {
             return static_cast<real_type>(rational_) * real_;
         }
 
-        inline rational_times_real& operator=(const rational_times_real&) noexcept = default;
+        inline constexpr rational_times_real& operator=(const rational_times_real&) noexcept = default;
 
         inline std::string to_string() const noexcept {
-            return std::to_string(real_) + '*' + std::to_string(rational_.numerator()) + '/' + std::to_string(rational_.denominator());
+            return std::to_string(real_) + '*' +
+                   std::to_string(rational_.numerator()) + '/' + std::to_string(rational_.denominator());
+        }
+
+        inline bool operator==(const rational_times_real& other) const noexcept {
+            return rational_ == other.rational_ && real_ == other.real_;
+        }
+        inline bool operator>=(const rational_times_real& other) const noexcept {
+            return static_cast<real_type>(*this) >= static_cast<real_type>(other);
+        }
+        inline bool operator<=(const rational_times_real& other) const noexcept {
+            return static_cast<real_type>(*this) <= static_cast<real_type>(other);
+        }
+        inline bool operator>(const rational_times_real& other) const noexcept {
+            return static_cast<real_type>(*this) > static_cast<real_type>(other);
+        }
+        inline bool operator<(const rational_times_real& other) const noexcept {
+            return static_cast<real_type>(*this) < static_cast<real_type>(other);
         }
 
     private:
@@ -111,13 +127,23 @@ namespace lightdb {
         real_type real_;
     };
 
+    namespace internal {
+        struct StringVisitor {
+            template<typename T>
+            inline std::string operator()(const T &r) const { return r.to_string(); }
+            inline std::string operator()(const real_type &r) const { return std::to_string(r); }
+        };
+
+        struct RealTypeVisitor {
+            template<typename T>
+            inline constexpr real_type operator()(const T &r) const { return static_cast<real_type>(r); }
+        };
+    }
 
     template<class tolerance, typename T1, typename T2>
     constexpr inline bool epsilon_equal(const T1 &left, const T2 &right) noexcept {
-        //TODO these casts are superfluous; need unit tests
-        return static_cast<long double>(rational{tolerance::num, tolerance::den}) > boost::math::relative_difference(
-                static_cast<long double>(left),
-                static_cast<long double>(right));
+        return rational{tolerance::num, tolerance::den} >
+                 boost::math::relative_difference(left, right);
     }
 
     struct number {
@@ -128,29 +154,17 @@ namespace lightdb {
         constexpr number(unsigned int integer) noexcept : number(rational{integer}) { }
         constexpr number(size_t integer) : number(rational{static_cast<rational_type>(integer)}) {
             if(integer > std::numeric_limits<rational_type>::max()) {
-                type_ = type::real;
-                real_ = integer;
+                value_ = static_cast<real_type>(integer);
             }
         }
-        constexpr number(const rational &rational) noexcept : type_(type::rational), rational_{rational} { }
-        constexpr explicit number(const real_type real) noexcept : type_(type::real), real_{real} { }
-        constexpr number(rational_times_real value) noexcept : type_(type::rational_times_real), rational_times_real_{std::move(value)} { }
-        constexpr number(const double real) noexcept : type_(type::real), real_{real} { }
-        constexpr number(const number& other) noexcept
-                : type_(other.type_), real_(0) { *this = other; }
+        constexpr number(const rational &rational) noexcept : value_{rational} { }
+        constexpr explicit number(const real_type real) noexcept : value_{real} { }
+        constexpr number(rational_times_real value) noexcept : value_{value} { }
+        constexpr number(const double real) noexcept : value_{real} { }
+        constexpr number(const number& other) noexcept = default;
 
         constexpr inline explicit operator real_type() const noexcept {
-            switch(type_) {
-                case type::rational:
-                    return static_cast<real_type>(rational_);
-                case type::real:
-                    return real_;
-                case type::rational_times_real:
-                    return static_cast<real_type>(rational_times_real_);
-                default:
-                    assert(false);
-                    return 0;
-            }
+            return std::visit(internal::RealTypeVisitor(), value_);
         }
 
         constexpr inline explicit operator double() const noexcept {
@@ -165,27 +179,7 @@ namespace lightdb {
             return static_cast<size_t>(static_cast<real_type>(*this));
         }
 
-        inline number& operator=(const number& other) noexcept {
-            type_ = other.type_;
-            switch(type_) {
-                case type::rational:
-                    rational_ = other.rational_;
-                    break;
-                case type::real:
-                    real_ = other.real_;
-                    break;
-                case type::rational_times_real:
-                    rational_times_real_ = other.rational_times_real_;
-                    break;
-                default:
-                    // This case should never be executed, and we want to keep noexcept
-                    #pragma GCC diagnostic push
-                    #pragma GCC diagnostic ignored "-Wterminate"
-                    throw std::logic_error("Unimplemented assignment for type.");
-                    #pragma GCC diagnostic pop
-            }
-            return *this;
-        }
+        inline number& operator=(const number& other) noexcept = default;
 
         _LOGICAL_REAL_OPERATOR(==)
         _LOGICAL_REAL_OPERATOR(>=)
@@ -197,40 +191,22 @@ namespace lightdb {
         _ARITHMATIC_REAL_OPERATOR(*)
         _ARITHMATIC_REAL_OPERATOR(/)
 
-        std::string to_string() const noexcept {
-            switch(type_) {
-                case type::rational:
-                    return rational_.to_string();
-                case type::real:
-                    return std::to_string(real_);
-                case type::rational_times_real:
-                    return rational_times_real_.to_string();
-                default:
-                    assert(false);
-                    return 0;
-            }
-        }
+        inline std::string to_string() const noexcept { return std::visit(internal::StringVisitor(), value_); }
 
         template<typename tolerance=std::pico, typename T>
-        inline bool epsilon_equal(const T &other) const noexcept {
-            if(type_ == type::rational && other.type_ == type::rational)
-               return (rational_ > other.rational_ ? (rational_ - other.rational_) : (other - rational_))
-                          < rational{tolerance::num, tolerance::den};
-            else
+        inline constexpr bool epsilon_equal(const T &other) const noexcept {
+            if(std::holds_alternative<rational>(value_) && std::holds_alternative<rational>(other.value_)) {
+                const auto &left = std::get<rational>(value_);
+                const auto &right = std::get<rational>(other.value_);
+
+                //abs(a - b) < n/m => m * abs(a - b) < n)
+                return tolerance::den * abs(left - right) < tolerance::num;
+            } else
                 return lightdb::epsilon_equal<tolerance>(static_cast<real_type>(*this), other);
         }
 
     private:
-        enum class type {
-            rational,
-            real,
-            rational_times_real
-        } type_;
-        union {
-            rational rational_;
-            real_type real_;
-            rational_times_real rational_times_real_;
-        };
+        std::variant<rational, real_type, rational_times_real> value_;
     };
 
     _ARITHMATIC_FREE_REAL_OPERATOR(+)
@@ -254,7 +230,7 @@ namespace lightdb {
         return stream << to_string(value);
     }
 
-    constexpr inline number round(const number &value) noexcept {
+    inline number round(const number &value) noexcept {
         return {std::lround((real_type)value)};
     }
 
