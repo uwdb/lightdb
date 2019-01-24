@@ -30,9 +30,10 @@ set (CMAKE_CXX_STANDARD 17)
 #set (CLANG_TIDY_CXX_STANDARD 14)
 
 # Set compiler flags
-set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -g3 -rdynamic -Wall")
-set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -fvisibility=hidden -Wall")
-set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG --coverage -g3 -Wall")
+set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -g3 -rdynamic -Wall -Wextra -Wno-unused-parameter")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -fvisibility=hidden -Wall  -Wextra -Wno-unused-parameter")
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g -DNDEBUG -Wall -Wextra -Wno-unused-parameter")
+set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG --coverage -g3 -Wall -Wextra -Wno-unused-parameter")
 
 # Find required library dependencies
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} cuda nvcuvid dl pthread glog gflags stdc++fs)
@@ -52,18 +53,18 @@ set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} lfv)
 #set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${NVENC_LIBRARIES})
 
 find_package(NvidiaSDK REQUIRED)
-include_directories(${NVIDIASDK_INCLUDE_DIR})
+include_directories(SYSTEM ${NVIDIASDK_INCLUDE_DIR})
 set(CLANG_TIDY_EXCLUDED_SOURCES ${NVIDIASDK_SOURCES})
 
 find_package(PythonLibs 2.7 REQUIRED)
-include_directories(${PYTHON_INCLUDE_DIRS})
+include_directories(SYSTEM ${PYTHON_INCLUDE_DIRS})
 
 find_package(Boost COMPONENTS python filesystem system REQUIRED)
-include_directories(${Boost_INCLUDE_DIR})
+include_directories(SYSTEM ${Boost_INCLUDE_DIR})
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${Boost_LIBRARIES})
 
 find_package(FFmpeg REQUIRED COMPONENTS AVCODEC AVFORMAT AVUTIL SWSCALE)
-include_directories(${FFMPEG_INCLUDE_DIRS})
+include_directories(SYSTEM ${FFMPEG_INCLUDE_DIRS})
 
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${FFMPEG_LIBRARIES})
 
@@ -71,9 +72,9 @@ find_package(GTest)
 find_package (Glog REQUIRED)
 #find_package(ClangTidy)
 
-find_package(Bento4 REQUIRED)
-include_directories(${Bento4_INCLUDE_DIRS})
-add_subdirectory(${Bento4_SOURCE_DIR})
+#find_package(Bento4 REQUIRED)
+#include_directories(${Bento4_INCLUDE_DIRS})
+#add_subdirectory(${Bento4_SOURCE_DIR})
 
 # Enable testing
 enable_testing()
