@@ -48,7 +48,8 @@ public:
         auto iterators = functional::transform<PhysicalLightField::iterator>(outputs.begin(), outputs.end(), [](auto &out) { return out->begin(); });
         Progress progress(static_cast<int>(iterators.size()));
 
-        CHECK_EQ(iterators.size(), streams.size());
+        if(iterators.size() != streams.size())
+            throw CoordinatorError("Plan does not contain a consistent physical plan.");
 
         while(!iterators.empty()) {
             for(auto index = 0u; index < iterators.size(); index++) {
