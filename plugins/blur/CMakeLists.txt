@@ -24,5 +24,5 @@ target_link_libraries(blur ${BLUR_LIB_DEPENDENCIES})
 
 ADD_CUSTOM_COMMAND(TARGET blur
         POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:blur> ${PROJECT_SOURCE_DIR}/..
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:blur> ${CMAKE_INSTALL_PREFIX}
         )
