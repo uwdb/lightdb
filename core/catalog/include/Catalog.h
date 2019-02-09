@@ -70,7 +70,11 @@ namespace lightdb {
                     throw CatalogError("No ambient catalog specified", "instance");
             }
             static const Catalog &instance(Catalog catalog) { return instance_.emplace(catalog); }
+
+            static bool catalog_exists(const std::experimental::filesystem::path &path);
+
             LightFieldReference get(const std::string &name) const;
+            bool exists(const std::string &name) const;
             OutputStream create(const std::string& name, const Codec &codec, const Configuration &configuration) const;
 
             class Metadata {
