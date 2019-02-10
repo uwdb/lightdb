@@ -38,6 +38,7 @@ namespace lightdb {
 
             LightFieldReference Encode(const Codec &codec=Codec::hevc());
             LightFieldReference Store(const std::string &name, const Codec &codec=Codec::hevc());
+            LightFieldReference Sink();
 
             Algebra& operator=(Algebra&& other) noexcept { return *this; }
 

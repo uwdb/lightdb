@@ -38,6 +38,10 @@ namespace lightdb::logical {
         return LightFieldReference::make<StoredLightField>(this_, name, codec);
     }
 
+    LightFieldReference Algebra::Sink() {
+        return LightFieldReference::make<SunkLightField>(this_);
+    }
+
     LightFieldReference Algebra::Encode(const Codec &codec) {
         return LightFieldReference::make<logical::EncodedLightField>(
                 this_, codec, this_->volume().bounding(), this_->colorSpace());

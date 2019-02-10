@@ -16,6 +16,7 @@
 #include "HomomorphicOperators.h"
 #include "SubsetOperators.h"
 #include "StoreOperators.h"
+#include "SinkOperators.h"
 #include "Rectangle.h"
 
 namespace lightdb::optimization {
@@ -587,6 +588,53 @@ namespace lightdb::optimization {
 
                 auto encode = Encode(node, physical_parents[0]);
                 plan().emplace<physical::Store>(plan().lookup(node), encode);
+                return true;
+            }
+            return false;
+        }
+    };
+
+    class ChooseSink : public OptimizerRule {
+    public:
+        using OptimizerRule::OptimizerRule;
+
+        PhysicalLightFieldReference Encode(const logical::SunkLightField &node, PhysicalLightFieldReference parent) {
+            auto logical = plan().lookup(node);
+
+            // Can we leverage the ChooseEncode rule to automatically do this stuff, which is an exact duplicate?
+            //TODO Copied from ChooseStore, which is lame
+
+            if(parent.is<physical::GPUAngularSubquery>() && parent.downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
+                return plan().emplace<physical::CPUIdentity>(logical, parent);
+                //} else if(parent.is<physical::GPUOperatorAdapter>() && parent->parents()[0].is<physical::GPUAngularSubquery>() && parent->parents()[0].downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
+                //    return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent.is<physical::GPUOperator>()) {
+                return plan().emplace<physical::GPUEncode>(logical, parent, Codec::hevc());
+                //TODO this is silly -- every physical operator should declare an output type and we should just use that
+            } else if(parent.is<physical::TeedPhysicalLightFieldAdapter::TeedPhysicalLightField>() && parent->parents()[0].is<physical::GPUAngularSubquery>()) {
+                return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent->device() != physical::DeviceType::GPU) {
+                auto gpu = plan().environment().gpus()[0];
+                auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, parent, gpu);
+                return plan().emplace<physical::GPUEncode>(logical, transfer, Codec::hevc());
+            } else if(!parent.is<physical::GPUOperator>()) {
+                auto gpuop = plan().emplace<physical::GPUOperatorAdapter>(parent);
+                return plan().emplace<physical::GPUEncode>(logical, gpuop, Codec::hevc());
+            } else
+                return plan().emplace<physical::GPUEncode>(logical, parent, Codec::hevc());
+        }
+
+        bool visit(const logical::SunkLightField &node) override {
+            if(!plan().has_physical_assignment(node)) {
+                auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                        node.parents().begin(), node.parents().end(),
+                        [this](auto &parent) { return plan().unassigned(parent); });
+
+                if(physical_parents.empty())
+                    return false;
+
+                auto sink = Encode(node, physical_parents[0]);
+                plan().emplace<physical::Sink>(plan().lookup(node), sink);
                 return true;
             }
             return false;

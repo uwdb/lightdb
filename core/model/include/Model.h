@@ -278,6 +278,15 @@ namespace lightdb::logical {
         const Codec codec_;
     };
 
+    class SunkLightField : public LightField {
+    public:
+        explicit SunkLightField(const LightFieldReference &source)
+                : LightField(source)
+        { }
+
+        void accept(LightFieldVisitor &visitor) override { LightField::accept<SunkLightField>(visitor); }
+    };
+
 } // namespace lightdb::logical
 
 #endif //LIGHTDB_MODEL_H
