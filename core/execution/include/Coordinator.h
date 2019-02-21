@@ -13,14 +13,18 @@ public:
     PhysicalLightField& submit(const optimization::Plan &plan) {
         auto assignments = submit(plan);
 
-        CHECK_GE(assignments.size(), Index);
+
+        if(assignments.size() <= Index)
+            throw CoordinatorError(std::string("Could not execute sink ") + std::to_string(Index) +
+                                   "; only " + std::to_string(assignments.size()) + " were found");
 
         return *assignments[Index];
     }
 
     std::vector<PhysicalLightFieldReference> submit(const optimization::Plan &plan) {
         const auto &sinks = plan.sinks();
-        return functional::flatmap<std::vector<PhysicalLightFieldReference>>(sinks.begin(), sinks.end(), [plan](auto &sink) { return plan.unassigned(sink); });
+        return functional::flatmap<std::vector<PhysicalLightFieldReference>>(sinks.begin(), sinks.end(),
+                [plan](auto &sink) { return plan.unassigned(sink); });
     }
 
     void save(const optimization::Plan &plan, const std::string &filename) {
@@ -29,7 +33,8 @@ public:
 
     //TODO this should be in the algebra, returning an external TLF
     void save(const optimization::Plan &plan, const std::vector<std::string> &filenames) {
-        auto streams = functional::transform<std::ofstream>(filenames.begin(), filenames.end(), [](auto &filename) { return std::ofstream(filename); });
+        auto streams = functional::transform<std::ofstream>(filenames.begin(), filenames.end(),
+                                                            [](auto &filename) { return std::ofstream(filename); });
         save(plan, functional::transform<std::ostream*>(streams.begin(), streams.end(), [](auto &s) { return &s; }));
     }
 
