@@ -100,3 +100,22 @@ TEST_F(Q2aTestFixture, testQ2a_scale) {
 
     coordinator.save(plan, {duplicates, "out"});
 }
+
+TEST_F(Q2aTestFixture, testQ2a_scale_sink) {
+    Catalog::instance(visualroad);
+
+    auto duplicates = 16u;
+    auto name = "scale1";
+    std::vector<LightFieldReference> sinks;
+
+    auto mapped = Scan(name).Map(Greyscale);
+
+    for(auto i = 0u; i < duplicates; i++)
+        sinks.emplace_back(mapped.Sink());
+
+    auto environment = LocalEnvironment();
+    auto coordinator = Coordinator();
+    Plan plan = HeuristicOptimizer(environment).optimize(sinks);
+
+    coordinator.save(plan, {duplicates, "out"});
+}

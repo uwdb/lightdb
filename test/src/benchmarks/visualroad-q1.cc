@@ -196,3 +196,24 @@ TEST_F(Q1TestFixture, testQ1_scale8) {
     coordinator.save(plan, {duplicates, "out"});
 }
 
+TEST_F(Q1TestFixture, testQ1_scale4_sink) {
+    Catalog::instance(visualroad);
+
+    auto duplicates = 16u;
+    auto name = "scale1";
+    std::vector<LightFieldReference> sinks;
+
+    auto input = Scan(name);
+
+    for(auto i = 0u; i < duplicates; i++)
+        sinks.emplace_back(
+                input.Select(PhiRange{0, rational_times_real({2, 4}, PI)})
+                        .Select(SpatiotemporalDimension::Time, {1, 2})
+                        .Sink());
+
+    auto environment = LocalEnvironment();
+    auto coordinator = Coordinator();
+    Plan plan = HeuristicOptimizer(environment).optimize(sinks);
+
+    coordinator.save(plan, {duplicates, "out"});
+}

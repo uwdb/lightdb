@@ -246,3 +246,29 @@ TEST_F(Q2bTestFixture, testQ2b_scale8) {
 
     coordinator.save(plan, {duplicates, "out"});
 }
+
+TEST_F(Q2bTestFixture, testQ2b_scale4_sink) {
+    Catalog::instance(visualroad);
+
+    auto duplicates = 16u;
+    auto name = "scale1";
+    std::vector<LightFieldReference> sinks;
+
+    auto blur = lightdb::extensibility::Load("blur");
+
+    auto mapped = Scan(name);
+
+    for(auto i = 0u; i < duplicates; i++)
+        sinks.emplace_back(mapped
+                                   .Map(blur)
+                                   .Sink());
+
+    auto environment = LocalEnvironment();
+    auto coordinator = Coordinator();
+    Plan plan = HeuristicOptimizer(environment).optimize(sinks);
+
+    //print_plan(plan);
+
+    coordinator.save(plan, {duplicates, "out"});
+}
+
