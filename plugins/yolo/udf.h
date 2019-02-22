@@ -52,6 +52,9 @@ class YOLO: public lightdb::functor::unaryfunctor {
                 rgb_.resize(total_size_);
                 scaled_.resize(total_size_);
                 planes_.resize(total_size_);
+
+                CHECK_GT(frame_size_, 0);
+                CHECK_GT(total_size_, 0);
             }
         }
 
