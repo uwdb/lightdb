@@ -31,6 +31,9 @@
 #define GpuCudaRuntimeError(message, status)    \
     ::lightdb::errors::_GpuCudaRuntimeError(message, status, __FILE__, __LINE__, __func__)
 
+#define PluginError(message, name) \
+    ::lightdb::errors::_PluginError(message, name, __FILE__, __LINE__, __func__)
+
 namespace lightdb::errors {
     template<typename Exception>
     class LightDBError: public Exception {
@@ -101,7 +104,6 @@ namespace lightdb::errors {
         {  }
     };
 
-
     class _CatalogError: public LightDBError<std::runtime_error> {
     public:
         _CatalogError(const std::string &message, std::string name, const char* file, int line, const char* function)
@@ -119,7 +121,6 @@ namespace lightdb::errors {
         const std::string name_;
     };
 
-
     class _CoordinatorError: public LightDBError<std::runtime_error> {
     public:
         _CoordinatorError(const std::string &message, const char* file, int line, const char* function)
@@ -132,14 +133,12 @@ namespace lightdb::errors {
         }
     };
 
-
     class _FfmpegRuntimeError: public LightDBError<std::runtime_error> {
     public:
         _FfmpegRuntimeError(const std::string &message, const char* file, int line, const char* function)
                 : LightDBError(message, file, line, function)
         { }
     };
-
 
     class _GpuRuntimeError: public LightDBError<std::runtime_error> {
     public:
@@ -174,6 +173,23 @@ namespace lightdb::errors {
 
     private:
         CUresult status_;
+    };
+
+    class _PluginError: public LightDBError<std::runtime_error> {
+    public:
+        _PluginError(const std::string &message, std::string name, const char* file, int line, const char* function)
+                : LightDBError(message, file, line, function), name_(std::move(name))
+        {  }
+
+        const std::string& name() const { return name_; }
+
+    protected:
+        void log() const override {
+            LOG(ERROR) <<  name() << ':' << what() << " (" << function() << ':' << file() << ':' << line() << ')';
+        }
+
+    private:
+        const std::string name_;
     };
 } // namespace lightdb::errors
 
