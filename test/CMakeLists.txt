@@ -30,11 +30,14 @@ file(GLOB LIGHTDB_PLUGIN_DIRS ${CMAKE_SOURCE_DIR}/plugins/*)
 foreach(LIGHTDB_PLUGIN_DIR ${LIGHTDB_PLUGIN_DIRS})
     if (IS_DIRECTORY ${LIGHTDB_PLUGIN_DIR})
         get_filename_component(LIGHTDB_PLUGIN_NAME ${LIGHTDB_PLUGIN_DIR} NAME_WE)
-        ExternalProject_Add(${LIGHTDB_PLUGIN_NAME}
+        string(TOLOWER "${LIGHTDB_PLUGIN_DIR}/cmake-build-${CMAKE_BUILD_TYPE}" LIGHTDB_PLUGIN_BINARY_DIR)
+        ExternalProject_Add(
+                ${LIGHTDB_PLUGIN_NAME}
                 PREFIX ${LIGHTDB_PLUGIN_DIR}
                 SOURCE_DIR ${LIGHTDB_PLUGIN_DIR}
+                BINARY_DIR ${LIGHTDB_PLUGIN_BINARY_DIR}
                 INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/plugins
-                CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+                CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
                 EXCLUDE_FROM_ALL TRUE
                 BUILD_ALWAYS TRUE
                 INSTALL_COMMAND ""
@@ -43,7 +46,7 @@ foreach(LIGHTDB_PLUGIN_DIR ${LIGHTDB_PLUGIN_DIRS})
     endif(IS_DIRECTORY ${LIGHTDB_PLUGIN_DIR})
 endforeach(LIGHTDB_PLUGIN_DIR)
 
-# Copy plugins to output plugin directory
+# Copy modules to output directory
 ADD_CUSTOM_COMMAND(TARGET lightdb_test
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/modules
