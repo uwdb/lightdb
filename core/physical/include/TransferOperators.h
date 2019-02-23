@@ -33,8 +33,13 @@ public:
     CPUtoGPUTransfer(const LightFieldReference &logical,
                 PhysicalLightFieldReference &parent,
                 const execution::GPU &gpu)
-            : GPUOperator(logical, {parent}, gpu, []() { return Configuration{960, 540, 0, 0, 0, {30, 1}, {}}; }) {
-        LOG(ERROR) << "CPU->GPU transfer operator has hardcoded size of 960x540, this will break";
+            : GPUOperator(logical, {parent}, gpu, [this]() {
+                  CHECK_GT(height_, 0);
+                  CHECK_GT(width_, 0);
+                  return Configuration{width_, height_, 0, 0, 0, {30, 1}, {}}; }),
+              height_(0u),
+              width_(0u) {
+        LOG(WARNING) << "CPU->GPU transfer operator has hardcoded framerate of 30";
     }
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
@@ -44,11 +49,25 @@ public:
             auto data = input.downcast<CPUDecodedFrameData>();
 
             for(LocalFrameReference &frame: data.frames())
-                output.frames().emplace_back(std::make_shared<CudaFrame>(*frame));
+                output.frames().emplace_back(std::make_shared<CudaFrame>(
+                        *InitializeConfiguration(frame)));
 
             return {output};
         } else
             return {};
+    }
+
+private:
+    unsigned int height_;
+    unsigned int width_;
+
+    inline LocalFrameReference InitializeConfiguration(LocalFrameReference &frame) {
+        //TODO parent op should be explicitly exposing a configuration, this is a hack
+        if(height_ == 0) {
+            height_ = frame->height();
+            width_ = frame->width();
+        }
+        return frame;
     }
 };
 
