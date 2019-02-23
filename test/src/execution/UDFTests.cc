@@ -3,6 +3,7 @@
 #include "extension.h"
 #include "Display.h"
 #include "AssertVideo.h"
+#include "TestResources.h"
 
 using namespace lightdb;
 using namespace lightdb::logical;
@@ -34,28 +35,26 @@ TEST_F(UDFTestFixture, testGreyscale) {
     Coordinator().save(plan, output);
 
     EXPECT_VIDEO_VALID(output);
-    EXPECT_VIDEO_FRAMES(output, 250);
-    EXPECT_VIDEO_RESOLUTION(output, 240, 320);
+    EXPECT_VIDEO_FRAMES(output, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(output, Resources.red10.height, Resources.red10.width);
     EXPECT_EQ(remove(output), 0);
 }
 
-TEST_F(UDFTestFixture, testDrawtext) {
+TEST_F(UDFTestFixture, testBlur) {
     auto name = "red10";
     auto output = "out.hevc";
 
-    auto drawtext = lightdb::extensibility::Load("drawtext");
+    auto blur = lightdb::extensibility::Load("blur");
 
     auto input = Scan(name);
-    auto annotated = input.Map(drawtext);
+    auto annotated = input.Map(blur);
     auto encoded = annotated.Encode();
 
     auto plan = Optimizer::instance().optimize(encoded);
     Coordinator().save(plan, output);
 
     EXPECT_VIDEO_VALID(output);
-    EXPECT_VIDEO_FRAMES(output, 250);
-    EXPECT_VIDEO_RESOLUTION(output, 240, 320);
-    EXPECT_EQ(remove(output), 0);
-
-    //TODO add Tesseract OCR check
+    EXPECT_VIDEO_FRAMES(output, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(output, Resources.red10.height, Resources.red10.width);
+    //EXPECT_EQ(remove(output), 0);
 }

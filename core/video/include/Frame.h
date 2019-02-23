@@ -299,7 +299,7 @@ private:
 class LocalFrame: public Frame {
 public:
     LocalFrame(const LocalFrame &frame)
-        : LocalFrame(frame, frame.data_)
+            : LocalFrame(frame, frame.data_)
     { }
 
     LocalFrame(const LocalFrame &frame, const lightdb::bytestring &data)
