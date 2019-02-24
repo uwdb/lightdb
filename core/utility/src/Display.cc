@@ -3,7 +3,7 @@
 
 namespace lightdb {
 
-    void print_plan(const LightFieldReference &lightField, const std::optional<optimization::Plan> &plan={}) {
+    void print_plan(const LightFieldReference &lightField, const std::optional<optimization::Plan> &plan) {
         std::deque<std::pair<LightFieldReference, unsigned int>> queue{{{lightField, 0u}}};
 
         while(!queue.empty()) {

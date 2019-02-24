@@ -5,8 +5,8 @@
 
 namespace lightdb {
 
-void print_plan(const LightFieldReference &lightField);
-void print_plan(const optimization::Plan &plan);
+void print_plan(const LightFieldReference&, const std::optional<optimization::Plan>& = {});
+void print_plan(const optimization::Plan&);
 
 }
 
