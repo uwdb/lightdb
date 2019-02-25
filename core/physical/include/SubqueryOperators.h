@@ -43,10 +43,10 @@ private:
     TeedPhysicalLightFieldAdapter& streams() { return *streams_.value(); }
 
     optimization::Plan CreatePlan();
-    inline LightFieldReference ExecuteSubquery(const size_t index);
+    inline LightFieldReference ExecuteSubquery(size_t index);
     inline PhysicalLightField::iterator ExecutePlan() {
         LOG(WARNING) << "Arbitrarily creating new coordinator for subquery execution";
-        return execution::Coordinator().submit<0>(subplan_).begin();
+        return execution::Coordinator().submit<0u>(subplan_).begin();
     }
 
     const execution::Environment &environment_;

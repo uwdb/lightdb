@@ -294,6 +294,16 @@ namespace lightdb::optimization {
                 throw std::runtime_error("Hardcoded support only for GPU temporal selection"); //TODO
         }
 
+        PhysicalLightFieldReference IdentitySelection(const logical::SubsetLightField &node,
+                                                      PhysicalLightFieldReference parent) {
+            if(parent->device() == physical::DeviceType::CPU)
+                return plan().emplace<physical::CPUIdentity>(plan().lookup(node), parent);
+            else if(parent->device() == physical::DeviceType::GPU)
+                return plan().emplace<physical::GPUIdentity>(plan().lookup(node), parent);
+            else
+                throw std::runtime_error("No identity support for FPGA"); //TODO
+        }
+
         bool visit(const logical::SubsetLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
                 auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
@@ -313,6 +323,10 @@ namespace lightdb::optimization {
 
                 selection = dimensions.find(Dimension::Time) != dimensions.end()
                     ? TemporalSelection(node, selection)
+                    : selection;
+
+                selection = dimensions.empty()
+                    ? IdentitySelection(node, selection)
                     : selection;
 
                 if(dimensions.find(Dimension::X) != dimensions.end() ||

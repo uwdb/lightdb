@@ -13,7 +13,6 @@ public:
     PhysicalLightField& submit(const optimization::Plan &plan) {
         auto assignments = submit(plan);
 
-
         if(assignments.size() <= Index)
             throw CoordinatorError(std::string("Could not execute sink ") + std::to_string(Index) +
                                    "; only " + std::to_string(assignments.size()) + " were found");

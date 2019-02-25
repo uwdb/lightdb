@@ -161,6 +161,6 @@ TEST_F(VisitorTestFixture, testPartitionSubqueryUnion) {
 
     //print_plan(plan);
 
-    //coordinator.save(plan, "out.hevc");
-    FAIL();
+    coordinator.save(plan, "out.hevc");
+    //FAIL();
 }
