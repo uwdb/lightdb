@@ -115,6 +115,8 @@ public:
 
         if(source_ == nullptr)
             ;
+        else if(!CompleteVideo())
+            LOG(ERROR) << "Swallowed CompleteVideo failure";
         else if((status = cuvidSetVideoSourceState(source_, cudaVideoState_Stopped)) != CUDA_SUCCESS)
             LOG(ERROR) << "Swallowed cuvidSetVideoSourceState failure (" << status << ')';
         else if((status = cuvidDestroyVideoSource(source_)) != CUDA_SUCCESS)
@@ -148,7 +150,7 @@ public:
 
 private:
     static int CUDAAPI HandleVideoData(void *userData, CUVIDSOURCEDATAPACKET *packet) {
-        auto *packets = static_cast<boost::lockfree::spsc_queue<DecodeReaderPacket>*>(userData);
+        auto *packets = static_cast<lightdb::spsc_queue<DecodeReaderPacket>*>(userData);
 
         while(!packets->push(DecodeReaderPacket(*packet)))
             std::this_thread::yield();
@@ -187,6 +189,11 @@ private:
         if((status = cuvidGetSourceVideoFormat(source, &format, 0)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuvidGetSourceVideoFormat failed", status);
         return format;
+    }
+
+    bool CompleteVideo() {
+        packets_->reset();
+        return true;
     }
 
     std::string filename_;

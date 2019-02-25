@@ -74,8 +74,7 @@ TEST_F(Q1TestFixture, testQ1random) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    //coordinator.save(plan, {duplicates, "out"});
-    FAIL(); //TODO
+    coordinator.save(plan, {duplicates, "out"});
 }
 
 TEST_F(Q1TestFixture, testQ1unique) {
