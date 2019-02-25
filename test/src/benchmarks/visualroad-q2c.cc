@@ -51,8 +51,8 @@ TEST_F(Q2cTestFixture, testQ2cduplicate) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    //coordinator.save(plan, outputs);
-    FAIL(); //TODO
+    coordinator.save(plan, outputs);
+    //FAIL(); //TODO
 }
 
 TEST_F(Q2cTestFixture, testQ2cunique) {
