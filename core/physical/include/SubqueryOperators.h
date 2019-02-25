@@ -14,9 +14,9 @@ class GPUAngularSubquery: public GPUUnaryOperator<GPUDecodedFrameData> {
 public:
     GPUAngularSubquery(const LightFieldReference &logical,
                        PhysicalLightFieldReference &parent,
-                       const execution::Environment &environment)
+                       const optimization::OptimizerReference &optimizer)
             : GPUUnaryOperator(logical, parent),
-              environment_(environment),
+              optimizer_(optimizer),
               subquery_(logical.downcast<logical::SubqueriedLightField>().subquery()),
               type_(subquery_(LightFieldReference::make<logical::ConstantLightField>(YUVColor::red(), Point6D::zero()))),
               streams_([parent]() { return TeedPhysicalLightFieldAdapter::make(
@@ -49,7 +49,7 @@ private:
         return execution::Coordinator().submit<0u>(subplan_).begin();
     }
 
-    const execution::Environment &environment_;
+    const optimization::OptimizerReference optimizer_;
     const std::function<LightFieldReference(LightFieldReference)> subquery_;
     const LightFieldReference type_;
     lazy<std::shared_ptr<TeedPhysicalLightFieldAdapter>> streams_;

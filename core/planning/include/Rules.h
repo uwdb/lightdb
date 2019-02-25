@@ -535,6 +535,10 @@ namespace lightdb::optimization {
         }
 
     public:
+        explicit ChooseSubquery(const OptimizerReference &optimizer)
+            : optimizer_(optimizer)
+        { }
+
         bool visit(const logical::SubqueriedLightField &node) override {
             auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
                     node.parents().begin(), node.parents().end(),
@@ -547,13 +551,16 @@ namespace lightdb::optimization {
             auto hardcoded_parent = physical_parents[0];
 
             if(!plan().has_physical_assignment(node)) {
-                auto subquery = plan().emplace<physical::GPUAngularSubquery>(plan().lookup(node), hardcoded_parent,
-                                                             plan().environment());
+                auto subquery = plan().emplace<physical::GPUAngularSubquery>(
+                        plan().lookup(node), hardcoded_parent, optimizer_);
                 teeIfNecessary(node, subquery);
                 return true;
             }
             return false;
         }
+
+    private:
+        const OptimizerReference optimizer_;
     };
 
     class ChooseStore : public OptimizerRule {

@@ -15,8 +15,8 @@ namespace lightdb::optimization {
 
     class Optimizer {
     public:
-        explicit Optimizer(const execution::Environment &environment)
-            : environment_(environment)
+        explicit Optimizer(execution::Environment environment)
+            : environment_(std::move(environment))
         { }
 
         static const Optimizer &instance()
@@ -80,6 +80,7 @@ namespace lightdb::optimization {
         std::optional<std::reference_wrapper<Plan>> current_;
     };
 
+    using OptimizerReference = lightdb::shared_reference<Optimizer>;
 }
 
 #endif //LIGHTDB_OPTIMIZER_H

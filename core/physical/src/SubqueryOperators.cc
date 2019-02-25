@@ -15,8 +15,7 @@ optimization::Plan GPUAngularSubquery::CreatePlan() {
     for(auto index = 1u; index < streams().size(); index++)
         unions = unions.Union(ExecuteSubquery(index));
 
-    LOG(WARNING) << "Arbitrarily selecting heuristic optimizer for subquery optimization";
-    return optimization::HeuristicOptimizer(environment_).optimize(unions);
+    return optimizer_->optimize(unions);
 }
 
 }; // namespace lightdb::physical
