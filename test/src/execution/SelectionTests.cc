@@ -19,7 +19,6 @@ public:
 
 protected:
     Catalog catalog;
-    const char* output_filename = "out.hevc";
 };
 
 TEST_F(SelectionTestFixture, testEmptySelection) {
@@ -39,13 +38,13 @@ TEST_F(SelectionTestFixture, testSelectThetaPhi) {
     auto encoded = phi.Encode();
 
     auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, output_filename);
+    Coordinator().save(plan, Resources.out.hevc);
 
-    EXPECT_VIDEO_VALID(output_filename);
-    EXPECT_VIDEO_FRAMES(output_filename, Resources.red10.frames);
-    EXPECT_VIDEO_RESOLUTION(output_filename, Resources.red10.height / 4, Resources.red10.width / 4);
-    EXPECT_VIDEO_RED(output_filename);
-    EXPECT_EQ(remove(output_filename), 0);
+    EXPECT_VIDEO_VALID(Resources.out.hevc);
+    EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height / 4, Resources.red10.width / 4);
+    EXPECT_VIDEO_RED(Resources.out.hevc);
+    EXPECT_EQ(remove(Resources.out.hevc), 0);
 }
 
 TEST_F(SelectionTestFixture, testSelectPhiTheta) {
@@ -55,13 +54,13 @@ TEST_F(SelectionTestFixture, testSelectPhiTheta) {
     auto encoded = theta.Encode();
 
     auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, output_filename);
+    Coordinator().save(plan, Resources.out.hevc);
 
-    EXPECT_VIDEO_VALID(output_filename);
-    EXPECT_VIDEO_FRAMES(output_filename, Resources.red10.frames);
-    EXPECT_VIDEO_RESOLUTION(output_filename, Resources.red10.height / 4, Resources.red10.width / 4);
-    EXPECT_VIDEO_RED(output_filename);
-    EXPECT_EQ(remove(output_filename), 0);
+    EXPECT_VIDEO_VALID(Resources.out.hevc);
+    EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height / 4, Resources.red10.width / 4);
+    EXPECT_VIDEO_RED(Resources.out.hevc);
+    EXPECT_EQ(remove(Resources.out.hevc), 0);
 }
 
 TEST_F(SelectionTestFixture, testSelectPhi) {
@@ -70,13 +69,13 @@ TEST_F(SelectionTestFixture, testSelectPhi) {
     auto encoded = phi.Encode();
 
     auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, output_filename);
+    Coordinator().save(plan, Resources.out.hevc);
 
-    EXPECT_VIDEO_VALID(output_filename);
-    EXPECT_VIDEO_FRAMES(output_filename, Resources.red10.frames);
-    EXPECT_VIDEO_RESOLUTION(output_filename, Resources.red10.height / 4, Resources.red10.width);
-    EXPECT_VIDEO_RED(output_filename);
-    EXPECT_EQ(remove(output_filename), 0);
+    EXPECT_VIDEO_VALID(Resources.out.hevc);
+    EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height / 4, Resources.red10.width);
+    EXPECT_VIDEO_RED(Resources.out.hevc);
+    EXPECT_EQ(remove(Resources.out.hevc), 0);
 }
 
 TEST_F(SelectionTestFixture, testSelectTheta) {
@@ -85,28 +84,28 @@ TEST_F(SelectionTestFixture, testSelectTheta) {
     auto encoded = theta.Encode();
 
     auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, output_filename);
+    Coordinator().save(plan, Resources.out.hevc);
 
-    EXPECT_VIDEO_VALID(output_filename);
-    EXPECT_VIDEO_FRAMES(output_filename, Resources.red10.frames);
-    EXPECT_VIDEO_RESOLUTION(output_filename, Resources.red10.height, Resources.red10.width / 4);
-    EXPECT_VIDEO_RED(output_filename);
-    EXPECT_EQ(remove(output_filename), 0);
+    EXPECT_VIDEO_VALID(Resources.out.hevc);
+    EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height, Resources.red10.width / 4);
+    EXPECT_VIDEO_RED(Resources.out.hevc);
+    EXPECT_EQ(remove(Resources.out.hevc), 0);
 }
 
 TEST_F(SelectionTestFixture, testTemporalSelect) {
     auto input = Scan(Resources.red10.name);
-    auto temporal = input.Select(SpatiotemporalDimension::Time, TemporalRange{2, 5});
+    auto temporal = input.Select(TemporalRange{2, 5});
     auto encoded = temporal.Encode();
 
     auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, output_filename);
+    Coordinator().save(plan, Resources.out.hevc);
 
-    EXPECT_VIDEO_VALID(output_filename);
-    EXPECT_VIDEO_FRAMES(output_filename, Resources.red10.framerate * 3);
-    EXPECT_VIDEO_RESOLUTION(output_filename, Resources.red10.height, Resources.red10.width);
-    EXPECT_VIDEO_RED(output_filename);
-    EXPECT_EQ(remove(output_filename), 0);
+    EXPECT_VIDEO_VALID(Resources.out.hevc);
+    EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.framerate * 3);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height, Resources.red10.width);
+    EXPECT_VIDEO_RED(Resources.out.hevc);
+    EXPECT_EQ(remove(Resources.out.hevc), 0);
 }
 
 TEST_F(SelectionTestFixture, testThetaTemporalSelect) {
@@ -116,13 +115,13 @@ TEST_F(SelectionTestFixture, testThetaTemporalSelect) {
     auto encoded = temporal.Encode();
 
     auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, output_filename);
+    Coordinator().save(plan, Resources.out.hevc);
 
-    EXPECT_VIDEO_VALID(output_filename);
-    EXPECT_VIDEO_FRAMES(output_filename, Resources.red10.framerate * 3);
-    EXPECT_VIDEO_RESOLUTION(output_filename, Resources.red10.height, Resources.red10.width / 4);
-    EXPECT_VIDEO_RED(output_filename);
-    EXPECT_EQ(remove(output_filename), 0);
+    EXPECT_VIDEO_VALID(Resources.out.hevc);
+    EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.framerate * 3);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height, Resources.red10.width / 4);
+    EXPECT_VIDEO_RED(Resources.out.hevc);
+    EXPECT_EQ(remove(Resources.out.hevc), 0);
 }
 
 TEST_F(SelectionTestFixture, testTemporalThetaSelect) {
@@ -132,11 +131,11 @@ TEST_F(SelectionTestFixture, testTemporalThetaSelect) {
     auto encoded = theta.Encode();
 
     auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, output_filename);
+    Coordinator().save(plan, Resources.out.hevc);
 
-    EXPECT_VIDEO_VALID(output_filename);
-    EXPECT_VIDEO_FRAMES(output_filename, Resources.red10.framerate * 3);
-    EXPECT_VIDEO_RESOLUTION(output_filename, Resources.red10.height, Resources.red10.width / 4);
-    EXPECT_VIDEO_RED(output_filename);
-    EXPECT_EQ(remove(output_filename), 0);
+    EXPECT_VIDEO_VALID(Resources.out.hevc);
+    EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.framerate * 3);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height, Resources.red10.width / 4);
+    EXPECT_VIDEO_RED(Resources.out.hevc);
+    EXPECT_EQ(remove(Resources.out.hevc), 0);
 }
