@@ -21,12 +21,11 @@ public:
 
     explicit GPUEncode(const LightFieldReference &logical,
                        PhysicalLightFieldReference &parent,
-                       Codec codec,
-                       const unsigned int gop_size=kDefaultGopSize)
+                       Codec codec)
             : GPUUnaryOperator(logical, parent),
               codec_(std::move(codec)),
-              encodeConfiguration_([this, gop_size]() {
-                  return EncodeConfiguration{configuration(), codec_.nvidiaId().value(), gop_size}; }),
+              encodeConfiguration_([this]() {
+                  return EncodeConfiguration{configuration(), codec_.nvidiaId().value(), gop()}; }),
               encoder_([this]() { return VideoEncoder(context(), encodeConfiguration_, lock()); }),
               writer_([this]() { return MemoryEncodeWriter(encoder_->api()); }),
               encodeSession_([this]() { return VideoEncoderSession(encoder_, writer_); }) {
@@ -63,6 +62,12 @@ private:
     lazy <VideoEncoder> encoder_;
     lazy <MemoryEncodeWriter> writer_;
     lazy <VideoEncoderSession> encodeSession_;
+
+    unsigned int gop() const {
+        auto option = logical().downcast<OptionContainer<>>().get_option("GOP");
+        return std::any_cast<unsigned int>(option.value_or(
+                std::make_any<unsigned int>(kDefaultGopSize)));
+    }
 };
 
 }; // namespace lightdb::physical

@@ -5,6 +5,7 @@
 #include "Catalog.h"
 #include "Geometry.h"
 #include "Interpolation.h"
+#include "options.h"
 
 namespace lightdb {
     namespace functor {
@@ -36,7 +37,8 @@ namespace lightdb {
             LightFieldReference Map(functor::UnaryFunctorReference);
             LightFieldReference Subquery(const std::function<LightFieldReference(LightFieldReference)>&);
 
-            LightFieldReference Encode(const Codec &codec=Codec::hevc());
+            LightFieldReference Encode(const Codec& = Codec::hevc(), const lightdb::options<>& = {});
+
             LightFieldReference Store(const std::string &name, const Codec &codec=Codec::hevc());
             LightFieldReference Sink();
 

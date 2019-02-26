@@ -242,20 +242,27 @@ namespace lightdb::logical {
         const Geometry &geometry_;
     };
 
-    class EncodedLightField : public LightField {
+    class EncodedLightField : public LightField, public OptionContainer<> {
     public:
         EncodedLightField(LightFieldReference parent,
-                          Codec codec, const Volume &volume, const ColorSpace &colorSpace)
+                          Codec codec, const Volume &volume,
+                          const ColorSpace &colorSpace,
+                          lightdb::options<> options)
                 : LightField({parent}, volume, colorSpace),
-                  codec_(std::move(codec)), colorSpace_(colorSpace) { }
+                  codec_(std::move(codec)),
+                  colorSpace_(colorSpace),
+                  options_(std::move(options))
+        { }
 
+        const lightdb::options<>& options() const {return options_; }
         const Codec& codec() const { return codec_; }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<EncodedLightField>(visitor); }
 
     private:
         const Codec codec_;
-        const ColorSpace &colorSpace_;
+        const ColorSpace colorSpace_;
+        const lightdb::options<> options_;
     };
 
     class StoredLightField : public LightField {

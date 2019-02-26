@@ -27,6 +27,23 @@ using std::to_string;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
+#define _GOP_COMMAND(filename, gop_size) \
+     (std::string("resources/assert-gop.sh ") + \
+                     (filename) + ' ' + \
+                     to_string(gop_size))
+
+#define ASSERT_VIDEO_GOP(filename, gop_size) { \
+    auto command = _GOP_COMMAND(filename, gop_size); \
+    ASSERT_EQ(system(command.c_str()), 0) \
+        << (filename) << ": expected GOP size " << (gop_size); }
+
+#define EXPECT_VIDEO_GOP(filename, gop_size) { \
+    auto command = _GOP_COMMAND(filename, gop_size); \
+    EXPECT_EQ(system(command.c_str()), 0) \
+        << (filename) << ": expected GOP size " << (gop_size); }
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+
 #define _VALID_VIDEO_COMMAND(filename) \
      (std::string("ffprobe -hide_banner -loglevel quiet ") + (filename))
 

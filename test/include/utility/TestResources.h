@@ -26,7 +26,13 @@ struct {
             const unsigned int height = 2160;
             const unsigned int width = 3840;
         } black;
+
     } videos;
+
+    struct {
+        const char *hevc = "out.hevc";
+        const char *h264 = "out.h264";
+    } out;
 
     const std::string catalog_name = "resources";
 } Resources;
