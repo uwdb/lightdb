@@ -32,6 +32,7 @@ struct {
     struct {
         const char *hevc = "out.hevc";
         const char *h264 = "out.h264";
+        const char *raw = "out.raw";
     } out;
 
     const std::string catalog_name = "resources";

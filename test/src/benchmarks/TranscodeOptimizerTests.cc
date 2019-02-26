@@ -14,8 +14,10 @@ using namespace lightdb::execution;
 class TranscodeOptimizerTestFixture : public testing::Test {
 public:
     TranscodeOptimizerTestFixture()
-            : catalog("resources")
-    { Catalog::instance(catalog); }
+            : catalog("resources") {
+        Catalog::instance(catalog);
+        Optimizer::instance<HeuristicOptimizer>(LocalEnvironment());
+    }
 
 protected:
     Catalog catalog;
@@ -25,12 +27,8 @@ TEST_F(TranscodeOptimizerTestFixture, testTranscode) {
     auto source = Scan(Resources.red10.name);
     auto encoded = source.Encode(Codec::hevc());
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-
-    Plan plan = HeuristicOptimizer(environment).optimize(encoded);
-
-    coordinator.save(plan, Resources.out.hevc);
+    auto plan = Optimizer::instance().optimize(encoded);
+    Coordinator().save(plan, Resources.out.hevc);
 
     EXPECT_VIDEO_VALID(Resources.out.hevc);
     EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
