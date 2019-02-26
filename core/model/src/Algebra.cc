@@ -34,6 +34,12 @@ namespace lightdb::logical {
         return LightFieldReference::make<SubsetLightField>(this_, volume);
     }
 
+    LightFieldReference Algebra::Select(const TemporalRange &range) {
+        Volume volume(this_->volume().bounding());
+        volume.t(range);
+        return LightFieldReference::make<SubsetLightField>(this_, volume);
+    }
+
     LightFieldReference Algebra::Store(const std::string &name, const Codec &codec) {
         return LightFieldReference::make<StoredLightField>(this_, name, codec);
     }
