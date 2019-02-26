@@ -254,7 +254,7 @@ namespace lightdb::logical {
                   options_(std::move(options))
         { }
 
-        const lightdb::options<>& options() const {return options_; }
+        const lightdb::options<>& options() const override {return options_; }
         const Codec& codec() const { return codec_; }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<EncodedLightField>(visitor); }

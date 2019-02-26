@@ -65,7 +65,10 @@ private:
     lazy <VideoEncoderSession> encodeSession_;
 
     unsigned int gop() const {
-        auto option = logical().downcast<OptionContainer<>>().get_option(kGOPOptionName);
+        auto option = logical().is<OptionContainer<>>()
+                ? logical().downcast<OptionContainer<>>().get_option(kGOPOptionName)
+                : std::nullopt;
+
         if(option.has_value() && option.value().type() != typeid(unsigned int))
             throw InvalidArgumentError("Invalid GOP option specified", kGOPOptionName);
         else
