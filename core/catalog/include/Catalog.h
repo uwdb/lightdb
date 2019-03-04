@@ -5,7 +5,7 @@
 #include "Geometry.h"
 #include "Color.h"
 #include "Configuration.h"
-#include <experimental/filesystem>
+#include <filesystem>
 #include <utility>
 #include <fstream>
 
@@ -18,25 +18,25 @@ namespace lightdb {
     namespace catalog {
         class Stream {
         public:
-            Stream(std::experimental::filesystem::path path, Codec codec, Configuration configuration)
+            Stream(std::filesystem::path path, Codec codec, Configuration configuration)
                     : path_(std::move(path)),
                       codec_(std::move(codec)),
-                      configuration_(std::move(configuration))
+                      configuration_(configuration)
             { }
 
-            const std::experimental::filesystem::path& path() const { return path_; }
+            const std::filesystem::path& path() const { return path_; }
             const Codec& codec() const { return codec_; }
             const Configuration& configuration() const { return configuration_; }
 
         private:
-            const std::experimental::filesystem::path path_;
+            const std::filesystem::path path_;
             const Codec codec_;
             const Configuration configuration_;
         };
 
         class OutputStream: public Stream {
         public:
-            OutputStream(const std::experimental::filesystem::path &path, const Codec &codec, const Configuration &configuration)
+            OutputStream(const std::filesystem::path &path, const Codec &codec, const Configuration &configuration)
                     : Stream(path, codec, configuration),
                       stream_(path)
             { }
@@ -50,16 +50,16 @@ namespace lightdb {
         class Catalog {
         public:
             Catalog(const Catalog &catalog) = default;
-            explicit Catalog(std::experimental::filesystem::path path)
+            explicit Catalog(std::filesystem::path path)
                     : path_(std::move(asserts::CHECK_NONEMPTY(path)))
             { }
 
             //TODO these overloads are superfluous, but cause issues with syntax highlighting
             explicit Catalog(const char *path)
-                : Catalog(std::experimental::filesystem::path(path))
+                : Catalog(std::filesystem::path(path))
             { }
             explicit Catalog(const std::string &path)
-                : Catalog(std::experimental::filesystem::path(path))
+                : Catalog(std::filesystem::path(path))
             { }
 
             static const Catalog &instance()
@@ -71,7 +71,7 @@ namespace lightdb {
             }
             static const Catalog &instance(Catalog catalog) { return instance_.emplace(catalog); }
 
-            static bool catalog_exists(const std::experimental::filesystem::path &path);
+            static bool catalog_exists(const std::filesystem::path &path);
 
             LightFieldReference get(const std::string &name) const;
             bool exists(const std::string &name) const;
@@ -80,7 +80,7 @@ namespace lightdb {
             class Metadata {
                 friend class Catalog;
 
-                Metadata(const Catalog &catalog, std::string name, std::experimental::filesystem::path path)
+                Metadata(const Catalog &catalog, std::string name, std::filesystem::path path)
                         : catalog_(catalog), name_(std::move(name)), path_(std::move(path)),
                         //TODO grab boxes and load volume/geometry, detect colorspace
                           volume_({{0, 0}, {0, 0}, {0, 0}, {0, 10}, ThetaRange::limits(), PhiRange::limits()}),
@@ -100,7 +100,7 @@ namespace lightdb {
             private:
                 const Catalog &catalog_;
                 const std::string name_;
-                const std::experimental::filesystem::path path_;
+                const std::filesystem::path path_;
                 const Volume volume_;
                 const ColorSpace colorSpace_;
                 const GeometryReference geometry_;
@@ -110,11 +110,11 @@ namespace lightdb {
         private:
             Catalog() : path_("") { }
 
-            const std::experimental::filesystem::path path_;
+            const std::filesystem::path path_;
 
             static constexpr const char *metadataFilename_ = "metadata.mp4";
             static std::optional<Catalog> instance_;
-            static std::vector<Stream> get_streams(const std::experimental::filesystem::path&);
+            static std::vector<Stream> get_streams(const std::filesystem::path&);
             inline Catalog::Metadata metadata(const std::string &name) const;
         };
     } //namespace catalog

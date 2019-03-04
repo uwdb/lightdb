@@ -4,7 +4,7 @@
 #include "errors.h"
 #include <vector>
 #include <stdexcept>
-#include <experimental/filesystem>
+#include <filesystem>
 
 namespace lightdb::asserts {
     template<typename T>
@@ -30,7 +30,7 @@ namespace lightdb::asserts {
             return value;
     }
 
-    inline std::experimental::filesystem::path& CHECK_NONEMPTY(std::experimental::filesystem::path& path) {
+    inline std::filesystem::path& CHECK_NONEMPTY(std::filesystem::path& path) {
         if (path.empty())
             throw InvalidArgumentError("Expected nonempty value", "value");
         else
