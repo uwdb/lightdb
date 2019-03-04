@@ -36,10 +36,10 @@ namespace lightdb::utility::ffmpeg {
 
             if (context->nb_streams < index + 1)
                 throw InvalidArgumentError("Index is larger than number of streams", "index");
-            else if (context->streams[0]->codecpar->height <= 0 ||
-                     context->streams[0]->codecpar->width <= 0)
+            else if (context->streams[index]->codecpar->height <= 0 ||
+                     context->streams[index]->codecpar->width <= 0)
                 throw FfmpegRuntimeError("Frame size not detected");
-            else if (context->streams[0]->nb_frames < 0)
+            else if (context->streams[index]->nb_frames < 0)
                 throw FfmpegRuntimeError("No frames detected");
             else if (context->bit_rate < 0)
                 throw FfmpegRuntimeError("No bitrate detected");
