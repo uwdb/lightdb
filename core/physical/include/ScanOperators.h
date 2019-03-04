@@ -7,10 +7,10 @@ namespace lightdb::physical {
 
 class ScanSingleFileToGPU: public PhysicalLightField, public EncodedVideoInterface {
 public:
-    explicit ScanSingleFileToGPU(const LightFieldReference &logical, const catalog::Stream &stream)
-            : ScanSingleFileToGPU(logical,
-                                  logical->downcast<logical::ScannedLightField>(),
-                                  stream)
+    explicit ScanSingleFileToGPU(const LightFieldReference &logical, catalog::Stream stream)
+            : PhysicalLightField(logical, DeviceType::GPU),
+              stream_(stream),
+              reader_([this]() { return FileDecodeReader(stream_.path()); })
     { }
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
@@ -24,27 +24,18 @@ public:
     const Configuration &configuration() override { return stream_.configuration(); }
 
 private:
-    explicit ScanSingleFileToGPU(const LightFieldReference &logical,
-                                 const logical::ScannedLightField &scanned,
-                                 catalog::Stream stream)
-            : PhysicalLightField(logical, DeviceType::GPU),
-              stream_(std::move(stream)),
-              scanned_(scanned),
-              reader_([this]() { return FileDecodeReader(stream_.path()); })
-    { }
-
     const catalog::Stream stream_;
-    const logical::ScannedLightField &scanned_;
     lazy<FileDecodeReader> reader_;
 };
 
 template<size_t Size=131072>
 class ScanSingleFile: public PhysicalLightField, public EncodedVideoInterface {
 public:
-    explicit ScanSingleFile(const LightFieldReference &logical, const catalog::Stream &stream)
-            : ScanSingleFile(logical,
-                             logical->downcast<logical::ScannedLightField>(),
-                             stream)
+    explicit ScanSingleFile(const LightFieldReference &logical, catalog::Stream stream)
+            : PhysicalLightField(logical, DeviceType::CPU),
+              stream_(std::move(stream)),
+              buffer_(Size, 0),
+              reader_([this]() { return std::ifstream(stream_.path()); })
     { }
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
@@ -62,18 +53,7 @@ public:
     const Configuration &configuration() override { return stream_.configuration(); }
 
 private:
-    explicit ScanSingleFile(const LightFieldReference &logical,
-                            const logical::ScannedLightField &scanned,
-                            catalog::Stream stream)
-            : PhysicalLightField(logical, DeviceType::CPU),
-              stream_(std::move(stream)),
-              scanned_(scanned),
-              buffer_(Size, 0),
-              reader_([this]() { return std::ifstream(stream_.path()); })
-    { }
-
     const catalog::Stream stream_;
-    const logical::ScannedLightField &scanned_;
     lightdb::bytestring buffer_;
     lazy<std::ifstream> reader_;
 };
