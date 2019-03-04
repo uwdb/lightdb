@@ -689,6 +689,38 @@ namespace lightdb::optimization {
             return false;
         }
     };
+
+    class RemoveIdentities : public OptimizerRule {
+    public:
+        using OptimizerRule::OptimizerRule;
+
+        bool visit(const LightField &node) override {
+            auto logical = plan().lookup(node);
+            auto assignments = plan().assignments(logical);
+
+            for(auto &assignment: assignments) {
+                if(assignment.is<physical::GPUIdentity>() ||
+                   assignment.is<physical::CPUIdentity>()) {
+                    auto parents = assignment->parents();
+                    auto children = plan().children(logical);
+
+                    if(parents.size() == 1 && children.size() == 1) {
+                        auto parent = parents.at(0);
+                        auto child = children.at(0);
+
+                        assignment->parents().clear();
+                        for(auto &physical_child: plan().assignments(child))
+                            for(auto index = 0u; index < physical_child->parents().size(); index++)
+                                physical_child->parents()[index] = parent;
+
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+    };
 }
 
 #endif //LIGHTDB_RULES_H
