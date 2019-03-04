@@ -10,6 +10,11 @@ namespace lightdb {
     public:
         using std::unordered_map<TKey, TValue>::unordered_map;
 
+        struct Encoding {
+            static constexpr const char* Codec = "Codec";
+            static constexpr const char* GOPSize = "GOP";
+        };
+
         std::optional<TValue> get(const TKey& key) const {
             auto value = this->find(key);
             return value != this->end()
@@ -24,6 +29,8 @@ namespace lightdb {
         virtual const lightdb::options<TKey, TValue> &options() const = 0;
         const std::optional<TValue> get_option(const TKey& key) const { return options().get(key); }
     };
+
+    using EncodeOptions = options<>::Encoding;
 } // namespace lightdb
 
 #endif //LIGHTDB_OPTIONS_H

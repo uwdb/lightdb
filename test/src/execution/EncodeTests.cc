@@ -24,7 +24,7 @@ public:
 
     void testEncodeGOP(const unsigned int gop) {
         auto source = Scan(Resources.red10.name);
-        auto encoded = source.Encode(Codec::hevc(), {{GPUEncode::kGOPOptionName, gop}});
+        auto encoded = source.Encode(Codec::hevc(), {{EncodeOptions::GOPSize, gop}});
 
         auto plan = Optimizer::instance().optimize(encoded);
         Coordinator().save(plan, Resources.out.hevc);
@@ -113,7 +113,7 @@ TEST_F(EncodeTestFixture, testImplicitGOP) {
 
 TEST_F(EncodeTestFixture, testInvalidGOPType) {
     auto source = Scan(Resources.red10.name);
-    auto encoded = source.Encode(Codec::hevc(), {{GPUEncode::kGOPOptionName, "invalid"}});
+    auto encoded = source.Encode(Codec::hevc(), {{EncodeOptions::GOPSize, "invalid"}});
 
     auto plan = Optimizer::instance().optimize(encoded);
 
@@ -122,7 +122,7 @@ TEST_F(EncodeTestFixture, testInvalidGOPType) {
 
 TEST_F(EncodeTestFixture, testInvalidGOPRange) {
     auto source = Scan(Resources.red10.name);
-    auto encoded = source.Encode(Codec::hevc(), {{GPUEncode::kGOPOptionName, -1}});
+    auto encoded = source.Encode(Codec::hevc(), {{EncodeOptions::GOPSize, -1}});
 
     auto environment = LocalEnvironment();
     auto coordinator = Coordinator();

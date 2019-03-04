@@ -18,7 +18,6 @@ namespace lightdb::physical {
 class GPUEncode : public GPUUnaryOperator<GPUDecodedFrameData>, public EncodedVideoInterface {
 public:
     static constexpr size_t kDefaultGopSize = 30;
-    static constexpr const char* kGOPOptionName = "GOP";
 
     explicit GPUEncode(const LightFieldReference &logical,
                        PhysicalLightFieldReference &parent,
@@ -66,11 +65,11 @@ private:
 
     unsigned int gop() const {
         auto option = logical().is<OptionContainer<>>()
-                ? logical().downcast<OptionContainer<>>().get_option(kGOPOptionName)
+                ? logical().downcast<OptionContainer<>>().get_option(EncodeOptions::GOPSize)
                 : std::nullopt;
 
         if(option.has_value() && option.value().type() != typeid(unsigned int))
-            throw InvalidArgumentError("Invalid GOP option specified", kGOPOptionName);
+            throw InvalidArgumentError("Invalid GOP option specified", EncodeOptions::GOPSize);
         else
             return std::any_cast<unsigned int>(option.value_or(
                     std::make_any<unsigned int>(kDefaultGopSize)));

@@ -223,34 +223,41 @@ namespace lightdb::logical {
         const catalog::Catalog::Metadata metadata_;
     };
 
-    class ExternalLightField : public LightField {
+    class ExternalLightField : public LightField, public OptionContainer<> {
     public:
-        ExternalLightField(std::string uri, std::string codec,
-                           const Volume &volume, const ColorSpace &colorSpace, const Geometry &geometry)
+        ExternalLightField(const std::filesystem::path &filename,
+                           const Codec &codec,
+                           const Volume &volume,
+                           const ColorSpace &colorSpace,
+                           const GeometryReference &geometry,
+                           lightdb::options<> options)
                 : LightField({}, volume, colorSpace),
-                  uri_(std::move(uri)), codec_(std::move(codec)),
-                  colorSpace_(colorSpace), geometry_(geometry) { }
+                  stream_{filename, codec,
+                          utility::ffmpeg::GetStreamConfiguration(filename, 0, true)},
+                  geometry_(geometry),
+                  options_(std::move(options)) { }
 
-        const std::string& uri() const noexcept { return uri_; }
+        const catalog::Stream& stream() const noexcept { return stream_; }
+        const Codec& codec() const noexcept { return stream_.codec(); }
+        const lightdb::options<>& options() const override {return options_; }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<ExternalLightField>(visitor); }
 
     private:
-        const std::string uri_;
-        const std::string codec_;
-        const ColorSpace &colorSpace_;
-        const Geometry &geometry_;
+        const catalog::Stream stream_;
+        const GeometryReference geometry_;
+        const lightdb::options<> options_;
     };
 
     class EncodedLightField : public LightField, public OptionContainer<> {
     public:
         EncodedLightField(LightFieldReference parent,
-                          Codec codec, const Volume &volume,
+                          Codec codec,
+                          const Volume &volume,
                           const ColorSpace &colorSpace,
                           lightdb::options<> options)
                 : LightField({parent}, volume, colorSpace),
                   codec_(std::move(codec)),
-                  colorSpace_(colorSpace),
                   options_(std::move(options))
         { }
 
@@ -261,7 +268,6 @@ namespace lightdb::logical {
 
     private:
         const Codec codec_;
-        const ColorSpace colorSpace_;
         const lightdb::options<> options_;
     };
 
