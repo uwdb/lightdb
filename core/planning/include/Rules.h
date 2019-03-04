@@ -80,6 +80,34 @@ namespace lightdb::optimization {
             }
             return false;
         }
+
+        bool visit(const logical::ExternalLightField &node) override {
+            if(!plan().has_physical_assignment(node)) {
+                auto logical = plan().lookup(node);
+
+                if(node.codec() == Codec::h264() ||
+                   node.codec() == Codec::hevc()) {
+                    LOG(WARNING) << "Using first GPU and ignoring all others";
+                    auto gpu = plan().environment().gpus()[0];
+
+                    auto &scan = plan().emplace<physical::ScanSingleFileToGPU>(logical, node.stream());
+                    auto decode = plan().emplace<physical::GPUDecode>(logical, scan, gpu);
+
+                    auto children = plan().children(plan().lookup(node));
+                    if(children.size() > 1) {
+                        auto tees = physical::TeedPhysicalLightFieldAdapter::make(decode, children.size());
+                        for (auto index = 0u; index < children.size(); index++)
+                            plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
+                    }
+                } else if(node.codec() == Codec::boxes()) {
+                    auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, node.stream());
+                    auto decode = plan().emplace<physical::CPUFixedLengthRecordDecode<Rectangle>>(logical, scan);
+                }
+
+                return true;
+            }
+            return false;
+        }
     };
 
     class ChooseEncoders : public OptimizerRule {

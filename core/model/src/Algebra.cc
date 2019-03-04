@@ -12,6 +12,23 @@ namespace lightdb::logical {
         return catalog.get(name);
     }
 
+    LightFieldReference Load(const std::filesystem::path& filename, const lightdb::options<>& options) {
+        auto codec_name = std::any_cast<std::string>(options.get("Codec").value_or(
+                std::any{filename.extension().string()}));
+        auto codec = Codec::get(codec_name);
+
+        if(codec.has_value())
+            return Load(filename, codec.value());
+        else
+            throw InvalidArgumentError("Could not infer codec from options or uri", "options");
+    }
+
+    LightFieldReference Load(const std::filesystem::path &filename, const Codec& codec, const Volume& volume,
+                             const ColorSpace &colorSpace, const GeometryReference &geometry,
+                             const lightdb::options<>& options) {
+        return LightFieldReference::make<ExternalLightField>(filename, codec, volume, colorSpace, geometry, options);
+    }
+
     LightFieldReference Algebra::Select(const Volume &volume) {
         return LightFieldReference::make<SubsetLightField>(this_, volume);
     }

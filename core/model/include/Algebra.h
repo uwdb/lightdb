@@ -6,6 +6,7 @@
 #include "Geometry.h"
 #include "Interpolation.h"
 #include "options.h"
+#include <filesystem>
 
 namespace lightdb {
     namespace functor {
@@ -17,12 +18,16 @@ namespace lightdb {
     namespace logical {
         LightFieldReference Scan(const std::string &name);
         LightFieldReference Scan(const catalog::Catalog&, const std::string &name);
+        LightFieldReference Load(const std::filesystem::path&, const lightdb::options<>& = {});
+        LightFieldReference Load(const std::filesystem::path&,
+                                 const Codec&,
+                                 const Volume& = Volume::zero(),
+                                 const ColorSpace& = YUVColorSpace::instance(),
+                                 const GeometryReference& = EquirectangularGeometry(EquirectangularGeometry::Samples()),
+                                 const lightdb::options<>& = {});
 
         class Algebra: public DefaultMixin {
         public:
-            //TODO Decode, Transcode
-
-            //LightFieldReference Load(const std::string &uri);
             LightFieldReference Select(const Volume&);
             LightFieldReference Select(SpatiotemporalDimension, const SpatiotemporalRange&);
             LightFieldReference Select(const ThetaRange&);
