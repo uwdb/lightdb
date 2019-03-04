@@ -26,20 +26,20 @@ namespace lightdb {
     class LightFieldVisitor {
     public:
         virtual void visit(const LightField &) {}
-        virtual void visit(const logical::ConstantLightField &) {}
-        virtual void visit(const logical::CompositeLightField &) {}
-        virtual void visit(const logical::PartitionedLightField &) {}
-        virtual void visit(const logical::SubsetLightField &) {}
-        virtual void visit(const logical::RotatedLightField &) {}
-        virtual void visit(const logical::DiscreteLightField &) {}
-        virtual void visit(const logical::InterpolatedLightField &) {}
-        virtual void visit(const logical::TransformedLightField &) {}
-        virtual void visit(const logical::ScannedLightField &) {}
-        virtual void visit(const logical::SubqueriedLightField &) {}
-        virtual void visit(const logical::ExternalLightField &) {}
-        virtual void visit(const logical::EncodedLightField &) {}
-        virtual void visit(const logical::StoredLightField &) {}
-        virtual void visit(const logical::SunkLightField &) {}
+        virtual void visit(const logical::ConstantLightField &l) { visit((const LightField&)l); }
+        virtual void visit(const logical::CompositeLightField &l) { visit((const LightField&)l); }
+        virtual void visit(const logical::PartitionedLightField &l) { visit((const LightField&)l); }
+        virtual void visit(const logical::SubsetLightField &l) { visit((const LightField&)l); }
+        virtual void visit(const logical::RotatedLightField &l) { visit((const LightField&)l); }
+        virtual void visit(const logical::DiscreteLightField &l) { visit((const LightField&)l); }
+        virtual void visit(const logical::InterpolatedLightField &l) { visit((const LightField&)l); }
+        virtual void visit(const logical::TransformedLightField &l) { visit((const LightField&)l); }
+        virtual void visit(const logical::ScannedLightField &l) { visit((const LightField&)l); }
+        virtual void visit(const logical::SubqueriedLightField &l) { visit((const LightField&)l); }
+        virtual void visit(const logical::ExternalLightField &l) { visit((const LightField&)l); }
+        virtual void visit(const logical::EncodedLightField &l) { visit((const LightField&)l); }
+        virtual void visit(const logical::StoredLightField &l) { visit((const LightField&)l); }
+        virtual void visit(const logical::SunkLightField &l) { visit((const LightField&)l); }
 
     protected:
         LightFieldVisitor() = default;
@@ -67,20 +67,20 @@ namespace lightdb {
 
 
         virtual State visit(const LightField &) { return {}; }
-        virtual State visit(const logical::ConstantLightField &) { return {}; }
-        virtual State visit(const logical::CompositeLightField &) { return {}; }
-        virtual State visit(const logical::PartitionedLightField &) { return {}; }
-        virtual State visit(const logical::SubsetLightField &) { return {}; }
-        virtual State visit(const logical::RotatedLightField &) { return {}; }
-        virtual State visit(const logical::DiscreteLightField &) { return {}; }
-        virtual State visit(const logical::InterpolatedLightField &) { return {}; }
-        virtual State visit(const logical::TransformedLightField &) { return {}; }
-        virtual State visit(const logical::ScannedLightField &) { return {}; }
-        virtual State visit(const logical::SubqueriedLightField &) { return {}; }
-        virtual State visit(const logical::ExternalLightField &) { return {}; }
-        virtual State visit(const logical::EncodedLightField &) { return {}; }
-        virtual State visit(const logical::StoredLightField &) { return {}; }
-        virtual State visit(const logical::SunkLightField &) { return {}; }
+        virtual State visit(const logical::ConstantLightField &l) { return visit((const LightField&)(l)); }
+        virtual State visit(const logical::CompositeLightField &l) { return visit((const LightField&)(l)); }
+        virtual State visit(const logical::PartitionedLightField &l) { return visit((const LightField&)(l)); }
+        virtual State visit(const logical::SubsetLightField &l) { return visit((const LightField&)(l)); }
+        virtual State visit(const logical::RotatedLightField &l) { return visit((const LightField&)(l)); }
+        virtual State visit(const logical::DiscreteLightField &l) { return visit((const LightField&)(l)); }
+        virtual State visit(const logical::InterpolatedLightField &l) { return visit((const LightField&)(l)); }
+        virtual State visit(const logical::TransformedLightField &l) { return visit((const LightField&)(l)); }
+        virtual State visit(const logical::ScannedLightField &l) { return visit((const LightField&)(l)); }
+        virtual State visit(const logical::SubqueriedLightField &l) { return visit((const LightField&)(l)); }
+        virtual State visit(const logical::ExternalLightField &l) { return visit((const LightField&)(l)); }
+        virtual State visit(const logical::EncodedLightField &l) { return visit((const LightField&)(l)); }
+        virtual State visit(const logical::StoredLightField &l) { return visit((const LightField&)(l)); }
+        virtual State visit(const logical::SunkLightField &l) { return visit((const LightField&)(l)); }
 
         virtual State visit(State state, const LightField &field) { return state + visit(field); }
         virtual State visit(State state, const logical::ConstantLightField &field) { return state + visit(field); }
