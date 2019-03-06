@@ -34,6 +34,7 @@ namespace lightdb::utility::ffmpeg {
                 throw FfmpegRuntimeError(av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, result));
             }
 
+
             if (context->nb_streams < index + 1)
                 throw InvalidArgumentError("Index is larger than number of streams", "index");
             else if (context->streams[index]->codecpar->height <= 0 ||

@@ -167,7 +167,7 @@ private:
                 .pUserData = packets_.get(),
                 .pfnVideoDataHandler = HandleVideoData,
                 .pfnAudioDataHandler = nullptr,
-                0
+                {nullptr}
         };
 
         if(!std::experimental::filesystem::exists(filename))

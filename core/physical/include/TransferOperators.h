@@ -8,7 +8,7 @@ namespace lightdb::physical {
 class GPUtoCPUTransfer: public PhysicalLightField {
 public:
     GPUtoCPUTransfer(const LightFieldReference &logical,
-           PhysicalLightFieldReference &parent)
+                     PhysicalLightFieldReference &parent)
             : PhysicalLightField(logical, {parent}, physical::DeviceType::CPU)
     { }
 
