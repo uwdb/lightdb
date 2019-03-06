@@ -24,6 +24,8 @@ enable_testing()
 # Copy test files to output directory
 file(COPY resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 
+target_compile_definitions(lightdb_test PRIVATE LIGHTDB_BENCHMARK_DATASET_PATH="${CMAKE_SOURCE_DIR}/benchmarks/datasets")
+
 # Build plugins used by tests
 include(ExternalProject)
 file(GLOB LIGHTDB_PLUGIN_DIRS ${CMAKE_SOURCE_DIR}/plugins/*)

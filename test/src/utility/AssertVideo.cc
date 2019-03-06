@@ -1,3 +1,4 @@
+#include <cstdio>
 #include "AssertVideo.h"
 
 CudaFrame CREATE_BLACK_FRAME(const Configuration &configuration)
@@ -50,4 +51,27 @@ std::string TRANSCODE_RAW_TO_H264(const std::string& filename, const size_t heig
     EXPECT_EQ(system(command.c_str()), 0);
 
     return output_filename;
+}
+
+size_t COUNT_FRAMES(const std::string &filename, const size_t stream_index)
+{
+    std::array<char, 128> buffer{};
+    std::string result;
+    auto command = std::string("ffprobe -v error -count_frames") +
+                               " -select_streams v:" + std::to_string(stream_index) +
+                               " -show_entries stream=nb_read_frames -of default=nokey=1:noprint_wrappers=1" +
+                               " " + filename;
+    auto pipe = popen(command.c_str(), "r");
+
+    EXPECT_NE(pipe, nullptr);
+
+    while (fgets(buffer.data(), buffer.size(), pipe) != nullptr)
+        result += buffer.data();
+
+    auto frame_count = std::strtoul(result.data(), nullptr, 0);
+
+    EXPECT_EQ(pclose(pipe), 0);
+    EXPECT_GT(frame_count, 0);
+
+    return frame_count;
 }
