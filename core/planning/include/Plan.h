@@ -48,6 +48,23 @@ namespace lightdb::optimization {
             assigned_[&*node].push_back(physical);
         }
 
+        void unassign(const LightFieldReference &node, const PhysicalLightFieldReference &physical,
+                      const bool strict=true) {
+            auto assigned = assigned_.find(&*node);
+
+            if(strict) {
+                if(assigned == assigned_.end())
+                    throw InvalidArgumentError("Logical node not present in plan", "node");
+                if(std::find(assigned->second.begin(), assigned->second.end(), physical) == assigned->second.end())
+                    throw InvalidArgumentError("Physical node not associated with logical node", "physical");
+            }
+
+            if(assigned != assigned_.end()) {
+                auto &assignments = (*assigned).second;
+                assignments.erase(std::remove(assignments.begin(), assignments.end(), physical), assignments.end());
+            }
+        }
+
         inline bool has_physical_assignment(const LightField &node) { return has_physical_assignment(lookup(node)); }
 
         bool has_physical_assignment(const LightFieldReference &reference) {
@@ -103,6 +120,12 @@ namespace lightdb::optimization {
                         children.push_back(node.second);
 
             return children;
+        }
+
+        void replace_assignments(const PhysicalLightFieldReference &original, const PhysicalLightFieldReference &replacement) {
+            for(auto &[logical, assignments]: assigned_)
+                std::replace(assignments.begin(), assignments.end(), original, replacement);
+            std::replace(physical_.begin(), physical_.end(), original, replacement);
         }
 
         const auto& physical() const { return physical_; }
