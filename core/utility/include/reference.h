@@ -97,6 +97,10 @@ public:
 
     bool operator==(const shared_reference& other) const { return pointer_ == other.pointer_; }
     bool operator!=(const shared_reference& other) const { return !(*this == other); }
+    bool operator<(const shared_reference& other) const { return pointer_ < other.pointer_; }
+    bool operator<=(const shared_reference& other) const { return pointer_ <= other.pointer_; }
+    bool operator>(const shared_reference& other) const { return pointer_ > other.pointer_; }
+    bool operator>=(const shared_reference& other) const { return pointer_ >= other.pointer_; }
 
     shared_reference& operator=(const shared_reference&) = default;
     shared_reference& operator=(shared_reference&&) noexcept = default;
