@@ -20,6 +20,7 @@ namespace lightdb {
         class ExternalLightField;
         class EncodedLightField;
         class StoredLightField;
+        class SavedLightField;
         class SunkLightField;
     }
 
@@ -39,6 +40,7 @@ namespace lightdb {
         virtual void visit(const logical::ExternalLightField &l) { visit((const LightField&)l); }
         virtual void visit(const logical::EncodedLightField &l) { visit((const LightField&)l); }
         virtual void visit(const logical::StoredLightField &l) { visit((const LightField&)l); }
+        virtual void visit(const logical::SavedLightField &l) { visit((const LightField&)l); }
         virtual void visit(const logical::SunkLightField &l) { visit((const LightField&)l); }
 
     protected:
@@ -80,6 +82,7 @@ namespace lightdb {
         virtual State visit(const logical::ExternalLightField &l) { return visit((const LightField&)(l)); }
         virtual State visit(const logical::EncodedLightField &l) { return visit((const LightField&)(l)); }
         virtual State visit(const logical::StoredLightField &l) { return visit((const LightField&)(l)); }
+        virtual State visit(const logical::SavedLightField &l) { return visit((const LightField&)(l)); }
         virtual State visit(const logical::SunkLightField &l) { return visit((const LightField&)(l)); }
 
         virtual State visit(State state, const LightField &field) { return state + visit(field); }
@@ -96,6 +99,7 @@ namespace lightdb {
         virtual State visit(State state, const logical::ExternalLightField &field) { return state + visit(field); }
         virtual State visit(State state, const logical::EncodedLightField &field) { return state + visit(field); }
         virtual State visit(State state, const logical::StoredLightField &field) { return state + visit(field); }
+        virtual State visit(State state, const logical::SavedLightField &field) { return state + visit(field); }
         virtual State visit(State state, const logical::SunkLightField &field) { return state + visit(field); }
 
         class AdaptedVisitor: public LightFieldVisitor {
@@ -118,6 +122,7 @@ namespace lightdb {
             void visit(const logical::ExternalLightField &field) final { state_ = visitor_.visit(state_, field); }
             void visit(const logical::EncodedLightField &field) final  { state_ = visitor_.visit(state_, field); }
             void visit(const logical::StoredLightField &field) final  { state_ = visitor_.visit(state_, field); }
+            void visit(const logical::SavedLightField &field) final  { state_ = visitor_.visit(state_, field); }
             void visit(const logical::SunkLightField &field) final  { state_ = visitor_.visit(state_, field); }
 
             State result() const { return state_; }
