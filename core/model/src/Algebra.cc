@@ -29,6 +29,10 @@ namespace lightdb::logical {
         return LightFieldReference::make<ExternalLightField>(filename, codec, volume, colorSpace, geometry, options);
     }
 
+    LightFieldReference Algebra::Save(const std::filesystem::path &filename) {
+        return LightFieldReference::make<SavedLightField>(this_, filename);
+    }
+
     LightFieldReference Algebra::Select(const Volume &volume) {
         return LightFieldReference::make<SubsetLightField>(this_, volume);
     }

@@ -291,6 +291,21 @@ namespace lightdb::logical {
         const Codec codec_;
     };
 
+    class SavedLightField : public LightField {
+    public:
+        SavedLightField(const LightFieldReference &parent,
+                           std::filesystem::path filename)
+                : LightField(parent),
+                  filename_(std::move(filename)) { }
+
+        inline const std::filesystem::path& filename() const noexcept { return filename_; }
+
+        void accept(LightFieldVisitor &visitor) override { LightField::accept<SavedLightField>(visitor); }
+
+    private:
+        const std::filesystem::path filename_;
+    };
+
     class SunkLightField : public LightField {
     public:
         explicit SunkLightField(const LightFieldReference &source)
