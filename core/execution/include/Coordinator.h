@@ -2,6 +2,7 @@
 #define LIGHTDB_COORDINATOR_H
 
 #include "Plan.h"
+#include "Optimizer.h"
 #include "Pool.h"
 #include "progress.h"
 
@@ -36,6 +37,10 @@ public:
         auto streams = functional::transform<std::ofstream>(filenames.begin(), filenames.end(),
                                                             [](auto &filename) { return std::ofstream(filename); });
         save(plan, functional::transform<std::ostream*>(streams.begin(), streams.end(), [](auto &s) { return &s; }));
+    }
+
+    void execute(const LightFieldReference &query) {
+        execute(optimization::Optimizer::instance().optimize(query));
     }
 
     void execute(const optimization::Plan &plan) {
