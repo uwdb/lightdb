@@ -16,6 +16,8 @@ struct Configuration {
     //TODO bitrate does not belong here
     size_t bitrate;
     struct FrameRate: public lightdb::rational {
+        FrameRate() : FrameRate(0, 1) { }
+
         explicit FrameRate(const lightdb::rational &rational)
                 : lightdb::rational(rational)
         { }

@@ -29,7 +29,7 @@ public:
                     const auto &data = next.downcast<CPUEncodedFrameData>().value();
                     materializedData_[index].insert(std::end(materializedData_[index]), data.begin(), data.end());
                 }
-            return CPUEncodedFrameData(codec(), bytestring{});
+            return CPUEncodedFrameData(codec(), configuration(), bytestring{});
         } else if(!materializedData_.empty()) {
             lightdb::hevc::Context context({rows_, columns_},
                                            {configuration().height / rows_,
@@ -37,7 +37,7 @@ public:
             lightdb::hevc::Stitcher stitcher(context, materializedData_);
             materializedData_.clear();
 
-            return CPUEncodedFrameData(codec(), stitcher.GetStitchedSegments());
+            return CPUEncodedFrameData(codec(), configuration(), stitcher.GetStitchedSegments());
         } else
             return {};
     }

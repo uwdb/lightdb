@@ -73,7 +73,7 @@ public:
                 output.back().downcast<CudaFrame>().copy(lock(), *frame->cuda(), configuration().offset.top, configuration().offset.left);
             }
 
-            return GPUDecodedFrameData(output);
+            return GPUDecodedFrameData(configuration(), output);
         } else
             return std::nullopt;
     }
@@ -119,7 +119,7 @@ public:
                 // Still delaying?  Deincrement and return an empty sentinal
                 assert(delay_frames_ >= data.frames().size());
                 delay_frames_ -= data.frames().size();
-                return GPUDecodedFrameData{};
+                return GPUDecodedFrameData{configuration()};
             } else if(pending_frames_ > 0) {
                 // Still transmitting?  Deincrement and return the current set of frames
                 assert(pending_frames_ >= data.frames().size());

@@ -16,7 +16,8 @@ public:
     std::optional<physical::MaterializedLightFieldReference> read() override {
         auto packet = reader_->read();
         return packet.has_value()
-               ? std::optional<physical::MaterializedLightFieldReference>{CPUEncodedFrameData(codec(), packet.value())}
+               ? std::optional<physical::MaterializedLightFieldReference>{
+                    CPUEncodedFrameData(codec(), configuration(), packet.value())}
                : std::nullopt;
     }
 
@@ -41,7 +42,7 @@ public:
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if(!reader_->eof()) {
             reader_->read(buffer_.data(), buffer_.size());
-            return {CPUEncodedFrameData(stream_.codec(), buffer_)};
+            return {CPUEncodedFrameData(stream_.codec(), configuration(), buffer_)};
 
         } else {
             reader_->close();

@@ -52,7 +52,7 @@ public:
                     frames.size() <= decode_configuration_->output_surfaces / 4);
 
         if(!frames.empty() || !decoder_->frame_queue().isComplete())
-            return std::optional<physical::MaterializedLightFieldReference>{GPUDecodedFrameData(frames)};
+            return std::optional<physical::MaterializedLightFieldReference>{GPUDecodedFrameData(configuration(), frames)};
         else
             return std::nullopt;
     }
@@ -98,9 +98,9 @@ public:
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if(iterators()[0] != iterators()[0].eos()) {
-            CPUDecodedFrameData output;
             auto input = iterators()[0]++;
             auto &data = input.downcast<CPUEncodedFrameData>();
+            CPUDecodedFrameData output{data.configuration()};
 
             for(auto *current = data.value().data(),
                      *end = current + data.value().size();

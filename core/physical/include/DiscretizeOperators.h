@@ -28,7 +28,7 @@ public:
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if(iterator() != iterator().eos()) {
-            GPUDecodedFrameData output;
+            GPUDecodedFrameData output{configuration()};
             auto input = iterator()++;
 
             for(auto &frame: input.frames())

@@ -26,7 +26,7 @@ public:
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if(!any_parent_eos()) {
-            GPUDecodedFrameData output;
+            GPUDecodedFrameData output{configuration()};
             auto available_frames = std::max(frames_->available(), 1ul);
 
             for(auto i = 0u; i < available_frames; i++) {
@@ -82,8 +82,8 @@ public:
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if(!any_parent_eos()) {
-            GPUDecodedFrameData output;
             auto video = (iterators().back()++).downcast<GPUDecodedFrameData>();
+            GPUDecodedFrameData output{configuration()};
 
             for(auto &frame: video.frames()) {
                 auto values = groups_++;
@@ -102,7 +102,7 @@ private:
         explicit GroupById(lazy<PhysicalLightField::iterator*> iterator)
                 : index_(0u),
                   current_id_(0u),
-                  buffer_(MaterializedLightFieldReference::make<CPUDecodedFrameData>()),
+                  buffer_(MaterializedLightFieldReference::make<CPUDecodedFrameData>(Configuration{})),
                   iterator_(std::move(iterator))
         { }
 

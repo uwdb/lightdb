@@ -14,13 +14,13 @@ public:
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if(iterators()[0] != iterators()[0].eos()) {
-            CPUDecodedFrameData output;
             auto input = iterators()[0]++;
             auto data = input.downcast<GPUDecodedFrameData>();
+            auto &configuration = parents().front().downcast<GPUOperator>().configuration();
+            CPUDecodedFrameData output{configuration};
 
             for(auto &frame: data.frames())
-                output.frames().emplace_back(LocalFrame{*frame->cuda(),
-                                                        parents().front().downcast<GPUOperator>().configuration()});
+                output.frames().emplace_back(LocalFrame{*frame->cuda(), configuration});
 
             return {output};
         } else
@@ -44,7 +44,7 @@ public:
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if(iterators()[0] != iterators()[0].eos()) {
-            GPUDecodedFrameData output;
+            GPUDecodedFrameData output{configuration()};
             auto input = iterators()[0]++;
             auto data = input.downcast<CPUDecodedFrameData>();
 

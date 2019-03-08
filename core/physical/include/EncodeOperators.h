@@ -46,7 +46,7 @@ public:
                 // If so, flush the encode queue and end this op too
                 encodeSession_->Flush();
 
-            return {CPUEncodedFrameData(codec_, writer_->dequeue())};
+            return {CPUEncodedFrameData(codec_, configuration(), writer_->dequeue())};
         } else
             return std::nullopt;
     }

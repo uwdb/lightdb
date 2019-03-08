@@ -81,15 +81,42 @@ namespace lightdb::physical {
         inline MaterializedLightFieldReference ref() const override { return MaterializedLightFieldReference::make<EmptyData>(*this); }
     };
 
-    class EncodedFrameData: public SerializedData {
+    class FrameData: public SerializedData {
+    public:
+        const Configuration& configuration() const { return configuration_; }
+
     protected:
-        EncodedFrameData(const DeviceType device, const Codec &codec, const bytestring &value)
-                : EncodedFrameData(device, codec, value.begin(), value.end())
+        FrameData(const DeviceType device, Configuration configuration)
+                : SerializedData(device, {}),
+                  configuration_(std::move(configuration))
+        { }
+
+        FrameData(const DeviceType device, Configuration configuration, const bytestring &value)
+            : SerializedData(device, value),
+              configuration_(std::move(configuration))
         { }
 
         template<typename Input>
-        EncodedFrameData(const DeviceType device, Codec codec, Input begin, const Input end)
-                : SerializedData(device, begin, end), codec_(std::move(codec))
+        FrameData(const DeviceType device, Configuration configuration, Input &begin, const Input &end)
+                : SerializedData(device, begin, end),
+                  configuration_(std::move(configuration))
+        { }
+
+    private:
+        const Configuration configuration_;
+    };
+
+    class EncodedFrameData: public FrameData {
+    protected:
+        EncodedFrameData(const DeviceType device, const Codec &codec,
+                         const Configuration& configuration, const bytestring &value)
+                : EncodedFrameData(device, codec, configuration, value.begin(), value.end())
+        { }
+
+        template<typename Input>
+        EncodedFrameData(const DeviceType device, Codec codec, const Configuration& configuration,
+                         Input begin, const Input end)
+                : FrameData(device, configuration, begin, end), codec_(std::move(codec))
         { }
 
     public:
@@ -101,13 +128,15 @@ namespace lightdb::physical {
 
     class CPUEncodedFrameData: public EncodedFrameData {
     public:
-        explicit CPUEncodedFrameData(const Codec &codec, const bytestring &data)
-                : EncodedFrameData(DeviceType::CPU, codec, data.begin(), data.end()),
+        explicit CPUEncodedFrameData(const Codec &codec, const Configuration& configuration, const bytestring &data)
+                : EncodedFrameData(DeviceType::CPU, codec, configuration, data.begin(), data.end()),
                   packet_(data)
         { }
 
-        explicit CPUEncodedFrameData(const Codec &codec, const DecodeReaderPacket &packet)
-                : EncodedFrameData(DeviceType::CPU, codec, packet.payload, packet.payload + packet.payload_size),
+        explicit CPUEncodedFrameData(const Codec &codec, const Configuration& configuration,
+                                     const DecodeReaderPacket &packet)
+                : EncodedFrameData(DeviceType::CPU, codec, configuration,
+                                   packet.payload, packet.payload + packet.payload_size),
                   packet_(packet)
         { }
 
@@ -118,23 +147,24 @@ namespace lightdb::physical {
         const DecodeReaderPacket packet_;
     };
 
-    class CPUDecodedFrameData: public SerializableData {
+    class CPUDecodedFrameData: public FrameData {
     public:
-        CPUDecodedFrameData()
-                : CPUDecodedFrameData(std::vector<LocalFrameReference>{})
+        CPUDecodedFrameData(const Configuration &configuration)
+                : CPUDecodedFrameData(configuration, std::vector<LocalFrameReference>{})
         { }
 
-        explicit CPUDecodedFrameData(std::vector<LocalFrameReference> frames)
-                : SerializableData(DeviceType::CPU),
+        explicit CPUDecodedFrameData(const Configuration &configuration,
+                                     std::vector<LocalFrameReference> frames)
+                : FrameData(DeviceType::CPU, configuration),
                   frames_(std::move(frames))
         { }
 
         CPUDecodedFrameData(const CPUDecodedFrameData& other)
-                : CPUDecodedFrameData(other.frames_)
+                : CPUDecodedFrameData(other.configuration(), other.frames_)
         { }
 
         CPUDecodedFrameData(CPUDecodedFrameData &&other) noexcept
-                : CPUDecodedFrameData(std::move(other.frames_))
+                : CPUDecodedFrameData(other.configuration(), std::move(other.frames_))
         { }
 
         const bytestring& value() {
@@ -156,28 +186,28 @@ namespace lightdb::physical {
         bytestring serialized_;
     };
 
-    class GPUDecodedFrameData: public SerializableData {
+    class GPUDecodedFrameData: public FrameData {
     public:
-        GPUDecodedFrameData()
-                : SerializableData(DeviceType::GPU),
+        GPUDecodedFrameData(const Configuration &configuration)
+                : FrameData(DeviceType::GPU, configuration),
                   frames_{},
                   serialized_{}
         { }
 
-        explicit GPUDecodedFrameData(std::vector<GPUFrameReference> frames)
-                : SerializableData(DeviceType::GPU),
+        explicit GPUDecodedFrameData(const Configuration &configuration, std::vector<GPUFrameReference> frames)
+                : FrameData(DeviceType::GPU, configuration),
                   frames_(std::move(frames)),
                   serialized_{}
         { }
 
         GPUDecodedFrameData(const GPUDecodedFrameData& other)
-                : SerializableData(DeviceType::GPU),
+                : FrameData(DeviceType::GPU, other.configuration()),
                   frames_(other.frames_),
                   serialized_{}
         { }
 
         GPUDecodedFrameData(GPUDecodedFrameData &&other) noexcept
-                : SerializableData(DeviceType::GPU),
+                : FrameData(DeviceType::GPU, other.configuration()),
                   frames_{std::move(other.frames_)},
                   serialized_{}
         { }

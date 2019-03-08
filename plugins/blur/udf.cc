@@ -9,7 +9,7 @@ shared_reference<LightField> Blur::CPU::operator()(LightField& input) {
     IppiSize maskSize = {static_cast<int>(kernel_size_), static_cast<int>(kernel_size_)};
 
     auto &data = dynamic_cast<physical::CPUDecodedFrameData&>(input);
-    physical::CPUDecodedFrameData output;
+    physical::CPUDecodedFrameData output(data.configuration());
 
     for(auto& frame: data.frames()) {
         Allocate(frame->height(), frame->width(), channels);
