@@ -26,19 +26,30 @@ public:
                 [plan](auto &sink) { return plan.unassigned(sink); });
     }
 
+    [[deprecated]]
     void save(const optimization::Plan &plan, const std::string &filename) {
         save(plan, std::vector<std::string>{filename});
     }
 
-    //TODO this should be in the algebra, returning an external TLF
+    [[deprecated]]
     void save(const optimization::Plan &plan, const std::vector<std::string> &filenames) {
         auto streams = functional::transform<std::ofstream>(filenames.begin(), filenames.end(),
                                                             [](auto &filename) { return std::ofstream(filename); });
         save(plan, functional::transform<std::ostream*>(streams.begin(), streams.end(), [](auto &s) { return &s; }));
     }
 
-    void save(const optimization::Plan &plan, std::ostream& stream) {
-        save(plan, std::vector<std::ostream*>{&stream});
+    void execute(const optimization::Plan &plan) {
+        auto outputs = submit(plan);
+        auto iterators = functional::transform<PhysicalLightField::iterator>(outputs.begin(), outputs.end(),
+                                                                             [](auto &out) { return out->begin(); });
+        Progress progress(static_cast<int>(iterators.size()));
+
+        while(!iterators.empty()) {
+            iterators.erase(std::remove_if(iterators.begin(), iterators.end(),
+                                           [](auto &it) { it++; return it == it.eos(); }),
+                            iterators.end());
+            progress.display(iterators.size());
+        }
     }
 
     std::string save(const optimization::Plan &plan) {
@@ -47,6 +58,7 @@ public:
         return stream.str();
     }
 
+    [[deprecated]]
     void save(const optimization::Plan &plan, std::vector<std::ostream*> streams) {
         auto outputs = submit(plan);
         auto iterators = functional::transform<PhysicalLightField::iterator>(outputs.begin(), outputs.end(), [](auto &out) { return out->begin(); });
