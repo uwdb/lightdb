@@ -135,6 +135,7 @@ namespace lightdb {
                                                             [](auto &it) { return it == iterator::eos(); }); }
 
     private:
+        //TODO this should be a set
         std::vector<PhysicalLightFieldReference> parents_;
         const LightFieldReference logical_;
         const physical::DeviceType deviceType_;
@@ -172,27 +173,21 @@ namespace lightdb {
 
             GPUOperator(const LightFieldReference &logical,
                         PhysicalLightFieldReference &parent)
-                    : GPUOperator(logical, {parent}, parent.expect_downcast<GPUOperator>())
+                    : GPUOperator(logical, {parent},
+                                  parent.expect_downcast<GPUOperator>().gpu(),
+                                  [this]() { return parents().front().expect_downcast<GPUOperator>().configuration(); })
             { }
 
             GPUOperator(const LightFieldReference &logical,
                         PhysicalLightFieldReference &parent,
                         const std::function<Configuration()> &output_configuration)
-                    : GPUOperator(logical, {parent}, parent.expect_downcast<GPUOperator>(), output_configuration)
-            { }
+                    : GPUOperator(logical, {parent}, parent.expect_downcast<GPUOperator>().gpu(), output_configuration)
 
             GPUOperator(const LightFieldReference &logical,
                         PhysicalLightFieldReference &parent,
-                        GPUOperator &gpuParent)
-                    : GPUOperator(logical, parent, gpuParent,
-                                  [&gpuParent]() mutable { return gpuParent.configuration(); })
-            { }
-
-            GPUOperator(const LightFieldReference &logical,
-                        PhysicalLightFieldReference &parent,
-                        GPUOperator &gpuParent,
+                        const execution::GPU &gpu,
                         const std::function<Configuration()> &output_configuration)
-                    : GPUOperator(logical, {parent}, gpuParent.gpu(), output_configuration)
+                    : GPUOperator(logical, {parent}, gpu, lazy<Configuration>{output_configuration})
             { }
 
         private:
@@ -206,14 +201,14 @@ namespace lightdb {
         class GPUUnaryOperator : public GPUOperator {
         public:
             template<typename T=PhysicalLightField>
-            T& parent() noexcept { return parents()[0].downcast<T>(); }
+            T& parent() noexcept { return parents().front().downcast<T>(); }
             downcast_iterator<Data>& iterator() noexcept { return iterator_; }
 
         protected:
             explicit GPUUnaryOperator(const LightFieldReference &logical,
-                                 PhysicalLightFieldReference &parent)
+                                      PhysicalLightFieldReference &parent)
                     : GPUOperator(logical, {parent}),
-                      iterator_([this]() { return iterators()[0].downcast<Data>(); })
+                      iterator_([this]() { return iterators().front().downcast<Data>(); })
             { }
 
             explicit GPUUnaryOperator(const LightFieldReference &logical,
@@ -221,14 +216,14 @@ namespace lightdb {
                                  const execution::GPU &gpu,
                                  const std::function<Configuration()> &output_configuration)
                     : GPUOperator(logical, {parent}, gpu, lazy(output_configuration)),
-                      iterator_([this]() { return iterators()[0].downcast<Data>(); })
+                      iterator_([this]() { return iterators().front().downcast<Data>(); })
             { }
 
             explicit GPUUnaryOperator(const LightFieldReference &logical,
                                       PhysicalLightFieldReference &parent,
                                       const std::function<Configuration()> &output_configuration)
                     : GPUOperator(logical, parent, output_configuration),
-                      iterator_([this]() { return iterators()[0].downcast<Data>(); })
+                      iterator_([this]() { return iterators().front().downcast<Data>(); })
             { }
 
         private:
