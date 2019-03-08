@@ -40,6 +40,10 @@ public:
     }
 
     void execute(const LightFieldReference &query) {
+        execute(std::vector<LightFieldReference>{query});
+    }
+
+    void execute(const std::vector<LightFieldReference> &query) {
         execute(optimization::Optimizer::instance().optimize(query));
     }
 
