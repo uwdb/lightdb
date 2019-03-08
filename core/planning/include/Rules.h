@@ -16,6 +16,7 @@
 #include "HomomorphicOperators.h"
 #include "SubsetOperators.h"
 #include "StoreOperators.h"
+#include "SaveOperators.h"
 #include "SinkOperators.h"
 #include "Rectangle.h"
 
@@ -62,8 +63,8 @@ namespace lightdb::optimization {
                    stream.codec() == Codec::hevc()) {
                     auto gpu = plan().environment().gpus()[0];
 
-                    auto &scan = plan().emplace<physical::ScanSingleFileToGPU>(logical, stream);
-                    auto decode = plan().emplace<physical::GPUDecode>(logical, scan, gpu);
+                    auto &scan = plan().emplace<physical::ScanSingleFileDecodeReader>(logical, stream);
+                    auto decode = plan().emplace<physical::GPUDecodeFromCPU>(logical, scan, gpu);
 
                     auto children = plan().children(plan().lookup(node));
                     if(children.size() > 1) {
@@ -90,8 +91,8 @@ namespace lightdb::optimization {
                     LOG(WARNING) << "Using first GPU and ignoring all others";
                     auto gpu = plan().environment().gpus()[0];
 
-                    auto &scan = plan().emplace<physical::ScanSingleFileToGPU>(logical, node.stream());
-                    auto decode = plan().emplace<physical::GPUDecode>(logical, scan, gpu);
+                    auto &scan = plan().emplace<physical::ScanSingleFileDecodeReader>(logical, node.stream());
+                    auto decode = plan().emplace<physical::GPUDecodeFromCPU>(logical, scan, gpu);
 
                     auto children = plan().children(plan().lookup(node));
                     if(children.size() > 1) {
@@ -160,7 +161,7 @@ namespace lightdb::optimization {
             for(const auto &parent: node->parents()) {
                 if(parent.is<logical::EncodedLightField>() &&
                    plan().has_physical_assignment(parent))
-                    return {plan().assignments(parent)[0]};
+                    return {plan().assignments(parent).front()};
             }
             return {};
         }
@@ -233,7 +234,8 @@ namespace lightdb::optimization {
                     const auto &assignments = plan().assignments(parent);
                     if (assignments.empty())
                         return false;
-                    physical_outputs.push_back(assignments[assignments.size() - 1]);
+                    //physical_outputs.push_back(assignments[assignments.size() - 1]);
+                    physical_outputs.push_back(assignments.back());
                 }
 
                 plan().emplace<physical::HomomorphicUniformAngularUnion>(plan().lookup(node), physical_outputs, 4, 4);
@@ -381,7 +383,7 @@ namespace lightdb::optimization {
                 return false;
 
             //TODO clean this up, shouldn't just be randomly picking last parent
-            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>() || physical_parents[0].is<physical::CPUtoGPUTransfer>()
+            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecodeFromCPU>() || physical_parents[0].is<physical::CPUtoGPUTransfer>()
                                     ? physical_parents[0]
                                     : physical_parents[physical_parents.size() - 1];
 
@@ -425,11 +427,11 @@ namespace lightdb::optimization {
                 return false;
 
             //TODO clean this up, shouldn't just be randomly picking last parent
-            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>() ||
+            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecodeFromCPU>() ||
                                     physical_parents[0].is<physical::CPUtoGPUTransfer>()
                                     ? physical_parents[0]
                                     : physical_parents[physical_parents.size() - 1];
-            auto is_discrete = (hardcoded_parent.is<physical::GPUDecode>() &&
+            auto is_discrete = (hardcoded_parent.is<physical::GPUDecodeFromCPU>() &&
                                 hardcoded_parent->logical().is<logical::ScannedLightField>()) ||
                                hardcoded_parent.is<physical::GPUDownsampleResolution>();
 
@@ -484,7 +486,7 @@ namespace lightdb::optimization {
                 return false;
 
             //TODO clean this up, shouldn't just be randomly picking last parent
-            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecode>() || physical_parents[0].is<physical::CPUtoGPUTransfer>()
+            auto hardcoded_parent = physical_parents[0].is<physical::GPUDecodeFromCPU>() || physical_parents[0].is<physical::CPUtoGPUTransfer>()
                                     ? physical_parents[0]
                                     : physical_parents[physical_parents.size() - 1];
             auto hardcoded_grandparent = hardcoded_parent->parents()[0];
@@ -682,8 +684,28 @@ namespace lightdb::optimization {
                 if(physical_parents.empty())
                     return false;
 
-                auto sink = Encode(node, physical_parents[0]);
+                auto sink = Encode(node, physical_parents.front());
                 plan().emplace<physical::Sink>(plan().lookup(node), sink);
+                return true;
+            }
+            return false;
+        }
+    };
+
+    class ChooseSave : public OptimizerRule {
+    public:
+        using OptimizerRule::OptimizerRule;
+
+        bool visit(const logical::SavedLightField &node) override {
+            if(!plan().has_physical_assignment(node)) {
+                auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                        node.parents().begin(), node.parents().end(),
+                        [this](auto &parent) { return plan().unassigned(parent); });
+
+                if(physical_parents.empty())
+                    return false;
+
+                plan().emplace<physical::SaveToFile>(plan().lookup(node), physical_parents.at(0));
                 return true;
             }
             return false;
@@ -701,21 +723,118 @@ namespace lightdb::optimization {
             for(auto &assignment: assignments) {
                 if(assignment.is<physical::GPUIdentity>() ||
                    assignment.is<physical::CPUIdentity>()) {
-                    auto parents = assignment->parents();
-                    auto children = plan().children(logical);
+                    auto &parents = assignment->parents();
 
-                    if(parents.size() == 1 && children.size() == 1) {
-                        auto parent = parents.at(0);
-                        auto child = children.at(0);
 
-                        assignment->parents().clear();
-                        for(auto &physical_child: plan().assignments(child))
-                            for(auto index = 0u; index < physical_child->parents().size(); index++)
-                                physical_child->parents()[index] = parent;
+                    CHECK_EQ(parents.size(), 1);
 
-                        return true;
-                    }
+                    auto parent = parents.at(0);
+
+                    parents.clear();
+                    plan().replace_assignments(assignment, parent);
+
+                    return true;
                 }
+            }
+
+            return false;
+        }
+    };
+
+    class RemoveDegenerateDecodeEncode: public OptimizerRule {
+    public:
+        using OptimizerRule::OptimizerRule;
+
+        bool IsParentADecodeOperator(const LightField &node) {
+            return node.parents().size() == 1 &&
+                   plan().assignments(node.parents().front()).size() == 1 &&
+                   plan().assignments(node.parents().front()).front().is<physical::GPUDecodeFromCPU>();
+        }
+
+        //TODO Uh, implement this
+        bool IsCompatibleCodecConfiguration() {
+            return true;
+        }
+
+        PhysicalLightFieldReference CreateIdentity(const LightFieldReference& logical, PhysicalLightFieldReference &parent) {
+            if(parent->device() == physical::DeviceType::CPU)
+                return plan().emplace<physical::CPUIdentity>(logical, parent);
+            else if(parent->device() == physical::DeviceType::GPU)
+                return plan().emplace<physical::GPUIdentity>(logical, parent);
+            else
+                throw InvalidArgumentError("Unsupported device type for identity creation", "parent");
+        }
+
+        bool visit(const logical::EncodedLightField &node) override {
+            auto logical = plan().lookup(node);
+
+            if(IsParentADecodeOperator(*logical) &&
+               IsCompatibleCodecConfiguration()) {
+                auto &encode = logical;
+                auto &decode = logical->parents().front();
+                auto &source = decode->parents().front();
+                auto out = plan().children(logical);
+
+                auto source_physical = plan().assignments(source).front();
+                auto decode_physical = plan().assignments(decode).front();
+                auto encode_physical = plan().assignments(logical).front();
+
+                auto decode_identity = CreateIdentity(decode, source_physical);
+                auto encode_identity = CreateIdentity(encode, decode_identity);
+
+                // Remove encode
+                plan().replace_assignments(encode_physical, encode_identity);
+
+                // Remove decode
+                plan().replace_assignments(decode_physical, decode_identity);
+
+                return true;
+            }
+
+            return false;
+        }
+    };
+
+    class ConvertLoadSaveToCopy: public OptimizerRule {
+    public:
+        using OptimizerRule::OptimizerRule;
+
+        bool IsPhysicalChildASaveOperator(const LightFieldReference &node) {
+            const auto children = plan().children(node);
+            return children.size() == 1 &&
+                   plan().assignments(children.front()).size() == 1 &&
+                   plan().assignments(children.front()).front().is<physical::ScanSingleFileDecodeReader>();
+        }
+
+        PhysicalLightFieldReference CreateIdentity(const LightFieldReference& logical, PhysicalLightFieldReference &parent) {
+            if(parent->device() == physical::DeviceType::CPU)
+                return plan().emplace<physical::CPUIdentity>(logical, parent);
+            else if(parent->device() == physical::DeviceType::GPU)
+                return plan().emplace<physical::GPUIdentity>(logical, parent);
+            else
+                throw InvalidArgumentError("Unsupported device type for identity creation", "parent");
+        }
+
+        bool visit(const logical::ExternalLightField &node) override {
+            auto logical = plan().lookup(node);
+
+            if(IsPhysicalChildASaveOperator(logical)) {
+                auto &scan = logical;
+
+                auto scan_physical = plan().assignments(scan).front();
+                auto save_physical =  plan().children(scan_physical).front();
+                auto in_physical = scan_physical->parents();
+                auto out_physical = plan().children(save_physical);
+
+                auto &save = save_physical->logical().downcast<logical::SavedLightField>();
+
+                auto copy_physical = plan().emplace<physical::CopyFile>(scan, save.filename(), in_physical);
+                auto save_identity = CreateIdentity(save, copy_physical);
+
+                plan().replace_assignments(save_physical, save_identity);
+                plan().replace_assignments(scan_physical, copy_physical);
+
+                return true;
             }
 
             return false;

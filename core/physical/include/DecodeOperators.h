@@ -9,32 +9,32 @@
 
 namespace lightdb::physical {
 
-class GPUDecode : public GPUUnaryOperator<CPUEncodedFrameData> {
+class GPUDecodeFromCPU : public GPUUnaryOperator<CPUEncodedFrameData> {
 public:
-    explicit GPUDecode(const LightFieldReference &logical,
-                       PhysicalLightFieldReference source,
-                       const execution::GPU &gpu)
-            : GPUDecode(logical,
-                        source,
-                        source.expect_downcast<EncodedVideoInterface>(),
-                        gpu,
-                        std::chrono::milliseconds(1u))
+    explicit GPUDecodeFromCPU(const LightFieldReference &logical,
+                              PhysicalLightFieldReference source,
+                              const execution::GPU &gpu)
+            : GPUDecodeFromCPU(logical,
+                               source,
+                               source.expect_downcast<EncodedVideoInterface>(),
+                               gpu,
+                               std::chrono::milliseconds(1u))
     { }
 
     template<typename Rep, typename Period>
-    explicit GPUDecode(const LightFieldReference &logical,
-                       PhysicalLightFieldReference source,
-                       const execution::GPU &gpu,
-                       const std::chrono::duration<Rep, Period> &poll_duration)
-            : GPUDecode(logical,
-                        source,
-                        source.expect_downcast<EncodedVideoInterface>(),
-                        gpu,
-                        poll_duration)
+    explicit GPUDecodeFromCPU(const LightFieldReference &logical,
+                              PhysicalLightFieldReference source,
+                              const execution::GPU &gpu,
+                              const std::chrono::duration<Rep, Period> &poll_duration)
+            : GPUDecodeFromCPU(logical,
+                               source,
+                               source.expect_downcast<EncodedVideoInterface>(),
+                               gpu,
+                               poll_duration)
     { }
 
-    GPUDecode(const GPUDecode &) = delete;
-    GPUDecode(GPUDecode &&) = default;
+    GPUDecodeFromCPU(const GPUDecodeFromCPU&) = delete;
+    GPUDecodeFromCPU(GPUDecodeFromCPU&&) = default;
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
         std::vector<GPUFrameReference> frames;
@@ -59,11 +59,11 @@ public:
 
 protected:
     template<typename Rep, typename Period>
-    explicit GPUDecode(const LightFieldReference &logical,
-                       const PhysicalLightFieldReference &source,
-                       EncodedVideoInterface &encoded,
-                       const execution::GPU &gpu,
-                       std::chrono::duration<Rep, Period> poll_duration)
+    explicit GPUDecodeFromCPU(const LightFieldReference &logical,
+                              const PhysicalLightFieldReference &source,
+                              EncodedVideoInterface &encoded,
+                              const execution::GPU &gpu,
+                              std::chrono::duration<Rep, Period> poll_duration)
             : GPUUnaryOperator(logical, source, gpu, [&encoded](){return encoded.configuration(); }),
               poll_duration_(poll_duration),
               decode_configuration_([&encoded, this]() {
@@ -73,7 +73,7 @@ protected:
               session_([this]() {
                   return VideoDecoderSession<downcast_iterator<CPUEncodedFrameData>>(
                           decoder_, iterator(), iterator().eos()); }) {
-        CHECK_EQ(source->device(), DeviceType::GPU);
+        CHECK_EQ(source->device(), DeviceType::CPU);
     }
 
 private:

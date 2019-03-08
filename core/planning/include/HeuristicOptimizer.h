@@ -24,8 +24,12 @@ namespace lightdb::optimization {
                      make_rule<ChooseSubquery>(*this),
                      make_rule<ChooseEncoders>(),
                      make_rule<ChooseStore>(),
+                     make_rule<ChooseSave>(),
                      make_rule<ChooseSink>(),
-                     make_rule<RemoveIdentities>()};
+                     make_rule<RemoveIdentities>(),
+                     make_rule<RemoveDegenerateDecodeEncode>(),
+                     make_rule<ConvertLoadSaveToCopy>(),
+                     };
         }
     };
 }
