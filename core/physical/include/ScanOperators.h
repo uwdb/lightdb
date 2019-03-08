@@ -5,11 +5,11 @@
 
 namespace lightdb::physical {
 
-class ScanSingleFileToGPU: public PhysicalLightField, public EncodedVideoInterface {
+class ScanSingleFileDecodeReader: public PhysicalLightField, public EncodedVideoInterface {
 public:
-    explicit ScanSingleFileToGPU(const LightFieldReference &logical, catalog::Stream stream)
-            : PhysicalLightField(logical, DeviceType::GPU),
-              stream_(stream),
+    explicit ScanSingleFileDecodeReader(const LightFieldReference &logical, catalog::Stream stream)
+            : PhysicalLightField(logical, DeviceType::CPU),
+              stream_(std::move(stream)),
               reader_([this]() { return FileDecodeReader(stream_.path()); })
     { }
 
