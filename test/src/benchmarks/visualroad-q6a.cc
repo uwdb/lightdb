@@ -75,7 +75,7 @@ TEST_F(Q6aTestFixture, testQ6aduplicate) {
     //print_plan(plan);
 
     //coordinator.save(plan, {duplicates, "out"});
-    FAIL();
+    GTEST_SKIP();
 }
 
 TEST_F(Q6aTestFixture, testQ6arandom) {
@@ -98,7 +98,7 @@ TEST_F(Q6aTestFixture, testQ6arandom) {
     //print_plan(plan);
 
     //coordinator.save(plan, {duplicates, "out"});
-    FAIL(); //TODO test works, but takes forever
+    GTEST_SKIP(); //TODO test works, but takes forever
 }
 
 TEST_F(Q6aTestFixture, testQ6avrdetrac) {
@@ -125,7 +125,7 @@ TEST_F(Q6aTestFixture, testQ6avrdetrac) {
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
     //coordinator.save(plan, {names.size(), "out"});
-    FAIL(); //TODO test works fine but is slow
+    GTEST_SKIP(); //TODO test works fine but is slow
 }
 
 TEST_F(Q6aTestFixture, testQ6auadetrac) {
@@ -152,7 +152,7 @@ TEST_F(Q6aTestFixture, testQ6auadetrac) {
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
     //coordinator.save(plan, {names.size(), "out"});
-    FAIL(); //TODO test works fine, disabled for perf
+    GTEST_SKIP(); //TODO test works fine, disabled for perf
 }
 
 TEST_F(Q6aTestFixture, testQ6a_scale1) {

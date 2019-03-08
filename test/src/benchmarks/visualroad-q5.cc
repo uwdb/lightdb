@@ -57,7 +57,7 @@ TEST_F(Q5TestFixture, testQ5duplicate) {
     //print_plan(plan);
 
     //coordinator.save(plan, {duplicates, "out"});
-    FAIL();
+    GTEST_SKIP();
 }
 
 TEST_F(Q5TestFixture, testQ5random) {
@@ -82,7 +82,7 @@ TEST_F(Q5TestFixture, testQ5random) {
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
     //coordinator.save(plan, {duplicates, "out"});
-    FAIL();
+    GTEST_SKIP();
 }
 
 TEST_F(Q5TestFixture, testQ5vrdetrac) {
@@ -116,7 +116,7 @@ TEST_F(Q5TestFixture, testQ5vrdetrac) {
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
     //coordinator.save(plan, {names.size(), "out"});
-    FAIL();
+    GTEST_SKIP();
 }
 
 TEST_F(Q5TestFixture, testQ5uadetrac) {
@@ -150,7 +150,7 @@ TEST_F(Q5TestFixture, testQ5uadetrac) {
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
     //coordinator.save(plan, {names.size(), "out"});
-    FAIL();
+    GTEST_SKIP();
 }
 
 TEST_F(Q5TestFixture, testQ5_scale1) {

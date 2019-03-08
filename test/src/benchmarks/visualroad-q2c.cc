@@ -52,7 +52,7 @@ TEST_F(Q2cTestFixture, testQ2cduplicate) {
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
     coordinator.save(plan, outputs);
-    //FAIL(); //TODO
+    //GTEST_SKIP(); //TODO
 }
 
 TEST_F(Q2cTestFixture, testQ2cunique) {
