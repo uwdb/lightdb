@@ -182,6 +182,7 @@ namespace lightdb {
                         PhysicalLightFieldReference &parent,
                         const std::function<Configuration()> &output_configuration)
                     : GPUOperator(logical, {parent}, parent.expect_downcast<GPUOperator>().gpu(), output_configuration)
+            { }
 
             GPUOperator(const LightFieldReference &logical,
                         PhysicalLightFieldReference &parent,
