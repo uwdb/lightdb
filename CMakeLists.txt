@@ -68,7 +68,6 @@ include_directories(SYSTEM ${FFMPEG_INCLUDE_DIRS})
 
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${FFMPEG_LIBRARIES})
 
-find_package(GTest)
 find_package (Glog REQUIRED)
 #find_package(ClangTidy)
 
@@ -76,14 +75,13 @@ find_package (Glog REQUIRED)
 #include_directories(${Bento4_INCLUDE_DIRS})
 #add_subdirectory(${Bento4_SOURCE_DIR})
 
-# Enable testing
-enable_testing()
-
 # Build LightDB library
 add_subdirectory(core)
 
-# Build unit tests
-if(GTEST_FOUND)
+# Enable testing
+option(ENABLE_TESTS "Enable tests" ON)
+if (${ENABLE_TESTS})
+  enable_testing()
   add_subdirectory(test)
 endif()
 

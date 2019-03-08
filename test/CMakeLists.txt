@@ -1,3 +1,7 @@
+enable_testing()
+
+find_package(GTest 1.9.1 REQUIRED)
+
 # Include GTest headers
 include_directories(${GTEST_INCLUDE_DIRS})
 
@@ -15,11 +19,10 @@ file(GLOB_RECURSE LIGHTDB_TEST_SOURCES "src/*.cc")
 # Build tests
 add_executable(lightdb_test EXCLUDE_FROM_ALL ${LIGHTDB_TEST_SOURCES})
 target_link_libraries(
-    lightdb_test   ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES}
+    lightdb_test   ${GTEST_BOTH_LIBRARIES}
     lightdb_static ${LIGHTDB_LIB_DEPENDENCIES}
 )
 add_test(lightdb_test lightdb_test)
-enable_testing()
 
 # Copy test files to output directory
 file(COPY resources DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
