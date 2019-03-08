@@ -75,7 +75,7 @@ namespace lightdb::optimization {
                 return this->accept(source); });
         }
 
-        Plan &plan() { return current_.value(); }
+        inline Plan &plan() { return current_.value(); }
     private:
         std::optional<std::reference_wrapper<Plan>> current_;
     };

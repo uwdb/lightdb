@@ -13,12 +13,11 @@ namespace lightdb::physical {
 
         CPUIdentity(const LightFieldReference &logical,
                     PhysicalLightFieldReference &parent)
-                : PhysicalLightField(logical, {parent}, physical::DeviceType::CPU)
-        { }
+                : PhysicalLightField(logical, {parent}, physical::DeviceType::CPU) { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
-            if(iterators()[0] != iterators()[0].eos()) {
-                return iterators()[0]++;
+            if(iterators().front() != iterators().front().eos()) {
+                return iterators().front()++;
             } else
                 return {};
         }
