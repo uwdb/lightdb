@@ -1,58 +1,84 @@
-//#include "Operators.h"
-#include "PhysicalOperators.h"
+#include "HeuristicOptimizer.h"
+#include "Ffmpeg.h"
+#include "TestResources.h"
+#include "AssertVideo.h"
+#include "AssertTime.h"
 #include <gtest/gtest.h>
-#include <AssertVideo.h>
 
 using namespace lightdb;
+using namespace lightdb::logical;
+using namespace lightdb::optimization;
+using namespace lightdb::catalog;
+using namespace lightdb::execution;
+using namespace lightdb::utility::ffmpeg;
 using namespace std::chrono;
 
 class DegenerateSelectionBenchmarkTestFixture : public testing::Test {
 public:
     DegenerateSelectionBenchmarkTestFixture()
-        : name("result")
-    { }
-
-    const char *name;
-
-    //TODO fix
-    double temptodouble(const rational &value) {
-        return (double)value.numerator() / value.denominator();
+            : catalog(Resources.catalog_name),
+              path(std::filesystem::absolute(LIGHTDB_BENCHMARK_DATASET_PATH)) {
+        Catalog::instance(catalog);
+        Optimizer::instance<HeuristicOptimizer>(LocalEnvironment());
     }
 
-    void testDegenerateSelect(std::string dataset,
-                    size_t size, size_t frames,
-                    size_t height, size_t width) {
-        auto source = std::string("../../benchmarks/datasets/") + dataset + '/' + dataset + std::to_string(size) + "K.h264";
+    void testDegenerateTimeSelect(const std::string &dataset) {
+        auto filename = path / dataset;
+        auto configuration = GetStreamConfiguration(filename, 0, true);
+        auto frames = COUNT_FRAMES(filename);
 
-        auto start = steady_clock::now();
+        auto query = Load(filename).Select(TemporalRange::limits()).Encode().Save(Resources.out.h264);
 
-/*        Decode(source)
-                >> Select(Volume{Point3D::zero(), {0, 20}, ThetaRange::limits(), PhiRange::limits()})
-                >> Encode("h264")
-                >> Store(name);*/
+        LOG_DURATION(dataset,
+            ASSERT_MSECS(
+                Coordinator().execute(query),
+                400u));
 
-        LOG(INFO) << source << " time:" << ::duration_cast<milliseconds>(steady_clock::now() - start).count() << "ms";
-
-/*        EXPECT_VIDEO_VALID(name);
-        EXPECT_VIDEO_FRAMES(name, frames);
-        EXPECT_VIDEO_RESOLUTION(name, height, width);
-        EXPECT_EQ(remove(name), 0);*/
-        FAIL();
+        EXPECT_VIDEO_VALID(Resources.out.h264);
+        EXPECT_VIDEO_FRAMES(Resources.out.h264, frames);
+        EXPECT_VIDEO_RESOLUTION(Resources.out.h264, configuration.height, configuration.width);
+        EXPECT_EQ(remove(Resources.out.h264), 0);
     }
 
+    void testDegenerateAngularSelect(const std::string &dataset) {
+        auto filename = path / dataset;
+        auto configuration = GetStreamConfiguration(filename, 0, true);
+        auto frames = COUNT_FRAMES(filename);
+
+        auto query = Load(filename).Select(ThetaRange::limits()).Encode().Save(Resources.out.h264);
+
+        LOG_DURATION(dataset,
+                     ASSERT_MSECS(
+                             Coordinator().execute(query),
+                             400u));
+
+        EXPECT_VIDEO_VALID(Resources.out.h264);
+        EXPECT_VIDEO_FRAMES(Resources.out.h264, frames);
+        EXPECT_VIDEO_RESOLUTION(Resources.out.h264, configuration.height, configuration.width);
+        EXPECT_EQ(remove(Resources.out.h264), 0);
+    }
+
+protected:
+    Catalog catalog;
+    const std::filesystem::path path;
 };
 
-TEST_F(DegenerateSelectionBenchmarkTestFixture, testSelect_1K) {
-    testDegenerateSelect("timelapse", 1, 2701, 512, 960);
+TEST_F(DegenerateSelectionBenchmarkTestFixture, testSelectTime_1K) {
+    testDegenerateTimeSelect("timelapse/timelapse1K.h264");
 }
 
-TEST_F(DegenerateSelectionBenchmarkTestFixture, testSelect_2K) {
-    testDegenerateSelect("timelapse", 2, 2701, 1024, 1920);
+TEST_F(DegenerateSelectionBenchmarkTestFixture, testSelectTime_2K) {
+    testDegenerateTimeSelect("timelapse/timelapse2K.h264");
 }
 
-TEST_F(DegenerateSelectionBenchmarkTestFixture, testSelect_4K) {
-    testDegenerateSelect("timelapse", 4, 2701, 2048, 3840);
+TEST_F(DegenerateSelectionBenchmarkTestFixture, testSelectTime_4K) {
+    testDegenerateTimeSelect("timelapse/timelapse4K.h264");
 }
+
+TEST_F(DegenerateSelectionBenchmarkTestFixture, testSelectAngle_4K) {
+    testDegenerateAngularSelect("timelapse/timelapse4K.h264");
+}
+
 /*
 TEST_F(DegenerateSelectionBenchmarkTestFixture, testSelect_2K) {
     testSelect("timelapse", 2, 2730, 1024, 1920, {0, temptodouble(pi_div_2)}, {0, temptodouble(pi_div_2)});
