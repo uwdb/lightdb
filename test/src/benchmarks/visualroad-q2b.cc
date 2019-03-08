@@ -18,6 +18,7 @@ public:
               visualroad("visualroad"),
               uadetrac("ua-detrac") {
         Catalog::instance(vrdetrac);
+        Optimizer::instance<HeuristicOptimizer>(LocalEnvironment());
     }
 
 protected:
@@ -46,18 +47,9 @@ TEST_F(Q2bTestFixture, testQ2bduplicate) {
     auto mapped = Scan(name).Map(blur);
 
     for(auto i = 0u; i < duplicates; i++)
-        sinks.emplace_back(mapped
-                     .Store(std::string(name) + '-' + std::to_string(i)));
+        sinks.emplace_back(mapped.Store(std::string(name) + '-' + std::to_string(i)));
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize(sinks);
-
-    //print_plan(plan);
-
-    //Temporarily disabled, was core dumping
-    //coordinator.save(plan, {duplicates, "out"});
-    GTEST_SKIP(); //TODO
+    Coordinator().execute(sinks);
 }
 
 TEST_F(Q2bTestFixture, testQ2buadetrac) {
@@ -80,14 +72,7 @@ TEST_F(Q2bTestFixture, testQ2buadetrac) {
         sinks.emplace_back(Scan(names[i]).Map(blur)
                                 .Store(std::string(names[i]) + '-' + std::to_string(i)));
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize(sinks);
-
-    //print_plan(plan);
-
-    //coordinator.save(plan, {names.size(), "out"});
-    GTEST_SKIP(); //TODO
+    Coordinator().execute(sinks);
 }
 
 TEST_F(Q2bTestFixture, testQ2bvrdetrac) {
