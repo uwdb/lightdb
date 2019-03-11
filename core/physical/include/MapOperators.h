@@ -14,7 +14,7 @@ public:
     GPUMap(const LightFieldReference &logical,
            PhysicalLightFieldReference &parent,
            const functor::unaryfunctor &transform)
-            : GPUMap(logical, parent, [this]() -> Configuration { return this->parent<GPUOperator>().configuration(); },
+            : GPUMap(logical, parent, [this]() -> Configuration { return this->parent<GPUOperator>().configuration2(); },
                      transform)
     { }
 

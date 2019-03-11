@@ -6,6 +6,7 @@
 #include "Environment.h"
 #include "MaterializedLightField.h"
 #include "lazy.h"
+#include "set.h"
 #include "functional.h"
 #include <tuple>
 #include <stdexcept>
@@ -142,103 +143,36 @@ namespace lightdb {
         lazy<std::vector<iterator>> iterators_;
     };
 
+    class FrameLightField: public PhysicalLightField {
+    public:
+        inline const Configuration &configuration2() noexcept { return configuration_.value(); }
 
-    namespace physical {
-        class GPUOperator: public PhysicalLightField {
-        public:
-            inline const execution::GPU& gpu() const { return gpu_; }
-            inline const Configuration& configuration() { return output_configuration_; }
+    protected:
+        explicit FrameLightField(const LightFieldReference &logical, const physical::DeviceType deviceType,
+                                 const Configuration &configuration)
+                : FrameLightField(logical, std::vector<PhysicalLightFieldReference>{}, deviceType,
+                                  lazy<Configuration>{[configuration]() { return configuration; }})
+        { }
+        explicit FrameLightField(const LightFieldReference &logical, const physical::DeviceType deviceType,
+                                 const lazy<Configuration> &configuration)
+                : FrameLightField(logical, std::vector<PhysicalLightFieldReference>{}, deviceType, configuration)
+        { }
+        /*explicit PhysicalLightField(const LightFieldReference &logical,
+                                    const std::vector<PhysicalLightFieldReference> &parents,
+                                    const physical::DeviceType deviceType)
+                                    : PhysicalLightField(logical, parents, deviceType,
+                                                         functional::single(parents)->configuration_) { }
+        */explicit FrameLightField(const LightFieldReference &logical,
+                                   const std::vector<PhysicalLightFieldReference> &parents,
+                                   const physical::DeviceType deviceType,
+                                   lazy<Configuration> configuration)
+                : PhysicalLightField(logical, parents, deviceType),
+                  configuration_(std::move(configuration))
+        { }
 
-            GPUContext& context() { return context_; }
-            VideoLock& lock() {return lock_; }
-
-        protected:
-            GPUOperator(const LightFieldReference &logical,
-                        const std::vector<PhysicalLightFieldReference> &parents,
-                        const execution::GPU &gpu,
-                        const std::function<Configuration()> &output_configuration)
-                    : GPUOperator(logical, parents, gpu, lazy(output_configuration))
-            { }
-
-            GPUOperator(const LightFieldReference &logical,
-                        std::vector<PhysicalLightFieldReference> parents,
-                        execution::GPU gpu,
-                        lazy<Configuration> output_configuration)
-                    : PhysicalLightField(logical, std::move(parents), DeviceType::GPU),
-                      gpu_(gpu),
-                      context_([this]() { return this->gpu().context(); }),
-                      lock_([this]() { return VideoLock(context()); }),
-                      output_configuration_(std::move(output_configuration))
-            { }
-
-            GPUOperator(const LightFieldReference &logical,
-                        PhysicalLightFieldReference &parent)
-                    : GPUOperator(logical, {parent},
-                                  parent.expect_downcast<GPUOperator>().gpu(),
-                                  [this]() { return parents().front().expect_downcast<GPUOperator>().configuration(); })
-            { }
-
-            GPUOperator(const LightFieldReference &logical,
-                        PhysicalLightFieldReference &parent,
-                        const std::function<Configuration()> &output_configuration)
-                    : GPUOperator(logical, {parent}, parent.expect_downcast<GPUOperator>().gpu(), output_configuration)
-            { }
-
-            GPUOperator(const LightFieldReference &logical,
-                        PhysicalLightFieldReference &parent,
-                        const execution::GPU &gpu,
-                        const std::function<Configuration()> &output_configuration)
-                    : GPUOperator(logical, {parent}, gpu, lazy<Configuration>{output_configuration})
-            { }
-
-        private:
-            execution::GPU gpu_;
-            lazy<GPUContext> context_;
-            lazy<VideoLock> lock_;
-            lazy<Configuration> output_configuration_;
-        };
-
-        template<typename Data>
-        class GPUUnaryOperator : public GPUOperator {
-        public:
-            template<typename T=PhysicalLightField>
-            T& parent() noexcept { return parents().front().downcast<T>(); }
-            downcast_iterator<Data>& iterator() noexcept { return iterator_; }
-
-        protected:
-            explicit GPUUnaryOperator(const LightFieldReference &logical,
-                                      PhysicalLightFieldReference &parent)
-                    : GPUOperator(logical, {parent}),
-                      iterator_([this]() { return iterators().front().downcast<Data>(); })
-            { }
-
-            explicit GPUUnaryOperator(const LightFieldReference &logical,
-                                 const PhysicalLightFieldReference &parent,
-                                 const execution::GPU &gpu,
-                                 const std::function<Configuration()> &output_configuration)
-                    : GPUOperator(logical, {parent}, gpu, lazy(output_configuration)),
-                      iterator_([this]() { return iterators().front().downcast<Data>(); })
-            { }
-
-            explicit GPUUnaryOperator(const LightFieldReference &logical,
-                                      PhysicalLightFieldReference &parent,
-                                      const std::function<Configuration()> &output_configuration)
-                    : GPUOperator(logical, parent, output_configuration),
-                      iterator_([this]() { return iterators().front().downcast<Data>(); })
-            { }
-
-        private:
-            lazy<PhysicalLightField::downcast_iterator<Data>> iterator_;
-        };
-
-        class EncodedVideoInterface {
-        public:
-            virtual ~EncodedVideoInterface() = default;
-
-            virtual const Codec &codec() const = 0;
-            virtual const Configuration &configuration() = 0;
-        };
-    } // namespace physical
+    private:
+        lazy<Configuration> configuration_;
+    };
 } // namespace lightdb
 
 #endif //LIGHTDB_PHYSICALOPERATORS_H

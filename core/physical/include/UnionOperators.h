@@ -13,9 +13,9 @@ public:
                           std::vector<PhysicalLightFieldReference> &parents,
                           const unsigned int rows, const unsigned int columns)
             : GPUOperator(logical, parents,
-                          parents[0].downcast<GPUOperator>().gpu(),
+                          parents.front().downcast<GPUOperator>().gpu(),
                           [this, rows, columns]() {
-                              return create_configuration(rows, columns); }),
+                              return create_configurationTODOremove(rows, columns); }),
               rows_(rows),
               columns_(columns),
               frames_([this] { return functional::make_union_iterator<GPUFrameReference>(
@@ -26,19 +26,28 @@ public:
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if(!any_parent_eos()) {
-            GPUDecodedFrameData output{configuration()};
             auto available_frames = std::max(frames_->available(), 1ul);
+            //GPUDecodedFrameData output{configuration()};
+            //std::unique_ptr<GPUDecodedFrameData> output; //{frames_.value()};
+            GPUDecodedFrameData output{create_configuration2()};
 
             for(auto i = 0u; i < available_frames; i++) {
                 auto frames = frames_.value()++;
-                auto unioned = GPUFrameReference::make<CudaFrame>(configuration().height, configuration().width, frames[0]->type());
+                //auto unioned = GPUFrameReference::make<CudaFrame>(configuration().height, configuration().width, frames[0]->type());
+                auto unioned = GPUFrameReference::make<CudaFrame>(
+                        frames.front()->height() * rows_,
+                        frames.front()->width() * columns_,
+                        frames.front()->type());
                 auto &cuda = unioned.downcast<CudaFrame>();
 
                 for(auto column = 0u; column < columns_; column++)
                     for(auto row = 0u; row < rows_; row++)
                         cuda.copy(lock(), *frames[row * columns_ + column]->cuda(),
-                                  configuration().height / rows_,
-                                  configuration().width / columns_);
+                                  create_configuration2().height / rows_,
+                                  create_configuration2().width / columns_);
+
+                //if(output == nullptr)
+                  //  output = std::make_unique(frames.front()->);
 
                 output.frames().emplace_back(GPUFrameReference{unioned});
             }
@@ -49,12 +58,31 @@ public:
     }
 
 private:
-    Configuration create_configuration(const unsigned int rows, const unsigned int columns) {
+    Configuration create_configurationTODOremove(const unsigned int rows, const unsigned int columns) {
         CHECK(!parents().empty());
 
-        const auto &configuration = parents()[0].downcast<GPUOperator>().configuration();
+        const auto &configuration = parents()[0].downcast<GPUOperator>().configuration2();
         return Configuration{configuration.width * columns, configuration.height * rows, 0, 0,
                              configuration.bitrate, configuration.framerate, configuration.offset};
+    }
+
+    Configuration create_configuration2() {
+        CHECK(!parents().empty());
+
+        printf("Broken\n");
+        assert(0);
+        auto &current = frames_.value().iterators();
+        auto first = current.front();
+        const Configuration c = (*first.iterator()).configuration();
+        auto height = std::accumulate(current.begin(), current.end(), 0u,
+                                      [](auto sum, auto &data) { return sum; });// + (*data.iterator()).configuration().height; });
+        auto width = std::accumulate(current.begin(), current.end(), 0u,
+                                     [](auto sum, auto &data) { return sum; });// + (*data.iterator()).configuration().width; });
+
+        return Configuration{width, height, 0, 0,
+                             c.bitrate,
+                             c.framerate,
+                             c.offset};
     }
 
     const unsigned int rows_, columns_;
@@ -73,7 +101,7 @@ public:
                              std::vector<PhysicalLightFieldReference> &parents)
             : GPUOperator(logical, parents,
                           parents.back().downcast<GPUOperator>().gpu(),
-                          [this]() { return this->parents().back().downcast<GPUOperator>().configuration(); }),
+                          [this]() { return this->parents().back().downcast<GPUOperator>().configuration2(); }),
               transform_([this]() { return Transform(context()); }),
               groups_(lazy<PhysicalLightField::iterator*>{[this]() { return &iterators()[0]; }})
     { }
@@ -83,7 +111,7 @@ public:
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if(!any_parent_eos()) {
             auto video = (iterators().back()++).downcast<GPUDecodedFrameData>();
-            GPUDecodedFrameData output{configuration()};
+            GPUDecodedFrameData output{video.configuration()};
 
             for(auto &frame: video.frames()) {
                 auto values = groups_++;

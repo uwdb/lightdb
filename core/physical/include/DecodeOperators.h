@@ -52,7 +52,7 @@ public:
                     frames.size() <= decode_configuration_->output_surfaces / 4);
 
         if(!frames.empty() || !decoder_->frame_queue().isComplete())
-            return std::optional<physical::MaterializedLightFieldReference>{GPUDecodedFrameData(configuration(), frames)};
+            return std::optional<physical::MaterializedLightFieldReference>{GPUDecodedFrameData(decode_configuration_, frames)};
         else
             return std::nullopt;
     }
@@ -67,7 +67,7 @@ protected:
             : GPUUnaryOperator(logical, source, gpu, [&encoded](){return encoded.configuration(); }),
               poll_duration_(poll_duration),
               decode_configuration_([&encoded, this]() {
-                  return DecodeConfiguration{configuration(), encoded.codec()}; }),
+                  return DecodeConfiguration{encoded.configuration(), encoded.codec()}; }),
               queue_([this]() { return CUVIDFrameQueue(lock()); }),
               decoder_([this]() { return CudaDecoder(decode_configuration_, queue_, lock()); }),
               session_([this]() {

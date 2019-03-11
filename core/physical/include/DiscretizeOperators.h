@@ -28,13 +28,13 @@ public:
 
     std::optional<physical::MaterializedLightFieldReference> read() override {
         if(iterator() != iterator().eos()) {
-            GPUDecodedFrameData output{configuration()};
             auto input = iterator()++;
+            GPUDecodedFrameData output{input.configuration()};
 
             for(auto &frame: input.frames())
             {
                 auto in = frame->cuda();
-                CudaFrameReference out = CudaFrameReference::make<CudaFrame>(configuration().height, configuration().width, NV_ENC_PIC_STRUCT_FRAME);
+                CudaFrameReference out = CudaFrameReference::make<CudaFrame>(*frame); //configuration().height, configuration().width, NV_ENC_PIC_STRUCT_FRAME);
 
                 scaler_->nv12().scale(lock(), in, out);
 
@@ -61,7 +61,8 @@ private:
     }
     Configuration downsampled_configuration()
     {
-        const auto &base = parent<GPUOperator>().configuration();
+        //const auto &base = parent<GPUOperator>().configuration();
+        const auto &base = (*iterator()).configuration();
         const auto &theta_geometry = get_geometry(Dimension::Theta);
         const auto &phi_geometry = get_geometry(Dimension::Phi);
         auto theta_samples = theta_geometry.has_value() && theta_geometry.value().size().has_value()

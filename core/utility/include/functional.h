@@ -1,10 +1,18 @@
 #ifndef LIGHTDB_FUNCTIONAL_H
 #define LIGHTDB_FUNCTIONAL_H
 
+#include <glog/logging.h>
 #include <iterator>
 #include <algorithm>
 
 namespace lightdb::functional {
+    template<typename T, template<typename> typename TContainer>
+    inline T single(TContainer<T> container) {
+        auto begin = std::begin(container);
+        assert(begin + 1 == std::end(container));
+        return *begin;
+    }
+
     template<typename T, typename Container, typename InputIterator, typename UnaryFunction>
     Container transform(InputIterator begin, InputIterator end, UnaryFunction f)
     {
@@ -103,6 +111,8 @@ namespace lightdb::functional {
         }
 
         size_t available() const { return std::size(container_); }
+        //const Input &iterator() const { return iterator_; }
+        Input &iterator() { return iterator_; }
 
     private:
         Input iterator_;
@@ -141,6 +151,8 @@ namespace lightdb::functional {
                            [](auto &it) { return *it; });
             return values;
         }
+
+        const Inputs &iterators() const { return iterators_; }
 
         size_t available() const {
             auto available = functional::transform<size_t>(std::begin(iterators_), std::end(iterators_),

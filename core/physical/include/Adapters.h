@@ -2,27 +2,51 @@
 #define LIGHTDB_ADAPTERS_H
 
 #include "LightField.h"
-#include "PhysicalOperators.h"
+#include "GPUOperators.h"
 #include "MaterializedLightField.h"
 #include <queue>
 #include <mutex>
 
 namespace lightdb::physical {
 
+class PhysicalToLogicalLightFieldAdapter: public LightField {
+public:
+    explicit PhysicalToLogicalLightFieldAdapter(const PhysicalLightFieldReference &physical)
+            : LightField({},
+                         physical->logical()->volume(),
+                         physical->logical()->colorSpace()),
+              physical_(physical)
+    { }
+
+    PhysicalToLogicalLightFieldAdapter(PhysicalToLogicalLightFieldAdapter &) = default;
+    PhysicalToLogicalLightFieldAdapter(const PhysicalToLogicalLightFieldAdapter &) = default;
+    PhysicalToLogicalLightFieldAdapter(PhysicalToLogicalLightFieldAdapter &&) = default;
+
+    ~PhysicalToLogicalLightFieldAdapter() override = default;
+
+    void accept(LightFieldVisitor& visitor) override { visitor.visit(*this); }
+
+    PhysicalLightFieldReference source() { return physical_; }
+
+private:
+    PhysicalLightFieldReference physical_;
+};
+
+
     class MaterializedToPhysicalOperatorAdapter: public PhysicalLightField {
     public:
-        explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference logical,
+        explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference &logical,
                                                        const MaterializedLightFieldReference &source)
                 : MaterializedToPhysicalOperatorAdapter(logical, source, {})
         { }
 
-        explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference logical,
+        explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference &logical,
                                                        const MaterializedLightFieldReference &source,
                                                        const PhysicalLightFieldReference &parent)
                 : MaterializedToPhysicalOperatorAdapter(logical, source, std::vector<PhysicalLightFieldReference>{parent})
         { }
 
-        explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference logical,
+        explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference &logical,
                                                        const MaterializedLightFieldReference &source,
                                                        const std::vector<PhysicalLightFieldReference> &parents)
                 : PhysicalLightField(logical,
@@ -49,30 +73,6 @@ namespace lightdb::physical {
         MaterializedLightFieldReference source_;
         bool read_;
     };
-
-
-class PhysicalToLogicalLightFieldAdapter: public LightField {
-public:
-    explicit PhysicalToLogicalLightFieldAdapter(const PhysicalLightFieldReference &physical)
-            : LightField({},
-                         physical->logical()->volume(),
-                         physical->logical()->colorSpace()),
-              physical_(physical)
-    { }
-
-    PhysicalToLogicalLightFieldAdapter(PhysicalToLogicalLightFieldAdapter &) = default;
-    PhysicalToLogicalLightFieldAdapter(const PhysicalToLogicalLightFieldAdapter &) = default;
-    PhysicalToLogicalLightFieldAdapter(PhysicalToLogicalLightFieldAdapter &&) = default;
-
-    ~PhysicalToLogicalLightFieldAdapter() override = default;
-
-    void accept(LightFieldVisitor& visitor) override { visitor.visit(*this); }
-
-    PhysicalLightFieldReference source() { return physical_; }
-
-private:
-    PhysicalLightFieldReference physical_;
-};
 
 /*
  * Converts a GPU-based physical light field into one that implements GPUOperator.
@@ -113,7 +113,7 @@ private:
             : GPUOperator(source->logical(),
                           parents,
                           op.gpu(),
-                          [&op]() { return op.configuration(); }),
+                          [&op]() { return op.configuration2(); }),
               source_(source)
     { }
 

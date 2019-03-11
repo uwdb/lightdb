@@ -2,7 +2,7 @@
 #define LIGHTDB_PLAN_H
 
 #include "LightField.h"
-#include "PhysicalOperators.h"
+#include "GPUOperators.h"
 #include "Environment.h"
 #include "set.h"
 

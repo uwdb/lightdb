@@ -15,7 +15,7 @@ public:
                    PhysicalLightFieldReference &parent,
                    const interpolation::InterpolatorReference &interpolator)
             : GPUInterpolate(logical, parent,
-                             [this]() -> Configuration { return this->parent<GPUOperator>().configuration(); },
+                             [this]() -> Configuration { return this->parent<GPUOperator>().configuration2(); },
                              interpolator)
     { }
 

@@ -5,10 +5,10 @@
 
 namespace lightdb::physical {
 
-class ScanSingleFileDecodeReader: public PhysicalLightField, public EncodedVideoInterface {
+class ScanSingleFileDecodeReader: public FrameLightField, public EncodedVideoInterface {
 public:
     explicit ScanSingleFileDecodeReader(const LightFieldReference &logical, catalog::Stream stream)
-            : PhysicalLightField(logical, DeviceType::CPU),
+            : FrameLightField(logical, DeviceType::CPU, stream.configuration()),
               stream_(std::move(stream)),
               reader_([this]() { return FileDecodeReader(stream_.path()); })
     { }
@@ -30,10 +30,10 @@ private:
 };
 
 template<size_t Size=131072>
-class ScanSingleFile: public PhysicalLightField, public EncodedVideoInterface {
+class ScanSingleFile: public FrameLightField, public EncodedVideoInterface {
 public:
     explicit ScanSingleFile(const LightFieldReference &logical, catalog::Stream stream)
-            : PhysicalLightField(logical, DeviceType::CPU),
+            : FrameLightField(logical, DeviceType::CPU, stream.configuration()),
               stream_(std::move(stream)),
               buffer_(Size, 0),
               reader_([this]() { return std::ifstream(stream_.path()); })
