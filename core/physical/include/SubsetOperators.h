@@ -19,7 +19,7 @@ class GPUAngularSubframe: public GPUUnaryOperator {
 public:
     explicit GPUAngularSubframe(const LightFieldReference &logical,
                                 PhysicalLightFieldReference &parent)
-            : GPUUnaryOperator(logical, parent, runtime::make<Runtime>(*this)) //, [this]() { return GetConfigurationTODOremove(); })
+            : GPUUnaryOperator(logical, parent, runtime::make<Runtime>(*this))
     { }
 
 private:
@@ -33,15 +33,12 @@ private:
             if (iterator() != iterator().eos()) {
                 auto v = iterator()++;
                 return GPUDecodedFrameData{GetConfiguration(v.configuration()), v.frames()};
-                //return iterator()++;
             } else
                 return {};
         }
 
     private:
         Configuration GetConfiguration(const Configuration &base) {
-            //const auto &base = parent<GPUOperator>().configuration();
-
             if(logical()->volume().bounding().theta() == physical().parent().logical()->volume().bounding().theta() &&
                logical()->volume().bounding().phi() == physical().parent().logical()->volume().bounding().phi())
                 return base;
@@ -111,9 +108,8 @@ private:
                 std::vector<GPUFrameReference> output;
 
                 for (const auto &frame: decoded.frames()) {
-                    output.emplace_back(GPUFrameReference::make<CudaFrame>(*frame)); //configuration().height, configuration().width, NV_ENC_PIC_STRUCT_FRAME));
+                    output.emplace_back(GPUFrameReference::make<CudaFrame>(*frame));
                     output.back().downcast<CudaFrame>().copy(lock(), *frame->cuda(), decoded.configuration().offset.top, decoded.configuration().offset.left);
-                    //output.back().downcast<CudaFrame>().copy(lock(), *frame->cuda(), configuration().offset.top, configuration().offset.left);
                 }
 
                 return GPUDecodedFrameData(decoded.configuration(), output);
@@ -185,27 +181,20 @@ private:
 
     private:
         unsigned long DefaultDelay() {
-            //const auto &configuration = configuration();
-            //const auto &configuration = (*iterator()).configuration();
             const auto delay = logical()->volume().bounding().t().start() - physical().parent().logical()->volume().bounding().t().start();
             const auto delay_frames = static_cast<unsigned long>(configuration().framerate * delay);
-            //const auto delay_frames = static_cast<unsigned long>(configuration().framerate * delay);
 
             CHECK_GE(delay, 0);
             CHECK_EQ(static_cast<double>(configuration().framerate * delay), delay_frames);
-            //CHECK_EQ(static_cast<double>(configuration().framerate * delay), delay_frames);
 
             return delay_frames;
         }
 
         unsigned long DefaultPending() {
-            //const auto &configuration = (*iterator()).configuration();
             const auto duration = logical()->volume().bounding().t().magnitude();
             const auto pending_frames = static_cast<unsigned long>(configuration().framerate * duration);
-            //const auto pending_frames = static_cast<unsigned long>(configuration().framerate * duration);
 
             CHECK_GE(duration, 0);
-            //CHECK_EQ(static_cast<double>(configuration().framerate * duration), pending_frames);
             CHECK_EQ(static_cast<double>(configuration().framerate * duration), pending_frames);
 
             LOG_IF(WARNING, pending_frames == 0) << "Subset op has zero pending frames; optimizer should have just omitted it";

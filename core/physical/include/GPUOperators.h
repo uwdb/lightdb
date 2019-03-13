@@ -7,49 +7,31 @@ namespace lightdb::physical {
     class GPUOperator: public FrameLightField {
     public:
         inline const execution::GPU& gpu() const { return gpu_; }
-        //inline const Configuration& configuration() { return output_configuration_; }
 
         template<typename Physical=GPUOperator>
         class Runtime: public FrameLightField::Runtime<Physical> {
         public:
-            explicit Runtime(Physical &physical) //, Configuration configuration)
+            explicit Runtime(Physical &physical)
                 : FrameLightField::Runtime<Physical>(physical),
                   context_(physical.gpu().context()),
                   lock_(context_)
-                  //context_(physical.context_),
-                  //lock_(physical.lock_)
-                  //output_configuration_(configuration)
             { }
 
-//            const Configuration &configuration() const { return configuration; }
             GPUContext& context() { return context_; }
             VideoLock& lock() {return lock_; }
 
         private:
-            GPUContext context_;  //TODO remove ref
-            VideoLock lock_; //TODO remove ref
-            //Configuration output_configuration_;
+            GPUContext context_;
+            VideoLock lock_;
         };
 
     protected:
-        /*GPUOperator(const LightFieldReference &logical,
-                    const std::vector<PhysicalLightFieldReference> &parents,
-                    const lazy<runtime::RuntimeReference> &runtime,
-                    const execution::GPU &gpu)
-                    //const std::function<Configuration()> &output_configuration)
-                : GPUOperator(logical, parents, runtime, gpu) //, lazy(output_configuration))
-        { }*/
-
         GPUOperator(const LightFieldReference &logical,
                     const std::vector<PhysicalLightFieldReference> &parents,
                     const lazy<runtime::RuntimeReference> &runtime,
                     execution::GPU gpu)
-                    //lazy<Configuration> output_configuration)
-                : FrameLightField(logical, parents, DeviceType::GPU, runtime), //, output_configuration),
+                : FrameLightField(logical, parents, DeviceType::GPU, runtime),
                   gpu_(gpu)
-                  //context_([this]() { return this->gpu().context(); }),
-                  //lock_([this]() { return VideoLock(context_); }),
-                  //output_configuration_(std::move(output_configuration))
         { }
 
         GPUOperator(const LightFieldReference &logical,
@@ -57,34 +39,17 @@ namespace lightdb::physical {
                     const lazy<runtime::RuntimeReference> &runtime)
                 : GPUOperator(logical, {parent}, runtime,
                               parent.expect_downcast<GPUOperator>().gpu())
-                              //[this]() { return parents().front().expect_downcast<GPUOperator>().configuration2(); })
         { }
-
-/*        GPUOperator(const LightFieldReference &logical,
-                    PhysicalLightFieldReference &parent,
-                    const lazy<runtime::RuntimeReference> &runtime)
-                    //const std::function<Configuration()> &output_configuration)
-                : GPUOperator(logical, {parent}, runtime, parent.expect_downcast<GPUOperator>().gpu()) //, output_configuration)
-        { }*/
 
         GPUOperator(const LightFieldReference &logical,
                     PhysicalLightFieldReference &parent,
                     const lazy<runtime::RuntimeReference> &runtime,
                     const execution::GPU &gpu)
-                    //const std::function<Configuration()> &output_configuration)
-                : GPUOperator(logical, std::vector<PhysicalLightFieldReference>{parent}, runtime, gpu) //, lazy<Configuration>{output_configuration})
+                : GPUOperator(logical, std::vector<PhysicalLightFieldReference>{parent}, runtime, gpu)
         { }
-
-        //TODO remove
-        //GPUContext& context() { return context_; }
-        //VideoLock& lock() {return lock_; }
 
     private:
         execution::GPU gpu_;
-        //TODO move these to runtime
-        //lazy<GPUContext> context_;
-        //lazy<VideoLock> lock_;
-        //lazy<Configuration> output_configuration_;
     };
 
     class GPUUnaryOperator : public GPUOperator {
@@ -103,16 +68,8 @@ namespace lightdb::physical {
                              const PhysicalLightFieldReference &parent,
                              const lazy<runtime::RuntimeReference> &runtime,
                              const execution::GPU &gpu)
-                             //const std::function<Configuration()> &output_configuration)
-                : GPUOperator(logical, {parent}, runtime, gpu) //, lazy(output_configuration))
+                : GPUOperator(logical, {parent}, runtime, gpu)
         { }
-
-        /*explicit GPUUnaryOperator(const LightFieldReference &logical,
-                                  PhysicalLightFieldReference &parent,
-                                  const lazy<runtime::RuntimeReference> &runtime)
-                                  //const std::function<Configuration()> &output_configuration)
-                : GPUOperator(logical, parent, runtime) //, output_configuration)
-        { }*/
 
         template<typename Physical, typename Data>
         class Runtime: public GPUOperator::Runtime<Physical> {
@@ -138,7 +95,6 @@ namespace lightdb::physical {
         virtual ~EncodedVideoInterface() = default;
 
         virtual const Codec &codec() const = 0;
-        //virtual const Configuration &configuration() = 0;
     };
 } // namespace lightdb::physical
 

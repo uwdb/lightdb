@@ -21,7 +21,6 @@ private:
             if(iterators()[0] != iterators()[0].eos()) {
                 auto input = iterators()[0]++;
                 auto data = input.downcast<GPUDecodedFrameData>();
-                //auto &configuration = parents().front().downcast<GPUOperator>().configuration();
                 CPUDecodedFrameData output{data.configuration()};
 
                 for(auto &frame: data.frames())
@@ -39,13 +38,8 @@ public:
     CPUtoGPUTransfer(const LightFieldReference &logical,
                 PhysicalLightFieldReference &parent,
                 const execution::GPU &gpu)
-            : GPUOperator(logical, {parent}, runtime::make<Runtime>(*this), gpu) {//}, [this]() {
-                  //CHECK_GT(height_, 0);
-                  //CHECK_GT(width_, 0);
-                  //return Configuration{width_, height_, 0, 0, 0, {30, 1}, {}}; }),
-                  //return Configuration{0, 0, 0, 0, 0, {30, 1}, {}}; }) {
-        LOG(WARNING) << "CPU->GPU transfer operator has hardcoded framerate of 30";
-    }
+            : GPUOperator(logical, {parent}, runtime::make<Runtime>(*this), gpu)
+    { }
 
 private:
     class Runtime: public GPUOperator::Runtime<CPUtoGPUTransfer> {
@@ -62,24 +56,11 @@ private:
 
                 for(LocalFrameReference &frame: data.frames())
                     output.frames().emplace_back(std::make_shared<CudaFrame>(*frame));
-                            //*InitializeConfiguration(frame)));
 
                 return {output};
             } else
                 return {};
         }
-
-        /*inline LocalFrameReference InitializeConfiguration(LocalFrameReference &frame) {
-            //TODO parent op should be explicitly exposing a configuration, this is a hack
-            if(height_ == 0) {
-                height_ = frame->height();
-                width_ = frame->width();
-            }
-            return frame;
-        }
-
-        unsigned int height_;
-        unsigned int width_;*/
     };
 };
 

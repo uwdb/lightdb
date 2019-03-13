@@ -46,7 +46,7 @@ protected:
                               EncodedVideoInterface &encoded,
                               const execution::GPU &gpu,
                               std::chrono::duration<Rep, Period> poll_duration)
-            : GPUUnaryOperator(logical, source, runtime::make<Runtime>(*this, encoded), gpu), //, [&encoded](){return encoded.configuration(); }),
+            : GPUUnaryOperator(logical, source, runtime::make<Runtime>(*this, encoded), gpu),
               poll_duration_(poll_duration) {
         CHECK_EQ(source->device(), DeviceType::CPU);
     }
@@ -56,7 +56,7 @@ private:
     public:
         explicit Runtime(GPUDecodeFromCPU &physical, EncodedVideoInterface &encoded)
             : GPUUnaryOperator::Runtime<GPUDecodeFromCPU, CPUEncodedFrameData>(physical),
-              decode_configuration_{/*encoded.*/ configuration(), encoded.codec()},
+              decode_configuration_{configuration(), encoded.codec()},
               queue_{lock()},
               decoder_{decode_configuration_, queue_, lock()},
               session_{decoder_, iterator(), iterator().eos()}
@@ -115,10 +115,7 @@ private:
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if(this->iterator() != this->iterator().eos()) {
-            //if(iterators()[0] != iterators()[0].eos()) {
-                //auto input = iterators()[0]++;
-                //auto &data = input.downcast<CPUEncodedFrameData>();
-                auto data = this->iterator()++; //input.downcast<CPUEncodedFrameData>();
+                auto data = this->iterator()++;
                 CPUDecodedFrameData output{data.configuration()};
 
                 for(auto *current = data.value().data(),

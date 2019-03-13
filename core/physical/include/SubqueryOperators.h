@@ -19,11 +19,6 @@ public:
               optimizer_(optimizer),
               subquery_(logical.downcast<logical::SubqueriedLightField>().subquery()),
               type_(subquery_(LightFieldReference::make<logical::ConstantLightField>(YUVColor::red(), Point6D::zero()))) {
-              //streams_([parent]() { return TeedPhysicalLightFieldAdapter::make(
-                //      parent, parent->logical()->volume().components().size()); })
-              //subplan_([this]() { return CreatePlan(); }),
-              //subiterator_([this]() { return ExecutePlan(); })
-//    {
         if(logical->volume().components().size() <= 1)
             LOG(ERROR) << "Invalid angular subquery on " << logical->volume().components().size() << " components.";
         else if(logical->volume().components().size() > 64)
@@ -47,8 +42,6 @@ private:
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
-            //if(*subiterator_ != subiterator_->eos())
-                //return (*subiterator_)++;
             if(subiterator_ != subiterator_.eos())
                 return subiterator_++;
             else
@@ -74,7 +67,6 @@ private:
     const optimization::OptimizerReference optimizer_;
     const std::function<LightFieldReference(LightFieldReference)> subquery_;
     const LightFieldReference type_;
-    //lazy<std::shared_ptr<TeedPhysicalLightFieldAdapter>> streams_;
 };
 
 }; // namespace lightdb::physical

@@ -14,7 +14,7 @@
 
 namespace lightdb::physical {
 
-class GPUEncode : public GPUUnaryOperator /*, public EncodedVideoInterface*/ {
+class GPUEncode : public GPUUnaryOperator {
 public:
     static constexpr size_t kDefaultGopSize = 30;
 
@@ -27,17 +27,13 @@ public:
             throw GpuRuntimeError("Requested codec does not have an Nvidia encode id");
     }
 
-    const Codec &codec() const /*override */ { return codec_; }
-    //const Configuration &configuration() override {
-    //    return GPUUnaryOperator<GPUDecodedFrameData>::configuration();
-    //}
+    const Codec &codec() const { return codec_; }
 
 private:
     class Runtime: public GPUUnaryOperator::Runtime<GPUEncode, GPUDecodedFrameData> {
     public:
         explicit Runtime(GPUEncode &physical)
             : GPUUnaryOperator::Runtime<GPUEncode, GPUDecodedFrameData>(physical),
-              //new_encode_configuration_{configuration()}, //TODO
               encodeConfiguration_{configuration(), this->physical().codec().nvidiaId().value(), gop()},
               encoder_{context(), encodeConfiguration_, lock()},
               writer_{encoder_.api()},
@@ -47,7 +43,6 @@ private:
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if (iterator() != iterator().eos()) {
                 auto decoded = iterator()++;
-                //new_encode_configuration_ = decoded.configuration(); //TODO
 
                 for (const auto &frame: decoded.frames())
                     encodeSession_.Encode(*frame, decoded.configuration().offset.top, decoded.configuration().offset.left);
@@ -76,7 +71,6 @@ private:
                         std::make_any<unsigned int>(kDefaultGopSize)));
         }
 
-        //Configuration new_encode_configuration_; //TODO remove
         EncodeConfiguration encodeConfiguration_;
         VideoEncoder encoder_;
         MemoryEncodeWriter writer_;

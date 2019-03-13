@@ -21,8 +21,6 @@ public:
                             PhysicalLightFieldReference &parent,
                             std::vector<IntervalGeometry> geometries)
             : GPUUnaryOperator(logical, parent, runtime::make<Runtime>(*this)),
-                               //[this]() { return Configuration{}; }),
-                               //[this]() { return runtime().downcast<Runtime>().downsampled_configuration(); }),
               geometries_(std::move(geometries))
     { }
 
@@ -43,7 +41,7 @@ private:
 
                 for(auto &frame: input.frames()) {
                     auto in = frame->cuda();
-                    CudaFrameReference out = CudaFrameReference::make<CudaFrame>(*frame); //configuration().height, configuration().width, NV_ENC_PIC_STRUCT_FRAME);
+                    CudaFrameReference out = CudaFrameReference::make<CudaFrame>(*frame);
 
                     scaler_.nv12().scale(lock(), in, out);
 
@@ -68,7 +66,6 @@ private:
         }
 
         Configuration downsampled_configuration() {
-            //const auto &base = parent<GPUOperator>().configuration();
             const auto &base = (*iterator()).configuration();
             const auto &theta_geometry = get_geometry(Dimension::Theta);
             const auto &phi_geometry = get_geometry(Dimension::Phi);

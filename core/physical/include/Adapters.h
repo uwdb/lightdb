@@ -33,63 +33,63 @@ private:
 };
 
 
-    class MaterializedToPhysicalOperatorAdapter: public PhysicalLightField {
+class MaterializedToPhysicalOperatorAdapter: public PhysicalLightField {
+public:
+    explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference &logical,
+                                                   const MaterializedLightFieldReference &source)
+            : MaterializedToPhysicalOperatorAdapter(logical, source, {})
+    { }
+
+    explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference &logical,
+                                                   const MaterializedLightFieldReference &source,
+                                                   const PhysicalLightFieldReference &parent)
+            : MaterializedToPhysicalOperatorAdapter(logical, source, std::vector<PhysicalLightFieldReference>{parent})
+    { }
+
+    explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference &logical,
+                                                   const MaterializedLightFieldReference &source,
+                                                   const std::vector<PhysicalLightFieldReference> &parents)
+            : PhysicalLightField(logical,
+                                 parents,
+                                 source->device(),
+                                 runtime::make<Runtime>(*this, source))
+    { }
+
+    MaterializedToPhysicalOperatorAdapter(const MaterializedToPhysicalOperatorAdapter &) = default;
+    MaterializedToPhysicalOperatorAdapter(MaterializedToPhysicalOperatorAdapter &&) = default;
+
+    ~MaterializedToPhysicalOperatorAdapter() override = default;
+
+private:
+    class Runtime: public runtime::Runtime<> {
     public:
-        explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference &logical,
-                                                       const MaterializedLightFieldReference &source)
-                : MaterializedToPhysicalOperatorAdapter(logical, source, {})
+        explicit Runtime(PhysicalLightField &physical, const MaterializedLightFieldReference &source)
+            : runtime::Runtime<>(physical),
+              source_(source),
+              read_(false)
         { }
 
-        explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference &logical,
-                                                       const MaterializedLightFieldReference &source,
-                                                       const PhysicalLightFieldReference &parent)
-                : MaterializedToPhysicalOperatorAdapter(logical, source, std::vector<PhysicalLightFieldReference>{parent})
-        { }
-
-        explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference &logical,
-                                                       const MaterializedLightFieldReference &source,
-                                                       const std::vector<PhysicalLightFieldReference> &parents)
-                : PhysicalLightField(logical,
-                                     parents,
-                                     source->device(),
-                                     runtime::make<Runtime>(*this, source))
-        { }
-
-        MaterializedToPhysicalOperatorAdapter(const MaterializedToPhysicalOperatorAdapter &) = default;
-        MaterializedToPhysicalOperatorAdapter(MaterializedToPhysicalOperatorAdapter &&) = default;
-
-        ~MaterializedToPhysicalOperatorAdapter() override = default;
+        std::optional<physical::MaterializedLightFieldReference> read() override {
+            if(!read_) {
+                read_ = false;
+                return {source_};
+            } else
+                return {};
+        }
 
     private:
-        class Runtime: public runtime::Runtime<> {
-        public:
-            explicit Runtime(PhysicalLightField &physical, const MaterializedLightFieldReference &source)
-                : runtime::Runtime<>(physical),
-                  source_(source),
-                  read_(false)
-            { }
-
-            std::optional<physical::MaterializedLightFieldReference> read() override {
-                if(!read_) {
-                    read_ = false;
-                    return {source_};
-                } else
-                    return {};
-            }
-
-        private:
-            MaterializedLightFieldReference source_;
-            bool read_;
-        };
-
+        MaterializedLightFieldReference source_;
+        bool read_;
     };
+
+};
 
 /*
  * Converts a GPU-based physical light field into one that implements GPUOperator.
  * This is necessary while there are separate hierarchies for CPU and GPU operators,
  * which is sad and should be fixed.
  */
-//TODO Fix the sadness
+//TODO Fix the sadness -- this rule is only used in one place
 class GPUOperatorAdapter: public GPUOperator {
 public:
     explicit GPUOperatorAdapter(const PhysicalLightFieldReference &source)
@@ -135,7 +135,6 @@ private:
                           parents,
                           lazy<runtime::RuntimeReference>{[source]() { return source->runtime(); }},
                           op.gpu())
-                          //[&op]() { return op.configuration2(); })
     { }
 
     static GPUOperator& FindGPUOperatorAncestor(PhysicalLightFieldReference physical) {

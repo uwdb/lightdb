@@ -54,43 +54,27 @@ namespace lightdb {
 
     class FrameLightField: public PhysicalLightField {
     public:
-        //inline const Configuration &configuration2() noexcept { return configuration_.value(); }
-
         template<typename Physical>
         class Runtime: public runtime::Runtime<Physical> {
         protected:
             explicit Runtime(Physical &physical)
                 : runtime::Runtime<Physical>(physical)
             { }
-
-        private:
-//            const Configuration configuration_;
         };
 
     protected:
         explicit FrameLightField(const LightFieldReference &logical,
                                  const physical::DeviceType deviceType,
                                  const lazy<runtime::RuntimeReference> &runtime)
-                                 //const Configuration &configuration)
                 : FrameLightField(logical, std::vector<PhysicalLightFieldReference>{}, deviceType, runtime)
-                                  //lazy<Configuration>{[configuration]() { return configuration; }})
         { }
-        /*explicit FrameLightField(const LightFieldReference &logical, const physical::DeviceType deviceType,
-                                 const lazy<runtime::RuntimeReference> &runtime)
-                                 //const lazy<Configuration> &configuration)
-                : FrameLightField(logical, std::vector<PhysicalLightFieldReference>{}, deviceType, runtime) //, configuration)
-        { }*/
+
         explicit FrameLightField(const LightFieldReference &logical,
                                    const std::vector<PhysicalLightFieldReference> &parents,
                                    const physical::DeviceType deviceType,
                                    const lazy<runtime::RuntimeReference> &runtime)
-                                   //lazy<Configuration> configuration)
                 : PhysicalLightField(logical, parents, deviceType, runtime)
-                  //configuration_(std::move(configuration))
         { }
-
-    private:
-        //lazy<Configuration> configuration_;
     };
 } // namespace lightdb
 

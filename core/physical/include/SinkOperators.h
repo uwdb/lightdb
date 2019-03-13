@@ -20,7 +20,6 @@ private:
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if(!all_parent_eos()) {
                 std::for_each(iterators().begin(), iterators().end(), [](auto &i) { i++; });
-                //return CPUEncodedFrameData{Codec::raw(), Configuration{}, bytestring{}};
                 return EmptyData{physical().device()};
             } else
                 return std::nullopt;

@@ -8,20 +8,18 @@ namespace lightdb::physical {
 class ScanSingleFileDecodeReader: public FrameLightField, public EncodedVideoInterface {
 public:
     explicit ScanSingleFileDecodeReader(const LightFieldReference &logical, catalog::Stream stream)
-            : FrameLightField(logical, DeviceType::CPU, runtime::make<Runtime>(*this)), //, stream.configuration()),
+            : FrameLightField(logical, DeviceType::CPU, runtime::make<Runtime>(*this)),
               stream_(std::move(stream))
     { }
 
     const catalog::Stream &stream() const { return stream_; }
     const Codec &codec() const override { return stream_.codec(); }
-    //const Configuration &configuration() override { return stream_.configuration(); }
 
 private:
     class Runtime: public FrameLightField::Runtime<ScanSingleFileDecodeReader> {
     public:
-        explicit Runtime(ScanSingleFileDecodeReader &physical) //, catalog::Stream stream)
+        explicit Runtime(ScanSingleFileDecodeReader &physical)
             : FrameLightField::Runtime<ScanSingleFileDecodeReader>(physical),
-              //stream_(std::move(stream)),
               reader_(physical.stream().path())
         { }
 
@@ -43,13 +41,12 @@ template<size_t Size=131072>
 class ScanSingleFile: public FrameLightField, public EncodedVideoInterface {
 public:
     explicit ScanSingleFile(const LightFieldReference &logical, catalog::Stream stream)
-            : FrameLightField(logical, DeviceType::CPU, runtime::make<Runtime>(*this)), //, stream.configuration()),
+            : FrameLightField(logical, DeviceType::CPU, runtime::make<Runtime>(*this)),
               stream_(std::move(stream))
     { }
 
     const catalog::Stream &stream() const { return stream_; }
     const Codec &codec() const override { return stream_.codec(); }
-    //const Configuration &configuration() override { return stream_.configuration(); }
 
 private:
     class Runtime: public FrameLightField::Runtime<ScanSingleFile<Size>> {
