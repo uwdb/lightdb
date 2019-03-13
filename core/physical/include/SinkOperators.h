@@ -9,16 +9,23 @@ class Sink: public PhysicalLightField {
 public:
     explicit Sink(const LightFieldReference &logical,
                    PhysicalLightFieldReference &parent)
-        : PhysicalLightField(logical, {parent}, DeviceType::CPU)
+        : PhysicalLightField(logical, {parent}, DeviceType::CPU, runtime::make<Runtime>(*this))
     { }
 
-    std::optional<physical::MaterializedLightFieldReference> read() override {
-        if(!all_parent_eos()) {
-            std::for_each(iterators().begin(), iterators().end(), [](auto &i) { i++; });
-            return CPUEncodedFrameData{Codec::raw(), Configuration{}, bytestring{}};
-        } else
-            return std::nullopt;
-    }
+private:
+    class Runtime: public runtime::Runtime<> {
+    public:
+        explicit Runtime(PhysicalLightField &physical) : runtime::Runtime<>(physical) { }
+
+        std::optional<physical::MaterializedLightFieldReference> read() override {
+            if(!all_parent_eos()) {
+                std::for_each(iterators().begin(), iterators().end(), [](auto &i) { i++; });
+                //return CPUEncodedFrameData{Codec::raw(), Configuration{}, bytestring{}};
+                return EmptyData{physical().device()};
+            } else
+                return std::nullopt;
+        }
+    };
 };
 
 } // namespace lightdb::physical

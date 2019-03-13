@@ -25,14 +25,10 @@ protected:
 };
 
 TEST_F(DecodeTestFixture, testDecode) {
-    auto output = "out.raw";
+    auto input = Scan(Resources.red10.name).Save(Resources.out.raw);
+    Coordinator().execute(input);
 
-    auto input = Scan(Resources.red10.name);
-
-    auto plan = Optimizer::instance().optimize(input);
-    Coordinator().save(plan, output);
-
-    auto output_h264 = TRANSCODE_RAW_TO_H264(output,
+    auto output_h264 = TRANSCODE_RAW_TO_H264(Resources.out.raw,
             Resources.red10.height, Resources.red10.width,
             Resources.red10.framerate);
 
@@ -40,6 +36,6 @@ TEST_F(DecodeTestFixture, testDecode) {
     EXPECT_VIDEO_FRAMES(output_h264, Resources.red10.frames);
     EXPECT_VIDEO_RESOLUTION(output_h264, Resources.red10.height, Resources.red10.width);
     EXPECT_VIDEO_RED(output_h264);
-    EXPECT_EQ(remove(output), 0);
+    EXPECT_EQ(remove(Resources.out.raw), 0);
     EXPECT_EQ(remove(output_h264.c_str()), 0);
 }

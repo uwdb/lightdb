@@ -49,8 +49,9 @@ public:
 
     void execute(const optimization::Plan &plan) {
         auto outputs = submit(plan);
-        auto iterators = functional::transform<PhysicalLightField::iterator>(outputs.begin(), outputs.end(),
-                                                                             [](auto &out) { return out->begin(); });
+        auto iterators = functional::transform<runtime::RuntimeIterator>(
+                outputs.begin(), outputs.end(),
+                [](auto &out) { return out->runtime()->begin(); });
         Progress progress(static_cast<int>(iterators.size()));
 
         while(!iterators.empty()) {
@@ -59,6 +60,42 @@ public:
                             iterators.end());
             progress.display(iterators.size());
         }
+    }
+
+    std::string serialize(const LightFieldReference &query) {
+        return functional::single(serialize(optimization::Optimizer::instance().optimize(query)));
+    }
+
+    std::vector<std::string> serialize(const std::vector<LightFieldReference> &queries) {
+        return serialize(optimization::Optimizer::instance().optimize(queries));
+    }
+
+    std::vector<std::string> serialize(const optimization::Plan &plan) {
+        auto outputs = submit(plan);
+        auto iterators = functional::transform<std::pair<runtime::RuntimeIterator, std::ostringstream>>(
+                outputs.begin(), outputs.end(),
+                [](auto &out) { return std::make_pair(out->runtime()->begin(), std::ostringstream{}); });
+        std::vector<std::string> result;
+        Progress progress(static_cast<int>(iterators.size()));
+
+        while(!iterators.empty()) {
+            iterators.erase(std::remove_if(iterators.begin(), iterators.end(),
+                                          [&result](auto &pair) {
+                auto &[it, stream] = pair;
+                if(it != it.eos()) {
+                    auto next = it++;
+                    auto &data = next.template downcast<physical::SerializableData>();
+                    std::copy(data.value().begin(), data.value().end(),
+                              std::ostreambuf_iterator<char>(stream));
+                    return false;
+                } else {
+                    result.push_back(stream.str());
+                    return true;
+                } }), iterators.end());
+            progress.display(iterators.size());
+        }
+
+        return result;
     }
 
     std::string save(const optimization::Plan &plan) {
@@ -70,7 +107,7 @@ public:
     [[deprecated]]
     void save(const optimization::Plan &plan, std::vector<std::ostream*> streams) {
         auto outputs = submit(plan);
-        auto iterators = functional::transform<PhysicalLightField::iterator>(outputs.begin(), outputs.end(), [](auto &out) { return out->begin(); });
+        auto iterators = functional::transform<runtime::RuntimeIterator>(outputs.begin(), outputs.end(), [](auto &out) { return out->runtime()->begin(); });
         Progress progress(static_cast<int>(iterators.size()));
 
         if(iterators.size() != streams.size())

@@ -8,55 +8,78 @@ namespace lightdb::physical {
 class ScanSingleFileDecodeReader: public FrameLightField, public EncodedVideoInterface {
 public:
     explicit ScanSingleFileDecodeReader(const LightFieldReference &logical, catalog::Stream stream)
-            : FrameLightField(logical, DeviceType::CPU, stream.configuration()),
-              stream_(std::move(stream)),
-              reader_([this]() { return FileDecodeReader(stream_.path()); })
+            : FrameLightField(logical, DeviceType::CPU, runtime::make<Runtime>(*this)), //, stream.configuration()),
+              stream_(std::move(stream))
     { }
 
-    std::optional<physical::MaterializedLightFieldReference> read() override {
-        auto packet = reader_->read();
-        return packet.has_value()
-               ? std::optional<physical::MaterializedLightFieldReference>{
-                    CPUEncodedFrameData(codec(), configuration(), packet.value())}
-               : std::nullopt;
-    }
-
+    const catalog::Stream &stream() const { return stream_; }
     const Codec &codec() const override { return stream_.codec(); }
-    const Configuration &configuration() override { return stream_.configuration(); }
+    //const Configuration &configuration() override { return stream_.configuration(); }
 
 private:
+    class Runtime: public FrameLightField::Runtime<ScanSingleFileDecodeReader> {
+    public:
+        explicit Runtime(ScanSingleFileDecodeReader &physical) //, catalog::Stream stream)
+            : FrameLightField::Runtime<ScanSingleFileDecodeReader>(physical),
+              //stream_(std::move(stream)),
+              reader_(physical.stream().path())
+        { }
+
+        std::optional<physical::MaterializedLightFieldReference> read() override {
+            auto packet = reader_.read();
+            return packet.has_value()
+                   ? std::optional<physical::MaterializedLightFieldReference>{
+                            CPUEncodedFrameData(physical().stream().codec(), physical().stream().configuration(), packet.value())}
+                   : std::nullopt;
+        }
+
+        FileDecodeReader reader_;
+    };
+
     const catalog::Stream stream_;
-    lazy<FileDecodeReader> reader_;
 };
 
 template<size_t Size=131072>
 class ScanSingleFile: public FrameLightField, public EncodedVideoInterface {
 public:
     explicit ScanSingleFile(const LightFieldReference &logical, catalog::Stream stream)
-            : FrameLightField(logical, DeviceType::CPU, stream.configuration()),
-              stream_(std::move(stream)),
-              buffer_(Size, 0),
-              reader_([this]() { return std::ifstream(stream_.path()); })
+            : FrameLightField(logical, DeviceType::CPU, runtime::make<Runtime>(*this)), //, stream.configuration()),
+              stream_(std::move(stream))
     { }
 
-    std::optional<physical::MaterializedLightFieldReference> read() override {
-        if(!reader_->eof()) {
-            reader_->read(buffer_.data(), buffer_.size());
-            return {CPUEncodedFrameData(stream_.codec(), configuration(), buffer_)};
-
-        } else {
-            reader_->close();
-            return {};
-        }
-    }
-
+    const catalog::Stream &stream() const { return stream_; }
     const Codec &codec() const override { return stream_.codec(); }
-    const Configuration &configuration() override { return stream_.configuration(); }
+    //const Configuration &configuration() override { return stream_.configuration(); }
 
 private:
+    class Runtime: public FrameLightField::Runtime<ScanSingleFile<Size>> {
+    public:
+        explicit Runtime(ScanSingleFile &physical)
+            : FrameLightField::Runtime<ScanSingleFile<Size>>(physical),
+              buffer_(Size, 0),
+              reader_(physical.stream().path())
+        { }
+
+        std::optional<physical::MaterializedLightFieldReference> read() override {
+            if(!reader_.eof()) {
+                reader_.read(buffer_.data(), buffer_.size());
+                return {CPUEncodedFrameData(
+                        this->physical().stream().codec(),
+                        this->physical().stream().configuration(),
+                        buffer_)};
+
+            } else {
+                reader_.close();
+                return {};
+            }
+        }
+
+    private:
+        lightdb::bytestring buffer_;
+        std::ifstream reader_;
+    };
+
     const catalog::Stream stream_;
-    lightdb::bytestring buffer_;
-    lazy<std::ifstream> reader_;
 };
 
 } // namespace lightdb::physical

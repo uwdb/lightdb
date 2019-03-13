@@ -35,6 +35,13 @@ struct {
         const char *raw = "out.raw";
     } out;
 
+
+    struct {
+        struct {
+            const char *name = "blur";
+        } blur;
+    } plugins;
+
     const std::string catalog_name = "resources";
 } Resources;
 

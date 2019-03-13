@@ -51,9 +51,8 @@ private:
                                                        const std::vector<PhysicalLightFieldReference> &parents)
                 : PhysicalLightField(logical,
                                      parents,
-                                     source->device()),
-                  source_(source),
-                  read_(false)
+                                     source->device(),
+                                     runtime::make<Runtime>(*this, source))
         { }
 
         MaterializedToPhysicalOperatorAdapter(const MaterializedToPhysicalOperatorAdapter &) = default;
@@ -61,17 +60,28 @@ private:
 
         ~MaterializedToPhysicalOperatorAdapter() override = default;
 
-        std::optional<physical::MaterializedLightFieldReference> read() override {
-            if(!read_) {
-                read_ = false;
-                return {source_};
-            } else
-                return {};
-        }
-
     private:
-        MaterializedLightFieldReference source_;
-        bool read_;
+        class Runtime: public runtime::Runtime<> {
+        public:
+            explicit Runtime(PhysicalLightField &physical, const MaterializedLightFieldReference &source)
+                : runtime::Runtime<>(physical),
+                  source_(source),
+                  read_(false)
+            { }
+
+            std::optional<physical::MaterializedLightFieldReference> read() override {
+                if(!read_) {
+                    read_ = false;
+                    return {source_};
+                } else
+                    return {};
+            }
+
+        private:
+            MaterializedLightFieldReference source_;
+            bool read_;
+        };
+
     };
 
 /*
@@ -87,7 +97,7 @@ public:
     { }
 
     explicit GPUOperatorAdapter(const PhysicalLightFieldReference &source,
-                                PhysicalLightFieldReference parent)
+                                const PhysicalLightFieldReference &parent)
             : GPUOperatorAdapter(source, std::vector<PhysicalLightFieldReference>{parent})
     { }
 
@@ -102,19 +112,30 @@ public:
 
     ~GPUOperatorAdapter() override = default;
 
-    std::optional<physical::MaterializedLightFieldReference> read() override {
-        return source_->read();
-    }
-
 private:
+    class Runtime: public GPUOperator::Runtime<GPUOperatorAdapter> {
+    public:
+        explicit Runtime(GPUOperatorAdapter &physical, const PhysicalLightFieldReference &source)
+            : GPUOperator::Runtime<GPUOperatorAdapter>(physical),
+              source_(source)
+        { }
+
+        std::optional<physical::MaterializedLightFieldReference> read() override {
+            return source_->runtime()->read();
+        }
+
+    private:
+        PhysicalLightFieldReference source_;
+    };
+
     GPUOperatorAdapter(const PhysicalLightFieldReference &source,
                        GPUOperator &op,
-                       std::vector<PhysicalLightFieldReference> parents)
+                       const std::vector<PhysicalLightFieldReference> &parents)
             : GPUOperator(source->logical(),
                           parents,
-                          op.gpu(),
-                          [&op]() { return op.configuration2(); }),
-              source_(source)
+                          lazy<runtime::RuntimeReference>{[source]() { return source->runtime(); }},
+                          op.gpu())
+                          //[&op]() { return op.configuration2(); })
     { }
 
     static GPUOperator& FindGPUOperatorAncestor(PhysicalLightFieldReference physical) {
@@ -123,30 +144,28 @@ private:
             return physical.downcast<GPUOperator>();
         else if(physical->device() == DeviceType::GPU &&
                 physical->parents().size() == 1)
-            return FindGPUOperatorAncestor(physical->parents()[0]);
+            return FindGPUOperatorAncestor(physical->parents().front());
         else
             throw InvalidArgumentError("Could not find GPUOperator ancestor", "physical");
     }
-
-    PhysicalLightFieldReference source_;
 };
 
 class TeedPhysicalLightFieldAdapter {
 public:
-static std::shared_ptr<TeedPhysicalLightFieldAdapter> make(const PhysicalLightFieldReference &source,
-                                                           const size_t size) {
-    return std::make_shared<TeedPhysicalLightFieldAdapter>(source, size);
-}
+    static std::shared_ptr<TeedPhysicalLightFieldAdapter> make(const PhysicalLightFieldReference &source,
+                                                               const size_t size) {
+        return std::make_shared<TeedPhysicalLightFieldAdapter>(source, size);
+    }
 
-TeedPhysicalLightFieldAdapter(const PhysicalLightFieldReference &source,
-                              const size_t size) {
-    auto mutex = std::make_shared<std::mutex>();
-    auto queues = std::make_shared<std::vector<std::queue<MaterializedLightFieldReference>>>(size);
+    TeedPhysicalLightFieldAdapter(const PhysicalLightFieldReference &source,
+                                  const size_t size) {
+        auto mutex = std::make_shared<std::mutex>();
+        auto queues = std::make_shared<std::vector<std::queue<MaterializedLightFieldReference>>>(size);
 
-    for(auto index = 0u; index < size; index++)
-        tees_.emplace_back(
-                LightFieldReference::make<PhysicalToLogicalLightFieldAdapter>(
-                        PhysicalLightFieldReference::make<TeedPhysicalLightField>(mutex, queues, source, index)));
+        for(auto index = 0u; index < size; index++)
+            tees_.emplace_back(
+                    LightFieldReference::make<PhysicalToLogicalLightFieldAdapter>(
+                            PhysicalLightFieldReference::make<TeedPhysicalLightField>(mutex, queues, source, index)));
     }
 
     TeedPhysicalLightFieldAdapter(const TeedPhysicalLightFieldAdapter&) = delete;
@@ -172,42 +191,54 @@ TeedPhysicalLightFieldAdapter(const PhysicalLightFieldReference &source,
                                const size_t index)
                 : PhysicalLightField(source->logical(),
                                      {source},
-                                     source->device()),
-                  index_(index),
-                  mutex_(std::move(mutex)),
-                  source_(source),
-                  queues_(std::move(queues))
+                                     source->device(),
+                                     runtime::make<Runtime>(*this, mutex, queues, source, index))
         { }
 
         TeedPhysicalLightField(const TeedPhysicalLightField&) = delete;
         TeedPhysicalLightField(TeedPhysicalLightField&&) = default;
 
-        std::optional<physical::MaterializedLightFieldReference> read() override {
-            std::optional<physical::MaterializedLightFieldReference> value;
-
-            std::lock_guard lock(*mutex_);
-
-            auto &queue = queues_->at(index_);
-
-            if(queue.empty())
-                // Teed stream's queue is empty, so read from base stream and broadcast to all queues
-                if((value = source_->read()).has_value())
-                    std::for_each(queues_->begin(), queues_->end(), [&value](auto &q) { q.push(value.value()); });
-
-            // Now return a value (if any) from this tee's queue
-            if(!queue.empty()) {
-                value = queue.front();
-                queue.pop();
-                return value;
-            } else
-                return {};
-        }
-
     private:
-        const size_t index_;
-        std::shared_ptr<std::mutex> mutex_;
-        PhysicalLightFieldReference source_;
-        std::shared_ptr<std::vector<std::queue<MaterializedLightFieldReference>>> queues_;
+        class Runtime: public runtime::Runtime<> {
+        public:
+            explicit Runtime(PhysicalLightField &physical,
+                             std::shared_ptr<std::mutex> mutex,
+                             std::shared_ptr<std::vector<std::queue<MaterializedLightFieldReference>>> queues,
+                             const PhysicalLightFieldReference &source,
+                             const size_t index)
+                 : runtime::Runtime<>(physical),
+                   index_(index),
+                   mutex_(std::move(mutex)),
+                   source_(source),
+                   queues_(std::move(queues))
+            { }
+
+            std::optional<physical::MaterializedLightFieldReference> read() override {
+                std::optional<physical::MaterializedLightFieldReference> value;
+
+                std::lock_guard lock(*mutex_);
+
+                auto &queue = queues_->at(index_);
+
+                if(queue.empty())
+                    // Teed stream's queue is empty, so read from base stream and broadcast to all queues
+                    if((value = source_->runtime()->read()).has_value())
+                        std::for_each(queues_->begin(), queues_->end(), [&value](auto &q) { q.push(value.value()); });
+
+                // Now return a value (if any) from this tee's queue
+                if(!queue.empty()) {
+                    value = queue.front();
+                    queue.pop();
+                    return value;
+                } else
+                    return {};
+            }
+
+            const size_t index_;
+            std::shared_ptr<std::mutex> mutex_;
+            PhysicalLightFieldReference source_;
+            std::shared_ptr<std::vector<std::queue<MaterializedLightFieldReference>>> queues_;
+        };
     };
 
 private:

@@ -23,11 +23,11 @@ public:
     }
 
     void testEncodeGOP(const unsigned int gop) {
-        auto source = Scan(Resources.red10.name);
-        auto encoded = source.Encode(Codec::hevc(), {{EncodeOptions::GOPSize, gop}});
+        auto query = Scan(Resources.red10.name)
+                          .Encode(Codec::hevc(), {{EncodeOptions::GOPSize, gop}})
+                          .Save(Resources.out.hevc);
 
-        auto plan = Optimizer::instance().optimize(encoded);
-        Coordinator().save(plan, Resources.out.hevc);
+        Coordinator().execute(query);
 
         EXPECT_VIDEO_VALID(Resources.out.hevc);
         EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
@@ -41,10 +41,11 @@ protected:
 };
 
 TEST_F(EncodeTestFixture, testEncodeH264) {
-    auto encoded = Scan(Resources.red10.name).Encode(Codec::h264());
+    auto query = Scan(Resources.red10.name)
+                     .Encode(Codec::h264())
+                     .Save(Resources.out.h264);
 
-    auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, Resources.out.h264);
+    Coordinator().execute(query);
 
     EXPECT_VIDEO_VALID(Resources.out.h264);
     EXPECT_VIDEO_FRAMES(Resources.out.h264, Resources.red10.frames);
@@ -54,10 +55,11 @@ TEST_F(EncodeTestFixture, testEncodeH264) {
 }
 
 TEST_F(EncodeTestFixture, testEncodeHEVC) {
-    auto encoded = Scan(Resources.red10.name).Encode(Codec::hevc());
+    auto query = Scan(Resources.red10.name)
+                     .Encode(Codec::hevc())
+                     .Save(Resources.out.hevc);
 
-    auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, Resources.out.hevc);
+    Coordinator().execute(query);
 
     EXPECT_VIDEO_VALID(Resources.out.hevc);
     EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
@@ -67,10 +69,11 @@ TEST_F(EncodeTestFixture, testEncodeHEVC) {
 }
 
 TEST_F(EncodeTestFixture, testEncodeRaw) {
-    auto encoded = Scan(Resources.red10.name).Encode(Codec::raw());
+    auto query = Scan(Resources.red10.name)
+                     .Encode(Codec::raw())
+                     .Save(Resources.out.raw);
 
-    auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, Resources.out.raw);
+    Coordinator().execute(query);
 
     auto output_h264 = TRANSCODE_RAW_TO_H264(Resources.out.raw,
                                              Resources.red10.height, Resources.red10.width,
@@ -97,11 +100,11 @@ TEST_F(EncodeTestFixture, testGOP7) {
 }
 
 TEST_F(EncodeTestFixture, testImplicitGOP) {
-    auto source = Scan(Resources.red10.name);
-    auto encoded = source.Encode(Codec::hevc());
+    auto query = Scan(Resources.red10.name)
+                     .Encode(Codec::hevc())
+                     .Save(Resources.out.hevc);
 
-    auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, Resources.out.hevc);
+    Coordinator().execute(query);
 
     EXPECT_VIDEO_VALID(Resources.out.hevc);
     EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
@@ -112,22 +115,17 @@ TEST_F(EncodeTestFixture, testImplicitGOP) {
 }
 
 TEST_F(EncodeTestFixture, testInvalidGOPType) {
-    auto source = Scan(Resources.red10.name);
-    auto encoded = source.Encode(Codec::hevc(), {{EncodeOptions::GOPSize, "invalid"}});
+    auto query = Scan(Resources.red10.name)
+                     .Encode(Codec::hevc(), {{EncodeOptions::GOPSize, "invalid"}})
+                     .Save(Resources.out.hevc);
 
-    auto plan = Optimizer::instance().optimize(encoded);
-
-    EXPECT_THROW(Coordinator().save(plan, Resources.out.hevc), _InvalidArgument);
+    EXPECT_THROW(Coordinator().execute(query), _InvalidArgument);
 }
 
 TEST_F(EncodeTestFixture, testInvalidGOPRange) {
-    auto source = Scan(Resources.red10.name);
-    auto encoded = source.Encode(Codec::hevc(), {{EncodeOptions::GOPSize, -1}});
+    auto query = Scan(Resources.red10.name)
+                     .Encode(Codec::hevc(), {{EncodeOptions::GOPSize, -1}})
+                     .Save(Resources.out.hevc);
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-
-    Plan plan = HeuristicOptimizer(environment).optimize(encoded);
-
-    EXPECT_THROW(coordinator.save(plan, Resources.out.hevc), _InvalidArgument);
+    EXPECT_THROW(Coordinator().execute(query), _InvalidArgument);
 }

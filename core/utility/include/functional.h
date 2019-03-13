@@ -7,8 +7,15 @@
 
 namespace lightdb::functional {
     template<typename T, template<typename> typename TContainer>
-    inline T single(TContainer<T> container) {
-        auto begin = std::begin(container);
+    inline T single(TContainer<T> &container) {
+        const auto begin = std::begin(container);
+        assert(begin + 1 == std::end(container));
+        return *begin;
+    }
+
+    template<typename T, template<typename> typename TContainer>
+    inline T single(TContainer<T> &&container) {
+        const auto begin = std::begin(container);
         assert(begin + 1 == std::end(container));
         return *begin;
     }
@@ -167,6 +174,41 @@ namespace lightdb::functional {
     static union_iterator<T, Inputs, TContainer> make_union_iterator(const Inputs &iterators) {
         return union_iterator<T, Inputs, TContainer>(iterators);
     }
+
+    template<typename Element, typename Iterator>
+    class downcast_iterator {
+    public:
+        explicit downcast_iterator(Iterator &iterator)
+                : iterator_(iterator)
+        { }
+
+        constexpr explicit downcast_iterator()
+                : iterator_(Iterator::eos())
+        { }
+
+        bool operator==(const downcast_iterator<Element, Iterator> &other) const { return iterator_ == other.iterator_; }
+        bool operator!=(const downcast_iterator<Element, Iterator> &other) const { return !(*this == other); }
+
+        void operator++() {
+            assert(iterator_ != Iterator::eos());
+            ++iterator_;
+        }
+
+        Element operator++(int) {
+            auto value = **this;
+            ++*this;
+            return std::move(value);
+        }
+
+        Element operator*() { return (*iterator_).template expect_downcast<Element>(); }
+
+        static const downcast_iterator<Element, Iterator> eos() {
+            return downcast_iterator<Element, Iterator>();
+        }
+
+    private:
+        Iterator &iterator_;
+    };
 } // namespace lightdb::functional
 
 #endif //LIGHTDB_FUNCTIONAL_H

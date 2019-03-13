@@ -9,48 +9,22 @@
 #include "EncodeWriter.h"
 #include "VideoEncoderSession.h"
 #include "MaterializedLightField.h"
-#include "lazy.h"
 #include <cstdio>
 #include <utility>
 
 namespace lightdb::physical {
 
-class GPUEncode : public GPUUnaryOperator<GPUDecodedFrameData> /*, public EncodedVideoInterface*/ {
+class GPUEncode : public GPUUnaryOperator /*, public EncodedVideoInterface*/ {
 public:
     static constexpr size_t kDefaultGopSize = 30;
 
     explicit GPUEncode(const LightFieldReference &logical,
                        PhysicalLightFieldReference &parent,
                        Codec codec)
-            : GPUUnaryOperator(logical, parent),
-              codec_(std::move(codec)),
-              encodeConfiguration_([this]() {
-                  //return EncodeConfiguration{configuration(), codec_.nvidiaId().value(), gop()}; }),
-                  return EncodeConfiguration{new_encode_configuration_, codec_.nvidiaId().value(), gop()}; }),
-              encoder_([this]() { return VideoEncoder(context(), encodeConfiguration_, lock()); }),
-              writer_([this]() { return MemoryEncodeWriter(encoder_->api()); }),
-              encodeSession_([this]() { return VideoEncoderSession(encoder_, writer_); }) {
+            : GPUUnaryOperator(logical, parent, runtime::make<Runtime>(*this)),
+              codec_(std::move(codec)) {
         if(!codec.nvidiaId().has_value())
             throw GpuRuntimeError("Requested codec does not have an Nvidia encode id");
-    }
-
-    std::optional<physical::MaterializedLightFieldReference> read() override {
-        if (iterator() != iterator().eos()) {
-            auto decoded = iterator()++;
-            new_encode_configuration_ = decoded.configuration(); //TODO
-
-            for (const auto &frame: decoded.frames())
-                encodeSession_->Encode(*frame, decoded.configuration().offset.top, decoded.configuration().offset.left);
-
-            //TODO think this should move down just above nullopt
-            // Did we just reach the end of the decode stream?
-            if (iterator() == iterator().eos())
-                // If so, flush the encode queue and end this op too
-                encodeSession_->Flush();
-
-            return {CPUEncodedFrameData(codec_, decoded.configuration(), writer_->dequeue())};
-        } else
-            return std::nullopt;
     }
 
     const Codec &codec() const /*override */ { return codec_; }
@@ -59,24 +33,57 @@ public:
     //}
 
 private:
+    class Runtime: public GPUUnaryOperator::Runtime<GPUEncode, GPUDecodedFrameData> {
+    public:
+        explicit Runtime(GPUEncode &physical)
+            : GPUUnaryOperator::Runtime<GPUEncode, GPUDecodedFrameData>(physical),
+              //new_encode_configuration_{configuration()}, //TODO
+              encodeConfiguration_{configuration(), this->physical().codec().nvidiaId().value(), gop()},
+              encoder_{context(), encodeConfiguration_, lock()},
+              writer_{encoder_.api()},
+              encodeSession_{encoder_, writer_}
+        { }
+
+        std::optional<physical::MaterializedLightFieldReference> read() override {
+            if (iterator() != iterator().eos()) {
+                auto decoded = iterator()++;
+                //new_encode_configuration_ = decoded.configuration(); //TODO
+
+                for (const auto &frame: decoded.frames())
+                    encodeSession_.Encode(*frame, decoded.configuration().offset.top, decoded.configuration().offset.left);
+
+                //TODO think this should move down just above nullopt
+                // Did we just reach the end of the decode stream?
+                if (iterator() == iterator().eos())
+                    // If so, flush the encode queue and end this op too
+                    encodeSession_.Flush();
+
+                return {CPUEncodedFrameData(physical().codec(), decoded.configuration(), writer_.dequeue())};
+            } else
+                return std::nullopt;
+        }
+
+    private:
+        unsigned int gop() const {
+            auto option = logical().is<OptionContainer<>>()
+                          ? logical().downcast<OptionContainer<>>().get_option(EncodeOptions::GOPSize)
+                          : std::nullopt;
+
+            if(option.has_value() && option.value().type() != typeid(unsigned int))
+                throw InvalidArgumentError("Invalid GOP option specified", EncodeOptions::GOPSize);
+            else
+                return std::any_cast<unsigned int>(option.value_or(
+                        std::make_any<unsigned int>(kDefaultGopSize)));
+        }
+
+        //Configuration new_encode_configuration_; //TODO remove
+        EncodeConfiguration encodeConfiguration_;
+        VideoEncoder encoder_;
+        MemoryEncodeWriter writer_;
+        VideoEncoderSession encodeSession_;
+    };
+
     const Codec codec_;
-    lazy <EncodeConfiguration> encodeConfiguration_;
-    lazy <VideoEncoder> encoder_;
-    lazy <MemoryEncodeWriter> writer_;
-    lazy <VideoEncoderSession> encodeSession_;
-    Configuration new_encode_configuration_;
-
-    unsigned int gop() const {
-        auto option = logical().is<OptionContainer<>>()
-                ? logical().downcast<OptionContainer<>>().get_option(EncodeOptions::GOPSize)
-                : std::nullopt;
-
-        if(option.has_value() && option.value().type() != typeid(unsigned int))
-            throw InvalidArgumentError("Invalid GOP option specified", EncodeOptions::GOPSize);
-        else
-            return std::any_cast<unsigned int>(option.value_or(
-                    std::make_any<unsigned int>(kDefaultGopSize)));
-    }
 };
 
 }; // namespace lightdb::physical
