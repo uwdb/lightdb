@@ -2,6 +2,7 @@
 #include "Display.h"
 #include "TestResources.h"
 #include "AssertVideo.h"
+#include "AssertTime.h"
 
 using namespace lightdb;
 using namespace lightdb::logical;
@@ -136,4 +137,38 @@ TEST_F(SelectionTestFixture, testTemporalThetaSelect) {
     EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height, Resources.red10.width / 4);
     EXPECT_VIDEO_RED(Resources.out.hevc);
     EXPECT_EQ(remove(Resources.out.hevc), 0);
+}
+
+TEST_F(SelectionTestFixture, testDegenerateTimeSelect) {
+    auto query = Scan(Resources.red10.name)
+            .Select(TemporalRange::limits())
+            .Encode()
+            .Save(Resources.out.h264);
+
+    LOG_DURATION(Resources.red10.name,
+                 ASSERT_MSECS(
+                         Coordinator().execute(query),
+                         400u));
+
+    EXPECT_VIDEO_VALID(Resources.out.h264);
+    EXPECT_VIDEO_FRAMES(Resources.out.h264, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.h264, Resources.red10.height, Resources.red10.width);
+    EXPECT_EQ(remove(Resources.out.h264), 0);
+}
+
+TEST_F(SelectionTestFixture, testDegenerateAngularSelect) {
+    auto query = Scan(Resources.red10.name)
+            .Select(ThetaRange::limits())
+            .Encode()
+            .Save(Resources.out.h264);
+
+    LOG_DURATION(Resources.red10.name,
+                 ASSERT_MSECS(
+                         Coordinator().execute(query),
+                         400u));
+
+    EXPECT_VIDEO_VALID(Resources.out.h264);
+    EXPECT_VIDEO_FRAMES(Resources.out.h264, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.h264, Resources.red10.height, Resources.red10.width);
+    EXPECT_EQ(remove(Resources.out.h264), 0);
 }

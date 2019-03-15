@@ -26,19 +26,21 @@ private:
     class Runtime : public GPUUnaryOperator::Runtime<GPUAngularSubframe, GPUDecodedFrameData> {
     public:
         explicit Runtime(GPUAngularSubframe &physical)
-            : GPUUnaryOperator::Runtime<GPUAngularSubframe, GPUDecodedFrameData>(physical)
+            : GPUUnaryOperator::Runtime<GPUAngularSubframe, GPUDecodedFrameData>(physical),
+              configuration_(create_configuration(configuration()))
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if (iterator() != iterator().eos()) {
                 auto v = iterator()++;
-                return GPUDecodedFrameData{GetConfiguration(v.configuration()), v.frames()};
+                return GPUDecodedFrameData{configuration_, v.frames()};
+                //return GPUDecodedFrameData{GetConfiguration(v.configuration()), v.frames()};
             } else
                 return {};
         }
 
     private:
-        Configuration GetConfiguration(const Configuration &base) {
+        Configuration create_configuration(const Configuration &base) {
             if(logical()->volume().bounding().theta() == physical().parent().logical()->volume().bounding().theta() &&
                logical()->volume().bounding().phi() == physical().parent().logical()->volume().bounding().phi())
                 return base;
@@ -60,6 +62,8 @@ private:
 
             }
         }
+
+        const Configuration configuration_;
     };
 
     /*Configuration GetConfigurationTODOremove() {

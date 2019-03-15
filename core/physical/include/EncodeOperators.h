@@ -14,13 +14,13 @@
 
 namespace lightdb::physical {
 
-class GPUEncode : public GPUUnaryOperator {
+class GPUEncodeToCPU : public GPUUnaryOperator {
 public:
     static constexpr size_t kDefaultGopSize = 30;
 
-    explicit GPUEncode(const LightFieldReference &logical,
-                       PhysicalLightFieldReference &parent,
-                       Codec codec)
+    explicit GPUEncodeToCPU(const LightFieldReference &logical,
+                            PhysicalLightFieldReference &parent,
+                            Codec codec)
             : GPUUnaryOperator(logical, parent, runtime::make<Runtime>(*this)),
               codec_(std::move(codec)) {
         if(!codec.nvidiaId().has_value())
@@ -30,10 +30,10 @@ public:
     const Codec &codec() const { return codec_; }
 
 private:
-    class Runtime: public GPUUnaryOperator::Runtime<GPUEncode, GPUDecodedFrameData> {
+    class Runtime: public GPUUnaryOperator::Runtime<GPUEncodeToCPU, GPUDecodedFrameData> {
     public:
-        explicit Runtime(GPUEncode &physical)
-            : GPUUnaryOperator::Runtime<GPUEncode, GPUDecodedFrameData>(physical),
+        explicit Runtime(GPUEncodeToCPU &physical)
+            : GPUUnaryOperator::Runtime<GPUEncodeToCPU, GPUDecodedFrameData>(physical),
               encodeConfiguration_{configuration(), this->physical().codec().nvidiaId().value(), gop()},
               encoder_{context(), encodeConfiguration_, lock()},
               writer_{encoder_.api()},

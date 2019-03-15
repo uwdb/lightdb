@@ -110,7 +110,7 @@ TEST_F(EncodeTestFixture, testImplicitGOP) {
     EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
     EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height, Resources.red10.width);
     EXPECT_VIDEO_RED(Resources.out.hevc);
-    EXPECT_VIDEO_GOP(Resources.out.hevc, physical::GPUEncode::kDefaultGopSize);
+    EXPECT_VIDEO_GOP(Resources.out.hevc, physical::GPUEncodeToCPU::kDefaultGopSize);
     EXPECT_EQ(remove(Resources.out.hevc), 0);
 }
 

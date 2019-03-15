@@ -131,7 +131,7 @@ namespace lightdb::optimization {
                 if(physical_parent.is<physical::GPUAngularSubquery>() && physical_parent.downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>())
                     plan().emplace<physical::CPUIdentity>(logical, physical_parent);
                 else if(physical_parent.is<physical::GPUOperator>() && node.codec().nvidiaId().has_value())
-                    plan().emplace<physical::GPUEncode>(logical, physical_parent, node.codec());
+                    plan().emplace<physical::GPUEncodeToCPU>(logical, physical_parent, node.codec());
                 else if(physical_parent.is<physical::GPUOperator>() && node.codec() == Codec::raw())
                     plan().emplace<physical::GPUEnsureFrameCropped>(plan().lookup(node), physical_parent);
                 else if(physical_parent.is<physical::CPUMap>() && physical_parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
@@ -142,7 +142,7 @@ namespace lightdb::optimization {
                 else if(physical_parent->device() == physical::DeviceType::CPU) {
                     auto gpu = plan().environment().gpus()[0];
                     auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, physical_parent, gpu);
-                    plan().emplace<physical::GPUEncode>(plan().lookup(node), transfer, node.codec());
+                    plan().emplace<physical::GPUEncodeToCPU>(plan().lookup(node), transfer, node.codec());
                 } else
                     return false;
                 return true;
@@ -607,7 +607,7 @@ namespace lightdb::optimization {
             //} else if(parent.is<physical::GPUOperatorAdapter>() && parent->parents()[0].is<physical::GPUAngularSubquery>() && parent->parents()[0].downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
             //    return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent.is<physical::GPUOperator>()) {
-                return plan().emplace<physical::GPUEncode>(logical, parent, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
             } else if(parent.is<physical::CPUMap>() && parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
                 //TODO this is silly -- every physical operator should declare an output type and we should just use that
@@ -618,12 +618,12 @@ namespace lightdb::optimization {
             } else if(parent->device() != physical::DeviceType::GPU) {
                 auto gpu = plan().environment().gpus()[0];
                 auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, parent, gpu);
-                return plan().emplace<physical::GPUEncode>(logical, transfer, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, transfer, Codec::hevc());
             } else if(!parent.is<physical::GPUOperator>()) {
                 auto gpuop = plan().emplace<physical::GPUOperatorAdapter>(parent);
-                return plan().emplace<physical::GPUEncode>(logical, gpuop, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, gpuop, Codec::hevc());
             } else
-                return plan().emplace<physical::GPUEncode>(logical, parent, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
         }
 
         bool visit(const logical::StoredLightField &node) override {
@@ -660,19 +660,19 @@ namespace lightdb::optimization {
                 //} else if(parent.is<physical::GPUOperatorAdapter>() && parent->parents()[0].is<physical::GPUAngularSubquery>() && parent->parents()[0].downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
                 //    return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent.is<physical::GPUOperator>()) {
-                return plan().emplace<physical::GPUEncode>(logical, parent, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
                 //TODO this is silly -- every physical operator should declare an output type and we should just use that
             } else if(parent.is<physical::TeedPhysicalLightFieldAdapter::TeedPhysicalLightField>() && parent->parents()[0].is<physical::GPUAngularSubquery>()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent->device() != physical::DeviceType::GPU) {
                 auto gpu = plan().environment().gpus()[0];
                 auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, parent, gpu);
-                return plan().emplace<physical::GPUEncode>(logical, transfer, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, transfer, Codec::hevc());
             } else if(!parent.is<physical::GPUOperator>()) {
                 auto gpuop = plan().emplace<physical::GPUOperatorAdapter>(parent);
-                return plan().emplace<physical::GPUEncode>(logical, gpuop, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, gpuop, Codec::hevc());
             } else
-                return plan().emplace<physical::GPUEncode>(logical, parent, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
         }
 
         bool visit(const logical::SunkLightField &node) override {
@@ -724,7 +724,6 @@ namespace lightdb::optimization {
                 if(assignment.is<physical::GPUIdentity>() ||
                    assignment.is<physical::CPUIdentity>()) {
                     auto &parents = assignment->parents();
-
 
                     CHECK_EQ(parents.size(), 1);
 

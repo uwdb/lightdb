@@ -17,46 +17,32 @@ public:
                               const execution::GPU &gpu)
             : GPUDecodeFromCPU(logical,
                                source,
-                               source.expect_downcast<EncodedVideoInterface>(),
                                gpu,
                                std::chrono::milliseconds(1u))
     { }
 
     template<typename Rep, typename Period>
     explicit GPUDecodeFromCPU(const LightFieldReference &logical,
-                              PhysicalLightFieldReference source,
+                              PhysicalLightFieldReference &source,
                               const execution::GPU &gpu,
-                              const std::chrono::duration<Rep, Period> &poll_duration)
-            : GPUDecodeFromCPU(logical,
-                               source,
-                               source.expect_downcast<EncodedVideoInterface>(),
-                               gpu,
-                               poll_duration)
-    { }
+                              std::chrono::duration<Rep, Period> poll_duration)
+            : GPUUnaryOperator(logical, source, runtime::make<Runtime>(*this, source), gpu),
+              poll_duration_(poll_duration) {
+        CHECK(source.is<EncodedVideoInterface>());
+        CHECK_EQ(source->device(), DeviceType::CPU);
+    }
 
     GPUDecodeFromCPU(const GPUDecodeFromCPU&) = delete;
     GPUDecodeFromCPU(GPUDecodeFromCPU&&) = default;
 
     std::chrono::microseconds poll_duration() const { return poll_duration_; }
 
-protected:
-    template<typename Rep, typename Period>
-    explicit GPUDecodeFromCPU(const LightFieldReference &logical,
-                              const PhysicalLightFieldReference &source,
-                              EncodedVideoInterface &encoded,
-                              const execution::GPU &gpu,
-                              std::chrono::duration<Rep, Period> poll_duration)
-            : GPUUnaryOperator(logical, source, runtime::make<Runtime>(*this, encoded), gpu),
-              poll_duration_(poll_duration) {
-        CHECK_EQ(source->device(), DeviceType::CPU);
-    }
-
 private:
     class Runtime: public GPUUnaryOperator::Runtime<GPUDecodeFromCPU, CPUEncodedFrameData> {
     public:
-        explicit Runtime(GPUDecodeFromCPU &physical, EncodedVideoInterface &encoded)
+        explicit Runtime(GPUDecodeFromCPU &physical, PhysicalLightFieldReference &encoded)
             : GPUUnaryOperator::Runtime<GPUDecodeFromCPU, CPUEncodedFrameData>(physical),
-              decode_configuration_{configuration(), encoded.codec()},
+              decode_configuration_{configuration(), encoded.expect_downcast<EncodedVideoInterface>().codec()},
               queue_{lock()},
               decoder_{decode_configuration_, queue_, lock()},
               session_{decoder_, iterator(), iterator().eos()}

@@ -16,6 +16,9 @@ namespace lightdb {
         template<>
         class Runtime<> {
         public:
+            Runtime(const Runtime&) = delete;
+            Runtime(Runtime&&) = default;
+
             class iterator;
             template<typename T>
             using downcast_iterator = functional::downcast_iterator<T, iterator>;
@@ -71,7 +74,9 @@ namespace lightdb {
 
             inline virtual const iterator &end() { return iterator::eos(); }
 
+            //TODO make this protected after GPUOperatorAdapter is removed
             virtual std::optional<physical::MaterializedLightFieldReference> read() = 0;
+            std::vector<iterator> &iterators() noexcept { return iterators_; }
 
         protected:
             explicit Runtime(PhysicalLightField &physical);
@@ -79,10 +84,7 @@ namespace lightdb {
             virtual ~Runtime() = default;
 
             inline virtual PhysicalLightField &physical() { return physical_; }
-
             inline virtual const PhysicalLightField &physical() const { return physical_; }
-
-            std::vector<iterator> &iterators() noexcept { return iterators_; }
 
             LightFieldReference logical() const;
 
@@ -127,6 +129,9 @@ namespace lightdb {
                 CHECK_EQ(physical.parents().size(), 1);
             }
 
+            template<typename T=PhysicalLightField>
+            T& parent() noexcept { return functional::single(this->physical().parents()).template downcast<T>(); }
+
             runtime::Runtime<>::downcast_iterator<Data>& iterator() noexcept { return iterator_; }
 
             template <typename T=Data, typename = typename std::enable_if<std::is_base_of<physical::FrameData, T>::value>>
@@ -136,10 +141,30 @@ namespace lightdb {
             runtime::Runtime<>::template downcast_iterator<Data> iterator_;
         };
 
-        template<typename Runtime, typename... _Args>
-        static auto make(_Args&&... args) {
-            return lazy<RuntimeReference>{[&args...]() {
-                return RuntimeReference::make<Runtime>(args...); } };
+        template <typename Runtime,
+                  typename Physical,
+                  typename... Args,
+                  typename = typename std::enable_if<(std::is_move_constructible<Args>::value && ...)>::type>
+        static lazy<RuntimeReference>
+        make(Physical& physical, Args&&... args) {
+            return lazy<RuntimeReference>{[
+                    &physical,
+                    args = std::make_tuple(std::forward<Args>(args) ...)]() mutable {
+                return std::apply([&physical](auto&& ... args) {
+                    return RuntimeReference::make<Runtime>(physical, args...);
+                    }, std::move(args));
+                }
+            };
+        }
+
+        template <typename Runtime,
+                  typename Physical,
+                  typename... Args,
+                  typename = typename std::enable_if<!(std::is_move_constructible<Args>::value && ...)>::type>
+        static lazy<RuntimeReference>
+        make(Physical &physical, Args&... args) {
+            return lazy<RuntimeReference>{[&physical, args...]() mutable {
+                return RuntimeReference::make<Runtime>(physical, args...); } };
         }
 
         using RuntimeIterator = Runtime<>::iterator;

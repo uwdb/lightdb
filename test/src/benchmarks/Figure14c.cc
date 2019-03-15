@@ -11,11 +11,10 @@ using namespace lightdb::optimization;
 using namespace lightdb::catalog;
 using namespace lightdb::execution;
 using namespace lightdb::utility::ffmpeg;
-using namespace std::chrono;
 
-class DegenerateSelectionBenchmarkTestFixture : public testing::Test {
+class Figure14cTestFixture : public testing::Test {
 public:
-    DegenerateSelectionBenchmarkTestFixture()
+    Figure14cTestFixture()
             : catalog(Resources.catalog_name),
               path(std::filesystem::absolute(LIGHTDB_BENCHMARK_DATASET_PATH)) {
         Catalog::instance(catalog);
@@ -69,27 +68,27 @@ protected:
     const std::filesystem::path path;
 };
 
-TEST_F(DegenerateSelectionBenchmarkTestFixture, testSelectTime_1K) {
+TEST_F(Figure14cTestFixture, testSelectTime_1K) {
     testDegenerateTimeSelect("timelapse/timelapse1K.h264");
 }
 
-TEST_F(DegenerateSelectionBenchmarkTestFixture, testSelectTime_2K) {
+TEST_F(Figure14cTestFixture, testSelectTime_2K) {
     testDegenerateTimeSelect("timelapse/timelapse2K.h264");
 }
 
-TEST_F(DegenerateSelectionBenchmarkTestFixture, testSelectTime_4K) {
+TEST_F(Figure14cTestFixture, testSelectTime_4K) {
     testDegenerateTimeSelect("timelapse/timelapse4K.h264");
 }
 
-TEST_F(DegenerateSelectionBenchmarkTestFixture, testSelectAngle_1K) {
+TEST_F(Figure14cTestFixture, testSelectAngle_1K) {
     testDegenerateAngularSelect("timelapse/timelapse1K.h264");
 }
 
-TEST_F(DegenerateSelectionBenchmarkTestFixture, testSelectAngle_2K) {
+TEST_F(Figure14cTestFixture, testSelectAngle_2K) {
     testDegenerateAngularSelect("timelapse/timelapse2K.h264");
 }
 
-TEST_F(DegenerateSelectionBenchmarkTestFixture, testSelectAngle_4K) {
+TEST_F(Figure14cTestFixture, testSelectAngle_4K) {
     testDegenerateAngularSelect("timelapse/timelapse4K.h264");
 }
 

@@ -121,7 +121,7 @@ private:
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
-            return source_->runtime()->read();
+            return source_->runtime()->iterators().front()++;
         }
 
     private:
@@ -221,7 +221,7 @@ public:
 
                 if(queue.empty())
                     // Teed stream's queue is empty, so read from base stream and broadcast to all queues
-                    if((value = source_->runtime()->read()).has_value())
+                    if((value = functional::single(iterators())++).has_value())
                         std::for_each(queues_->begin(), queues_->end(), [&value](auto &q) { q.push(value.value()); });
 
                 // Now return a value (if any) from this tee's queue
