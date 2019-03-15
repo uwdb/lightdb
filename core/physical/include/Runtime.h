@@ -120,11 +120,11 @@ namespace lightdb {
             Physical &physical_;
         };
 
-        template<typename Physical, typename Data>
-        class UnaryRuntime: public Runtime<Physical> {
+        template<typename Physical, typename Data, typename BaseRuntime=Runtime<Physical>>
+        class UnaryRuntime: public BaseRuntime {
         protected:
             explicit UnaryRuntime(Physical &physical)
-                    : Runtime<Physical>(physical),
+                    : BaseRuntime(physical),
                       iterator_(this->iterators().front().template downcast<Data>()) {
                 CHECK_EQ(physical.parents().size(), 1);
             }
@@ -137,16 +137,38 @@ namespace lightdb {
             template <typename T=Data, typename = typename std::enable_if<std::is_base_of<physical::FrameData, T>::value>>
             Configuration configuration() { return (*iterator()).configuration(); }
 
+            template <typename T=Data, typename = typename std::enable_if<std::is_base_of<physical::EncodedFrameData, T>::value>>
+            Codec codec() { return (*iterator()).codec(); }
+
         private:
             runtime::Runtime<>::template downcast_iterator<Data> iterator_;
         };
+
+        template<typename Physical=PhysicalLightField>
+        class GPURuntime: public runtime::Runtime<Physical> {
+        public:
+            explicit GPURuntime(Physical &physical)
+                    : runtime::Runtime<Physical>(physical),
+                      context_(physical.gpu().context()),
+                      lock_(context_)
+            { }
+
+            GPUContext& context() { return context_; }
+            VideoLock& lock() {return lock_; }
+
+        private:
+            GPUContext context_;
+            VideoLock lock_;
+        };
+
+        template<typename Physical, typename Data>
+        using GPUUnaryRuntime = runtime::UnaryRuntime<Physical, Data, GPURuntime<Physical>>;
 
         template <typename Runtime,
                   typename Physical,
                   typename... Args,
                   typename = typename std::enable_if<(std::is_move_constructible<Args>::value && ...)>::type>
-        static lazy<RuntimeReference>
-        make(Physical& physical, Args&&... args) {
+        static auto make(Physical& physical, Args&&... args) {
             return lazy<RuntimeReference>{[
                     &physical,
                     args = std::make_tuple(std::forward<Args>(args) ...)]() mutable {
@@ -161,8 +183,7 @@ namespace lightdb {
                   typename Physical,
                   typename... Args,
                   typename = typename std::enable_if<!(std::is_move_constructible<Args>::value && ...)>::type>
-        static lazy<RuntimeReference>
-        make(Physical &physical, Args&... args) {
+        static auto make(Physical &physical, Args&... args) {
             return lazy<RuntimeReference>{[&physical, args...]() mutable {
                 return RuntimeReference::make<Runtime>(physical, args...); } };
         }

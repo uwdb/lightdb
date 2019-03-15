@@ -9,23 +9,23 @@
 
 namespace lightdb::physical {
 
-class GPUInterpolate: public GPUUnaryOperator {
+class GPUInterpolate: public PhysicalLightField, public GPUOperator {
 public:
     GPUInterpolate(const LightFieldReference &logical,
                    PhysicalLightFieldReference &parent,
                    const interpolation::InterpolatorReference &interpolator)
-            : GPUUnaryOperator(logical, parent, runtime::make<Runtime>(*this)),
+            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+              GPUOperator(parent),
               interpolator_(interpolator)
     { }
 
     interpolation::InterpolatorReference interpolator() const { return interpolator_; }
 
 private:
-
-    class Runtime: public GPUUnaryOperator::Runtime<GPUInterpolate, GPUDecodedFrameData> {
+    class Runtime: public runtime::GPUUnaryRuntime<GPUInterpolate, GPUDecodedFrameData> {
     public:
         explicit Runtime(GPUInterpolate &physical)
-            : GPUUnaryOperator::Runtime<GPUInterpolate, GPUDecodedFrameData>(physical)
+            : runtime::GPUUnaryRuntime<GPUInterpolate, GPUDecodedFrameData>(physical)
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {

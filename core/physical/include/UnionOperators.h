@@ -7,13 +7,13 @@
 
 namespace lightdb::physical {
 
-class GPUTileUnion : public GPUOperator {
+class GPUTileUnion : public PhysicalLightField, public GPUOperator {
 public:
     explicit GPUTileUnion(const LightFieldReference &logical,
                           std::vector<PhysicalLightFieldReference> &parents,
                           const unsigned int rows, const unsigned int columns)
-            : GPUOperator(logical, parents, runtime::make<Runtime>(*this),
-                          parents.front().downcast<GPUOperator>().gpu()),
+            : PhysicalLightField(logical, parents, DeviceType::GPU, runtime::make<Runtime>(*this)),
+              GPUOperator(parents.front()),
               rows_(rows),
               columns_(columns)
     { }
@@ -24,10 +24,10 @@ public:
     unsigned int columns() const { return columns_; }
 
 private:
-    class Runtime: public GPUOperator::Runtime<GPUTileUnion> {
+    class Runtime: public runtime::GPURuntime<GPUTileUnion> {
     public:
         explicit Runtime(GPUTileUnion &physical)
-            : GPUOperator::Runtime<GPUTileUnion>(physical),
+            : runtime::GPURuntime<GPUTileUnion>(physical),
               configuration_(create_configuration(physical.rows(), physical.columns())),
               frames_(functional::make_union_iterator<GPUFrameReference>(
                       functional::transform<
@@ -90,21 +90,21 @@ private:
 
 
 template<typename Transform, typename Data>
-class GPUOverlayUnion : public GPUOperator {
+class GPUOverlayUnion : public PhysicalLightField, public GPUOperator {
 public:
     explicit GPUOverlayUnion(const LightFieldReference &logical,
                              std::vector<PhysicalLightFieldReference> &parents)
-            : GPUOperator(logical, parents, runtime::make<Runtime>(*this),
-                          parents.back().downcast<GPUOperator>().gpu())
+            : PhysicalLightField(logical, parents, DeviceType::GPU, runtime::make<Runtime>(*this)),
+              GPUOperator(parents.back())
     { }
 
     GPUOverlayUnion(const GPUOverlayUnion &) = delete;
 
 private:
-    class Runtime: public GPUOperator::Runtime<GPUOverlayUnion> {
+    class Runtime: public runtime::GPURuntime<GPUOverlayUnion> {
     public:
         explicit Runtime(GPUOverlayUnion &physical)
-            : GPUOperator::Runtime<GPUOverlayUnion>(physical),
+            : runtime::GPURuntime<GPUOverlayUnion>(physical),
               transform_(this->context()),
               groups_(this->iterators().front()) {
             CHECK_EQ(physical.parents().size(), 2);

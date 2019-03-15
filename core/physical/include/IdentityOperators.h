@@ -31,18 +31,19 @@ namespace lightdb::physical {
         };
     };
 
-    class GPUIdentity: public GPUUnaryOperator {
+    class GPUIdentity: public PhysicalLightField, public GPUOperator {
     public:
         GPUIdentity(const LightFieldReference &logical,
                     PhysicalLightFieldReference &parent)
-                : GPUUnaryOperator(logical, parent, runtime::make<Runtime>(*this))
+                : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+                  GPUOperator(parent)
         { }
 
     private:
-        class Runtime: public GPUUnaryOperator::Runtime<GPUIdentity, GPUDecodedFrameData> {
+        class Runtime: public runtime::UnaryRuntime<GPUIdentity, GPUDecodedFrameData> {
         public:
             explicit Runtime(GPUIdentity &physical)
-                : GPUUnaryOperator::Runtime<GPUIdentity, GPUDecodedFrameData>(physical)
+                : runtime::UnaryRuntime<GPUIdentity, GPUDecodedFrameData>(physical)
             { }
 
             std::optional<physical::MaterializedLightFieldReference> read() override {

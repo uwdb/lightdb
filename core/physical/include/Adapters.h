@@ -90,7 +90,7 @@ private:
  * which is sad and should be fixed.
  */
 //TODO Fix the sadness -- this rule is only used in one place
-class GPUOperatorAdapter: public GPUOperator {
+class GPUOperatorAdapter: public PhysicalLightField, public GPUOperator {
 public:
     explicit GPUOperatorAdapter(const PhysicalLightFieldReference &source)
             : GPUOperatorAdapter(source, {})
@@ -113,10 +113,22 @@ public:
     ~GPUOperatorAdapter() override = default;
 
 private:
-    class Runtime: public GPUOperator::Runtime<GPUOperatorAdapter> {
+    GPUOperatorAdapter(const PhysicalLightFieldReference &source,
+                       GPUOperator &op,
+                       const std::vector<PhysicalLightFieldReference> &parents)
+            : PhysicalLightField(source->logical(),
+                                 parents,
+                                 DeviceType::GPU,
+                                 lazy<runtime::RuntimeReference>{[source]() { return source->runtime(); }}),
+                                 //op.gpu()),
+              GPUOperator(op.gpu())
+    { }
+
+    class Runtime: public runtime::GPURuntime<GPUOperatorAdapter> {
     public:
-        explicit Runtime(GPUOperatorAdapter &physical, const PhysicalLightFieldReference &source)
-            : GPUOperator::Runtime<GPUOperatorAdapter>(physical),
+        explicit Runtime(GPUOperatorAdapter &physical,
+                         const PhysicalLightFieldReference &source)
+            : GPURuntime<GPUOperatorAdapter>(physical),
               source_(source)
         { }
 
@@ -128,19 +140,10 @@ private:
         PhysicalLightFieldReference source_;
     };
 
-    GPUOperatorAdapter(const PhysicalLightFieldReference &source,
-                       GPUOperator &op,
-                       const std::vector<PhysicalLightFieldReference> &parents)
-            : GPUOperator(source->logical(),
-                          parents,
-                          lazy<runtime::RuntimeReference>{[source]() { return source->runtime(); }},
-                          op.gpu())
-    { }
-
     static GPUOperator& FindGPUOperatorAncestor(PhysicalLightFieldReference physical) {
         // Find ancestor GPUOperator instance given other possible intermediating GPU-based ancestors
         if(physical.is<GPUOperator>())
-            return physical.downcast<GPUOperator>();
+            return physical.downcast<GPUOperator>(); //GPUOperatorOld>();
         else if(physical->device() == DeviceType::GPU &&
                 physical->parents().size() == 1)
             return FindGPUOperatorAncestor(physical->parents().front());

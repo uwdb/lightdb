@@ -5,7 +5,7 @@
 
 namespace lightdb::physical {
 
-class Store: public PhysicalLightField, public EncodedVideoInterface {
+class Store: public PhysicalLightField, public EncodedVideoOperator {
 public:
     explicit Store(const LightFieldReference &logical,
                    PhysicalLightFieldReference &parent)

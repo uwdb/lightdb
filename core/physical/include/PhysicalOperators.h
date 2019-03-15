@@ -16,6 +16,7 @@ namespace lightdb {
     class PhysicalLightField;
     using PhysicalLightFieldReference = shared_reference<PhysicalLightField, AddressableMixin<PhysicalLightField>>;
 
+    //TODO rename to PhysicalOperator
     class PhysicalLightField {
     public:
         inline std::string type() const noexcept { return typeid(*this).name(); }
@@ -50,31 +51,6 @@ namespace lightdb {
         const LightFieldReference logical_;
         const physical::DeviceType deviceType_;
         lazy<runtime::RuntimeReference> runtime_;
-    };
-
-    class FrameLightField: public PhysicalLightField {
-    public:
-        template<typename Physical>
-        class Runtime: public runtime::Runtime<Physical> {
-        protected:
-            explicit Runtime(Physical &physical)
-                : runtime::Runtime<Physical>(physical)
-            { }
-        };
-
-    protected:
-        explicit FrameLightField(const LightFieldReference &logical,
-                                 const physical::DeviceType deviceType,
-                                 const lazy<runtime::RuntimeReference> &runtime)
-                : FrameLightField(logical, std::vector<PhysicalLightFieldReference>{}, deviceType, runtime)
-        { }
-
-        explicit FrameLightField(const LightFieldReference &logical,
-                                   const std::vector<PhysicalLightFieldReference> &parents,
-                                   const physical::DeviceType deviceType,
-                                   const lazy<runtime::RuntimeReference> &runtime)
-                : PhysicalLightField(logical, parents, deviceType, runtime)
-        { }
     };
 } // namespace lightdb
 

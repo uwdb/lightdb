@@ -10,7 +10,7 @@
 
 namespace lightdb::physical {
 
-class GPUDecodeFromCPU : public GPUUnaryOperator {
+class GPUDecodeFromCPU : public PhysicalLightField, public GPUOperator {
 public:
     explicit GPUDecodeFromCPU(const LightFieldReference &logical,
                               PhysicalLightFieldReference source,
@@ -26,9 +26,10 @@ public:
                               PhysicalLightFieldReference &source,
                               const execution::GPU &gpu,
                               std::chrono::duration<Rep, Period> poll_duration)
-            : GPUUnaryOperator(logical, source, runtime::make<Runtime>(*this, source), gpu),
+            : PhysicalLightField(logical, {source}, DeviceType::GPU, runtime::make<Runtime>(*this, source)),
+              GPUOperator(gpu),
               poll_duration_(poll_duration) {
-        CHECK(source.is<EncodedVideoInterface>());
+        CHECK(source.is<EncodedVideoOperator>());
         CHECK_EQ(source->device(), DeviceType::CPU);
     }
 
@@ -38,11 +39,11 @@ public:
     std::chrono::microseconds poll_duration() const { return poll_duration_; }
 
 private:
-    class Runtime: public GPUUnaryOperator::Runtime<GPUDecodeFromCPU, CPUEncodedFrameData> {
+    class Runtime: public runtime::GPUUnaryRuntime<GPUDecodeFromCPU, CPUEncodedFrameData> {
     public:
         explicit Runtime(GPUDecodeFromCPU &physical, PhysicalLightFieldReference &encoded)
-            : GPUUnaryOperator::Runtime<GPUDecodeFromCPU, CPUEncodedFrameData>(physical),
-              decode_configuration_{configuration(), encoded.expect_downcast<EncodedVideoInterface>().codec()},
+            : runtime::GPUUnaryRuntime<GPUDecodeFromCPU, CPUEncodedFrameData>(physical),
+              decode_configuration_{configuration(), encoded.expect_downcast<EncodedVideoOperator>().codec()},
               queue_{lock()},
               decoder_{decode_configuration_, queue_, lock()},
               session_{decoder_, iterator(), iterator().eos()}

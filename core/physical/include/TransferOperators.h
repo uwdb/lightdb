@@ -33,19 +33,20 @@ private:
     };
 };
 
-class CPUtoGPUTransfer: public GPUOperator {
+class CPUtoGPUTransfer: public PhysicalLightField, public GPUOperator {
 public:
     CPUtoGPUTransfer(const LightFieldReference &logical,
                 PhysicalLightFieldReference &parent,
                 const execution::GPU &gpu)
-            : GPUOperator(logical, {parent}, runtime::make<Runtime>(*this), gpu)
+            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)), //, gpu),
+              GPUOperator(gpu)
     { }
 
 private:
-    class Runtime: public GPUOperator::Runtime<CPUtoGPUTransfer> {
+    class Runtime: public runtime::GPURuntime<CPUtoGPUTransfer> {
     public:
         explicit Runtime(CPUtoGPUTransfer &physical)
-            : GPUOperator::Runtime<CPUtoGPUTransfer>(physical)
+            : runtime::GPURuntime<CPUtoGPUTransfer>(physical)
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {

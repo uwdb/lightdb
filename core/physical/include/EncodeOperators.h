@@ -14,14 +14,15 @@
 
 namespace lightdb::physical {
 
-class GPUEncodeToCPU : public GPUUnaryOperator {
+class GPUEncodeToCPU : public PhysicalLightField, public GPUOperator {
 public:
     static constexpr size_t kDefaultGopSize = 30;
 
     explicit GPUEncodeToCPU(const LightFieldReference &logical,
                             PhysicalLightFieldReference &parent,
                             Codec codec)
-            : GPUUnaryOperator(logical, parent, runtime::make<Runtime>(*this)),
+            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+              GPUOperator(parent),
               codec_(std::move(codec)) {
         if(!codec.nvidiaId().has_value())
             throw GpuRuntimeError("Requested codec does not have an Nvidia encode id");
@@ -30,10 +31,10 @@ public:
     const Codec &codec() const { return codec_; }
 
 private:
-    class Runtime: public GPUUnaryOperator::Runtime<GPUEncodeToCPU, GPUDecodedFrameData> {
+    class Runtime: public runtime::GPUUnaryRuntime<GPUEncodeToCPU, GPUDecodedFrameData> {
     public:
         explicit Runtime(GPUEncodeToCPU &physical)
-            : GPUUnaryOperator::Runtime<GPUEncodeToCPU, GPUDecodedFrameData>(physical),
+            : runtime::GPUUnaryRuntime<GPUEncodeToCPU, GPUDecodedFrameData>(physical),
               encodeConfiguration_{configuration(), this->physical().codec().nvidiaId().value(), gop()},
               encoder_{context(), encodeConfiguration_, lock()},
               writer_{encoder_.api()},

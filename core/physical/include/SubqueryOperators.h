@@ -10,12 +10,13 @@
 
 namespace lightdb::physical {
 
-class GPUAngularSubquery: public GPUUnaryOperator {
+class GPUAngularSubquery: public PhysicalLightField, public GPUOperator, UnaryOperator {
 public:
     GPUAngularSubquery(const LightFieldReference &logical,
                        PhysicalLightFieldReference &parent,
                        const optimization::OptimizerReference &optimizer)
-            : GPUUnaryOperator(logical, parent, runtime::make<Runtime>(*this)),
+            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+              GPUOperator(parent),
               optimizer_(optimizer),
               subquery_(logical.downcast<logical::SubqueriedLightField>().subquery()),
               type_(subquery_(LightFieldReference::make<logical::ConstantLightField>(YUVColor::red(), Point6D::zero()))) {
@@ -30,10 +31,10 @@ public:
     optimization::OptimizerReference optimizer() const { return optimizer_; }
 
 private:
-    class Runtime: public GPUUnaryOperator::Runtime<GPUAngularSubquery, GPUDecodedFrameData> {
+    class Runtime: public runtime::UnaryRuntime<GPUAngularSubquery, GPUDecodedFrameData> {
     public:
         explicit Runtime(GPUAngularSubquery &physical)
-            : GPUUnaryOperator::Runtime<GPUAngularSubquery, GPUDecodedFrameData>(physical),
+            : runtime::UnaryRuntime<GPUAngularSubquery, GPUDecodedFrameData>(physical),
               subplan_(CreatePlan()),
               subiterator_(ExecutePlan()),
               streams_(TeedPhysicalLightFieldAdapter::make(
@@ -62,7 +63,6 @@ private:
         runtime::RuntimeIterator subiterator_;
         std::shared_ptr<TeedPhysicalLightFieldAdapter> streams_;
     };
-
 
     const optimization::OptimizerReference optimizer_;
     const std::function<LightFieldReference(LightFieldReference)> subquery_;

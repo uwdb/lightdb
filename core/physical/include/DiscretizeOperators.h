@@ -9,7 +9,7 @@
 
 namespace lightdb::physical {
 
-class GPUDownsampleResolution: public GPUUnaryOperator {
+class GPUDownsampleResolution: public PhysicalLightField, public GPUOperator {
 public:
     GPUDownsampleResolution(const LightFieldReference &logical,
                             PhysicalLightFieldReference &parent,
@@ -20,17 +20,18 @@ public:
     GPUDownsampleResolution(const LightFieldReference &logical,
                             PhysicalLightFieldReference &parent,
                             std::vector<IntervalGeometry> geometries)
-            : GPUUnaryOperator(logical, parent, runtime::make<Runtime>(*this)),
+            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+              GPUOperator(parent),
               geometries_(std::move(geometries))
     { }
 
     std::vector<IntervalGeometry>& geometries() { return geometries_; }
 
 private:
-    class Runtime: public GPUUnaryOperator::Runtime<GPUDownsampleResolution, GPUDecodedFrameData> {
+    class Runtime: public runtime::GPUUnaryRuntime<GPUDownsampleResolution, GPUDecodedFrameData> {
     public:
         explicit Runtime(GPUDownsampleResolution &physical)
-            : GPUUnaryOperator::Runtime<GPUDownsampleResolution, GPUDecodedFrameData>(physical),
+            : runtime::GPUUnaryRuntime<GPUDownsampleResolution, GPUDecodedFrameData>(physical),
               scaler_(context())
         { }
 

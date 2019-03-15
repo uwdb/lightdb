@@ -15,18 +15,19 @@
 namespace lightdb::physical {
 
 // Just update the physical configuration, don't actual go ahead and copy the subframes
-class GPUAngularSubframe: public GPUUnaryOperator {
+class GPUAngularSubframe: public PhysicalLightField, public GPUOperator, UnaryOperator {
 public:
     explicit GPUAngularSubframe(const LightFieldReference &logical,
                                 PhysicalLightFieldReference &parent)
-            : GPUUnaryOperator(logical, parent, runtime::make<Runtime>(*this))
+            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+              GPUOperator(parent)
     { }
 
 private:
-    class Runtime : public GPUUnaryOperator::Runtime<GPUAngularSubframe, GPUDecodedFrameData> {
+    class Runtime : public runtime::GPUUnaryRuntime<GPUAngularSubframe, GPUDecodedFrameData> {
     public:
         explicit Runtime(GPUAngularSubframe &physical)
-            : GPUUnaryOperator::Runtime<GPUAngularSubframe, GPUDecodedFrameData>(physical),
+            : runtime::GPUUnaryRuntime<GPUAngularSubframe, GPUDecodedFrameData>(physical),
               configuration_(create_configuration(configuration()))
         { }
 
@@ -92,18 +93,19 @@ private:
     }*/
 };
 
-class GPUEnsureFrameCropped : public GPUUnaryOperator {
+class GPUEnsureFrameCropped : public PhysicalLightField, public GPUOperator {
 public:
     explicit GPUEnsureFrameCropped(const LightFieldReference &logical,
                                    PhysicalLightFieldReference &parent)
-            : GPUUnaryOperator(logical, parent, runtime::make<Runtime>(*this))
+            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+              GPUOperator(parent)
     { }
 
 private:
-    class Runtime: public GPUUnaryOperator::Runtime<GPUEnsureFrameCropped, GPUDecodedFrameData> {
+    class Runtime: public runtime::GPUUnaryRuntime<GPUEnsureFrameCropped, GPUDecodedFrameData> {
     public:
         explicit Runtime(GPUEnsureFrameCropped &physical)
-            : GPUUnaryOperator::Runtime<GPUEnsureFrameCropped, GPUDecodedFrameData>(physical)
+            : runtime::GPUUnaryRuntime<GPUEnsureFrameCropped, GPUDecodedFrameData>(physical)
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
@@ -124,30 +126,32 @@ private:
 };
 
 
-class FrameSubset: public GPUUnaryOperator {
+class FrameSubset: public PhysicalLightField, public GPUOperator, UnaryOperator {
 public:
     explicit FrameSubset(const LightFieldReference &logical,
                          PhysicalLightFieldReference &parent)
-            : GPUUnaryOperator(logical, parent, runtime::make<Runtime>(*this))
+            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+              GPUOperator(parent)
     { }
 
     explicit FrameSubset(const LightFieldReference &logical,
                          PhysicalLightFieldReference &parent,
                          unsigned long delay_frames)
-            : GPUUnaryOperator(logical, parent, runtime::make<Runtime>(*this, delay_frames))
+            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this, delay_frames)),
+              GPUOperator(parent)
     { }
 
 private:
-    class Runtime: public GPUUnaryOperator::Runtime<FrameSubset, GPUDecodedFrameData> {
+    class Runtime: public runtime::GPUUnaryRuntime<FrameSubset, GPUDecodedFrameData> {
     public:
         explicit Runtime(FrameSubset &physical)
-            : GPUUnaryOperator::Runtime<FrameSubset, GPUDecodedFrameData>(physical),
+            : runtime::GPUUnaryRuntime<FrameSubset, GPUDecodedFrameData>(physical),
               pending_frames_(DefaultPending()),
               delay_frames_(DefaultDelay())
         { }
 
         Runtime(FrameSubset &physical, unsigned long delay_frames)
-            : GPUUnaryOperator::Runtime<FrameSubset, GPUDecodedFrameData>(physical),
+            : runtime:: GPUUnaryRuntime<FrameSubset, GPUDecodedFrameData>(physical),
               pending_frames_(DefaultPending()),
               delay_frames_(delay_frames)
         { }

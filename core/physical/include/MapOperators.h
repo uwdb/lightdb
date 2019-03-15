@@ -9,12 +9,13 @@
 namespace lightdb::physical {
 
 //TODO CPUMap and GPU map can be combined into one templated class
-class GPUMap: public GPUUnaryOperator {
+class GPUMap: public PhysicalLightField, public GPUOperator {
 public:
     GPUMap(const LightFieldReference &logical,
            PhysicalLightFieldReference &parent,
            const functor::unaryfunctor &transform)
-            : GPUUnaryOperator(logical, parent, runtime::make<Runtime>(*this)),
+            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+              GPUOperator(parent),
               transform_(transform)
     { }
 
@@ -22,10 +23,10 @@ public:
 
 private:
 
-    class Runtime: public GPUUnaryOperator::Runtime<GPUMap, GPUDecodedFrameData> {
+    class Runtime: public runtime::GPUUnaryRuntime<GPUMap, GPUDecodedFrameData> {
     public:
         explicit Runtime(GPUMap &physical)
-            : GPUUnaryOperator::Runtime<GPUMap, GPUDecodedFrameData>(physical)
+            : runtime::GPUUnaryRuntime<GPUMap, GPUDecodedFrameData>(physical)
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
