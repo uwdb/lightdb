@@ -2,7 +2,6 @@
 #define LIGHTDB_ADAPTERS_H
 
 #include "LightField.h"
-#include "GPUOperators.h"
 #include "MaterializedLightField.h"
 #include <queue>
 #include <mutex>

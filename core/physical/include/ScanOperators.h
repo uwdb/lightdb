@@ -5,7 +5,7 @@
 
 namespace lightdb::physical {
 
-class ScanSingleFileDecodeReader: public PhysicalLightField, public EncodedVideoOperator {
+class ScanSingleFileDecodeReader: public PhysicalLightField {
 public:
     explicit ScanSingleFileDecodeReader(const LightFieldReference &logical, catalog::Stream stream)
             : PhysicalLightField(logical, DeviceType::CPU, runtime::make<Runtime>(*this)),
@@ -13,7 +13,7 @@ public:
     { }
 
     const catalog::Stream &stream() const { return stream_; }
-    const Codec &codec() const override { return stream_.codec(); }
+    const Codec &codec() const { return stream_.codec(); }
 
 private:
     class Runtime: public runtime::Runtime<ScanSingleFileDecodeReader> {
@@ -38,7 +38,7 @@ private:
 };
 
 template<size_t Size=131072>
-class ScanSingleFile: public PhysicalLightField, public EncodedVideoOperator {
+class ScanSingleFile: public PhysicalLightField {
 public:
     explicit ScanSingleFile(const LightFieldReference &logical, catalog::Stream stream)
             : PhysicalLightField(logical, DeviceType::CPU, runtime::make<Runtime>(*this)),
@@ -46,7 +46,7 @@ public:
     { }
 
     const catalog::Stream &stream() const { return stream_; }
-    const Codec &codec() const override { return stream_.codec(); }
+    const Codec &codec() const { return stream_.codec(); }
 
 private:
     class Runtime: public runtime::Runtime<ScanSingleFile<Size>> {

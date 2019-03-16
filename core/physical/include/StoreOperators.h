@@ -5,7 +5,7 @@
 
 namespace lightdb::physical {
 
-class Store: public PhysicalLightField, public EncodedVideoOperator {
+class Store: public PhysicalLightField {
 public:
     explicit Store(const LightFieldReference &logical,
                    PhysicalLightFieldReference &parent)
@@ -14,7 +14,7 @@ public:
                     parent)
     { }
 
-    const Codec &codec() const override { return store_.codec(); }
+    const Codec &codec() const { return store_.codec(); }
 
 private:
     explicit Store(const LightFieldReference &logical,

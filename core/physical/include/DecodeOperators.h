@@ -26,10 +26,9 @@ public:
                               PhysicalLightFieldReference &source,
                               const execution::GPU &gpu,
                               std::chrono::duration<Rep, Period> poll_duration)
-            : PhysicalLightField(logical, {source}, DeviceType::GPU, runtime::make<Runtime>(*this, source)),
+            : PhysicalLightField(logical, {source}, DeviceType::GPU, runtime::make<Runtime>(*this)),
               GPUOperator(gpu),
               poll_duration_(poll_duration) {
-        CHECK(source.is<EncodedVideoOperator>());
         CHECK_EQ(source->device(), DeviceType::CPU);
     }
 
@@ -41,9 +40,9 @@ public:
 private:
     class Runtime: public runtime::GPUUnaryRuntime<GPUDecodeFromCPU, CPUEncodedFrameData> {
     public:
-        explicit Runtime(GPUDecodeFromCPU &physical, PhysicalLightFieldReference &encoded)
+        explicit Runtime(GPUDecodeFromCPU &physical)
             : runtime::GPUUnaryRuntime<GPUDecodeFromCPU, CPUEncodedFrameData>(physical),
-              decode_configuration_{configuration(), encoded.expect_downcast<EncodedVideoOperator>().codec()},
+              decode_configuration_{configuration(), codec()},
               queue_{lock()},
               decoder_{decode_configuration_, queue_, lock()},
               session_{decoder_, iterator(), iterator().eos()}

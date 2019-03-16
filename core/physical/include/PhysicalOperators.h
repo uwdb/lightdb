@@ -52,6 +52,35 @@ namespace lightdb {
         const physical::DeviceType deviceType_;
         lazy<runtime::RuntimeReference> runtime_;
     };
+
+    namespace physical {
+        class GPUOperator {
+        public:
+            inline const execution::GPU& gpu() const { return gpu_; }
+
+        protected:
+            explicit GPUOperator(PhysicalLightFieldReference &parent)
+                    : GPUOperator(parent.expect_downcast<GPUOperator>())
+            { }
+
+            explicit GPUOperator(const execution::GPU &gpu)
+                    : gpu_(gpu)
+            { }
+
+            GPUOperator(const GPUOperator &parent) = default;
+
+        private:
+            const execution::GPU gpu_;
+        };
+
+        class UnaryOperator {
+        protected:
+            template<typename Physical=PhysicalLightField>
+            Physical& parent() noexcept {
+                return functional::single(reinterpret_cast<PhysicalLightField*>(this)->parents()).template downcast<Physical>();
+            }
+        };
+    } // namespace physical
 } // namespace lightdb
 
 #endif //LIGHTDB_PHYSICALOPERATORS_H
