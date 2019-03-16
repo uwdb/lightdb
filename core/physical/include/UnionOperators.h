@@ -7,12 +7,12 @@
 
 namespace lightdb::physical {
 
-class GPUTileUnion : public PhysicalLightField, public GPUOperator {
+class GPUTileUnion : public PhysicalOperator, public GPUOperator {
 public:
     explicit GPUTileUnion(const LightFieldReference &logical,
-                          std::vector<PhysicalLightFieldReference> &parents,
+                          std::vector<PhysicalOperatorReference> &parents,
                           const unsigned int rows, const unsigned int columns)
-            : PhysicalLightField(logical, parents, DeviceType::GPU, runtime::make<Runtime>(*this)),
+            : PhysicalOperator(logical, parents, DeviceType::GPU, runtime::make<Runtime>(*this)),
               GPUOperator(parents.front()),
               rows_(rows),
               columns_(columns)
@@ -90,11 +90,11 @@ private:
 
 
 template<typename Transform, typename Data>
-class GPUOverlayUnion : public PhysicalLightField, public GPUOperator {
+class GPUOverlayUnion : public PhysicalOperator, public GPUOperator {
 public:
     explicit GPUOverlayUnion(const LightFieldReference &logical,
-                             std::vector<PhysicalLightFieldReference> &parents)
-            : PhysicalLightField(logical, parents, DeviceType::GPU, runtime::make<Runtime>(*this)),
+                             std::vector<PhysicalOperatorReference> &parents)
+            : PhysicalOperator(logical, parents, DeviceType::GPU, runtime::make<Runtime>(*this)),
               GPUOperator(parents.back())
     { }
 

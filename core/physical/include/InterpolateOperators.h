@@ -9,12 +9,12 @@
 
 namespace lightdb::physical {
 
-class GPUInterpolate: public PhysicalLightField, public GPUOperator {
+class GPUInterpolate: public PhysicalOperator, public GPUOperator {
 public:
     GPUInterpolate(const LightFieldReference &logical,
-                   PhysicalLightFieldReference &parent,
+                   PhysicalOperatorReference &parent,
                    const interpolation::InterpolatorReference &interpolator)
-            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+            : PhysicalOperator(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
               GPUOperator(parent),
               interpolator_(interpolator)
     { }

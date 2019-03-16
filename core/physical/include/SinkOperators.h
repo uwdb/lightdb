@@ -5,17 +5,17 @@
 
 namespace lightdb::physical {
 
-class Sink: public PhysicalLightField {
+class Sink: public PhysicalOperator {
 public:
     explicit Sink(const LightFieldReference &logical,
-                   PhysicalLightFieldReference &parent)
-        : PhysicalLightField(logical, {parent}, DeviceType::CPU, runtime::make<Runtime>(*this))
+                   PhysicalOperatorReference &parent)
+        : PhysicalOperator(logical, {parent}, DeviceType::CPU, runtime::make<Runtime>(*this))
     { }
 
 private:
     class Runtime: public runtime::Runtime<> {
     public:
-        explicit Runtime(PhysicalLightField &physical) : runtime::Runtime<>(physical) { }
+        explicit Runtime(PhysicalOperator &physical) : runtime::Runtime<>(physical) { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if(!all_parent_eos()) {

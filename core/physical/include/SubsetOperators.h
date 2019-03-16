@@ -15,11 +15,11 @@
 namespace lightdb::physical {
 
 // Just update the physical configuration, don't actual go ahead and copy the subframes
-class GPUAngularSubframe: public PhysicalLightField, public GPUOperator, UnaryOperator {
+class GPUAngularSubframe: public PhysicalOperator, public GPUOperator, UnaryOperator {
 public:
     explicit GPUAngularSubframe(const LightFieldReference &logical,
-                                PhysicalLightFieldReference &parent)
-            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+                                PhysicalOperatorReference &parent)
+            : PhysicalOperator(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
               GPUOperator(parent)
     { }
 
@@ -93,11 +93,11 @@ private:
     }*/
 };
 
-class GPUEnsureFrameCropped : public PhysicalLightField, public GPUOperator {
+class GPUEnsureFrameCropped : public PhysicalOperator, public GPUOperator {
 public:
     explicit GPUEnsureFrameCropped(const LightFieldReference &logical,
-                                   PhysicalLightFieldReference &parent)
-            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+                                   PhysicalOperatorReference &parent)
+            : PhysicalOperator(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
               GPUOperator(parent)
     { }
 
@@ -126,18 +126,18 @@ private:
 };
 
 
-class FrameSubset: public PhysicalLightField, public GPUOperator, UnaryOperator {
+class FrameSubset: public PhysicalOperator, public GPUOperator, UnaryOperator {
 public:
     explicit FrameSubset(const LightFieldReference &logical,
-                         PhysicalLightFieldReference &parent)
-            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+                         PhysicalOperatorReference &parent)
+            : PhysicalOperator(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
               GPUOperator(parent)
     { }
 
     explicit FrameSubset(const LightFieldReference &logical,
-                         PhysicalLightFieldReference &parent,
+                         PhysicalOperatorReference &parent,
                          unsigned long delay_frames)
-            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this, delay_frames)),
+            : PhysicalOperator(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this, delay_frames)),
               GPUOperator(parent)
     { }
 

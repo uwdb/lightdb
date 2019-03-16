@@ -10,7 +10,7 @@ namespace lightdb::physical {
 
 class PhysicalToLogicalLightFieldAdapter: public LightField {
 public:
-    explicit PhysicalToLogicalLightFieldAdapter(const PhysicalLightFieldReference &physical)
+    explicit PhysicalToLogicalLightFieldAdapter(const PhysicalOperatorReference &physical)
             : LightField({},
                          physical->logical()->volume(),
                          physical->logical()->colorSpace()),
@@ -25,13 +25,13 @@ public:
 
     void accept(LightFieldVisitor& visitor) override { visitor.visit(*this); }
 
-    PhysicalLightFieldReference source() { return physical_; }
+    PhysicalOperatorReference source() { return physical_; }
 
 private:
-    PhysicalLightFieldReference physical_;
+    PhysicalOperatorReference physical_;
 };
 
-class MaterializedToPhysicalOperatorAdapter: public PhysicalLightField {
+class MaterializedToPhysicalOperatorAdapter: public PhysicalOperator {
 public:
     explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference &logical,
                                                    const MaterializedLightFieldReference &source)
@@ -40,14 +40,14 @@ public:
 
     explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference &logical,
                                                    const MaterializedLightFieldReference &source,
-                                                   const PhysicalLightFieldReference &parent)
-            : MaterializedToPhysicalOperatorAdapter(logical, source, std::vector<PhysicalLightFieldReference>{parent})
+                                                   const PhysicalOperatorReference &parent)
+            : MaterializedToPhysicalOperatorAdapter(logical, source, std::vector<PhysicalOperatorReference>{parent})
     { }
 
     explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference &logical,
                                                    const MaterializedLightFieldReference &source,
-                                                   const std::vector<PhysicalLightFieldReference> &parents)
-            : PhysicalLightField(logical,
+                                                   const std::vector<PhysicalOperatorReference> &parents)
+            : PhysicalOperator(logical,
                                  parents,
                                  source->device(),
                                  runtime::make<Runtime>(*this, source))
@@ -61,7 +61,7 @@ public:
 private:
     class Runtime: public runtime::Runtime<> {
     public:
-        explicit Runtime(PhysicalLightField &physical, const MaterializedLightFieldReference &source)
+        explicit Runtime(PhysicalOperator &physical, const MaterializedLightFieldReference &source)
             : runtime::Runtime<>(physical),
               source_(source),
               read_(false)
@@ -84,12 +84,12 @@ private:
 
 class TeedPhysicalLightFieldAdapter {
 public:
-    static std::shared_ptr<TeedPhysicalLightFieldAdapter> make(const PhysicalLightFieldReference &source,
+    static std::shared_ptr<TeedPhysicalLightFieldAdapter> make(const PhysicalOperatorReference &source,
                                                                const size_t size) {
         return std::make_shared<TeedPhysicalLightFieldAdapter>(source, size);
     }
 
-    TeedPhysicalLightFieldAdapter(const PhysicalLightFieldReference &source,
+    TeedPhysicalLightFieldAdapter(const PhysicalOperatorReference &source,
                                   const size_t size) {
         auto mutex = std::make_shared<std::mutex>();
         auto queues = std::make_shared<std::vector<std::queue<MaterializedLightFieldReference>>>(size);
@@ -98,12 +98,12 @@ public:
             if(source.is<GPUOperator>())
                 tees_.emplace_back(
                         LightFieldReference::make<PhysicalToLogicalLightFieldAdapter>(
-                                    PhysicalLightFieldReference::make<GPUTeedPhysicalLightField>(
+                                    PhysicalOperatorReference::make<GPUTeedPhysicalLightField>(
                                             mutex, queues, source, index, source.downcast<GPUOperator>().gpu())));
             else
                 tees_.emplace_back(
                         LightFieldReference::make<PhysicalToLogicalLightFieldAdapter>(
-                                    PhysicalLightFieldReference::make<TeedPhysicalLightField>(
+                                    PhysicalOperatorReference::make<TeedPhysicalLightField>(
                                             mutex, queues, source, index)));
     }
 
@@ -118,18 +118,18 @@ public:
         return tees_.at(index);
     }
 
-    PhysicalLightFieldReference physical(const size_t index) {
+    PhysicalOperatorReference physical(const size_t index) {
         return (*this)[index].downcast<PhysicalToLogicalLightFieldAdapter>().source();
     }
 
     //TODO these should be private
-    class TeedPhysicalLightField: public PhysicalLightField {
+    class TeedPhysicalLightField: public PhysicalOperator {
     public:
         TeedPhysicalLightField(std::shared_ptr<std::mutex> mutex,
                                std::shared_ptr<std::vector<std::queue<MaterializedLightFieldReference>>> queues,
-                               const PhysicalLightFieldReference &source,
+                               const PhysicalOperatorReference &source,
                                const size_t index)
-                : PhysicalLightField(source->logical(),
+                : PhysicalOperator(source->logical(),
                                      {source},
                                      source->device(),
                                      runtime::make<Runtime>(*this, mutex, queues, source, index))
@@ -141,10 +141,10 @@ public:
     protected:
         class Runtime: public runtime::Runtime<> {
         public:
-            explicit Runtime(PhysicalLightField &physical,
+            explicit Runtime(PhysicalOperator &physical,
                              std::shared_ptr<std::mutex> mutex,
                              std::shared_ptr<std::vector<std::queue<MaterializedLightFieldReference>>> queues,
-                             const PhysicalLightFieldReference &source,
+                             const PhysicalOperatorReference &source,
                              const size_t index)
                  : runtime::Runtime<>(physical),
                    index_(index),
@@ -176,7 +176,7 @@ public:
 
             const size_t index_;
             std::shared_ptr<std::mutex> mutex_;
-            PhysicalLightFieldReference source_;
+            PhysicalOperatorReference source_;
             std::shared_ptr<std::vector<std::queue<MaterializedLightFieldReference>>> queues_;
         };
     };
@@ -185,7 +185,7 @@ public:
     public:
         GPUTeedPhysicalLightField(std::shared_ptr<std::mutex> mutex,
                                   std::shared_ptr<std::vector<std::queue<MaterializedLightFieldReference>>> queues,
-                                  const PhysicalLightFieldReference &source,
+                                  const PhysicalOperatorReference &source,
                                   const size_t index,
                                   const execution::GPU& gpu)
                 : TeedPhysicalLightField(std::move(mutex), std::move(queues), source, index),

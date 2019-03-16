@@ -29,20 +29,20 @@ namespace lightdb::optimization {
                           std::bind(&Plan::associate, this, std::placeholders::_1));
         }
 
-        const PhysicalLightFieldReference& add(const PhysicalLightFieldReference &physical) {
+        const PhysicalOperatorReference& add(const PhysicalOperatorReference &physical) {
             physical_.insert(physical);
             assign(physical->logical(), physical);
             return physical;
         }
 
         template<typename PhysicalLightField, typename... Args>
-        const PhysicalLightFieldReference& emplace(Args&&... args) {
-            const auto &value = *physical_.emplace(PhysicalLightFieldReference::make<PhysicalLightField>(args...)).first;
+        const PhysicalOperatorReference& emplace(Args&&... args) {
+            const auto &value = *physical_.emplace(PhysicalOperatorReference::make<PhysicalLightField>(args...)).first;
             assign(value->logical(), value);
             return value;
         }
 
-        void assign(const LightFieldReference &node, const PhysicalLightFieldReference &physical) {
+        void assign(const LightFieldReference &node, const PhysicalOperatorReference &physical) {
             if(assigned_.find(&*node) == assigned_.end())
                 assigned_[&*node] = {};
             assigned_[&*node].insert(physical);
@@ -56,24 +56,24 @@ namespace lightdb::optimization {
 
         inline auto assignments(const LightField &node) const { return assignments(lookup(node)); }
 
-        const set<PhysicalLightFieldReference> assignments(const LightFieldReference &reference) const {
+        const set<PhysicalOperatorReference> assignments(const LightFieldReference &reference) const {
             auto element = assigned_.find(&*reference);
             return element != assigned_.end()
                    ? element->second
-                   : set<PhysicalLightFieldReference>{};
+                   : set<PhysicalOperatorReference>{};
         }
 
-        set<PhysicalLightFieldReference> assignments(const LightFieldReference &reference) {
+        set<PhysicalOperatorReference> assignments(const LightFieldReference &reference) {
             auto element = assigned_.find(&*reference);
             return element != assigned_.end()
                    ? element->second
-                   : set<PhysicalLightFieldReference>{};
+                   : set<PhysicalOperatorReference>{};
         }
 
-        std::vector<PhysicalLightFieldReference> unassigned(const LightFieldReference &reference, const bool global=true) const {
+        std::vector<PhysicalOperatorReference> unassigned(const LightFieldReference &reference, const bool global=true) const {
             auto assignments = this->assignments(reference);
-            std::set<PhysicalLightField*> nonleafs;
-            std::vector<PhysicalLightFieldReference> leafs;
+            std::set<PhysicalOperator*> nonleafs;
+            std::vector<PhysicalOperatorReference> leafs;
 
             for(const auto &assignment: assignments)
                 for(auto& parent: assignment->parents())
@@ -105,8 +105,8 @@ namespace lightdb::optimization {
             return children;
         }
 
-        set<PhysicalLightFieldReference> children(const PhysicalLightFieldReference &reference) const {
-            set<PhysicalLightFieldReference> children;
+        set<PhysicalOperatorReference> children(const PhysicalOperatorReference &reference) const {
+            set<PhysicalOperatorReference> children;
 
             for(const auto &node: physical_)
                 for(const auto &parent: node->parents())
@@ -116,7 +116,7 @@ namespace lightdb::optimization {
             return children;
         }
 
-        void replace_assignments(const PhysicalLightFieldReference &original, const PhysicalLightFieldReference &replacement) {
+        void replace_assignments(const PhysicalOperatorReference &original, const PhysicalOperatorReference &replacement) {
             for(auto &[logical, assignments]: assigned_)
                 if(assignments.find(original) != assignments.end()) {
                     assignments.erase(original);
@@ -144,8 +144,8 @@ namespace lightdb::optimization {
         std::vector<LightFieldReference> sinks_;
         //TODO can be replaced with an addressable shared_reference
         std::unordered_map<const LightField *, LightFieldReference> nodes_;
-        std::unordered_map<const LightField*, set<PhysicalLightFieldReference>> assigned_;
-        set<PhysicalLightFieldReference> physical_;
+        std::unordered_map<const LightField*, set<PhysicalOperatorReference>> assigned_;
+        set<PhysicalOperatorReference> physical_;
 
     };
 }

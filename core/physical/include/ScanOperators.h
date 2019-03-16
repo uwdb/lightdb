@@ -5,10 +5,10 @@
 
 namespace lightdb::physical {
 
-class ScanSingleFileDecodeReader: public PhysicalLightField {
+class ScanSingleFileDecodeReader: public PhysicalOperator {
 public:
     explicit ScanSingleFileDecodeReader(const LightFieldReference &logical, catalog::Stream stream)
-            : PhysicalLightField(logical, DeviceType::CPU, runtime::make<Runtime>(*this)),
+            : PhysicalOperator(logical, DeviceType::CPU, runtime::make<Runtime>(*this)),
               stream_(std::move(stream))
     { }
 
@@ -38,10 +38,10 @@ private:
 };
 
 template<size_t Size=131072>
-class ScanSingleFile: public PhysicalLightField {
+class ScanSingleFile: public PhysicalOperator {
 public:
     explicit ScanSingleFile(const LightFieldReference &logical, catalog::Stream stream)
-            : PhysicalLightField(logical, DeviceType::CPU, runtime::make<Runtime>(*this)),
+            : PhysicalOperator(logical, DeviceType::CPU, runtime::make<Runtime>(*this)),
               stream_(std::move(stream))
     { }
 

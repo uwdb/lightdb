@@ -5,20 +5,20 @@
 #include "PhysicalOperators.h"
 
 namespace lightdb::physical {
-    class CPUIdentity: public PhysicalLightField {
+    class CPUIdentity: public PhysicalOperator {
     public:
         explicit CPUIdentity(const LightFieldReference &logical)
-                : PhysicalLightField(logical, {}, physical::DeviceType::CPU, runtime::make<Runtime>(*this))
+                : PhysicalOperator(logical, {}, physical::DeviceType::CPU, runtime::make<Runtime>(*this))
         { }
 
-        CPUIdentity(const LightFieldReference &logical, PhysicalLightFieldReference &parent)
-                : PhysicalLightField(logical, {parent}, physical::DeviceType::CPU, runtime::make<Runtime>(*this))
+        CPUIdentity(const LightFieldReference &logical, PhysicalOperatorReference &parent)
+                : PhysicalOperator(logical, {parent}, physical::DeviceType::CPU, runtime::make<Runtime>(*this))
         { }
 
     private:
         class Runtime: public runtime::Runtime<> {
         public:
-            explicit Runtime(PhysicalLightField &physical)
+            explicit Runtime(PhysicalOperator &physical)
                 : runtime::Runtime<>(physical)
             { }
 
@@ -31,11 +31,11 @@ namespace lightdb::physical {
         };
     };
 
-    class GPUIdentity: public PhysicalLightField, public GPUOperator {
+    class GPUIdentity: public PhysicalOperator, public GPUOperator {
     public:
         GPUIdentity(const LightFieldReference &logical,
-                    PhysicalLightFieldReference &parent)
-                : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+                    PhysicalOperatorReference &parent)
+                : PhysicalOperator(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
                   GPUOperator(parent)
         { }
 

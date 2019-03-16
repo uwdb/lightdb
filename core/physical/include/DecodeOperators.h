@@ -10,10 +10,10 @@
 
 namespace lightdb::physical {
 
-class GPUDecodeFromCPU : public PhysicalLightField, public GPUOperator {
+class GPUDecodeFromCPU : public PhysicalOperator, public GPUOperator {
 public:
     explicit GPUDecodeFromCPU(const LightFieldReference &logical,
-                              PhysicalLightFieldReference source,
+                              PhysicalOperatorReference source,
                               const execution::GPU &gpu)
             : GPUDecodeFromCPU(logical,
                                source,
@@ -23,10 +23,10 @@ public:
 
     template<typename Rep, typename Period>
     explicit GPUDecodeFromCPU(const LightFieldReference &logical,
-                              PhysicalLightFieldReference &source,
+                              PhysicalOperatorReference &source,
                               const execution::GPU &gpu,
                               std::chrono::duration<Rep, Period> poll_duration)
-            : PhysicalLightField(logical, {source}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+            : PhysicalOperator(logical, {source}, DeviceType::GPU, runtime::make<Runtime>(*this)),
               GPUOperator(gpu),
               poll_duration_(poll_duration) {
         CHECK_EQ(source->device(), DeviceType::CPU);
@@ -81,11 +81,11 @@ private:
 };
 
 template<typename T>
-class CPUFixedLengthRecordDecode : public PhysicalLightField {
+class CPUFixedLengthRecordDecode : public PhysicalOperator {
 public:
     CPUFixedLengthRecordDecode(const LightFieldReference &logical,
-                               const PhysicalLightFieldReference &source)
-            : PhysicalLightField(logical, {source}, DeviceType::CPU, runtime::make<Runtime>(*this)) {
+                               const PhysicalOperatorReference &source)
+            : PhysicalOperator(logical, {source}, DeviceType::CPU, runtime::make<Runtime>(*this)) {
         CHECK_EQ(source->device(), DeviceType::CPU);
     }
 

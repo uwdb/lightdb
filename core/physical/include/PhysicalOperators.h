@@ -13,30 +13,29 @@
 #include <utility>
 
 namespace lightdb {
-    class PhysicalLightField;
-    using PhysicalLightFieldReference = shared_reference<PhysicalLightField, AddressableMixin<PhysicalLightField>>;
+    class PhysicalOperator;
+    using PhysicalOperatorReference = shared_reference<PhysicalOperator, AddressableMixin<PhysicalOperator>>;
 
-    //TODO rename to PhysicalOperator
-    class PhysicalLightField {
+    class PhysicalOperator {
     public:
         inline std::string type() const noexcept { return typeid(*this).name(); }
         inline const LightFieldReference& logical() const noexcept { return logical_; }
         inline physical::DeviceType device() const noexcept { return deviceType_; }
-        inline std::vector<PhysicalLightFieldReference>& parents() noexcept { return parents_; }
-        inline const std::vector<PhysicalLightFieldReference>& parents() const noexcept { return parents_; }
+        inline std::vector<PhysicalOperatorReference>& parents() noexcept { return parents_; }
+        inline const std::vector<PhysicalOperatorReference>& parents() const noexcept { return parents_; }
         inline runtime::RuntimeReference runtime() { return runtime_; }
 
-        virtual ~PhysicalLightField() = default;
+        virtual ~PhysicalOperator() = default;
 
     protected:
-        PhysicalLightField(const LightFieldReference &logical,
+        PhysicalOperator(const LightFieldReference &logical,
                            const physical::DeviceType deviceType,
                            const lazy<runtime::RuntimeReference> &runtime)
-                : PhysicalLightField(
-                        logical, std::vector<PhysicalLightFieldReference>{}, deviceType, runtime)
+                : PhysicalOperator(
+                        logical, std::vector<PhysicalOperatorReference>{}, deviceType, runtime)
         { }
-        PhysicalLightField(const LightFieldReference &logical,
-                           std::vector<PhysicalLightFieldReference> parents,
+        PhysicalOperator(const LightFieldReference &logical,
+                           std::vector<PhysicalOperatorReference> parents,
                            const physical::DeviceType deviceType,
                            lazy<runtime::RuntimeReference> runtime)
                 : parents_(std::move(parents)),
@@ -47,7 +46,7 @@ namespace lightdb {
 
     private:
         //TODO this should be a set
-        std::vector<PhysicalLightFieldReference> parents_;
+        std::vector<PhysicalOperatorReference> parents_;
         const LightFieldReference logical_;
         const physical::DeviceType deviceType_;
         lazy<runtime::RuntimeReference> runtime_;
@@ -59,7 +58,7 @@ namespace lightdb {
             inline const execution::GPU& gpu() const { return gpu_; }
 
         protected:
-            explicit GPUOperator(PhysicalLightFieldReference &parent)
+            explicit GPUOperator(PhysicalOperatorReference &parent)
                     : GPUOperator(parent.expect_downcast<GPUOperator>())
             { }
 
@@ -75,9 +74,9 @@ namespace lightdb {
 
         class UnaryOperator {
         protected:
-            template<typename Physical=PhysicalLightField>
+            template<typename Physical=PhysicalOperator>
             Physical& parent() noexcept {
-                return functional::single(reinterpret_cast<PhysicalLightField*>(this)->parents()).template downcast<Physical>();
+                return functional::single(reinterpret_cast<PhysicalOperator*>(this)->parents()).template downcast<Physical>();
             }
         };
     } // namespace physical

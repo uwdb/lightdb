@@ -11,7 +11,7 @@ namespace lightdb::execution {
 class Coordinator {
 public:
     template<unsigned int Index>
-    PhysicalLightField& submit(const optimization::Plan &plan) {
+    PhysicalOperator& submit(const optimization::Plan &plan) {
         auto assignments = submit(plan);
 
         if(assignments.size() <= Index)
@@ -21,9 +21,9 @@ public:
         return *assignments[Index];
     }
 
-    std::vector<PhysicalLightFieldReference> submit(const optimization::Plan &plan) {
+    std::vector<PhysicalOperatorReference> submit(const optimization::Plan &plan) {
         const auto &sinks = plan.sinks();
-        return functional::flatmap<std::vector<PhysicalLightFieldReference>>(sinks.begin(), sinks.end(),
+        return functional::flatmap<std::vector<PhysicalOperatorReference>>(sinks.begin(), sinks.end(),
                 [plan](auto &sink) { return plan.unassigned(sink); });
     }
 

@@ -9,18 +9,18 @@
 
 namespace lightdb::physical {
 
-class GPUDownsampleResolution: public PhysicalLightField, public GPUOperator {
+class GPUDownsampleResolution: public PhysicalOperator, public GPUOperator {
 public:
     GPUDownsampleResolution(const LightFieldReference &logical,
-                            PhysicalLightFieldReference &parent,
+                            PhysicalOperatorReference &parent,
                             IntervalGeometry geometry)
             : GPUDownsampleResolution(logical, parent, std::vector<IntervalGeometry>({std::move(geometry)}))
     { }
 
     GPUDownsampleResolution(const LightFieldReference &logical,
-                            PhysicalLightFieldReference &parent,
+                            PhysicalOperatorReference &parent,
                             std::vector<IntervalGeometry> geometries)
-            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+            : PhysicalOperator(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
               GPUOperator(parent),
               geometries_(std::move(geometries))
     { }

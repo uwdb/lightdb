@@ -14,14 +14,14 @@
 
 namespace lightdb::physical {
 
-class GPUEncodeToCPU : public PhysicalLightField, public GPUOperator {
+class GPUEncodeToCPU : public PhysicalOperator, public GPUOperator {
 public:
     static constexpr size_t kDefaultGopSize = 30;
 
     explicit GPUEncodeToCPU(const LightFieldReference &logical,
-                            PhysicalLightFieldReference &parent,
+                            PhysicalOperatorReference &parent,
                             Codec codec)
-            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+            : PhysicalOperator(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
               GPUOperator(parent),
               codec_(std::move(codec)) {
         if(!codec.nvidiaId().has_value())

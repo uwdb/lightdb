@@ -7,7 +7,7 @@
 #include <map>
 
 namespace lightdb {
-    class PhysicalLightField;
+    class PhysicalOperator;
 
     namespace functor {
         namespace internal {

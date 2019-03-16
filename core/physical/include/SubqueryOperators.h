@@ -10,12 +10,12 @@
 
 namespace lightdb::physical {
 
-class GPUAngularSubquery: public PhysicalLightField, public GPUOperator, UnaryOperator {
+class GPUAngularSubquery: public PhysicalOperator, public GPUOperator, UnaryOperator {
 public:
     GPUAngularSubquery(const LightFieldReference &logical,
-                       PhysicalLightFieldReference &parent,
+                       PhysicalOperatorReference &parent,
                        const optimization::OptimizerReference &optimizer)
-            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+            : PhysicalOperator(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
               GPUOperator(parent),
               optimizer_(optimizer),
               subquery_(logical.downcast<logical::SubqueriedLightField>().subquery()),

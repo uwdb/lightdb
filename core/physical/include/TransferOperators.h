@@ -5,17 +5,17 @@
 
 namespace lightdb::physical {
 
-class GPUtoCPUTransfer: public PhysicalLightField {
+class GPUtoCPUTransfer: public PhysicalOperator {
 public:
     GPUtoCPUTransfer(const LightFieldReference &logical,
-                     PhysicalLightFieldReference &parent)
-            : PhysicalLightField(logical, {parent}, physical::DeviceType::CPU, runtime::make<Runtime>(*this))
+                     PhysicalOperatorReference &parent)
+            : PhysicalOperator(logical, {parent}, physical::DeviceType::CPU, runtime::make<Runtime>(*this))
     { }
 
 private:
     class Runtime: public runtime::Runtime<> {
     public:
-        explicit Runtime(PhysicalLightField &physical) : runtime::Runtime<>(physical) { }
+        explicit Runtime(PhysicalOperator &physical) : runtime::Runtime<>(physical) { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if(iterators()[0] != iterators()[0].eos()) {
@@ -33,12 +33,12 @@ private:
     };
 };
 
-class CPUtoGPUTransfer: public PhysicalLightField, public GPUOperator {
+class CPUtoGPUTransfer: public PhysicalOperator, public GPUOperator {
 public:
     CPUtoGPUTransfer(const LightFieldReference &logical,
-                PhysicalLightFieldReference &parent,
+                PhysicalOperatorReference &parent,
                 const execution::GPU &gpu)
-            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)), //, gpu),
+            : PhysicalOperator(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)), //, gpu),
               GPUOperator(gpu)
     { }
 

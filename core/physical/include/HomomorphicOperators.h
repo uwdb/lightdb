@@ -6,12 +6,12 @@
 
 namespace lightdb::physical {
 
-class HomomorphicUniformAngularUnion: public PhysicalLightField /*, public EncodedVideoInterface*/ {
+class HomomorphicUniformAngularUnion: public PhysicalOperator /*, public EncodedVideoInterface*/ {
 public:
     explicit HomomorphicUniformAngularUnion(const LightFieldReference &logical,
-                                            std::vector<PhysicalLightFieldReference> &parents,
+                                            std::vector<PhysicalOperatorReference> &parents,
                                             const unsigned int rows, const unsigned int columns)
-            : PhysicalLightField(logical, parents, DeviceType::CPU, runtime::make<Runtime>(*this)),
+            : PhysicalOperator(logical, parents, DeviceType::CPU, runtime::make<Runtime>(*this)),
               rows_(rows), columns_(columns) {
         LOG(WARNING) << "Ignored myriad preconditions on homomorphic angular union";
     }

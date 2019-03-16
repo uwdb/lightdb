@@ -9,12 +9,12 @@
 namespace lightdb::physical {
 
 //TODO CPUMap and GPU map can be combined into one templated class
-class GPUMap: public PhysicalLightField, public GPUOperator {
+class GPUMap: public PhysicalOperator, public GPUOperator {
 public:
     GPUMap(const LightFieldReference &logical,
-           PhysicalLightFieldReference &parent,
+           PhysicalOperatorReference &parent,
            const functor::unaryfunctor &transform)
-            : PhysicalLightField(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+            : PhysicalOperator(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
               GPUOperator(parent),
               transform_(transform)
     { }
@@ -44,12 +44,12 @@ private:
     const functor::unaryfunctor transform_;
 };
 
-class CPUMap: public PhysicalLightField {
+class CPUMap: public PhysicalOperator {
 public:
     CPUMap(const LightFieldReference &logical,
-           PhysicalLightFieldReference &parent,
+           PhysicalOperatorReference &parent,
            const functor::unaryfunctor &transform)
-            : PhysicalLightField(logical, {parent}, physical::DeviceType::CPU, runtime::make<Runtime>(*this)),
+            : PhysicalOperator(logical, {parent}, physical::DeviceType::CPU, runtime::make<Runtime>(*this)),
               transform_(transform)
     { }
 

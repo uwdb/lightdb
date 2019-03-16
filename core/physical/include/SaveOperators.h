@@ -5,11 +5,11 @@
 
 namespace lightdb::physical {
 
-class SaveToFile: public PhysicalLightField {
+class SaveToFile: public PhysicalOperator {
 public:
     explicit SaveToFile(const LightFieldReference &logical,
-                        PhysicalLightFieldReference &parent)
-            : PhysicalLightField(logical, {parent}, DeviceType::CPU, runtime::make<Runtime>(*this)) {
+                        PhysicalOperatorReference &parent)
+            : PhysicalOperator(logical, {parent}, DeviceType::CPU, runtime::make<Runtime>(*this)) {
         CHECK_EQ(parents().size(), 1);
     }
 
@@ -40,7 +40,7 @@ private:
     };
 };
 
-class CopyFile: public PhysicalLightField {
+class CopyFile: public PhysicalOperator {
 public:
     explicit CopyFile(const LightFieldReference &logical,
                       const std::filesystem::path &destination)
@@ -48,13 +48,13 @@ public:
 
     explicit CopyFile(const LightFieldReference &logical,
                       const std::filesystem::path &destination,
-                      PhysicalLightFieldReference &parent)
-            : CopyFile(logical, destination, std::vector<PhysicalLightFieldReference>{parent}) { }
+                      PhysicalOperatorReference &parent)
+            : CopyFile(logical, destination, std::vector<PhysicalOperatorReference>{parent}) { }
 
     explicit CopyFile(const LightFieldReference &logical,
                       std::filesystem::path destination,
-                      const std::vector<PhysicalLightFieldReference> &parents)
-            : PhysicalLightField(logical, parents, DeviceType::CPU, runtime::make<Runtime>(*this)),
+                      const std::vector<PhysicalOperatorReference> &parents)
+            : PhysicalOperator(logical, parents, DeviceType::CPU, runtime::make<Runtime>(*this)),
               destination_{std::move(destination)} { }
 
     const std::filesystem::path &destination() const { return destination_; }

@@ -3,7 +3,7 @@
 namespace lightdb::runtime {
     Runtime<>::iterator Runtime<>::iterator::eos_instance_{};
 
-    Runtime<>::Runtime(PhysicalLightField &physical)
+    Runtime<>::Runtime(PhysicalOperator &physical)
             : physical_(physical),
               iterators_(functional::transform<Runtime<>::iterator>(
                           physical.parents().begin(), physical.parents().end(),

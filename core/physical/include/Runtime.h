@@ -5,7 +5,7 @@
 #include "functional.h"
 
 namespace lightdb {
-    class PhysicalLightField;
+    class PhysicalOperator;
 
     namespace runtime {
         template<typename... T>
@@ -79,12 +79,12 @@ namespace lightdb {
             std::vector<iterator> &iterators() noexcept { return iterators_; }
 
         protected:
-            explicit Runtime(PhysicalLightField &physical);
+            explicit Runtime(PhysicalOperator &physical);
 
             virtual ~Runtime() = default;
 
-            inline virtual PhysicalLightField &physical() { return physical_; }
-            inline virtual const PhysicalLightField &physical() const { return physical_; }
+            inline virtual PhysicalOperator &physical() { return physical_; }
+            inline virtual const PhysicalOperator &physical() const { return physical_; }
 
             LightFieldReference logical() const;
 
@@ -101,7 +101,7 @@ namespace lightdb {
             }
 
         private:
-            PhysicalLightField &physical_;
+            PhysicalOperator &physical_;
             std::vector<iterator> iterators_;
         };
 
@@ -129,7 +129,7 @@ namespace lightdb {
                 CHECK_EQ(physical.parents().size(), 1);
             }
 
-            template<typename T=PhysicalLightField>
+            template<typename T=PhysicalOperator>
             T& parent() noexcept { return functional::single(this->physical().parents()).template downcast<T>(); }
 
             runtime::Runtime<>::downcast_iterator<Data>& iterator() noexcept { return iterator_; }
@@ -144,7 +144,7 @@ namespace lightdb {
             runtime::Runtime<>::template downcast_iterator<Data> iterator_;
         };
 
-        template<typename Physical=PhysicalLightField>
+        template<typename Physical=PhysicalOperator>
         class GPURuntime: public runtime::Runtime<Physical> {
         public:
             explicit GPURuntime(Physical &physical)

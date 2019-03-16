@@ -5,10 +5,10 @@
 
 namespace lightdb::physical {
 
-class Store: public PhysicalLightField {
+class Store: public PhysicalOperator {
 public:
     explicit Store(const LightFieldReference &logical,
-                   PhysicalLightFieldReference &parent)
+                   PhysicalOperatorReference &parent)
             : Store(logical,
                     logical->downcast<logical::StoredLightField>(),
                     parent)
@@ -19,8 +19,8 @@ public:
 private:
     explicit Store(const LightFieldReference &logical,
                    const logical::StoredLightField &store,
-                   PhysicalLightFieldReference &parent)
-            : PhysicalLightField(logical, {parent}, DeviceType::CPU, runtime::make<Runtime>(*this, store)),
+                   PhysicalOperatorReference &parent)
+            : PhysicalOperator(logical, {parent}, DeviceType::CPU, runtime::make<Runtime>(*this, store)),
               store_(store) {
         LOG(INFO) << "Storing to ambient catalog";
         CHECK_EQ(parents().size(), 1);
