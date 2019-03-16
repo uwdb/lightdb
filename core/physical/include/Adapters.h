@@ -31,7 +31,6 @@ private:
     PhysicalLightFieldReference physical_;
 };
 
-
 class MaterializedToPhysicalOperatorAdapter: public PhysicalLightField {
 public:
     explicit MaterializedToPhysicalOperatorAdapter(const LightFieldReference &logical,
@@ -83,74 +82,6 @@ private:
 
 };
 
-/*
- * Converts a GPU-based physical light field into one that implements GPUOperator.
- * This is necessary while there are separate hierarchies for CPU and GPU operators,
- * which is sad and should be fixed.
- */
-//TODO Fix the sadness -- this rule is only used in one place
-class GPUOperatorAdapter: public PhysicalLightField, public GPUOperator {
-public:
-    explicit GPUOperatorAdapter(const PhysicalLightFieldReference &source)
-            : GPUOperatorAdapter(source, {})
-    { }
-
-    explicit GPUOperatorAdapter(const PhysicalLightFieldReference &source,
-                                const PhysicalLightFieldReference &parent)
-            : GPUOperatorAdapter(source, std::vector<PhysicalLightFieldReference>{parent})
-    { }
-
-    explicit GPUOperatorAdapter(const PhysicalLightFieldReference &source,
-                                const std::vector<PhysicalLightFieldReference> &parents)
-            : GPUOperatorAdapter(source, FindGPUOperatorAncestor(source), parents)
-    { }
-
-    GPUOperatorAdapter(GPUOperatorAdapter &) = default;
-    GPUOperatorAdapter(const GPUOperatorAdapter &) = default;
-    GPUOperatorAdapter(GPUOperatorAdapter &&) = default;
-
-    ~GPUOperatorAdapter() override = default;
-
-private:
-    GPUOperatorAdapter(const PhysicalLightFieldReference &source,
-                       GPUOperator &op,
-                       const std::vector<PhysicalLightFieldReference> &parents)
-            : PhysicalLightField(source->logical(),
-                                 parents,
-                                 DeviceType::GPU,
-                                 lazy<runtime::RuntimeReference>{[source]() { return source->runtime(); }}),
-                                 //op.gpu()),
-              GPUOperator(op.gpu())
-    { }
-
-    class Runtime: public runtime::GPURuntime<GPUOperatorAdapter> {
-    public:
-        explicit Runtime(GPUOperatorAdapter &physical,
-                         const PhysicalLightFieldReference &source)
-            : GPURuntime<GPUOperatorAdapter>(physical),
-              source_(source)
-        { }
-
-        std::optional<physical::MaterializedLightFieldReference> read() override {
-            return source_->runtime()->iterators().front()++;
-        }
-
-    private:
-        PhysicalLightFieldReference source_;
-    };
-
-    static GPUOperator& FindGPUOperatorAncestor(PhysicalLightFieldReference physical) {
-        // Find ancestor GPUOperator instance given other possible intermediating GPU-based ancestors
-        if(physical.is<GPUOperator>())
-            return physical.downcast<GPUOperator>(); //GPUOperatorOld>();
-        else if(physical->device() == DeviceType::GPU &&
-                physical->parents().size() == 1)
-            return FindGPUOperatorAncestor(physical->parents().front());
-        else
-            throw InvalidArgumentError("Could not find GPUOperator ancestor", "physical");
-    }
-};
-
 class TeedPhysicalLightFieldAdapter {
 public:
     static std::shared_ptr<TeedPhysicalLightFieldAdapter> make(const PhysicalLightFieldReference &source,
@@ -164,9 +95,16 @@ public:
         auto queues = std::make_shared<std::vector<std::queue<MaterializedLightFieldReference>>>(size);
 
         for(auto index = 0u; index < size; index++)
-            tees_.emplace_back(
-                    LightFieldReference::make<PhysicalToLogicalLightFieldAdapter>(
-                            PhysicalLightFieldReference::make<TeedPhysicalLightField>(mutex, queues, source, index)));
+            if(source.is<GPUOperator>())
+                tees_.emplace_back(
+                        LightFieldReference::make<PhysicalToLogicalLightFieldAdapter>(
+                                    PhysicalLightFieldReference::make<GPUTeedPhysicalLightField>(
+                                            mutex, queues, source, index, source.downcast<GPUOperator>().gpu())));
+            else
+                tees_.emplace_back(
+                        LightFieldReference::make<PhysicalToLogicalLightFieldAdapter>(
+                                    PhysicalLightFieldReference::make<TeedPhysicalLightField>(
+                                            mutex, queues, source, index)));
     }
 
     TeedPhysicalLightFieldAdapter(const TeedPhysicalLightFieldAdapter&) = delete;
@@ -184,6 +122,7 @@ public:
         return (*this)[index].downcast<PhysicalToLogicalLightFieldAdapter>().source();
     }
 
+    //TODO these should be private
     class TeedPhysicalLightField: public PhysicalLightField {
     public:
         TeedPhysicalLightField(std::shared_ptr<std::mutex> mutex,
@@ -197,9 +136,9 @@ public:
         { }
 
         TeedPhysicalLightField(const TeedPhysicalLightField&) = delete;
-        TeedPhysicalLightField(TeedPhysicalLightField&&) = default;
+        TeedPhysicalLightField(TeedPhysicalLightField&&) noexcept = default;
 
-    private:
+    protected:
         class Runtime: public runtime::Runtime<> {
         public:
             explicit Runtime(PhysicalLightField &physical,
@@ -240,6 +179,18 @@ public:
             PhysicalLightFieldReference source_;
             std::shared_ptr<std::vector<std::queue<MaterializedLightFieldReference>>> queues_;
         };
+    };
+
+    class GPUTeedPhysicalLightField : public TeedPhysicalLightField, public GPUOperator {
+    public:
+        GPUTeedPhysicalLightField(std::shared_ptr<std::mutex> mutex,
+                                  std::shared_ptr<std::vector<std::queue<MaterializedLightFieldReference>>> queues,
+                                  const PhysicalLightFieldReference &source,
+                                  const size_t index,
+                                  const execution::GPU& gpu)
+                : TeedPhysicalLightField(std::move(mutex), std::move(queues), source, index),
+                  GPUOperator(gpu)
+        { }
     };
 
 private:

@@ -41,8 +41,9 @@ namespace lightdb::optimization {
                 return true;
             } else if(node.is<physical::PhysicalToLogicalLightFieldAdapter>()) {
                 auto ref = plan().lookup(node);
-                auto op = plan().emplace<physical::GPUOperatorAdapter>(ref.downcast<physical::PhysicalToLogicalLightFieldAdapter>().source());
-                plan().assign(ref, op);
+                //auto op = plan().emplace<physical::GPUOperatorAdapter>(ref.downcast<physical::PhysicalToLogicalLightFieldAdapter>().source());
+                //plan().assign(ref, op);
+                plan().assign(ref, ref.downcast<physical::PhysicalToLogicalLightFieldAdapter>().source());
                 return true;
             } else
                 return false;
@@ -70,7 +71,8 @@ namespace lightdb::optimization {
                     if(children.size() > 1) {
                         auto tees = physical::TeedPhysicalLightFieldAdapter::make(decode, children.size());
                         for (auto index = 0u; index < children.size(); index++)
-                            plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
+                            plan().add(tees->physical(index));
+                            //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
                     }
                 } else if(stream.codec() == Codec::boxes()) {
                     auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, stream);
@@ -98,7 +100,8 @@ namespace lightdb::optimization {
                     if(children.size() > 1) {
                         auto tees = physical::TeedPhysicalLightFieldAdapter::make(decode, children.size());
                         for (auto index = 0u; index < children.size(); index++)
-                            plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
+                            plan().add(tees->physical(index));
+                            //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
                     }
                 } else if(node.codec() == Codec::boxes()) {
                     auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, node.stream());
@@ -212,7 +215,8 @@ namespace lightdb::optimization {
                         if (unioned->device() == physical::DeviceType::CPU)
                             plan().assign(plan().lookup(node), tees->physical(index));
                         else if (unioned->device() == physical::DeviceType::GPU)
-                            plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), unioned);
+                            plan().add(tees->physical(index));
+                            //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), unioned);
                         else
                             throw InvalidArgumentError("No rule support for device type.", "node");
                     }
@@ -291,7 +295,8 @@ namespace lightdb::optimization {
                             if(mapped->device() == physical::DeviceType::CPU)
                                 plan().assign(plan().lookup(node), tees->physical(index));
                             else if(mapped->device() == physical::DeviceType::GPU)
-                                plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), mapped);
+                                plan().add(tees->physical(index));
+                                //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), mapped);
                             else
                                 throw InvalidArgumentError("No rule support for device type.", "node");
                         }
@@ -407,7 +412,8 @@ namespace lightdb::optimization {
                     if (physical->device() == physical::DeviceType::CPU)
                         plan().assign(plan().lookup(node), tees->physical(index));
                     else if (physical->device() == physical::DeviceType::GPU)
-                        plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), physical);
+                        plan().add(tees->physical(index));
+                        //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), physical);
                     else
                         throw InvalidArgumentError("No rule support for device type.", "node");
                 }
@@ -620,8 +626,9 @@ namespace lightdb::optimization {
                 auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, parent, gpu);
                 return plan().emplace<physical::GPUEncodeToCPU>(logical, transfer, Codec::hevc());
             } else if(!parent.is<physical::GPUOperator>()) {
-                auto gpuop = plan().emplace<physical::GPUOperatorAdapter>(parent);
-                return plan().emplace<physical::GPUEncodeToCPU>(logical, gpuop, Codec::hevc());
+                //auto gpuop = plan().emplace<physical::GPUOperatorAdapter>(parent);
+                //return plan().emplace<physical::GPUEncodeToCPU>(logical, gpuop, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
             } else
                 return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
         }
@@ -669,8 +676,9 @@ namespace lightdb::optimization {
                 auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, parent, gpu);
                 return plan().emplace<physical::GPUEncodeToCPU>(logical, transfer, Codec::hevc());
             } else if(!parent.is<physical::GPUOperator>()) {
-                auto gpuop = plan().emplace<physical::GPUOperatorAdapter>(parent);
-                return plan().emplace<physical::GPUEncodeToCPU>(logical, gpuop, Codec::hevc());
+                //auto gpuop = plan().emplace<physical::GPUOperatorAdapter>(parent);
+                //return plan().emplace<physical::GPUEncodeToCPU>(logical, gpuop, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
             } else
                 return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
         }
