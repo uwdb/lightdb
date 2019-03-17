@@ -779,12 +779,11 @@ namespace lightdb::optimization {
                IsCompatibleCodecConfiguration()) {
                 auto &encode = logical;
                 auto &decode = logical->parents().front();
-                auto &source = decode->parents().front();
                 auto out = plan().children(logical);
 
-                auto source_physical = plan().assignments(source).front();
                 auto decode_physical = plan().assignments(decode).front();
                 auto encode_physical = plan().assignments(logical).front();
+                auto source_physical = functional::single(decode_physical->parents()); //plan().assignments(source).front();
 
                 auto decode_identity = CreateIdentity(decode, source_physical);
                 auto encode_identity = CreateIdentity(encode, decode_identity);
@@ -822,7 +821,7 @@ namespace lightdb::optimization {
                 throw InvalidArgumentError("Unsupported device type for identity creation", "parent");
         }
 
-        bool visit(const logical::ExternalLightField &node) override {
+        bool ApplyRule(const LightField &node) {
             auto logical = plan().lookup(node);
 
             if(IsPhysicalChildASaveOperator(logical)) {
@@ -835,7 +834,8 @@ namespace lightdb::optimization {
 
                 auto &save = save_physical->logical().downcast<logical::SavedLightField>();
 
-                auto copy_physical = plan().emplace<physical::CopyFile>(scan, save.filename(), in_physical);
+                auto copy_physical = plan().emplace<physical::CopyFile>(
+                        scan, std::vector<std::filesystem::path>{save.filename()}, in_physical);
                 auto save_identity = CreateIdentity(save, copy_physical);
 
                 plan().replace_assignments(save_physical, save_identity);
@@ -845,6 +845,14 @@ namespace lightdb::optimization {
             }
 
             return false;
+        }
+
+        bool visit(const logical::ExternalLightField &node) override {
+            return ApplyRule(node);
+        }
+
+        bool visit(const logical::ScannedLightField &node) override {
+            return ApplyRule(node);
         }
     };
 }

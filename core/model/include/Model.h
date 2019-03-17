@@ -210,7 +210,12 @@ namespace lightdb::logical {
         const std::function<LightFieldReference(LightFieldReference)> subquery_;
     };
 
-    class ScannedLightField : public LightField {
+    class StreamBackedLightField {
+    public:
+        virtual const std::vector<catalog::Stream> streams() const = 0;
+    };
+
+    class ScannedLightField : public LightField, public StreamBackedLightField {
     public:
         explicit ScannedLightField(catalog::Catalog::Metadata metadata)
                 : LightField({}, metadata.volume(), metadata.colorSpace()), metadata_(std::move(metadata)) { }
@@ -218,12 +223,13 @@ namespace lightdb::logical {
         void accept(LightFieldVisitor &visitor) override { LightField::accept<ScannedLightField>(visitor); }
 
         const catalog::Catalog::Metadata& metadata() const noexcept { return metadata_; }
+        const std::vector<catalog::Stream> streams() const override { return metadata().streams(); }
 
     private:
         const catalog::Catalog::Metadata metadata_;
     };
 
-    class ExternalLightField : public LightField, public OptionContainer<> {
+    class ExternalLightField : public LightField, public StreamBackedLightField, public OptionContainer<> {
     public:
         ExternalLightField(const std::filesystem::path &filename,
                            const Codec &codec,
@@ -237,9 +243,10 @@ namespace lightdb::logical {
                   geometry_(geometry),
                   options_(std::move(options)) { }
 
-        const catalog::Stream& stream() const noexcept { return stream_; }
-        const Codec& codec() const noexcept { return stream_.codec(); }
-        const lightdb::options<>& options() const override {return options_; }
+        inline const catalog::Stream& stream() const noexcept { return stream_; }
+        inline const Codec& codec() const noexcept { return stream_.codec(); }
+        inline const std::vector<catalog::Stream> streams() const override { return {stream()}; }
+        inline const lightdb::options<>& options() const override {return options_; }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<ExternalLightField>(visitor); }
 

@@ -43,21 +43,28 @@ private:
 class CopyFile: public PhysicalOperator {
 public:
     explicit CopyFile(const LightFieldReference &logical,
-                      const std::filesystem::path &destination)
-            : CopyFile(logical, destination, {}) { }
+                      const std::vector<std::filesystem::path> &destinations)
+            : CopyFile(logical, destinations, {})
+    { }
 
     explicit CopyFile(const LightFieldReference &logical,
-                      const std::filesystem::path &destination,
+                      const std::vector<std::filesystem::path> &destinations,
                       PhysicalOperatorReference &parent)
-            : CopyFile(logical, destination, std::vector<PhysicalOperatorReference>{parent}) { }
+            : CopyFile(logical, destinations, std::vector<PhysicalOperatorReference>{parent})
+    { }
 
     explicit CopyFile(const LightFieldReference &logical,
-                      std::filesystem::path destination,
+                      std::vector<std::filesystem::path> destinations,
                       const std::vector<PhysicalOperatorReference> &parents)
             : PhysicalOperator(logical, parents, DeviceType::CPU, runtime::make<Runtime>(*this)),
-              destination_{std::move(destination)} { }
+              sources_{functional::transform<std::filesystem::path>(
+                          logical.expect_downcast<logical::StreamBackedLightField>().streams(),
+                          [](auto &s) { return s.path(); })},
+              destinations_{std::move(destinations)}
+    { CHECK_EQ(sources_.size(), destinations_.size()); }
 
-    const std::filesystem::path &destination() const { return destination_; }
+    const std::vector<std::filesystem::path> &sources() const { return sources_; }
+    const std::vector<std::filesystem::path> &destinations() const { return destinations_; }
 
 private:
     class Runtime: public runtime::Runtime<CopyFile> {
@@ -69,9 +76,10 @@ private:
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if(!copied_) {
                 copied_ = true;
-                std::filesystem::copy(logical().downcast<logical::ExternalLightField>().stream().path(),
-                                      physical().destination(),
-                                      std::filesystem::copy_options::overwrite_existing);
+                for(auto i = 0u; i < physical().sources().size(); i++)
+                    std::filesystem::copy(physical().sources()[i],
+                                          physical().destinations()[i],
+                                         std::filesystem::copy_options::overwrite_existing);
                 return EmptyData{DeviceType::CPU};
             } else
                 return std::nullopt;
@@ -81,7 +89,8 @@ private:
         bool copied_ = false;
     };
 
-    const std::filesystem::path destination_;
+    const std::vector<std::filesystem::path> sources_;
+    const std::vector<std::filesystem::path> destinations_;
 };
 
 } // namespace lightdb::physical

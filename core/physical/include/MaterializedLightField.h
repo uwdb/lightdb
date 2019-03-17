@@ -215,6 +215,7 @@ namespace lightdb::physical {
         inline std::vector<GPUFrameReference>& frames() noexcept { return frames_; }
         inline const std::vector<GPUFrameReference>& frames() const noexcept { return frames_; }
         inline explicit operator std::vector<GPUFrameReference>&() noexcept { return frames_; }
+        inline explicit operator const std::vector<GPUFrameReference>&() const noexcept { return frames_; }
         inline MaterializedLightFieldReference ref() const override { return MaterializedLightFieldReference::make<GPUDecodedFrameData>(*this); }
 
         const bytestring& value() override {
