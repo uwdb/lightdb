@@ -21,21 +21,26 @@ namespace lightdb::functional {
     }
 
     template<typename T, typename Container, typename InputIterator, typename UnaryFunction>
-    Container transform(InputIterator begin, InputIterator end, UnaryFunction f)
-    {
+    Container transform(const InputIterator begin, const InputIterator end, UnaryFunction f) {
         Container values;
         std::transform(begin, end, std::back_inserter(values), f);
         return values;
     }
 
-    template<typename T, typename InputIterator, typename UnaryFunction>
-    std::vector<T> transform(InputIterator begin, InputIterator end, UnaryFunction f) {
-        return transform<T, std::vector<T>, InputIterator, UnaryFunction>(begin, end, f);
+    template<typename T, typename InputIterator, typename UnaryFunction,
+            template<typename> typename OutContainer=std::vector>
+    OutContainer<T> transform(const InputIterator &begin, const InputIterator &end, UnaryFunction f) {
+        return transform<T, OutContainer<T>, InputIterator, UnaryFunction>(begin, end, f);
+    }
+
+    template<typename T, typename Container, typename UnaryFunction,
+             template<typename> typename OutContainer=std::vector>
+    OutContainer<T> transform(const Container &container, UnaryFunction f) {
+        return transform<T>(std::cbegin(container), std::cend(container), f);
     }
 
     template<typename InIterator, typename OutIterator>
-    void flatten(InIterator begin, InIterator end, OutIterator output)
-    {
+    void flatten(InIterator begin, InIterator end, OutIterator output) {
         std::for_each(begin, end, [output](auto &current) {
             std::copy(std::begin(current), std::end(current), output);
         });
@@ -51,17 +56,16 @@ namespace lightdb::functional {
     }
 
     template<typename OutIterator, typename InIterator, typename Function>
-    OutIterator flatmap(InIterator begin, InIterator end, Function f)
-    {
+    OutIterator flatmap(InIterator begin, InIterator end, Function f) {
         OutIterator values;
         flatmap(begin, end, std::back_inserter(values), f);
         return values;
     }
 
-    template<typename T, typename InputIterator, typename Predicate>
-    std::vector<T> filter(InputIterator begin, const InputIterator end, const Predicate p)
-    {
-        std::vector<T> values;
+    template<typename T, typename InputIterator, typename Predicate,
+             template<typename> typename OutContainer=std::vector>
+    OutContainer<T> filter(InputIterator begin, const InputIterator end, const Predicate p) {
+        OutContainer<T> values;
         std::copy_if(begin, end, std::back_inserter(values), p);
         return values;
     }
@@ -69,19 +73,18 @@ namespace lightdb::functional {
     template<typename T, typename InputIterator, typename OutputIterator, typename UnaryFunction, typename Predicate>
     OutputIterator transform_if(
             InputIterator begin, const InputIterator end, OutputIterator output,
-            const UnaryFunction f, const Predicate p)
-    {
+            const UnaryFunction f, const Predicate p) {
         for (; begin != end; ++begin)
             if(p(*begin))
                 *output++ = f(*begin);
         return output;
     }
 
-    template<typename T, typename InputIterator, typename UnaryFunction, typename Predicate>
-    std::vector<T> transform_if(const InputIterator begin, const InputIterator end,
-                                const UnaryFunction f, const Predicate p)
-    {
-        std::vector<T> values;
+    template<typename T, typename InputIterator, typename UnaryFunction, typename Predicate,
+             template<typename> typename OutContainer=std::vector>
+    OutContainer<T> transform_if(const InputIterator begin, const InputIterator end,
+                                const UnaryFunction f, const Predicate p) {
+        OutContainer<T> values;
         values.reserve(std::distance(begin, end));
         transform_if<T>(begin, end, std::back_inserter(values), f, p);
         return values;
@@ -106,7 +109,7 @@ namespace lightdb::functional {
                 current_ = std::begin(container_);
             }
         }
-        T operator++(int) {
+        const T operator++(int) {
             auto value = **this;
             ++*this;
             return std::move(value);
@@ -118,7 +121,6 @@ namespace lightdb::functional {
         }
 
         size_t available() const { return std::size(container_); }
-        //const Input &iterator() const { return iterator_; }
         Input &iterator() { return iterator_; }
 
     private:
@@ -146,7 +148,7 @@ namespace lightdb::functional {
             for(auto it = std::begin(iterators_); it != std::end(iterators_); it++)
                 (*it)++;
         }
-        TContainer operator++(int) {
+        const TContainer operator++(int) {
             auto values = **this;
             ++*this;
             return std::move(values);
