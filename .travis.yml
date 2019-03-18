@@ -10,7 +10,7 @@ addons:
     sources:
       - sourceline: 'ppa:graphics-drivers/ppa'
     packages: 
-      - nvidia-cuda-toolkit-8.0
+      - nvidia-cuda-toolkit-8.0.44
 
 script:
   - mkdir -p build
