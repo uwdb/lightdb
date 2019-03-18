@@ -239,7 +239,7 @@ namespace lightdb::logical {
                            lightdb::options<> options)
                 : LightField({}, volume, colorSpace),
                   stream_{filename, codec,
-                          utility::ffmpeg::GetStreamConfiguration(filename, 0, true)},
+                          video::ffmpeg::GetStreamConfiguration(filename, 0, true)},
                   geometry_(geometry),
                   options_(std::move(options)) { }
 

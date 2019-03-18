@@ -47,7 +47,7 @@ namespace lightdb::catalog {
         LOG(WARNING) << "Using hardcoded first stream for video configuration";
 
         const size_t index = 0;
-        auto configuration = utility::ffmpeg::GetStreamConfiguration(path / metadataFilename_, index, false);
+        auto configuration = video::ffmpeg::GetStreamConfiguration(path / metadataFilename_, index, false);
 
         std::filesystem::path stream_filename;
         if(std::filesystem::exists(std::filesystem::absolute(path / "stream0.hevc")))

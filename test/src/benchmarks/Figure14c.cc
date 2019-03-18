@@ -10,7 +10,7 @@ using namespace lightdb::logical;
 using namespace lightdb::optimization;
 using namespace lightdb::catalog;
 using namespace lightdb::execution;
-using namespace lightdb::utility::ffmpeg;
+using namespace lightdb::video::ffmpeg;
 
 class Figure14cTestFixture : public testing::Test {
 public:

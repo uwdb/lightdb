@@ -3,29 +3,28 @@ extern "C" {
 #include <libavformat/avformat.h>
 }
 
-//TODO this all shoudl be in the video subdirectory, it's all video stuff...
-namespace lightdb::utility::ffmpeg {
-    Codec GetCodec(AVCodecID codec) {
-        switch(codec) {
-            case AV_CODEC_ID_H264:
-                return Codec::h264();
-            case AV_CODEC_ID_HEVC:
-                return Codec::hevc();
-            default:
-                throw NotImplementedError("StreamMetadata does not support codec conversion");
-        }
+namespace lightdb::video::ffmpeg {
+    DecodeConfiguration GetConfigurationFromContext(const AVFormatContext*, size_t);
+
+    DecodeConfiguration GetStreamConfiguration(const std::string &filename, const size_t index, const bool probe) {
+        auto configurations = GetStreamConfigurations(filename, probe);
+
+        if (configurations.size() < index)
+            throw InvalidArgumentError("Index is larger than number of streams", "index");
+        else
+            return configurations.at(index);
     }
 
-    DecodeConfiguration GetStreamConfiguration(const std::string &filename, size_t index, bool probe) {
+    std::vector<DecodeConfiguration> GetStreamConfigurations(const std::string &filename, const bool probe) {
         int result;
         char error[AV_ERROR_MAX_STRING_SIZE];
-        std::unique_ptr<std::exception> exception = nullptr;
+        std::vector<DecodeConfiguration> configurations;
 
         //TODO these are deprecated in newer ffmpeg versions and should be omitted
         av_register_all();
         avcodec_register_all();
 
-        AVFormatContext* context = avformat_alloc_context();
+        auto context = avformat_alloc_context();
 
         try {
             if ((result = avformat_open_input(&context, filename.c_str(), nullptr, nullptr)) < 0) {
@@ -34,35 +33,13 @@ namespace lightdb::utility::ffmpeg {
                 throw FfmpegRuntimeError(av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, result));
             }
 
-
-            if (context->nb_streams < index + 1)
-                throw InvalidArgumentError("Index is larger than number of streams", "index");
-            else if (context->streams[index]->codecpar->height <= 0 ||
-                     context->streams[index]->codecpar->width <= 0)
-                throw FfmpegRuntimeError("Frame size not detected");
-            else if (context->streams[index]->nb_frames < 0)
-                throw FfmpegRuntimeError("No frames detected");
-            else if (context->bit_rate < 0)
-                throw FfmpegRuntimeError("No bitrate detected");
-            else if (context->streams[index]->codecpar->codec_id != AV_CODEC_ID_H264 &&
-                     context->streams[index]->codecpar->codec_id != AV_CODEC_ID_HEVC)
-                throw FfmpegRuntimeError("Hardcoded support only for H264 and HEVC");
-
-            DecodeConfiguration configuration{
-                    static_cast<unsigned int>(context->streams[index]->codecpar->height),
-                    static_cast<unsigned int>(context->streams[index]->codecpar->width),
-                    0u,
-                    0u,
-                    lightdb::rational{context->streams[index]->r_frame_rate.num,
-                                      context->streams[index]->r_frame_rate.den},
-                    static_cast<unsigned int>(context->bit_rate),
-                    GetCodec(context->streams[index]->codecpar->codec_id)
-            };
+            for(auto i = 0u; i < context->nb_streams; i++)
+                configurations.emplace_back(GetConfigurationFromContext(context, i));
 
             avformat_close_input(&context);
             avformat_free_context(context);
 
-            return configuration;
+            return configurations;
         } catch(const std::exception&) {
             avformat_close_input(&context);
             avformat_free_context(context);
@@ -70,11 +47,33 @@ namespace lightdb::utility::ffmpeg {
         }
     }
 
-    //TemporalRange duration(std::istream& stream) {
-    //    return TemporalRange{0, 20}; //TODO broken
-    //}
+    DecodeConfiguration GetConfigurationFromContext(const AVFormatContext *context, const size_t index) {
+        if (context->nb_streams < index + 1)
+            throw InvalidArgumentError("Index is larger than number of streams", "index");
+        else if (context->streams[index]->codecpar->height <= 0 ||
+                 context->streams[index]->codecpar->width <= 0)
+            throw FfmpegRuntimeError("Frame size not detected");
+        else if (context->streams[index]->nb_frames < 0)
+            throw FfmpegRuntimeError("No frames detected");
+        else if (context->bit_rate < 0)
+            throw FfmpegRuntimeError("No bitrate detected");
 
 
+        auto codec = Codec::get(context->streams[index]->codecpar->codec_id);
+        if(!codec.has_value())
+            throw FfmpegRuntimeError("Unsupported codec type");
+        else
+            return DecodeConfiguration{
+                    static_cast<unsigned int>(context->streams[index]->codecpar->height),
+                    static_cast<unsigned int>(context->streams[index]->codecpar->width),
+                    0u,
+                    0u,
+                    lightdb::rational{context->streams[index]->r_frame_rate.num,
+                                      context->streams[index]->r_frame_rate.den},
+                    static_cast<unsigned int>(context->bit_rate),
+                    codec.value()
+            };
+    }
 
     /*
     class Video {
@@ -365,4 +364,4 @@ namespace lightdb::utility::ffmpeg {
         av_packet_free(&pkt);
     }
 
-} // namespace lightdb::utility::ffmpeg
+} // namespace lightdb::video::ffmpeg
