@@ -7,8 +7,10 @@ os:
 
 addons:
   apt:
+    sources:
+      - ppa:graphics-drivers/ppa
     packages: 
-      - nvidia-cuda-toolkit
+      - nvidia-cuda-toolkit-8.0
 
 script:
   - mkdir -p build
