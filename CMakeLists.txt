@@ -1,5 +1,6 @@
 project(LightDB)
 cmake_minimum_required(VERSION 3.8)
+
 SET(BOOST_MIN_VERSION "1.64.0")
 
 # Set the cmake Module path
