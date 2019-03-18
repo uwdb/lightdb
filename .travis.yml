@@ -4,6 +4,12 @@ compiler:
   - gcc
 os:
   - linux
+
+addons:
+  apt:
+    packages: 
+      - nvidia-cuda-toolkit
+
 script:
   - mkdir -p build
   - cd build
