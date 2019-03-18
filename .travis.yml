@@ -5,6 +5,9 @@ compiler:
 os:
   - linux
 script:
-  - cmake
+  - mkdir -p build
+  - cd build
+  - cmake ..
   - make
   - make test
+  - ctest
