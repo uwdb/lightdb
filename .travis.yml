@@ -8,7 +8,7 @@ os:
 addons:
   apt:
     sources:
-      - ppa:graphics-drivers/ppa
+      - sourceline: 'ppa:graphics-drivers/ppa'
     packages: 
       - nvidia-cuda-toolkit-8.0
 
