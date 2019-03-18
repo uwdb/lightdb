@@ -22,13 +22,11 @@ protected:
 };
 
 TEST_F(UnionTestFixture, testEmptyUnion) {
-    auto input = Scan(Resources.red10.name);
-    auto zero = input.Select(Point6D::zero());
-    auto encoded = zero.Encode(Codec::raw());
+    auto query = Scan(Resources.red10.name)
+                    .Select(Point6D::zero())
+                    .Encode(Codec::raw());
 
-    auto plan = Optimizer::instance().optimize(encoded);
-
-    ASSERT_EQ(Coordinator().save(plan), "");
+    ASSERT_EQ(Coordinator().serialize(query), "");
 }
 
 /*

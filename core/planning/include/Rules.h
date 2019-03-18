@@ -41,8 +41,9 @@ namespace lightdb::optimization {
                 return true;
             } else if(node.is<physical::PhysicalToLogicalLightFieldAdapter>()) {
                 auto ref = plan().lookup(node);
-                auto op = plan().emplace<physical::GPUOperatorAdapter>(ref.downcast<physical::PhysicalToLogicalLightFieldAdapter>().source());
-                plan().assign(ref, op);
+                //auto op = plan().emplace<physical::GPUOperatorAdapter>(ref.downcast<physical::PhysicalToLogicalLightFieldAdapter>().source());
+                //plan().assign(ref, op);
+                plan().assign(ref, ref.downcast<physical::PhysicalToLogicalLightFieldAdapter>().source());
                 return true;
             } else
                 return false;
@@ -70,7 +71,8 @@ namespace lightdb::optimization {
                     if(children.size() > 1) {
                         auto tees = physical::TeedPhysicalLightFieldAdapter::make(decode, children.size());
                         for (auto index = 0u; index < children.size(); index++)
-                            plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
+                            plan().add(tees->physical(index));
+                            //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
                     }
                 } else if(stream.codec() == Codec::boxes()) {
                     auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, stream);
@@ -98,7 +100,8 @@ namespace lightdb::optimization {
                     if(children.size() > 1) {
                         auto tees = physical::TeedPhysicalLightFieldAdapter::make(decode, children.size());
                         for (auto index = 0u; index < children.size(); index++)
-                            plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
+                            plan().add(tees->physical(index));
+                            //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
                     }
                 } else if(node.codec() == Codec::boxes()) {
                     auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, node.stream());
@@ -117,7 +120,7 @@ namespace lightdb::optimization {
 
         bool visit(const logical::EncodedLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
-                auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                auto physical_parents = functional::flatmap<std::vector<PhysicalOperatorReference>>(
                         node.parents().begin(), node.parents().end(),
                         [this](auto &parent) { return plan().unassigned(parent); });
 
@@ -131,7 +134,7 @@ namespace lightdb::optimization {
                 if(physical_parent.is<physical::GPUAngularSubquery>() && physical_parent.downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>())
                     plan().emplace<physical::CPUIdentity>(logical, physical_parent);
                 else if(physical_parent.is<physical::GPUOperator>() && node.codec().nvidiaId().has_value())
-                    plan().emplace<physical::GPUEncode>(logical, physical_parent, node.codec());
+                    plan().emplace<physical::GPUEncodeToCPU>(logical, physical_parent, node.codec());
                 else if(physical_parent.is<physical::GPUOperator>() && node.codec() == Codec::raw())
                     plan().emplace<physical::GPUEnsureFrameCropped>(plan().lookup(node), physical_parent);
                 else if(physical_parent.is<physical::CPUMap>() && physical_parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
@@ -142,7 +145,7 @@ namespace lightdb::optimization {
                 else if(physical_parent->device() == physical::DeviceType::CPU) {
                     auto gpu = plan().environment().gpus()[0];
                     auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, physical_parent, gpu);
-                    plan().emplace<physical::GPUEncode>(plan().lookup(node), transfer, node.codec());
+                    plan().emplace<physical::GPUEncodeToCPU>(plan().lookup(node), transfer, node.codec());
                 } else
                     return false;
                 return true;
@@ -157,7 +160,7 @@ namespace lightdb::optimization {
     public:
         using OptimizerRule::OptimizerRule;
 
-        std::optional<PhysicalLightFieldReference> FindEncodeParent(const LightFieldReference &node) {
+        std::optional<PhysicalOperatorReference> FindEncodeParent(const LightFieldReference &node) {
             for(const auto &parent: node->parents()) {
                 if(parent.is<logical::EncodedLightField>() &&
                    plan().has_physical_assignment(parent))
@@ -166,8 +169,8 @@ namespace lightdb::optimization {
             return {};
         }
 
-        std::optional<PhysicalLightFieldReference> FindHomomorphicAncestor(const LightFieldReference &node) {
-            std::deque<PhysicalLightFieldReference> queue;
+        std::optional<PhysicalOperatorReference> FindHomomorphicAncestor(const LightFieldReference &node) {
+            std::deque<PhysicalOperatorReference> queue;
 
             for(const auto &parent: node->parents())
                 for(const auto &assignment: plan().assignments(parent))
@@ -203,7 +206,7 @@ namespace lightdb::optimization {
                     node.parents()[1].downcast<logical::ScannedLightField>().metadata().streams()[0].codec() != Codec::hevc())
                 return false;
             else {
-                auto unioned = plan().emplace<physical::GPUBoxOverlayUnion>(plan().lookup(node), std::vector<PhysicalLightFieldReference>{leafs0[0], leafs1[0]});
+                auto unioned = plan().emplace<physical::GPUBoxOverlayUnion>(plan().lookup(node), std::vector<PhysicalOperatorReference>{leafs0[0], leafs1[0]});
 
                 auto children = plan().children(plan().lookup(node));
                 if(children.size() > 1) {
@@ -212,7 +215,8 @@ namespace lightdb::optimization {
                         if (unioned->device() == physical::DeviceType::CPU)
                             plan().assign(plan().lookup(node), tees->physical(index));
                         else if (unioned->device() == physical::DeviceType::GPU)
-                            plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), unioned);
+                            plan().add(tees->physical(index));
+                            //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), unioned);
                         else
                             throw InvalidArgumentError("No rule support for device type.", "node");
                     }
@@ -229,7 +233,7 @@ namespace lightdb::optimization {
                 return false;
             else if (node.parents()[0].is<logical::EncodedLightField>() &&
                      node.parents()[1].is<logical::EncodedLightField>()) {
-                std::vector<PhysicalLightFieldReference> physical_outputs;
+                std::vector<PhysicalOperatorReference> physical_outputs;
                 for (auto &parent: node.parents()) {
                     const auto &assignments = plan().assignments(parent);
                     if (assignments.empty())
@@ -262,7 +266,7 @@ namespace lightdb::optimization {
     public:
         using OptimizerRule::OptimizerRule;
 
-        PhysicalLightFieldReference Map(const logical::TransformedLightField &node, PhysicalLightFieldReference parent) {
+        PhysicalOperatorReference Map(const logical::TransformedLightField &node, PhysicalOperatorReference parent) {
             auto logical = plan().lookup(node);
 
             if(!node.functor()->has_implementation(physical::DeviceType::GPU)) {
@@ -275,7 +279,7 @@ namespace lightdb::optimization {
 
         bool visit(const logical::TransformedLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
-                auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                auto physical_parents = functional::flatmap<std::vector<PhysicalOperatorReference>>(
                         node.parents().begin(), node.parents().end(),
                         [this](auto &parent) { return plan().unassigned(parent); });
 
@@ -291,7 +295,8 @@ namespace lightdb::optimization {
                             if(mapped->device() == physical::DeviceType::CPU)
                                 plan().assign(plan().lookup(node), tees->physical(index));
                             else if(mapped->device() == physical::DeviceType::GPU)
-                                plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), mapped);
+                                plan().add(tees->physical(index));
+                                //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), mapped);
                             else
                                 throw InvalidArgumentError("No rule support for device type.", "node");
                         }
@@ -307,16 +312,16 @@ namespace lightdb::optimization {
     public:
         using OptimizerRule::OptimizerRule;
 
-        PhysicalLightFieldReference AngularSelection(const logical::SubsetLightField &node,
-                                                     PhysicalLightFieldReference parent) {
+        PhysicalOperatorReference AngularSelection(const logical::SubsetLightField &node,
+                                                     PhysicalOperatorReference parent) {
             if(parent->device() == physical::DeviceType::GPU)
                 return plan().emplace<physical::GPUAngularSubframe>(plan().lookup(node), parent);
             else
                 throw std::runtime_error("Hardcoded support only for GPU angular selection"); //TODO
         }
 
-        PhysicalLightFieldReference TemporalSelection(const logical::SubsetLightField &node,
-                                                      PhysicalLightFieldReference parent) {
+        PhysicalOperatorReference TemporalSelection(const logical::SubsetLightField &node,
+                                                      PhysicalOperatorReference parent) {
             LOG(WARNING) << "Assuming temporal selection parent is encoded video without actually checking";
             if(parent->device() == physical::DeviceType::GPU)
                 return plan().emplace<physical::FrameSubset>(plan().lookup(node), parent);
@@ -324,8 +329,8 @@ namespace lightdb::optimization {
                 throw std::runtime_error("Hardcoded support only for GPU temporal selection"); //TODO
         }
 
-        PhysicalLightFieldReference IdentitySelection(const logical::SubsetLightField &node,
-                                                      PhysicalLightFieldReference parent) {
+        PhysicalOperatorReference IdentitySelection(const logical::SubsetLightField &node,
+                                                      PhysicalOperatorReference parent) {
             if(parent->device() == physical::DeviceType::CPU)
                 return plan().emplace<physical::CPUIdentity>(plan().lookup(node), parent);
             else if(parent->device() == physical::DeviceType::GPU)
@@ -336,7 +341,7 @@ namespace lightdb::optimization {
 
         bool visit(const logical::SubsetLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
-                auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                auto physical_parents = functional::flatmap<std::vector<PhysicalOperatorReference>>(
                         node.parents().begin(), node.parents().end(),
                         [this](auto &parent) { return plan().unassigned(parent); });
 
@@ -375,7 +380,7 @@ namespace lightdb::optimization {
         using OptimizerRule::OptimizerRule;
 
         bool visit(const logical::InterpolatedLightField &node) override {
-            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+            auto physical_parents = functional::flatmap<std::vector<PhysicalOperatorReference>>(
                     node.parents().begin(), node.parents().end(),
                     [this](auto &parent) { return plan().assignments(parent); });
 
@@ -399,7 +404,7 @@ namespace lightdb::optimization {
     };
 
     class ChooseDiscretize : public OptimizerRule {
-        void teeIfNecessary(const LightField& node, PhysicalLightFieldReference physical) {
+        void teeIfNecessary(const LightField& node, PhysicalOperatorReference physical) {
             auto children = plan().children(plan().lookup(node));
             if(children.size() > 1) {
                 auto tees = physical::TeedPhysicalLightFieldAdapter::make(physical, children.size());
@@ -407,7 +412,8 @@ namespace lightdb::optimization {
                     if (physical->device() == physical::DeviceType::CPU)
                         plan().assign(plan().lookup(node), tees->physical(index));
                     else if (physical->device() == physical::DeviceType::GPU)
-                        plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), physical);
+                        plan().add(tees->physical(index));
+                        //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), physical);
                     else
                         throw InvalidArgumentError("No rule support for device type.", "node");
                 }
@@ -419,7 +425,7 @@ namespace lightdb::optimization {
         using OptimizerRule::OptimizerRule;
 
         bool visit(const logical::DiscreteLightField &node) override {
-            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+            auto physical_parents = functional::flatmap<std::vector<PhysicalOperatorReference>>(
                     node.parents().begin(), node.parents().end(),
                     [this](auto &parent) { return plan().assignments(parent); });
 
@@ -478,7 +484,7 @@ namespace lightdb::optimization {
         using OptimizerRule::OptimizerRule;
 
         bool visit(const logical::DiscreteLightField &node) override {
-            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+            auto physical_parents = functional::flatmap<std::vector<PhysicalOperatorReference>>(
                     node.parents().begin(), node.parents().end(),
                     [this](auto &parent) { return plan().assignments(parent); });
 
@@ -526,7 +532,7 @@ namespace lightdb::optimization {
         using OptimizerRule::OptimizerRule;
 
         bool visit(const logical::PartitionedLightField &node) override {
-            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+            auto physical_parents = functional::flatmap<std::vector<PhysicalOperatorReference>>(
                     node.parents().begin(), node.parents().end(),
                     [this](auto &parent) { return plan().assignments(parent); });
 
@@ -548,7 +554,7 @@ namespace lightdb::optimization {
     };
 
     class ChooseSubquery : public OptimizerRule {
-        void teeIfNecessary(const LightField& node, const PhysicalLightFieldReference &physical) {
+        void teeIfNecessary(const LightField& node, const PhysicalOperatorReference &physical) {
             auto children = plan().children(plan().lookup(node));
             if(children.size() > 1) {
                 auto tees = physical::TeedPhysicalLightFieldAdapter::make(physical, children.size());
@@ -570,7 +576,7 @@ namespace lightdb::optimization {
         { }
 
         bool visit(const logical::SubqueriedLightField &node) override {
-            auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+            auto physical_parents = functional::flatmap<std::vector<PhysicalOperatorReference>>(
                     node.parents().begin(), node.parents().end(),
                     [this](auto &parent) { return plan().assignments(parent); });
 
@@ -597,7 +603,7 @@ namespace lightdb::optimization {
     public:
         using OptimizerRule::OptimizerRule;
 
-        PhysicalLightFieldReference Encode(const logical::StoredLightField &node, PhysicalLightFieldReference parent) {
+        PhysicalOperatorReference Encode(const logical::StoredLightField &node, PhysicalOperatorReference parent) {
             auto logical = plan().lookup(node);
 
             // Can we leverage the ChooseEncode rule to automatically do this stuff, which is an exact duplicate?
@@ -607,7 +613,7 @@ namespace lightdb::optimization {
             //} else if(parent.is<physical::GPUOperatorAdapter>() && parent->parents()[0].is<physical::GPUAngularSubquery>() && parent->parents()[0].downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
             //    return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent.is<physical::GPUOperator>()) {
-                return plan().emplace<physical::GPUEncode>(logical, parent, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
             } else if(parent.is<physical::CPUMap>() && parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
                 //TODO this is silly -- every physical operator should declare an output type and we should just use that
@@ -618,17 +624,18 @@ namespace lightdb::optimization {
             } else if(parent->device() != physical::DeviceType::GPU) {
                 auto gpu = plan().environment().gpus()[0];
                 auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, parent, gpu);
-                return plan().emplace<physical::GPUEncode>(logical, transfer, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, transfer, Codec::hevc());
             } else if(!parent.is<physical::GPUOperator>()) {
-                auto gpuop = plan().emplace<physical::GPUOperatorAdapter>(parent);
-                return plan().emplace<physical::GPUEncode>(logical, gpuop, Codec::hevc());
+                //auto gpuop = plan().emplace<physical::GPUOperatorAdapter>(parent);
+                //return plan().emplace<physical::GPUEncodeToCPU>(logical, gpuop, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
             } else
-                return plan().emplace<physical::GPUEncode>(logical, parent, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
         }
 
         bool visit(const logical::StoredLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
-                auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                auto physical_parents = functional::flatmap<std::vector<PhysicalOperatorReference>>(
                         node.parents().begin(), node.parents().end(),
                         [this](auto &parent) { return plan().unassigned(parent); });
 
@@ -649,7 +656,7 @@ namespace lightdb::optimization {
     public:
         using OptimizerRule::OptimizerRule;
 
-        PhysicalLightFieldReference Encode(const logical::SunkLightField &node, PhysicalLightFieldReference parent) {
+        PhysicalOperatorReference Encode(const logical::SunkLightField &node, PhysicalOperatorReference parent) {
             auto logical = plan().lookup(node);
 
             // Can we leverage the ChooseEncode rule to automatically do this stuff, which is an exact duplicate?
@@ -660,24 +667,25 @@ namespace lightdb::optimization {
                 //} else if(parent.is<physical::GPUOperatorAdapter>() && parent->parents()[0].is<physical::GPUAngularSubquery>() && parent->parents()[0].downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
                 //    return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent.is<physical::GPUOperator>()) {
-                return plan().emplace<physical::GPUEncode>(logical, parent, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
                 //TODO this is silly -- every physical operator should declare an output type and we should just use that
             } else if(parent.is<physical::TeedPhysicalLightFieldAdapter::TeedPhysicalLightField>() && parent->parents()[0].is<physical::GPUAngularSubquery>()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent->device() != physical::DeviceType::GPU) {
                 auto gpu = plan().environment().gpus()[0];
                 auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, parent, gpu);
-                return plan().emplace<physical::GPUEncode>(logical, transfer, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, transfer, Codec::hevc());
             } else if(!parent.is<physical::GPUOperator>()) {
-                auto gpuop = plan().emplace<physical::GPUOperatorAdapter>(parent);
-                return plan().emplace<physical::GPUEncode>(logical, gpuop, Codec::hevc());
+                //auto gpuop = plan().emplace<physical::GPUOperatorAdapter>(parent);
+                //return plan().emplace<physical::GPUEncodeToCPU>(logical, gpuop, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
             } else
-                return plan().emplace<physical::GPUEncode>(logical, parent, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
         }
 
         bool visit(const logical::SunkLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
-                auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                auto physical_parents = functional::flatmap<std::vector<PhysicalOperatorReference>>(
                         node.parents().begin(), node.parents().end(),
                         [this](auto &parent) { return plan().unassigned(parent); });
 
@@ -698,7 +706,7 @@ namespace lightdb::optimization {
 
         bool visit(const logical::SavedLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
-                auto physical_parents = functional::flatmap<std::vector<PhysicalLightFieldReference>>(
+                auto physical_parents = functional::flatmap<std::vector<PhysicalOperatorReference>>(
                         node.parents().begin(), node.parents().end(),
                         [this](auto &parent) { return plan().unassigned(parent); });
 
@@ -724,7 +732,6 @@ namespace lightdb::optimization {
                 if(assignment.is<physical::GPUIdentity>() ||
                    assignment.is<physical::CPUIdentity>()) {
                     auto &parents = assignment->parents();
-
 
                     CHECK_EQ(parents.size(), 1);
 
@@ -756,7 +763,7 @@ namespace lightdb::optimization {
             return true;
         }
 
-        PhysicalLightFieldReference CreateIdentity(const LightFieldReference& logical, PhysicalLightFieldReference &parent) {
+        PhysicalOperatorReference CreateIdentity(const LightFieldReference& logical, PhysicalOperatorReference &parent) {
             if(parent->device() == physical::DeviceType::CPU)
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             else if(parent->device() == physical::DeviceType::GPU)
@@ -772,12 +779,11 @@ namespace lightdb::optimization {
                IsCompatibleCodecConfiguration()) {
                 auto &encode = logical;
                 auto &decode = logical->parents().front();
-                auto &source = decode->parents().front();
                 auto out = plan().children(logical);
 
-                auto source_physical = plan().assignments(source).front();
                 auto decode_physical = plan().assignments(decode).front();
                 auto encode_physical = plan().assignments(logical).front();
+                auto source_physical = functional::single(decode_physical->parents()); //plan().assignments(source).front();
 
                 auto decode_identity = CreateIdentity(decode, source_physical);
                 auto encode_identity = CreateIdentity(encode, decode_identity);
@@ -806,7 +812,7 @@ namespace lightdb::optimization {
                    plan().assignments(children.front()).front().is<physical::ScanSingleFileDecodeReader>();
         }
 
-        PhysicalLightFieldReference CreateIdentity(const LightFieldReference& logical, PhysicalLightFieldReference &parent) {
+        PhysicalOperatorReference CreateIdentity(const LightFieldReference& logical, PhysicalOperatorReference &parent) {
             if(parent->device() == physical::DeviceType::CPU)
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             else if(parent->device() == physical::DeviceType::GPU)
@@ -815,7 +821,7 @@ namespace lightdb::optimization {
                 throw InvalidArgumentError("Unsupported device type for identity creation", "parent");
         }
 
-        bool visit(const logical::ExternalLightField &node) override {
+        bool ApplyRule(const LightField &node) {
             auto logical = plan().lookup(node);
 
             if(IsPhysicalChildASaveOperator(logical)) {
@@ -828,7 +834,8 @@ namespace lightdb::optimization {
 
                 auto &save = save_physical->logical().downcast<logical::SavedLightField>();
 
-                auto copy_physical = plan().emplace<physical::CopyFile>(scan, save.filename(), in_physical);
+                auto copy_physical = plan().emplace<physical::CopyFile>(
+                        scan, std::vector<std::filesystem::path>{save.filename()}, in_physical);
                 auto save_identity = CreateIdentity(save, copy_physical);
 
                 plan().replace_assignments(save_physical, save_identity);
@@ -838,6 +845,14 @@ namespace lightdb::optimization {
             }
 
             return false;
+        }
+
+        bool visit(const logical::ExternalLightField &node) override {
+            return ApplyRule(node);
+        }
+
+        bool visit(const logical::ScannedLightField &node) override {
+            return ApplyRule(node);
         }
     };
 }

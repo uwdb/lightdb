@@ -11,7 +11,7 @@
 
 namespace lightdb {
     class LightField;
-    class PhysicalLightField;
+    class PhysicalOperator;
     namespace logical { class Algebra; }
     using LightFieldReference = shared_reference<LightField, logical::Algebra>;
 

@@ -14,7 +14,7 @@ using namespace lightdb::execution;
 class UDFTestFixture : public testing::Test {
 public:
     UDFTestFixture()
-            : catalog("resources") {
+            : catalog(Resources.catalog_name) {
         Catalog::instance(catalog);
         Optimizer::instance<HeuristicOptimizer>(LocalEnvironment());
     }
@@ -24,37 +24,31 @@ protected:
 };
 
 TEST_F(UDFTestFixture, testGreyscale) {
-    auto name = "red10";
-    auto output = "out.hevc";
+    auto query = Scan(Resources.red10.name)
+                    .Map(lightdb::Greyscale)
+                    .Encode()
+                    .Save(Resources.out.hevc);
 
-    auto input = Scan(name);
-    auto gray = input.Map(lightdb::Greyscale);
-    auto encoded = gray.Encode();
+    Coordinator().execute(query);
 
-    auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, output);
-
-    EXPECT_VIDEO_VALID(output);
-    EXPECT_VIDEO_FRAMES(output, Resources.red10.frames);
-    EXPECT_VIDEO_RESOLUTION(output, Resources.red10.height, Resources.red10.width);
-    EXPECT_EQ(remove(output), 0);
+    EXPECT_VIDEO_VALID(Resources.out.hevc);
+    EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height, Resources.red10.width);
+    EXPECT_EQ(remove(Resources.out.hevc), 0);
 }
 
-TEST_F(UDFTestFixture, testBlur) {
-    auto name = "red10";
-    auto output = "out.hevc";
+TEST_F(UDFTestFixture, testLoadedBlur) {
+    auto blur = lightdb::extensibility::Load(Resources.plugins.blur.name);
 
-    auto blur = lightdb::extensibility::Load("blur");
+    auto query = Scan(Resources.red10.name)
+                    .Map(blur)
+                    .Encode()
+                    .Save(Resources.out.hevc);
 
-    auto input = Scan(name);
-    auto annotated = input.Map(blur);
-    auto encoded = annotated.Encode();
+    Coordinator().execute(query);
 
-    auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, output);
-
-    EXPECT_VIDEO_VALID(output);
-    EXPECT_VIDEO_FRAMES(output, Resources.red10.frames);
-    EXPECT_VIDEO_RESOLUTION(output, Resources.red10.height, Resources.red10.width);
-    //EXPECT_EQ(remove(output), 0);
+    EXPECT_VIDEO_VALID(Resources.out.hevc);
+    EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height, Resources.red10.width);
+    EXPECT_EQ(remove(Resources.out.hevc), 0);
 }

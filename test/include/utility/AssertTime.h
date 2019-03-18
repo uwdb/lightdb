@@ -19,10 +19,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define LOG_DURATION(label, command) { \
-        auto __start = steady_clock::now(); \
-        {command} \
+        auto __start = std::chrono::steady_clock::now(); \
+        {command;} \
         LOG(INFO) << (label) << " duration:" \
-                  << ::duration_cast<milliseconds>(steady_clock::now() - __start).count() \
+                  << std::chrono::duration_cast<std::chrono::milliseconds>( \
+                        std::chrono::steady_clock::now() - __start).count() \
                   << "ms"; \
 }
 

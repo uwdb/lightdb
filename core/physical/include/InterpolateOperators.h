@@ -9,45 +9,36 @@
 
 namespace lightdb::physical {
 
-class GPUInterpolate: public GPUUnaryOperator<GPUDecodedFrameData> {
+class GPUInterpolate: public PhysicalOperator, public GPUOperator {
 public:
     GPUInterpolate(const LightFieldReference &logical,
-                   PhysicalLightFieldReference &parent,
+                   PhysicalOperatorReference &parent,
                    const interpolation::InterpolatorReference &interpolator)
-            : GPUInterpolate(logical, parent,
-                             [this]() -> Configuration { return this->parent<GPUOperator>().configuration(); },
-                             interpolator)
+            : PhysicalOperator(logical, {parent}, DeviceType::GPU, runtime::make<Runtime>(*this)),
+              GPUOperator(parent),
+              interpolator_(interpolator)
     { }
-
-    GPUInterpolate(const LightFieldReference &logical,
-                   PhysicalLightFieldReference &parent,
-                   const Configuration &configuration,
-                   const interpolation::InterpolatorReference &interpolator)
-            : GPUInterpolate(logical, parent, [configuration]() { return configuration; },
-                             interpolator)
-    { }
-
-    std::optional<physical::MaterializedLightFieldReference> read() override {
-        if(iterator() != iterator().eos()) {
-            auto input = iterator()++;
-
-            auto i = MaterializedLightFieldReference::make<physical::InterpolatedGPUDecodedFrameData>(input, interpolator());
-            return i;
-            //return MaterializedLightFieldReference::make<physical::InterpolatedGPUDecodedFrameData>(input, interpolator());
-        } else
-            return {};
-    }
 
     interpolation::InterpolatorReference interpolator() const { return interpolator_; }
 
 private:
-    GPUInterpolate(const LightFieldReference &logical,
-                   PhysicalLightFieldReference &parent,
-                   const std::function<Configuration()> &configuration,
-                   const interpolation::InterpolatorReference &interpolator)
-            : GPUUnaryOperator(logical, parent, configuration),
-              interpolator_(interpolator)
-    { }
+    class Runtime: public runtime::GPUUnaryRuntime<GPUInterpolate, GPUDecodedFrameData> {
+    public:
+        explicit Runtime(GPUInterpolate &physical)
+            : runtime::GPUUnaryRuntime<GPUInterpolate, GPUDecodedFrameData>(physical)
+        { }
+
+        std::optional<physical::MaterializedLightFieldReference> read() override {
+            if(iterator() != iterator().eos()) {
+                auto input = iterator()++;
+
+                auto i = MaterializedLightFieldReference::make<physical::InterpolatedGPUDecodedFrameData>(
+                        input, physical().interpolator());
+                return i;
+            } else
+                return {};
+        }
+    };
 
     interpolation::InterpolatorReference interpolator_;
 };

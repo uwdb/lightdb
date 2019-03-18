@@ -22,7 +22,7 @@ namespace lightdb {
     }
 
     void print_plan(const optimization::Plan &plan) {
-        std::deque<std::pair<PhysicalLightFieldReference, unsigned int>> queue{};
+        std::deque<std::pair<PhysicalOperatorReference, unsigned int>> queue{};
 
         for(auto &sink: plan.sinks()) {
             print_plan(sink, plan);
