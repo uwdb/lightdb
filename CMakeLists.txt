@@ -6,7 +6,6 @@ SET(BOOST_MIN_VERSION "1.64.0")
 # Set the cmake Module path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
-include(DownloadProject)
 
 # Set shared library suffix
 if(APPLE)
@@ -75,6 +74,10 @@ find_package (Glog REQUIRED)
 #find_package(Bento4 REQUIRED)
 #include_directories(${Bento4_INCLUDE_DIRS})
 #add_subdirectory(${Bento4_SOURCE_DIR})
+
+#TODO Add FindGPAC.cmake
+set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} gpac)
+include_directories(SYSTEM /usr/local/include/gpac)
 
 # Build LightDB library
 add_subdirectory(core)

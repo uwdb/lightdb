@@ -23,6 +23,8 @@
 
 #define FfmpegRuntimeError(message)                \
     ::lightdb::errors::_FfmpegRuntimeError(message, __FILE__, __LINE__, __func__)
+#define GpacRuntimeError(message, status)                \
+    ::lightdb::errors::_GpacRuntimeError(message, status, __FILE__, __LINE__, __func__)
 
 #define GpuRuntimeError(message)                \
     ::lightdb::errors::_GpuRuntimeError(message, __FILE__, __LINE__, __func__)
@@ -138,6 +140,19 @@ namespace lightdb::errors {
         _FfmpegRuntimeError(const std::string &message, const char* file, int line, const char* function)
                 : LightDBError(message, file, line, function)
         { }
+    };
+
+    class _GpacRuntimeError: public LightDBError<std::runtime_error> {
+    public:
+        _GpacRuntimeError(const std::string &message, unsigned int status, const char* file, int line, const char* function)
+                : LightDBError(message, file, line, function),
+                  status_(status)
+        { }
+
+        unsigned int status() const { return status_; }
+
+    private:
+        const unsigned int status_;
     };
 
     class _GpuRuntimeError: public LightDBError<std::runtime_error> {
