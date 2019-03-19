@@ -56,27 +56,30 @@ namespace lightdb::optimization {
 
         bool visit(const logical::ScannedLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
-                LOG(WARNING) << "Just using first stream and GPU and ignoring all others";
-                auto stream = node.metadata().streams()[0];
-                auto logical = plan().lookup(node);
+                LOG(WARNING) << "Just using first GPU and ignoring all others";
+                for(auto &stream: node.metadata().streams()) {
+                    //auto stream = node.metadata().streams()[0];
+                    auto logical = plan().lookup(node);
 
-                if(stream.codec() == Codec::h264() ||
-                   stream.codec() == Codec::hevc()) {
-                    auto gpu = plan().environment().gpus()[0];
+                    if(stream.codec() == Codec::h264() ||
+                       stream.codec() == Codec::hevc()) {
+                        auto gpu = plan().environment().gpus()[0];
 
-                    auto &scan = plan().emplace<physical::ScanSingleFileDecodeReader>(logical, stream);
-                    auto decode = plan().emplace<physical::GPUDecodeFromCPU>(logical, scan, gpu);
+                        auto &scan = plan().emplace<physical::ScanSingleFileDecodeReader>(logical, stream);
+                        auto decode = plan().emplace<physical::GPUDecodeFromCPU>(logical, scan, gpu);
 
-                    auto children = plan().children(plan().lookup(node));
-                    if(children.size() > 1) {
-                        auto tees = physical::TeedPhysicalLightFieldAdapter::make(decode, children.size());
-                        for (auto index = 0u; index < children.size(); index++)
-                            plan().add(tees->physical(index));
+                        auto children = plan().children(plan().lookup(node));
+                        if(children.size() > 1) {
+                            auto tees = physical::TeedPhysicalLightFieldAdapter::make(decode, children.size());
+                            for (auto index = 0u; index < children.size(); index++)
+                                plan().add(tees->physical(index));
                             //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
-                    }
-                } else if(stream.codec() == Codec::boxes()) {
-                    auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, stream);
-                    auto decode = plan().emplace<physical::CPUFixedLengthRecordDecode<Rectangle>>(logical, scan);
+                        }
+                    } else if(stream.codec() == Codec::boxes()) {
+                        auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, stream);
+                        auto decode = plan().emplace<physical::CPUFixedLengthRecordDecode<Rectangle>>(logical, scan);
+                    } else
+                        throw NotImplementedError("Unsupported codec when assigning decoder");
                 }
 
                 return true;
