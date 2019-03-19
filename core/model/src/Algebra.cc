@@ -14,7 +14,7 @@ namespace lightdb::logical {
 
     LightFieldReference Load(const std::filesystem::path& filename, const lightdb::options<>& options) {
         auto codec_name = std::any_cast<std::string>(options.get("Codec").value_or(
-                std::any{filename.extension().string()}));
+                          std::any{filename.extension().string()}));
         auto codec = Codec::get(codec_name);
 
         if(codec.has_value())
