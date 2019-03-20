@@ -2,8 +2,7 @@
 #define LIGHTDB_ENCODE_API
 
 #include "GPUContext.h"
-#include "nvUtils.h"
-#include <cuda.h>
+#include "nvEncodeAPI.h"
 #include <cassert>
 #include <functional>
 
@@ -85,7 +84,7 @@ protected:
     GUID                                                 codecGUID;
 
     NV_ENCODE_API_FUNCTION_LIST*                         m_pEncodeAPI;
-    HINSTANCE                                            m_hinstLib;
+    void*                                                m_hinstLib;
     FrameEncodedHandler                                  *frameEncodedHandler;
     MotionEstimationEncodedHandler                       *motionEstimationEncodedHandler;
     EncodeSessionHandle                                  *encodeSessionHandle;

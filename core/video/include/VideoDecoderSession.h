@@ -3,7 +3,6 @@
 
 #include "VideoDecoder.h"
 #include "DecodeReader.h"
-#include <cuda.h>
 #include <thread>
 #include <chrono>
 

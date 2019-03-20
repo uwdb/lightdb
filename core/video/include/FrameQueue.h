@@ -12,8 +12,6 @@
  */
 
 #include "VideoLock.h"
-#include <nvcuvid.h>
-
 #include <optional>
 #include <thread>
 #include <memory>

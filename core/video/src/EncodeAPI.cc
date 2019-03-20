@@ -1,5 +1,6 @@
 #include "EncodeAPI.h"
 #include "EncodeBuffer.h"
+#include "nvUtils.h"
 #include <gtest/gtest.h>
 
 NVENCSTATUS EncodeAPI::NvEncOpenEncodeSession(CUcontext context)

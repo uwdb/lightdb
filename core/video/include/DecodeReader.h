@@ -2,7 +2,6 @@
 #define LIGHTDB_DECODEREADER_H
 
 #include "spsc_queue.h"
-#include <cuda.h>
 #include <thread>
 #include <experimental/filesystem>
 

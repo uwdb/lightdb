@@ -2,8 +2,6 @@
 #define LIGHTDB_SCALE_H
 
 #include "VideoLock.h"
-#include <cuda.h>
-#include <vector_types.h>
 #include <experimental/filesystem>
 #include <mutex>
 
