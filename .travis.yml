@@ -13,16 +13,17 @@ addons:
   apt:
     sources:
       - sourceline: 'ppa:ubuntu-toolchain-r/test'
+      - sourceline: 'ppa:mhier/libboost-latest'
 #      - sourceline: 'ppa:graphics-drivers/ppa'
     packages: 
       - g++-8
       - libgoogle-glog-dev
       - libgtest-dev
       - libopencv-dev
-      - libboost1.64-all-dev
       - libavcodec-dev
       - libavformat-dev
       - nvidia-cuda-toolkit
+      - boost1.64
 
 before_install:
     - export CXX=g++-8
