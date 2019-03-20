@@ -27,7 +27,7 @@ addons:
 
 before_install:
     - export CXX=g++-8
-    - export CC=gcc-8
+    - export  CC=gcc-8
 
 script:
 #  - source .travis/install-cuda-trusty.sh
