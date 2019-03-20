@@ -1,7 +1,15 @@
 #include "EncodeAPI.h"
 #include "EncodeBuffer.h"
-#include "nvUtils.h"
 #include <gtest/gtest.h>
+#include <dlfcn.h>
+
+// Imports from nvUtils.h
+#define FALSE 0
+#define TRUE  1
+#define PRINTERR(message, ...) \
+    fprintf(stderr, "%s line %d: " message, __FILE__, __LINE__, ##__VA_ARGS__)
+#define FABS(a) ((a) >= 0 ? (a) : -(a))
+#define stricmp strcasecmp
 
 NVENCSTATUS EncodeAPI::NvEncOpenEncodeSession(CUcontext context)
 {
@@ -655,6 +663,10 @@ EncodeAPI::EncodeAPI(void* device, NV_ENC_DEVICE_TYPE deviceType)
     if((status = Initialize(device, deviceType)) != NV_ENC_SUCCESS)
         throw GpuEncodeRuntimeError("Call to api.Initialize failed", status);
 }
+
+EncodeAPI::EncodeAPI(GPUContext& context)
+    : EncodeAPI(context.get())
+{ }
 
 EncodeAPI::~EncodeAPI()
 {

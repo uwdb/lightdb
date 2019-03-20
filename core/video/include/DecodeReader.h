@@ -2,12 +2,13 @@
 #define LIGHTDB_DECODEREADER_H
 
 #include "spsc_queue.h"
+#include <nvcuvid.h>
 #include <thread>
 #include <experimental/filesystem>
 
 struct DecodeReaderPacket: public CUVIDSOURCEDATAPACKET {
 public:
-    DecodeReaderPacket() = default;
+    DecodeReaderPacket() : CUVIDSOURCEDATAPACKET{} { }
 
     DecodeReaderPacket(const DecodeReaderPacket &packet) = default;
 

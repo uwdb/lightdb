@@ -1,8 +1,7 @@
 #ifndef LIGHTDB_ERRORS_H
 #define LIGHTDB_ERRORS_H
 
-#include "nvEncodeAPI.h"
-#include "dynlink_nvcuvid.h"
+#include "EncodeAPI.h"
 #include <glog/logging.h>
 #include <stdexcept>
 #include <utility>

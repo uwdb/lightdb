@@ -21,7 +21,7 @@ CUVIDDECODECREATEINFO DecodeConfiguration::AsCuvidCreateInfo(CUvideoctxlock lock
                 .CodecType = codec.cudaId().value(),
                 .ChromaFormat = chroma_format,
                 .ulCreationFlags = creation_flags,
-                .bitDepthMinus8 = 0,
+                //.bitDepthMinus8 = 0,
                 .Reserved1 = {0},
                 .display_area = {
                         .left = static_cast<short>(left),
@@ -48,8 +48,8 @@ unsigned int DecodeConfiguration::DefaultDecodeSurfaces() const {
         (codec.cudaId() == cudaVideoCodec_H264_MVC)) {
         // Assume worst-case of 20 decode surfaces for H264
         decode_surfaces = 20;
-    } else if (codec.cudaId() == cudaVideoCodec_VP9) {
-        decode_surfaces = 12;
+    //} else if (codec.cudaId() == cudaVideoCodec_VP9) {
+    //    decode_surfaces = 12;
     } else if (codec.cudaId() == cudaVideoCodec_HEVC) {
         // ref HEVC spec: A.4.1 General tier and level limits
         auto maxLumaPS = 35651584u; // currently assuming level 6.2, 8Kx4K

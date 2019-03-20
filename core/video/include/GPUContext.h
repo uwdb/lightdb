@@ -3,6 +3,8 @@
 
 #include "errors.h"
 #include <glog/logging.h>
+#include <nvcuvid.h>
+#include <cuda.h>
 #include <stdexcept>
 
 class GPUContext {
@@ -61,17 +63,15 @@ public:
 
         if(isInitialized)
             return true;
-        else if((result = cuInit(0, __CUDA_API_VERSION, nullptr)) != CUDA_SUCCESS)
+        else if((result = cuInit(0)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuInit failed", result);
-        else if(cuvidInit(0) != CUDA_SUCCESS)
-            throw GpuCudaRuntimeError("Call to cuvidInit failed", result);
         else
             return (isInitialized = true);
     }
 
     static size_t device_count() {
         CUresult result;
-        int count;
+        int count = 2;
 
         if(!GPUContext::Initialize())
             throw GpuRuntimeError("GPU context initialization failed");
