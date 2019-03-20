@@ -82,6 +82,54 @@ private:
     const std::chrono::microseconds poll_duration_;
 };
 
+class CPUDecode : public PhysicalOperator {
+public:
+    explicit CPUDecode(const LightFieldReference &logical,
+                       const PhysicalOperatorReference &source)
+            : PhysicalOperator(logical, {source}, DeviceType::CPU, runtime::make<Runtime>(*this)) {
+        CHECK_EQ(source->device(), DeviceType::CPU);
+    }
+
+    CPUDecode(const CPUDecode&) = delete;
+    CPUDecode(CPUDecode&&) = default;
+
+private:
+    class Runtime: public runtime::UnaryRuntime<CPUDecode, CPUEncodedFrameData> {
+    public:
+        explicit Runtime(CPUDecode &physical)
+                : runtime::UnaryRuntime<CPUDecode, CPUEncodedFrameData>(physical),
+                  configuration_{configuration(), codec()},
+                  geometry_{geometry()}
+        { }
+
+        std::optional<physical::MaterializedLightFieldReference> read() override {
+            std::vector<GPUFrameReference> frames;
+
+            LOG_IF(WARNING, configuration_.output_surfaces < 8)
+            << "Decode configuration output surfaces is low, limiting throughput";
+
+            if(!decoder_.frame_queue().isComplete())
+                do {
+                    auto frame = session_.decode(physical().poll_duration());
+                    if (frame.has_value())
+                        frames.emplace_back(frame.value());
+                } while(!decoder_.frame_queue().isEmpty() &&
+                        !decoder_.frame_queue().isEndOfDecode() &&
+                        frames.size() <= configuration_.output_surfaces / 4);
+
+            if(!frames.empty() || !decoder_.frame_queue().isComplete())
+                return std::optional<physical::MaterializedLightFieldReference>{
+                        GPUDecodedFrameData(configuration_, geometry_, frames)};
+            else
+                return std::nullopt;
+        }
+
+    private:
+        const DecodeConfiguration configuration_;
+        const GeometryReference geometry_;
+    };
+};
+
 template<typename T>
 class CPUFixedLengthRecordDecode : public PhysicalOperator {
 public:
