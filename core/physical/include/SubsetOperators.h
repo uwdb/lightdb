@@ -34,7 +34,7 @@ private:
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if (iterator() != iterator().eos()) {
                 auto v = iterator()++;
-                return GPUDecodedFrameData{configuration_, v.frames()};
+                return GPUDecodedFrameData{configuration_, v.geometry(), v.frames()};
                 //return GPUDecodedFrameData{GetConfiguration(v.configuration()), v.frames()};
             } else
                 return {};
@@ -42,11 +42,13 @@ private:
 
     private:
         Configuration create_configuration(const Configuration &base) {
-            if(logical()->volume().bounding().theta() == physical().parent().logical()->volume().bounding().theta() &&
+            if((*iterator()).is<InterpolatedGPUDecodedFrameData>())
+                throw InvalidArgumentError("Attempt to take frame subset of interpolated data.", "iterator");
+            else if(logical()->volume().bounding().theta() == physical().parent().logical()->volume().bounding().theta() &&
                logical()->volume().bounding().phi() == physical().parent().logical()->volume().bounding().phi())
                 return base;
             else {
-                LOG(WARNING) << "Not checking for compatible projections or discrete sampling.";
+                LOG(WARNING) << "Not checking for compatible projections.";
                 auto left   = base.width * (logical()->volume().bounding().theta().start() - physical().parent().logical()->volume().bounding().theta().start()) / number(TWOPI),
                      right  = base.width - (base.width * (physical().parent().logical()->volume().bounding().theta().end() - logical()->volume().bounding().theta().end()) / number(TWOPI)),
                      top    = base.height * (logical()->volume().bounding().phi().start() - physical().parent().logical()->volume().bounding().phi().start()) / number(PI),
@@ -118,7 +120,7 @@ private:
                     output.back().downcast<CudaFrame>().copy(lock(), *frame->cuda(), decoded.configuration().offset.top, decoded.configuration().offset.left);
                 }
 
-                return GPUDecodedFrameData(decoded.configuration(), output);
+                return GPUDecodedFrameData(decoded.configuration(), decoded.geometry(), output);
             } else
                 return std::nullopt;
         }
@@ -174,7 +176,7 @@ private:
                     // Still delaying?  Deincrement and return an empty sentinal
                     assert(delay_frames_ >= data.frames().size());
                     delay_frames_ -= data.frames().size();
-                    return GPUDecodedFrameData{data.configuration()};
+                    return GPUDecodedFrameData{data.configuration(), data.geometry()};
                 } else if(pending_frames_ > 0) {
                     // Still transmitting?  Deincrement and return the current set of frames
                     assert(pending_frames_ >= data.frames().size());

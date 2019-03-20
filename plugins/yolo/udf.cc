@@ -70,7 +70,7 @@ shared_reference<LightField> YOLO::CPU::operator()(LightField& input) {
                     }
         }
 
-    return physical::CPUEncodedFrameData(Codec::boxes(), data.configuration(), output);
+    return physical::CPUEncodedFrameData(Codec::boxes(), data.configuration(), data.geometry(), output);
 }
 
 YOLO yolo;

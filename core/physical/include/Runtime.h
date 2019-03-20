@@ -137,6 +137,9 @@ namespace lightdb {
             template <typename T=Data, typename = typename std::enable_if<std::is_base_of<physical::FrameData, T>::value>>
             Configuration configuration() { return (*iterator()).configuration(); }
 
+            template <typename T=Data, typename = typename std::enable_if<std::is_base_of<physical::FrameData, T>::value>>
+            GeometryReference geometry() { return (*iterator()).geometry(); }
+
             template <typename T=Data, typename = typename std::enable_if<std::is_base_of<physical::EncodedFrameData, T>::value>>
             Codec codec() { return (*iterator()).codec(); }
 

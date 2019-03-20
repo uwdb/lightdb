@@ -38,7 +38,7 @@ private:
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if(iterator() != iterator().eos()) {
                 auto input = iterator()++;
-                GPUDecodedFrameData output{input.configuration()};
+                GPUDecodedFrameData output{input.configuration(), input.geometry()};
 
                 for(auto &frame: input.frames()) {
                     auto in = frame->cuda();

@@ -210,7 +210,9 @@ namespace lightdb::optimization {
                     node.parents()[1].downcast<logical::ScannedLightField>().metadata().streams()[0].codec() != Codec::hevc())
                 return false;
             else {
-                auto unioned = plan().emplace<physical::GPUBoxOverlayUnion>(plan().lookup(node), std::vector<PhysicalOperatorReference>{leafs0[0], leafs1[0]});
+                auto unioned = plan().emplace<physical::GPUBoxOverlayUnion>(
+                        plan().lookup(node),
+                        std::vector<PhysicalOperatorReference>{leafs0[0], leafs1[0]});
 
                 auto children = plan().children(plan().lookup(node));
                 if(children.size() > 1) {

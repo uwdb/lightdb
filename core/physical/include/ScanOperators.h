@@ -27,7 +27,10 @@ private:
             auto packet = reader_.read();
             return packet.has_value()
                    ? std::optional<physical::MaterializedLightFieldReference>{
-                            CPUEncodedFrameData(physical().stream().codec(), physical().stream().configuration(), packet.value())}
+                            CPUEncodedFrameData(physical().stream().codec(),
+                                                physical().stream().configuration(),
+                                                physical().stream().geometry(),
+                                                packet.value())}
                    : std::nullopt;
         }
 
@@ -63,6 +66,7 @@ private:
                 return {CPUEncodedFrameData(
                         this->physical().stream().codec(),
                         this->physical().stream().configuration(),
+                        this->physical().stream().geometry(),
                         buffer_)};
 
             } else {

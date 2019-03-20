@@ -25,7 +25,8 @@ private:
         explicit Runtime(HomomorphicUniformAngularUnion &physical)
             : runtime::Runtime<HomomorphicUniformAngularUnion>(physical),
               materializedData_(physical.rows() * physical.columns()),
-              configuration_(create_configuration())
+              configuration_(create_configuration()),
+              geometry_(get_geometry())
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
@@ -39,7 +40,7 @@ private:
                         materializedData_[index].insert(std::end(materializedData_[index]), data.begin(), data.end());
                     }
 
-                return CPUEncodedFrameData(Codec::hevc(), configuration_, bytestring{});
+                return CPUEncodedFrameData(Codec::hevc(), configuration_, geometry_, bytestring{});
             } else if(!materializedData_.empty()) {
                 lightdb::hevc::Context context({physical().rows(), physical().columns()},
                                                {configuration_.height / physical().rows(),
@@ -47,7 +48,7 @@ private:
                 lightdb::hevc::Stitcher stitcher(context, materializedData_);
                 materializedData_.clear();
 
-                return CPUEncodedFrameData(Codec::hevc(), configuration_, stitcher.GetStitchedSegments());
+                return CPUEncodedFrameData(Codec::hevc(), configuration_, geometry_, stitcher.GetStitchedSegments());
             } else
                 return {};
         }
@@ -67,8 +68,15 @@ private:
                                  configuration.framerate, {}};
         }
 
+        GeometryReference get_geometry() {
+            CHECK(!physical().parents().empty());
+
+            return (*iterators().front()).expect_downcast<FrameData>().geometry();
+        }
+
         std::vector<bytestring> materializedData_;
         const Configuration configuration_;
+        const GeometryReference geometry_;
     };
 
     const unsigned int rows_, columns_;
