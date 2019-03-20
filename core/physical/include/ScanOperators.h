@@ -27,10 +27,11 @@ private:
             auto packet = reader_.read();
             return packet.has_value()
                    ? std::optional<physical::MaterializedLightFieldReference>{
-                            CPUEncodedFrameData(physical().stream().codec(),
-                                                physical().stream().configuration(),
-                                                physical().stream().geometry(),
-                                                packet.value())}
+                            physical::MaterializedLightFieldReference::make<CPUEncodedFrameData>(
+                                    physical().stream().codec(),
+                                    physical().stream().configuration(),
+                                    physical().stream().geometry(),
+                                    packet.value())}
                    : std::nullopt;
         }
 
