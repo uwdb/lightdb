@@ -65,6 +65,8 @@ find_package(Boost COMPONENTS python filesystem system REQUIRED)
 include_directories(SYSTEM ${Boost_INCLUDE_DIR})
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${Boost_LIBRARIES})
 
+message(INFO ${Boost_INCLUDE_DIR})
+
 find_package(FFmpeg REQUIRED COMPONENTS AVCODEC AVFORMAT AVUTIL SWSCALE)
 include_directories(SYSTEM ${FFMPEG_INCLUDE_DIRS})
 
