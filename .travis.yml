@@ -15,6 +15,7 @@ addons:
     packages: 
       - g++-8
       - nvidia-cuda-toolkit
+      - libopencv-dev
 
 script:
 #  - source .travis/install-cuda-trusty.sh
