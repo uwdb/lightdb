@@ -15,8 +15,9 @@ addons:
     packages: 
       - g++-8
       - libgoogle-glog-dev
-      - nvidia-cuda-toolkit
       - libopencv-dev
+      - libboost-all-dev
+      - nvidia-cuda-toolkit
 
 script:
 #  - source .travis/install-cuda-trusty.sh
