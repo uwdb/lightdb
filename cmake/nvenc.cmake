@@ -1,8 +1,5 @@
-set(NVENC_ROOT thirdparty/nv-codec-headers)
+set(NVENC_ROOT thirdparty/NvEnc)
 
 include_directories(SYSTEM
-    ${PROJECT_SOURCE_DIR}/${NVENC_ROOT}
     ${PROJECT_SOURCE_DIR}/${NVENC_ROOT}/inc
     )
-
-#add_library(nvenc ${NVENC_SOURCES})
