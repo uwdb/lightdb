@@ -32,6 +32,7 @@ script:
 #  - source .travis/install-cuda-trusty.sh
 #  - export CXX=g++-8
 #  - locate relative_difference.hpp
+  - ls /usr/include
   - mkdir -p build
   - cd build
   - cmake ..
