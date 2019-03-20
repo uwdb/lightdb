@@ -4,15 +4,19 @@ compiler:
   - gcc
 os:
   - linux
-
+env: 
+  - CUDA=8.0
+   
 addons:
   apt:
     sources:
       - sourceline: 'ppa:graphics-drivers/ppa'
     packages: 
+      - g++-8
       - nvidia-cuda-toolkit
 
 script:
+  - .travis/install-cuda-trusty.sh
   - mkdir -p build
   - cd build
   - cmake ..
