@@ -11,7 +11,7 @@ addons:
   apt:
     sources:
       - sourceline: 'ppa:ubuntu-toolchain-r/test'
-      - sourceline: 'ppa:graphics-drivers/ppa'
+#      - sourceline: 'ppa:graphics-drivers/ppa'
     packages: 
       - g++-8
       - libgoogle-glog-dev

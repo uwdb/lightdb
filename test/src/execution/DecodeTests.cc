@@ -39,3 +39,17 @@ TEST_F(DecodeTestFixture, testDecode) {
     EXPECT_EQ(remove(Resources.out.raw), 0);
     EXPECT_EQ(remove(output_h264.c_str()), 0);
 }
+
+/*
+TEST_F(DecodeTestFixture, testDecodeMP4) {
+    auto input = Load(Resources.videos.black.mp4.name,
+                      {{"Codec", Resources.videos.black.mp4.codec}})
+                     .Save(Resources.out.h264);
+    Coordinator().execute(input);
+
+    EXPECT_VIDEO_VALID(Resources.out.h264);
+    EXPECT_VIDEO_FRAMES(Resources.out.h264, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.h264, Resources.videos.black.mp4.height, Resources.videos.black.mp4.width);
+    EXPECT_VIDEO_RED(Resources.out.h264);
+    EXPECT_EQ(remove(Resources.out.h264), 0);
+}*/
