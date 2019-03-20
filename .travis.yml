@@ -6,7 +6,8 @@ os:
   - linux
 env: 
 #  - CUDA=8.0
-  - CXX=g++-8
+#   - COMPILER=g++-8
+#   - CXX=g++-8
 
 addons:
   apt:
@@ -23,9 +24,13 @@ addons:
       - libavformat-dev
       - nvidia-cuda-toolkit
 
+before_install:
+    - export CXX=g++-8
+    - export CC=gcc-8
+
 script:
 #  - source .travis/install-cuda-trusty.sh
-  - export CXX=g++-8
+#  - export CXX=g++-8
   - mkdir -p build
   - cd build
   - cmake ..
