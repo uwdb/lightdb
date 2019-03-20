@@ -5,8 +5,6 @@
 #include "FrameQueue.h"
 #include "VideoLock.h"
 #include "errors.h"
-#include <cuda.h>
-#include <nvcuvid.h>
 
 class VideoDecoder {
 public:

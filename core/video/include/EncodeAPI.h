@@ -1,12 +1,13 @@
 #ifndef LIGHTDB_ENCODE_API
 #define LIGHTDB_ENCODE_API
 
-#include "GPUContext.h"
-#include "nvUtils.h"
+#include "ffmpeg/nvEncodeAPI.h"
+#include "ffmpeg/nvUtils.h"
 #include <cuda.h>
 #include <cassert>
 #include <functional>
 
+class GPUContext;
 struct EncodeConfiguration;
 struct EncodeBuffer;
 struct MotionEstimationBuffer;
@@ -134,8 +135,8 @@ public:
     NVENCSTATUS NvEncFlushEncoderQueue(void *hEOSEvent);
     NVENCSTATUS ResetEncoder();
 
-    EncodeAPI(GPUContext& context) : EncodeAPI(context.get()) { }
-    EncodeAPI(CUcontext context) : EncodeAPI(context, NV_ENC_DEVICE_TYPE_CUDA) { }
+    explicit EncodeAPI(GPUContext& context);
+    explicit EncodeAPI(CUcontext context) : EncodeAPI(context, NV_ENC_DEVICE_TYPE_CUDA) { }
     EncodeAPI(void* device, NV_ENC_DEVICE_TYPE deviceType);
     EncodeAPI(const EncodeAPI&) = delete;
     EncodeAPI(EncodeAPI &&other) noexcept

@@ -4,7 +4,7 @@ extern "C" {
 }
 
 namespace lightdb::video::ffmpeg {
-    DecodeConfiguration GetConfigurationFromContext(const AVFormatContext*, size_t);
+    DecodeConfiguration GetConfigurationFromContext(const AVStream*, unsigned int bitrate);
 
     DecodeConfiguration GetStreamConfiguration(const std::string &filename, const size_t index, const bool probe) {
         auto configurations = GetStreamConfigurations(filename, probe);
@@ -20,10 +20,6 @@ namespace lightdb::video::ffmpeg {
         char error[AV_ERROR_MAX_STRING_SIZE];
         std::vector<DecodeConfiguration> configurations;
 
-        //TODO these are deprecated in newer ffmpeg versions and should be omitted
-        av_register_all();
-        avcodec_register_all();
-
         auto context = avformat_alloc_context();
 
         try {
@@ -31,10 +27,13 @@ namespace lightdb::video::ffmpeg {
                 throw FfmpegRuntimeError(av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, result));
             } else if ((probe && (result = avformat_find_stream_info(context, nullptr)) < 0)) {
                 throw FfmpegRuntimeError(av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, result));
+            } else if (context->bit_rate < 0) {
+                throw FfmpegRuntimeError("No bitrate detected");
             }
 
             for(auto i = 0u; i < context->nb_streams; i++)
-                configurations.emplace_back(GetConfigurationFromContext(context, i));
+                configurations.emplace_back(GetConfigurationFromContext(context->streams[i],
+                                            static_cast<unsigned int>(context->bit_rate)));
 
             avformat_close_input(&context);
             avformat_free_context(context);
@@ -47,44 +46,39 @@ namespace lightdb::video::ffmpeg {
         }
     }
 
-    DecodeConfiguration GetConfigurationFromContext(const AVFormatContext *context, const size_t index) {
-        if (context->nb_streams < index + 1)
-            throw InvalidArgumentError("Index is larger than number of streams", "index");
-        else if (context->streams[index]->codecpar->height <= 0 ||
-                 context->streams[index]->codecpar->width <= 0)
+    DecodeConfiguration GetConfigurationFromContext(const AVStream *stream, const unsigned int bitrate) {
+        if (stream->codecpar->height <= 0 ||
+            stream->codecpar->width <= 0)
             throw FfmpegRuntimeError("Frame size not detected");
-        else if (context->streams[index]->nb_frames < 0)
+        else if (stream->nb_frames < 0)
             throw FfmpegRuntimeError("No frames detected");
-        else if (context->bit_rate < 0)
-            throw FfmpegRuntimeError("No bitrate detected");
 
-
-        auto codec = Codec::get(context->streams[index]->codecpar->codec_id);
+        auto codec = Codec::get(stream->codecpar->codec_id);
         if(!codec.has_value())
             throw FfmpegRuntimeError("Unsupported codec type");
         else
             return DecodeConfiguration{
-                    static_cast<unsigned int>(context->streams[index]->codecpar->height),
-                    static_cast<unsigned int>(context->streams[index]->codecpar->width),
+                    static_cast<unsigned int>(stream->codecpar->height),
+                    static_cast<unsigned int>(stream->codecpar->width),
                     0u,
                     0u,
-                    lightdb::rational{context->streams[index]->r_frame_rate.num,
-                                      context->streams[index]->r_frame_rate.den},
-                    static_cast<unsigned int>(context->bit_rate),
+                    lightdb::rational{stream->r_frame_rate.num,
+                                      stream->r_frame_rate.den},
+                    bitrate,
                     codec.value()
             };
     }
 
     /*
-    class Video {
-        FrameIterator begin() {
-
-        }
-
-        FrameIterator end() {
-
-        }
-    };*/
+//    class Video {
+//        FrameIterator begin() {
+//
+//        }
+//
+//        FrameIterator end() {
+//
+//        }
+//    };
 
     class FrameIterator : std::iterator<std::output_iterator_tag, AVFrame> {
     public:
@@ -214,23 +208,21 @@ namespace lightdb::video::ffmpeg {
         //++*this;
     }
 
-    /*
-        FrameIterator::FrameIterator(std::istream &input, size_t buffer_size)
-            : FrameIterator(FrameIterator::PacketIterator{input, buffer_size})
-        { }
-
-        FrameIterator(FrameIterator::PacketIterator &packets)
-            : packets_(packets),
-              frame_(CHECK_NOTNULL(av_frame_alloc())),
-              result_(AVERROR(EAGAIN))
-        { ++*this; }
-
-        FrameIterator::FrameIterator(FrameIterator::PacketIterator &&packets)
-            : packets_(packets),
-              frame_(CHECK_NOTNULL(av_frame_alloc())),
-              result_(AVERROR(EAGAIN))
-        { ++*this; }
-    */
+//        FrameIterator::FrameIterator(std::istream &input, size_t buffer_size)
+//            : FrameIterator(FrameIterator::PacketIterator{input, buffer_size})
+//        { }
+//
+//        FrameIterator(FrameIterator::PacketIterator &packets)
+//            : packets_(packets),
+//              frame_(CHECK_NOTNULL(av_frame_alloc())),
+//              result_(AVERROR(EAGAIN))
+//        { ++*this; }
+//
+//        FrameIterator::FrameIterator(FrameIterator::PacketIterator &&packets)
+//            : packets_(packets),
+//              frame_(CHECK_NOTNULL(av_frame_alloc())),
+//              result_(AVERROR(EAGAIN))
+//        { ++*this; }
 
     FrameIterator::~FrameIterator() {
         av_frame_free(&frame_);
@@ -290,8 +282,8 @@ namespace lightdb::video::ffmpeg {
             //printf("saving frame %3d\n", dec_ctx->frame_number);
             //fflush(stdout);
 
-            /* the picture is allocated by the decoder. no need to
-               free it */
+            // the picture is allocated by the decoder. no need to
+              // free it
             //snprintf(buf, sizeof(buf), "%s-%d", filename, dec_ctx->frame_number);
             //pgm_save(frame->data[0], frame->linesize[0],
             //         frame->width, frame->height, buf);
@@ -313,14 +305,14 @@ namespace lightdb::video::ffmpeg {
 
         CHECK_NOTNULL(pkt = av_packet_alloc());
 
-        /* find the MPEG-1 video decoder */
+        // find the MPEG-1 video decoder
         CHECK_NOTNULL(codec = avcodec_find_decoder(AV_CODEC_ID_MPEG2VIDEO));
         CHECK_NOTNULL(parser = av_parser_init(codec->id));
         CHECK_NOTNULL(c = avcodec_alloc_context3(codec));
 
-        /* For some codecs, such as msmpeg4 and mpeg4, width and height
-           MUST be initialized there because this information is not
-           available in the bitstream. */
+        // For some codecs, such as msmpeg4 and mpeg4, width and height
+        //   MUST be initialized there because this information is not
+        //   available in the bitstream.
 
         CHECK_GE(avcodec_open2(c, codec, NULL), 0) << "Could not open codec";
         CHECK_NOTNULL(frame = av_frame_alloc());
@@ -342,20 +334,20 @@ namespace lightdb::video::ffmpeg {
             }
 
 
-            /* use the parser to split the data into frames */
-            /*data = buffer;
-            while (data_size > 0) {
-                CHECK_GE(av_parser_parse2(parser, c, &pkt->data, &pkt->size,
-                                       data, data_size, AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0), 0) << "Error parsing stream";
-                data      += ret;
-                data_size -= ret;
+            // use the parser to split the data into frames
+            //data = buffer;
+            //while (data_size > 0) {
+            //    CHECK_GE(av_parser_parse2(parser, c, &pkt->data, &pkt->size,
+             //                          data, data_size, AV_NOPTS_VALUE, AV_NOPTS_VALUE, 0), 0) << "Error parsing stream";
+             //   data      += ret;
+             //   data_size -= ret;
 
-                if (pkt->size)
-                    decodeframe(c, frame, pkt, outfilename);
-            }*/
+             //   if (pkt->size)
+             //       decodeframe(c, frame, pkt, outfilename);
+            //}
         }
 
-        /* flush the decoder */
+        // flush the decoder
         decodeframe(c, frame, nullptr);
 
         av_parser_close(parser);
@@ -363,5 +355,5 @@ namespace lightdb::video::ffmpeg {
         av_frame_free(&frame);
         av_packet_free(&pkt);
     }
-
+*/
 } // namespace lightdb::video::ffmpeg

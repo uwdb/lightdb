@@ -2,6 +2,7 @@
 #include "LightField.h"
 #include "PhysicalOperators.h"
 #include "Model.h"
+#include "Gpac.h"
 
 namespace lightdb::catalog {
     std::optional<Catalog> Catalog::instance_;
@@ -44,23 +45,7 @@ namespace lightdb::catalog {
     }
 
     std::vector<Stream> Catalog::get_streams(const std::filesystem::path &path) {
-        LOG(WARNING) << "Using hardcoded first stream for video configuration";
-
-        const size_t index = 0;
-        auto configuration = video::ffmpeg::GetStreamConfiguration(path / metadataFilename_, index, false);
-
-        std::filesystem::path stream_filename;
-        if(std::filesystem::exists(std::filesystem::absolute(path / "stream0.hevc")))
-            stream_filename = std::filesystem::absolute(path / "stream0.hevc");
-        else if(std::filesystem::exists(std::filesystem::absolute(path / "stream0.h264")))
-            stream_filename = std::filesystem::absolute(path / "stream0.h264");
-        else if(std::filesystem::exists(std::filesystem::absolute(path / "stream0.boxes"))) {
-            stream_filename = std::filesystem::absolute(path / "stream0.boxes");
-            //TODO
-            return {Stream{stream_filename, Codec::boxes(), static_cast<Configuration&>(configuration)}};
-        }
-
-        return {Stream{stream_filename, configuration.codec, static_cast<Configuration&>(configuration)}};
+        return video::gpac::GetStreams(path / metadataFilename_);
     }
 
 } // namespace lightdb::catalog

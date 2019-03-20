@@ -48,9 +48,9 @@ private:
             else {
                 LOG(WARNING) << "Not checking for compatible projections or discrete sampling.";
                 auto left   = base.width * (logical()->volume().bounding().theta().start() - physical().parent().logical()->volume().bounding().theta().start()) / number(TWOPI),
-                        right  = base.width - (base.width * (physical().parent().logical()->volume().bounding().theta().end() - logical()->volume().bounding().theta().end()) / number(TWOPI)),
-                        top    = base.height * (logical()->volume().bounding().phi().start() - physical().parent().logical()->volume().bounding().phi().start()) / number(PI),
-                        bottom = base.height - (base.height * (physical().parent().logical()->volume().bounding().phi().end() - logical()->volume().bounding().phi().end()) / number(PI));
+                     right  = base.width - (base.width * (physical().parent().logical()->volume().bounding().theta().end() - logical()->volume().bounding().theta().end()) / number(TWOPI)),
+                     top    = base.height * (logical()->volume().bounding().phi().start() - physical().parent().logical()->volume().bounding().phi().start()) / number(PI),
+                     bottom = base.height - (base.height * (physical().parent().logical()->volume().bounding().phi().end() - logical()->volume().bounding().phi().end()) / number(PI));
 
                 LOG(INFO) << "Subset: " << static_cast<unsigned int>(right - left) << "x" <<
                           static_cast<unsigned int>(bottom - top);

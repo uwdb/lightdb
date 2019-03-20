@@ -6,7 +6,6 @@ SET(BOOST_MIN_VERSION "1.64.0")
 # Set the cmake Module path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
-include(DownloadProject)
 
 # Set shared library suffix
 if(APPLE)
@@ -53,9 +52,9 @@ set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} lfv)
 #find_package(NVENC REQUIRED)
 #set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${NVENC_LIBRARIES})
 
-find_package(NvidiaSDK REQUIRED)
-include_directories(SYSTEM ${NVIDIASDK_INCLUDE_DIR})
-set(CLANG_TIDY_EXCLUDED_SOURCES ${NVIDIASDK_SOURCES})
+#find_package(NvidiaSDK REQUIRED)
+#include_directories(SYSTEM ${NVIDIASDK_INCLUDE_DIR})
+#set(CLANG_TIDY_EXCLUDED_SOURCES ${NVIDIASDK_SOURCES})
 
 find_package(PythonLibs 2.7 REQUIRED)
 include_directories(SYSTEM ${PYTHON_INCLUDE_DIRS})
@@ -75,6 +74,10 @@ find_package (Glog REQUIRED)
 #find_package(Bento4 REQUIRED)
 #include_directories(${Bento4_INCLUDE_DIRS})
 #add_subdirectory(${Bento4_SOURCE_DIR})
+
+#TODO Add FindGPAC.cmake
+set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} gpac)
+include_directories(SYSTEM /usr/local/include/gpac)
 
 # Build LightDB library
 add_subdirectory(core)

@@ -7,11 +7,12 @@ class VideoDecoderSessionTestFixture : public testing::Test {
 public:
     VideoDecoderSessionTestFixture()
         : context(0),
-          configuration{Resources.videos.black.height, Resources.videos.black.width, 30, lightdb::Codec::h264()},
+          configuration{Resources.videos.black.h264.height, Resources.videos.black.h264.width,
+                        Resources.videos.black.h264.fps, lightdb::Codec::h264()},
           lock(context),
           queue(lock),
           decoder(configuration, queue, lock),
-          reader(Resources.videos.black.name)
+          reader(Resources.videos.black.h264.name)
     { }
 
 protected:

@@ -56,27 +56,30 @@ namespace lightdb::optimization {
 
         bool visit(const logical::ScannedLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
-                LOG(WARNING) << "Just using first stream and GPU and ignoring all others";
-                auto stream = node.metadata().streams()[0];
-                auto logical = plan().lookup(node);
+                for(const auto &stream: node.metadata().streams()) {
+                    //auto stream = node.metadata().streams()[0];
+                    auto logical = plan().lookup(node);
 
-                if(stream.codec() == Codec::h264() ||
-                   stream.codec() == Codec::hevc()) {
-                    auto gpu = plan().environment().gpus()[0];
+                    if(stream.codec() == Codec::h264() ||
+                       stream.codec() == Codec::hevc()) {
+                        auto gpu = plan().allocator().gpu();
+                        //auto gpu = plan().environment().gpus()[0];
 
-                    auto &scan = plan().emplace<physical::ScanSingleFileDecodeReader>(logical, stream);
-                    auto decode = plan().emplace<physical::GPUDecodeFromCPU>(logical, scan, gpu);
+                        auto &scan = plan().emplace<physical::ScanSingleFileDecodeReader>(logical, stream);
+                        auto decode = plan().emplace<physical::GPUDecodeFromCPU>(logical, scan, gpu);
 
-                    auto children = plan().children(plan().lookup(node));
-                    if(children.size() > 1) {
-                        auto tees = physical::TeedPhysicalLightFieldAdapter::make(decode, children.size());
-                        for (auto index = 0u; index < children.size(); index++)
-                            plan().add(tees->physical(index));
+                        auto children = plan().children(plan().lookup(node));
+                        if(children.size() > 1) {
+                            auto tees = physical::TeedPhysicalLightFieldAdapter::make(decode, children.size());
+                            for (auto index = 0u; index < children.size(); index++)
+                                plan().add(tees->physical(index));
                             //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
-                    }
-                } else if(stream.codec() == Codec::boxes()) {
-                    auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, stream);
-                    auto decode = plan().emplace<physical::CPUFixedLengthRecordDecode<Rectangle>>(logical, scan);
+                        }
+                    } else if(stream.codec() == Codec::boxes()) {
+                        auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, stream);
+                        auto decode = plan().emplace<physical::CPUFixedLengthRecordDecode<Rectangle>>(logical, scan);
+                    } else
+                        throw NotImplementedError("Unsupported codec when assigning decoder");
                 }
 
                 return true;
@@ -90,8 +93,8 @@ namespace lightdb::optimization {
 
                 if(node.codec() == Codec::h264() ||
                    node.codec() == Codec::hevc()) {
-                    LOG(WARNING) << "Using first GPU and ignoring all others";
-                    auto gpu = plan().environment().gpus()[0];
+                    //auto gpu = plan().environment().gpus()[0];
+                    auto gpu = plan().allocator().gpu();
 
                     auto &scan = plan().emplace<physical::ScanSingleFileDecodeReader>(logical, node.stream());
                     auto decode = plan().emplace<physical::GPUDecodeFromCPU>(logical, scan, gpu);
@@ -143,7 +146,8 @@ namespace lightdb::optimization {
                 else if(physical_parent.is<physical::TeedPhysicalLightFieldAdapter::TeedPhysicalLightField>() && physical_parent->parents()[0].is<physical::CPUMap>() && physical_parent->parents()[0].downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
                     plan().emplace<physical::CPUIdentity>(logical, physical_parent);
                 else if(physical_parent->device() == physical::DeviceType::CPU) {
-                    auto gpu = plan().environment().gpus()[0];
+                    //auto gpu = plan().environment().gpus()[0];
+                    auto gpu = plan().allocator().gpu();
                     auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, physical_parent, gpu);
                     plan().emplace<physical::GPUEncodeToCPU>(plan().lookup(node), transfer, node.codec());
                 } else
@@ -622,7 +626,8 @@ namespace lightdb::optimization {
             } else if(parent.is<physical::TeedPhysicalLightFieldAdapter::TeedPhysicalLightField>() && parent->parents()[0].is<physical::GPUAngularSubquery>()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent->device() != physical::DeviceType::GPU) {
-                auto gpu = plan().environment().gpus()[0];
+                //auto gpu = plan().environment().gpus()[0];
+                auto gpu = plan().allocator().gpu();
                 auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, parent, gpu);
                 return plan().emplace<physical::GPUEncodeToCPU>(logical, transfer, Codec::hevc());
             } else if(!parent.is<physical::GPUOperator>()) {
@@ -672,7 +677,8 @@ namespace lightdb::optimization {
             } else if(parent.is<physical::TeedPhysicalLightFieldAdapter::TeedPhysicalLightField>() && parent->parents()[0].is<physical::GPUAngularSubquery>()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent->device() != physical::DeviceType::GPU) {
-                auto gpu = plan().environment().gpus()[0];
+                //auto gpu = plan().environment().gpus()[0];
+                auto gpu = plan().allocator().gpu();
                 auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, parent, gpu);
                 return plan().emplace<physical::GPUEncodeToCPU>(logical, transfer, Codec::hevc());
             } else if(!parent.is<physical::GPUOperator>()) {

@@ -22,11 +22,20 @@ struct {
 
     struct {
         struct {
-            const std::string name = "resources/black.h264";
-            const unsigned int height = 2160;
-            const unsigned int width = 3840;
-        } black;
+            struct {
+                const std::string name = "resources/black.h264";
+                const unsigned int height = 2160;
+                const unsigned int width = 3840;
+                const unsigned int fps = 30;
+            } h264;
 
+            struct {
+                const std::string name = "resources/black.mp4";
+                const std::string codec = "h264";
+                const unsigned int height = 2160;
+                const unsigned int width = 3840;
+            } mp4;
+        } black;
     } videos;
 
     struct {

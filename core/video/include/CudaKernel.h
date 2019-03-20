@@ -2,7 +2,6 @@
 #define LIGHTDB_CUDAKERNEL_H
 
 #include "VideoLock.h"
-#include <cuda.h>
 #include <cuda_runtime_api.h>
 #include <experimental/filesystem>
 #include <mutex>

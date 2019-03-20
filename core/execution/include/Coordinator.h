@@ -56,7 +56,7 @@ public:
 
         while(!iterators.empty()) {
             iterators.erase(std::remove_if(iterators.begin(), iterators.end(),
-                                           [](auto &it) { it++; return it == it.eos(); }),
+                                           [](auto &it) { ++it; return it == it.eos(); }),
                             iterators.end());
             progress.display(iterators.size());
         }

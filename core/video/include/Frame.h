@@ -7,7 +7,6 @@
 #include "reference.h"
 #include "utility"
 #include "errors.h"
-#include "dynlink_nvcuvid.h"
 #include <mutex>
 #include <utility>
 
