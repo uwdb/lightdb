@@ -23,7 +23,7 @@ addons:
       - libavcodec-dev
       - libavformat-dev
       - nvidia-cuda-toolkit
-      - boost1.64
+      - libboost1.67
 
 before_install:
     - export CXX=g++-8
