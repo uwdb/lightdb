@@ -5,8 +5,9 @@ compiler:
 os:
   - linux
 env: 
-  - CUDA=8.0
-   
+#  - CUDA=8.0
+  - CXX=g++-8
+
 addons:
   apt:
     sources:
@@ -24,6 +25,7 @@ addons:
 
 script:
 #  - source .travis/install-cuda-trusty.sh
+#  - export CXX=g++-7
   - mkdir -p build
   - cd build
   - cmake ..
