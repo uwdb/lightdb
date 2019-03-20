@@ -27,6 +27,8 @@ namespace lightdb {
             const std::filesystem::path& path() const { return path_; }
             const Codec& codec() const { return codec_; }
             const Configuration& configuration() const { return configuration_; }
+            //TODO
+            GeometryReference geometry() const { return GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples{0u, 0u}); }
 
         private:
             const std::filesystem::path path_;

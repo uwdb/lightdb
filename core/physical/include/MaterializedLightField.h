@@ -84,39 +84,51 @@ namespace lightdb::physical {
     class FrameData: public SerializedData {
     public:
         const Configuration& configuration() const { return configuration_; }
+        const GeometryReference& geometry() const { return geometry_; }
 
     protected:
-        FrameData(const DeviceType device, Configuration configuration)
+        FrameData(const DeviceType device, Configuration configuration, GeometryReference geometry)
                 : SerializedData(device, {}),
-                  configuration_(std::move(configuration))
+                  configuration_(std::move(configuration)),
+                  geometry_(geometry)
         { }
 
-        FrameData(const DeviceType device, Configuration configuration, const bytestring &value)
+        FrameData(const DeviceType device, Configuration configuration, GeometryReference geometry,
+                  const bytestring &value)
             : SerializedData(device, value),
-              configuration_(std::move(configuration))
+              configuration_(std::move(configuration)),
+              geometry_(geometry)
         { }
 
         template<typename Input>
-        FrameData(const DeviceType device, Configuration configuration, Input &begin, const Input &end)
+        FrameData(const DeviceType device, Configuration configuration, GeometryReference geometry,
+                  Input &begin, const Input &end)
                 : SerializedData(device, begin, end),
-                  configuration_(std::move(configuration))
+                  configuration_(std::move(configuration)),
+                  geometry_(geometry)
         { }
 
     private:
         const Configuration configuration_;
+        const GeometryReference geometry_;
     };
 
     class EncodedFrameData: public FrameData {
     protected:
         EncodedFrameData(const DeviceType device, const Codec &codec,
-                         const Configuration& configuration, const bytestring &value)
-                : EncodedFrameData(device, codec, configuration, value.begin(), value.end())
+                         const Configuration& configuration,
+                         const GeometryReference &geometry,
+                         const bytestring &value)
+                : EncodedFrameData(device, codec, configuration, geometry,
+                                   value.begin(), value.end())
         { }
 
         template<typename Input>
-        EncodedFrameData(const DeviceType device, Codec codec, const Configuration& configuration,
+        EncodedFrameData(const DeviceType device, Codec codec,
+                         const Configuration& configuration, const GeometryReference &geometry,
                          Input begin, const Input end)
-                : FrameData(device, configuration, begin, end), codec_(std::move(codec))
+                : FrameData(device, configuration, geometry, begin, end),
+                  codec_(std::move(codec))
         { }
 
     public:
@@ -128,14 +140,20 @@ namespace lightdb::physical {
 
     class CPUEncodedFrameData: public EncodedFrameData {
     public:
-        explicit CPUEncodedFrameData(const Codec &codec, const Configuration& configuration, const bytestring &data)
-                : EncodedFrameData(DeviceType::CPU, codec, configuration, data.begin(), data.end()),
+        explicit CPUEncodedFrameData(const Codec &codec,
+                                     const Configuration& configuration,
+                                     const GeometryReference &geometry,
+                                     const bytestring &data)
+                : EncodedFrameData(DeviceType::CPU, codec, configuration, geometry,
+                                   data.begin(), data.end()),
                   packet_(data)
         { }
 
-        explicit CPUEncodedFrameData(const Codec &codec, const Configuration& configuration,
+        explicit CPUEncodedFrameData(const Codec &codec,
+                                     const Configuration& configuration,
+                                     const GeometryReference &geometry,
                                      const DecodeReaderPacket &packet)
-                : EncodedFrameData(DeviceType::CPU, codec, configuration,
+                : EncodedFrameData(DeviceType::CPU, codec, configuration, geometry,
                                    packet.payload, packet.payload + packet.payload_size),
                   packet_(packet)
         { }
@@ -149,22 +167,23 @@ namespace lightdb::physical {
 
     class CPUDecodedFrameData: public FrameData {
     public:
-        CPUDecodedFrameData(const Configuration &configuration)
-                : CPUDecodedFrameData(configuration, std::vector<LocalFrameReference>{})
+        CPUDecodedFrameData(const Configuration &configuration, const GeometryReference &geometry)
+                : CPUDecodedFrameData(configuration, geometry, std::vector<LocalFrameReference>{})
         { }
 
         explicit CPUDecodedFrameData(const Configuration &configuration,
+                                     const GeometryReference &geometry,
                                      std::vector<LocalFrameReference> frames)
-                : FrameData(DeviceType::CPU, configuration),
+                : FrameData(DeviceType::CPU, configuration, geometry),
                   frames_(std::move(frames))
         { }
 
         CPUDecodedFrameData(const CPUDecodedFrameData& other)
-                : CPUDecodedFrameData(other.configuration(), other.frames_)
+                : CPUDecodedFrameData(other.configuration(), other.geometry(), other.frames_)
         { }
 
         CPUDecodedFrameData(CPUDecodedFrameData &&other) noexcept
-                : CPUDecodedFrameData(other.configuration(), std::move(other.frames_))
+                : CPUDecodedFrameData(other.configuration(), other.geometry(), std::move(other.frames_))
         { }
 
         const bytestring& value() {
@@ -188,26 +207,27 @@ namespace lightdb::physical {
 
     class GPUDecodedFrameData: public FrameData {
     public:
-        GPUDecodedFrameData(const Configuration &configuration)
-                : FrameData(DeviceType::GPU, configuration),
+        GPUDecodedFrameData(const Configuration &configuration, const GeometryReference &geometry)
+                : FrameData(DeviceType::GPU, configuration, geometry),
                   frames_{},
                   serialized_{}
         { }
 
-        explicit GPUDecodedFrameData(const Configuration &configuration, std::vector<GPUFrameReference> frames)
-                : FrameData(DeviceType::GPU, configuration),
+        explicit GPUDecodedFrameData(const Configuration &configuration, const GeometryReference &geometry,
+                                     std::vector<GPUFrameReference> frames)
+                : FrameData(DeviceType::GPU, configuration, geometry),
                   frames_(std::move(frames)),
                   serialized_{}
         { }
 
         GPUDecodedFrameData(const GPUDecodedFrameData& other)
-                : FrameData(DeviceType::GPU, other.configuration()),
+                : FrameData(DeviceType::GPU, other.configuration(), other.geometry()),
                   frames_(other.frames_),
                   serialized_{}
         { }
 
         GPUDecodedFrameData(GPUDecodedFrameData &&other) noexcept
-                : FrameData(DeviceType::GPU, other.configuration()),
+                : FrameData(DeviceType::GPU, other.configuration(), other.geometry()),
                   frames_{std::move(other.frames_)},
                   serialized_{}
         { }

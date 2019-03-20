@@ -29,6 +29,7 @@ private:
         explicit Runtime(GPUTileUnion &physical)
             : runtime::GPURuntime<GPUTileUnion>(physical),
               configuration_(create_configuration(physical.rows(), physical.columns())),
+              geometry_(get_geometry()),
               frames_(functional::make_union_iterator<GPUFrameReference>(
                       functional::transform<
                               functional::flatmap_iterator<GPUFrameReference,
@@ -43,7 +44,7 @@ private:
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if(!any_parent_eos()) {
                 auto available_frames = std::max(frames_.available(), 1ul);
-                GPUDecodedFrameData output{configuration_};
+                GPUDecodedFrameData output{configuration_, geometry_};
 
                 for(auto i = 0u; i < available_frames; i++) {
                     auto frames = frames_++;
@@ -77,7 +78,14 @@ private:
                                  configuration.bitrate, configuration.framerate, configuration.offset};
         }
 
+        GeometryReference get_geometry() {
+            CHECK(!physical().parents().empty());
+
+            return (*iterators().front()).expect_downcast<FrameData>().geometry();
+        }
+
         const Configuration configuration_;
+        const GeometryReference geometry_;
         functional::union_iterator<
                 GPUFrameReference,
                 std::vector<
@@ -113,7 +121,7 @@ private:
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if(!this->any_parent_eos()) {
                 auto video = (this->iterators().back()++).template downcast<GPUDecodedFrameData>();
-                GPUDecodedFrameData output{video.configuration()};
+                GPUDecodedFrameData output{video.configuration(), video.geometry()};
 
                 for(auto &frame: video.frames()) {
                     auto values = groups_++;
@@ -132,7 +140,8 @@ private:
             explicit GroupById(runtime::RuntimeIterator& iterator)
                     : index_(0u),
                       current_id_(0u),
-                      buffer_(MaterializedLightFieldReference::make<CPUDecodedFrameData>(Configuration{})),
+                      buffer_(MaterializedLightFieldReference::make<CPUDecodedFrameData>(
+                                  Configuration{}, GeometryReference::make<EquirectangularGeometry>(0, 0))),
                       iterator_(iterator)
             { }
 

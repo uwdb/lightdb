@@ -415,11 +415,15 @@ namespace lightdb {
 
     class EquirectangularGeometry : public MeshGeometry {
     public:
-        class Samples
+        struct Samples
         {
             size_t theta;
             size_t phi;
         };
+
+        explicit EquirectangularGeometry(size_t theta_samples, size_t phi_samples)
+                : EquirectangularGeometry(Samples{theta_samples, phi_samples})
+        { }
 
         explicit EquirectangularGeometry(Samples samples)
                 : samples_(samples)

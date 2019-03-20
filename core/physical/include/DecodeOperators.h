@@ -42,16 +42,17 @@ private:
     public:
         explicit Runtime(GPUDecodeFromCPU &physical)
             : runtime::GPUUnaryRuntime<GPUDecodeFromCPU, CPUEncodedFrameData>(physical),
-              decode_configuration_{configuration(), codec()},
+              configuration_{configuration(), codec()},
+              geometry_{geometry()},
               queue_{lock()},
-              decoder_{decode_configuration_, queue_, lock()},
+              decoder_{configuration_, queue_, lock()},
               session_{decoder_, iterator(), iterator().eos()}
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
             std::vector<GPUFrameReference> frames;
 
-            LOG_IF(WARNING, decode_configuration_.output_surfaces < 8)
+            LOG_IF(WARNING, configuration_.output_surfaces < 8)
                 << "Decode configuration output surfaces is low, limiting throughput";
 
             if(!decoder_.frame_queue().isComplete())
@@ -61,17 +62,18 @@ private:
                         frames.emplace_back(frame.value());
                 } while(!decoder_.frame_queue().isEmpty() &&
                         !decoder_.frame_queue().isEndOfDecode() &&
-                        frames.size() <= decode_configuration_.output_surfaces / 4);
+                        frames.size() <= configuration_.output_surfaces / 4);
 
             if(!frames.empty() || !decoder_.frame_queue().isComplete())
                 return std::optional<physical::MaterializedLightFieldReference>{
-                          GPUDecodedFrameData(decode_configuration_, frames)};
+                          GPUDecodedFrameData(configuration_, geometry_, frames)};
             else
                 return std::nullopt;
         }
 
     private:
-        DecodeConfiguration decode_configuration_;
+        const DecodeConfiguration configuration_;
+        const GeometryReference geometry_;
         CUVIDFrameQueue queue_;
         CudaDecoder decoder_;
         VideoDecoderSession<Runtime::downcast_iterator<CPUEncodedFrameData>> session_;
@@ -102,7 +104,7 @@ private:
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if(this->iterator() != this->iterator().eos()) {
                 auto data = this->iterator()++;
-                CPUDecodedFrameData output{data.configuration()};
+                CPUDecodedFrameData output{data.configuration(), data.geometry()};
 
                 for(auto *current = data.value().data(),
                             *end = current + data.value().size();

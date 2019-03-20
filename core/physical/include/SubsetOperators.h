@@ -34,7 +34,7 @@ private:
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if (iterator() != iterator().eos()) {
                 auto v = iterator()++;
-                return GPUDecodedFrameData{configuration_, v.frames()};
+                return GPUDecodedFrameData{configuration_, v.geometry(), v.frames()};
                 //return GPUDecodedFrameData{GetConfiguration(v.configuration()), v.frames()};
             } else
                 return {};
@@ -120,7 +120,7 @@ private:
                     output.back().downcast<CudaFrame>().copy(lock(), *frame->cuda(), decoded.configuration().offset.top, decoded.configuration().offset.left);
                 }
 
-                return GPUDecodedFrameData(decoded.configuration(), output);
+                return GPUDecodedFrameData(decoded.configuration(), decoded.geometry(), output);
             } else
                 return std::nullopt;
         }
@@ -176,7 +176,7 @@ private:
                     // Still delaying?  Deincrement and return an empty sentinal
                     assert(delay_frames_ >= data.frames().size());
                     delay_frames_ -= data.frames().size();
-                    return GPUDecodedFrameData{data.configuration()};
+                    return GPUDecodedFrameData{data.configuration(), data.geometry()};
                 } else if(pending_frames_ > 0) {
                     // Still transmitting?  Deincrement and return the current set of frames
                     assert(pending_frames_ >= data.frames().size());

@@ -54,7 +54,7 @@ private:
                     // If so, flush the encode queue and end this op too
                     encodeSession_.Flush();
 
-                return {CPUEncodedFrameData(physical().codec(), decoded.configuration(), writer_.dequeue())};
+                return {CPUEncodedFrameData(physical().codec(), decoded.configuration(), decoded.geometry(), writer_.dequeue())};
             } else
                 return std::nullopt;
         }

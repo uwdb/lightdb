@@ -21,7 +21,7 @@ private:
             if(iterators()[0] != iterators()[0].eos()) {
                 auto input = iterators()[0]++;
                 auto data = input.downcast<GPUDecodedFrameData>();
-                CPUDecodedFrameData output{data.configuration()};
+                CPUDecodedFrameData output{data.configuration(), data.geometry()};
 
                 for(auto &frame: data.frames())
                     output.frames().emplace_back(LocalFrame{*frame->cuda(), data.configuration()});
@@ -53,7 +53,7 @@ private:
             if(iterators().front() != iterators().front().eos()) {
                 auto input = iterators().front()++;
                 auto data = input.downcast<CPUDecodedFrameData>();
-                GPUDecodedFrameData output{data.configuration()};
+                GPUDecodedFrameData output{data.configuration(), data.geometry()};
 
                 for(LocalFrameReference &frame: data.frames())
                     output.frames().emplace_back(std::make_shared<CudaFrame>(*frame));
