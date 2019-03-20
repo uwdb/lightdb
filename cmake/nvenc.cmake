@@ -1,4 +1,4 @@
-set(NVENC_ROOT thirdparty/nvenc CACHE STRING "NvEnc source root")
+set(NVENC_ROOT thirdparty/nv-codec-headers)
 
 include_directories(SYSTEM
     ${PROJECT_SOURCE_DIR}/${NVENC_ROOT}

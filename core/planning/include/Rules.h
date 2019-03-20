@@ -55,7 +55,7 @@ namespace lightdb::optimization {
         using OptimizerRule::OptimizerRule;
 
         bool visit(const logical::ScannedLightField &node) override {
-            if(!plan().has_physical_assignment(node)) {
+            if(!plan().has_physical_assignment(node) && !plan().environment().gpus().empty()) {
                 for(const auto &stream: node.metadata().streams()) {
                     //auto stream = node.metadata().streams()[0];
                     auto logical = plan().lookup(node);
