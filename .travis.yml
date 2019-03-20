@@ -33,7 +33,8 @@ script:
 #  - source .travis/install-cuda-trusty.sh
 #  - export CXX=g++-8
 #  - locate relative_difference.hpp
-  - ls /usr/include/boost/math/special_functions
+  #- ls /usr/include/boost/math/special_functions
+  - locate boost
   - mkdir -p build
   - cd build
   - cmake ..
