@@ -15,6 +15,7 @@ addons:
     packages: 
       - g++-8
       - libgoogle-glog-dev
+      - libgtest-dev
       - libopencv-dev
       - libboost-all-dev
       - nvidia-cuda-toolkit
