@@ -14,6 +14,7 @@ addons:
       - sourceline: 'ppa:graphics-drivers/ppa'
     packages: 
       - g++-8
+      - libgoogle-glog-dev
       - nvidia-cuda-toolkit
       - libopencv-dev
 
