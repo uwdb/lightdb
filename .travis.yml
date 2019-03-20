@@ -18,6 +18,8 @@ addons:
       - libgtest-dev
       - libopencv-dev
       - libboost-all-dev
+      - libavcodec-dev
+      - libavformat-dev
       - nvidia-cuda-toolkit
 
 script:
