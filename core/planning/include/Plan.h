@@ -4,6 +4,7 @@
 #include "LightField.h"
 #include "PhysicalOperators.h"
 #include "Environment.h"
+#include "Allocator.h"
 #include "set.h"
 
 namespace lightdb::optimization {
@@ -18,6 +19,7 @@ namespace lightdb::optimization {
         template<typename InputIterator>
         explicit Plan(execution::Environment environment, const InputIterator first, const InputIterator last)
                 : environment_(std::move(environment)),
+                  allocator_(AllocatorReference::make<RoundRobinAllocator>(environment_)),
                   sinks_(first, last),
                   physical_() {
             std::for_each(first, last, std::bind(&Plan::associate, this, std::placeholders::_1));
@@ -136,11 +138,13 @@ namespace lightdb::optimization {
 
         inline const auto& physical() const { return physical_; }
         inline const auto& environment() const { return environment_; }
+        inline auto& allocator() const { return *allocator_; }
         inline LightFieldReference lookup(const LightField &node) const { return nodes_.at(&node); }
         inline const std::vector<LightFieldReference>& sinks() const { return sinks_; }
 
     private:
         const execution::Environment environment_;
+        AllocatorReference allocator_;
         std::vector<LightFieldReference> sinks_;
         //TODO can be replaced with an addressable shared_reference
         std::unordered_map<const LightField *, LightFieldReference> nodes_;
