@@ -17,7 +17,7 @@ addons:
       - nvidia-cuda-toolkit
 
 script:
-  - source .travis/install-cuda-trusty.sh
+#  - source .travis/install-cuda-trusty.sh
   - mkdir -p build
   - cd build
   - cmake ..
