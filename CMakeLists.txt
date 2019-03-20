@@ -61,7 +61,7 @@ set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${CUDA_nvcuvenc_LIBRARY
 find_package(PythonLibs 2.7 REQUIRED)
 include_directories(SYSTEM ${PYTHON_INCLUDE_DIRS})
 
-find_package(Boost COMPONENTS python filesystem system REQUIRED)
+find_package(Boost 1.64 COMPONENTS python filesystem system REQUIRED)
 include_directories(SYSTEM ${Boost_INCLUDE_DIR})
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${Boost_LIBRARIES})
 

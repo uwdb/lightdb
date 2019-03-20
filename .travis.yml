@@ -19,7 +19,7 @@ addons:
       - libgoogle-glog-dev
       - libgtest-dev
       - libopencv-dev
-      - libboost-all-dev
+      - libboost1.64-all-dev
       - libavcodec-dev
       - libavformat-dev
       - nvidia-cuda-toolkit
