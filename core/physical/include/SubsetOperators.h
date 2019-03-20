@@ -42,11 +42,13 @@ private:
 
     private:
         Configuration create_configuration(const Configuration &base) {
-            if(logical()->volume().bounding().theta() == physical().parent().logical()->volume().bounding().theta() &&
+            if((*iterator()).is<InterpolatedGPUDecodedFrameData>())
+                throw InvalidArgumentError("Attempt to take frame subset of interpolated data.", "iterator");
+            else if(logical()->volume().bounding().theta() == physical().parent().logical()->volume().bounding().theta() &&
                logical()->volume().bounding().phi() == physical().parent().logical()->volume().bounding().phi())
                 return base;
             else {
-                LOG(WARNING) << "Not checking for compatible projections or discrete sampling.";
+                LOG(WARNING) << "Not checking for compatible projections.";
                 auto left   = base.width * (logical()->volume().bounding().theta().start() - physical().parent().logical()->volume().bounding().theta().start()) / number(TWOPI),
                      right  = base.width - (base.width * (physical().parent().logical()->volume().bounding().theta().end() - logical()->volume().bounding().theta().end()) / number(TWOPI)),
                      top    = base.height * (logical()->volume().bounding().phi().start() - physical().parent().logical()->volume().bounding().phi().start()) / number(PI),
