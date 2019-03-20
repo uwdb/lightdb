@@ -1,6 +1,6 @@
 enable_testing()
 
-include(gtest.cmake)
+include(${PROJECT_SOURCE_DIR}/cmake/gtest.cmake)
 
 #find_package(GTest 1.9.1 REQUIRED)
 

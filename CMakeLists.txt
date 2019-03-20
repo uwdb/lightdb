@@ -38,6 +38,8 @@ set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG --coverage -g3 -Wall -Wextra -Wno-unused-p
 # Find required library dependencies
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} cuda nvcuvid dl pthread glog gflags stdc++fs)
 
+include(cmake/nvenc.cmake)
+
 find_package(CUDA 7.5 REQUIRED)
 include_directories(${CUDA_INCLUDE_DIRS})
 #set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${CUDA_nppi_LIBRARY})

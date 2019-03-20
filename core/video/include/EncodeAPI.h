@@ -1,8 +1,8 @@
 #ifndef LIGHTDB_ENCODE_API
 #define LIGHTDB_ENCODE_API
 
-#include "ffmpeg/nvEncodeAPI.h"
-#include "ffmpeg/nvUtils.h"
+#include "nvEncodeAPI.h"
+#include "nvUtils.h"
 #include <cuda.h>
 #include <cassert>
 #include <functional>
