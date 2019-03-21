@@ -41,6 +41,7 @@ install:
         export BOOST_VERSION=1.65.1
         export BOOST_URL=https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.gz
         mkdir -p boost${BOOST_VERSION}
+        mkdir -p boost
         travis_retry wget --no-check-certificate --quiet -O - ${BOOST_URL} | tar --strip-components=1 -xz -C boost${BOOST_VERSION}
         pushd boost${BOOST_VERSION}
         ./bootstrap.sh --prefix=boost/ --with-libraries=python,filesystem,system
