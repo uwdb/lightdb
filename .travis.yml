@@ -24,7 +24,7 @@ addons:
       - libavformat-dev
       - nvidia-cuda-toolkit
       - libboost1.67-dev
-      - libboost-python1.67-dev
+#      - libboost-python1.67-dev
       - apt-file
 
 before_install:
@@ -36,6 +36,7 @@ script:
 #  - export CXX=g++-8
 #  - locate relative_difference.hpp
   #- ls /usr/include/boost/math/special_functions
+  - apt search libboost-pyth
   - ls /usr/include/boost/math
   - locate type.hpp
   - mkdir -p build
