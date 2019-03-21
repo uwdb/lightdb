@@ -35,6 +35,7 @@ script:
 #  - export CXX=g++-8
 #  - locate relative_difference.hpp
   #- ls /usr/include/boost/math/special_functions
+  - apt-file update
   - apt-file list libboost1.67-dev
   - locate type.hpp
   - mkdir -p build
