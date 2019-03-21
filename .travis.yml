@@ -8,9 +8,6 @@ env:
 #  - CUDA=8.0
 #   - COMPILER=g++-8
 #   - CXX=g++-8
-  - foo=bar
-  - BOOST_VERSION=1.65.1
-  - BOOST_URL=https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.gz
   - CC_COMPILER=gcc-8
   - CXX_COMPILER=g++-8
 
@@ -38,6 +35,8 @@ before_install:
 
 install:
   - |
+        export BOOST_VERSION=1.65.1
+        export BOOST_URL=https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.gz
         mkdir -p boost${BOOST_VERSION}
         travis_retry wget --no-check-certificate --quiet -O - ${BOOST_URL} | tar --strip-components=1 -xz -C boost${BOOST_VERSION}
         pushd boost${BOOST_VERSION}
