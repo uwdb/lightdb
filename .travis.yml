@@ -11,6 +11,8 @@ env:
 #   - CXX=g++-8
     - CC_COMPILER=gcc-8
     - CXX_COMPILER=g++-8
+    - CXX=g++-8
+    - CC=gcc-8
     - BOOST_VERSION=1.65.1
     - BOOST_URL=https://dl.bintray.com/boostorg/release/1.65.1/source/boost_1_65_1.tar.gz
 
@@ -44,19 +46,20 @@ install:
         mkdir -p ${TRAVIS_BUILD_DIR}/boost
         travis_retry wget --no-check-certificate --quiet -O - ${BOOST_URL} | tar --strip-components=1 -xz -C ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION}
         pushd ${TRAVIS_BUILD_DIR}/boost${BOOST_VERSION}
-        ./bootstrap.sh --prefix=${TRAVIS_BUILD_DIR}/boost/ --with-libraries=python,filesystem,system
+        ./bootstrap.sh --prefix=${TRAVIS_BUILD_DIR}/boost --with-libraries=python,filesystem,system
         ./b2 -j4 -d0 install
         popd
         export CMAKE_OPTIONS=${CMAKE_OPTIONS}" -DBOOST_ROOT=${TRAVIS_BUILD_DIR}/boost"
-
+        ls ${TRAVIS_BUILD_DIR}/boost #TODO
+    
 script:
 #  - source .travis/install-cuda-trusty.sh
 #  - export CXX=g++-8
 #  - locate relative_difference.hpp
   #- ls /usr/include/boost/math/special_functions
-  - apt search libboost-pyth
-  - ls /usr/include/boost/math
-  - locate type.hpp
+#  - apt search libboost-pyth
+#  - ls /usr/include/boost/math
+#  - locate type.hpp
   - mkdir -p build
   - cd build
   - cmake ..
