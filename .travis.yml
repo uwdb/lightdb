@@ -40,7 +40,7 @@ install:
         mkdir -p boost${BOOST_VERSION}
         travis_retry wget --no-check-certificate --quiet -O - ${BOOST_URL} | tar --strip-components=1 -xz -C boost${BOOST_VERSION}
         pushd boost${BOOST_VERSION}
-        ./bootstrap.sh --with-libraries=python,filesystem,system
+        ./bootstrap.sh --prefix=boost/ --with-libraries=python,filesystem,system
         ./b2 -j4 -d0 install
         popd
 
