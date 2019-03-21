@@ -24,7 +24,7 @@ addons:
       - libavformat-dev
       - nvidia-cuda-toolkit
       - libboost1.67-dev
-#      - libboost-python1.67-dev
+      - libboost-python-dev
       - apt-file
 
 before_install:
