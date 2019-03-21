@@ -17,7 +17,7 @@ addons:
   apt:
     sources:
       - sourceline: 'ppa:ubuntu-toolchain-r/test'
-      - sourceline: 'ppa:mhier/libboost-latest'
+ #     - sourceline: 'ppa:mhier/libboost-latest'
 #      - sourceline: 'ppa:graphics-drivers/ppa'
     packages: 
       - g++-8
@@ -27,7 +27,7 @@ addons:
       - libavcodec-dev
       - libavformat-dev
       - nvidia-cuda-toolkit
-      - libboost1.67-all-dev
+#      - libboost1.67-all-dev
       #- libboost-python-dev
       - apt-file
 
