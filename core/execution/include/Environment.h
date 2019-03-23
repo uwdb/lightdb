@@ -31,8 +31,8 @@ private:
 
 class LocalEnvironment: public Environment {
 public:
-    LocalEnvironment()
-            : Environment(GetLocalGPUs())
+    explicit LocalEnvironment(bool include_gpus=true)
+            : Environment(include_gpus ? GetLocalGPUs() : std::vector<GPU>{})
     { }
 
 private:
