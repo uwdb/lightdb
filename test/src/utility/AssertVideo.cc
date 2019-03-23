@@ -38,11 +38,12 @@ void ASSERT_BLACK_FRAME(const DecodedFrame &frame)
             ASSERT_EQ(local(x, y), 128); // Black UV chroma
 }
 
-std::string TRANSCODE_RAW_TO_H264(const std::string& filename, const size_t height, const size_t width, const size_t framerate)
-{
+std::string TRANSCODE_RAW_TO_H264(const std::string& filename,
+                                  const size_t height, const size_t width,
+                                  const size_t framerate, const std::string &pixel_format) {
     auto output_filename = filename + ".h264";
     auto command = std::string("ffmpeg -y -hide_banner -loglevel error ") +
-            " -f rawvideo -pix_fmt nv12 " +
+            " -f rawvideo -pix_fmt " + pixel_format + " " +
             " -s:v " + std::to_string(width) + 'x' + std::to_string(height) +
             " -r " + std::to_string(framerate) +
             " -i " + filename +
