@@ -40,11 +40,19 @@ public:
     }
 
     void execute(const LightFieldReference &query) {
-        execute(std::vector<LightFieldReference>{query});
+        execute(query, optimization::Optimizer::instance());
+    }
+
+    void execute(const LightFieldReference &query, const optimization::Optimizer& optimizer) {
+        execute(std::vector<LightFieldReference>{query}, optimizer);
     }
 
     void execute(const std::vector<LightFieldReference> &query) {
-        execute(optimization::Optimizer::instance().optimize(query));
+        execute(query, optimization::Optimizer::instance());
+    }
+
+    void execute(const std::vector<LightFieldReference> &query, const optimization::Optimizer& optimizer) {
+        execute(optimizer.optimize(query));
     }
 
     void execute(const optimization::Plan &plan) {
