@@ -163,7 +163,8 @@
 
 CudaFrame CREATE_BLACK_FRAME(const Configuration &);
 void ASSERT_BLACK_FRAME(const DecodedFrame &);
-std::string TRANSCODE_RAW_TO_H264(const std::string& filename, size_t height, size_t width, size_t framerate);
+std::string TRANSCODE_RAW_TO_H264(const std::string& filename, size_t height, size_t width, size_t framerate,
+                                  const std::string &pixel_format="nv12");
 size_t COUNT_FRAMES(const std::string &filename, size_t stream_index=0u);
 
 #endif //LIGHTDB_ASSERTVIDEO_H
