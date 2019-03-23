@@ -71,7 +71,7 @@ namespace lightdb::optimization {
 
                         auto children = plan().children(plan().lookup(node));
                         if (children.size() > 1) {
-                            auto tees = physical::TeedPhysicalLightFieldAdapter::make(decode, children.size());
+                            auto tees = physical::TeedPhysicalOperatorAdapter::make(decode, children.size());
                             for (auto index = 0u; index < children.size(); index++)
                                 plan().add(tees->physical(index));
                             //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
@@ -83,7 +83,7 @@ namespace lightdb::optimization {
 
                         auto children = plan().children(plan().lookup(node));
                         if(children.size() > 1) {
-                            auto tees = physical::TeedPhysicalLightFieldAdapter::make(decode, children.size());
+                            auto tees = physical::TeedPhysicalOperatorAdapter::make(decode, children.size());
                             for (auto index = 0u; index < children.size(); index++)
                                 plan().add(tees->physical(index));
                         }
@@ -113,7 +113,7 @@ namespace lightdb::optimization {
 
                     auto children = plan().children(plan().lookup(node));
                     if(children.size() > 1) {
-                        auto tees = physical::TeedPhysicalLightFieldAdapter::make(decode, children.size());
+                        auto tees = physical::TeedPhysicalOperatorAdapter::make(decode, children.size());
                         for (auto index = 0u; index < children.size(); index++)
                             plan().add(tees->physical(index));
                             //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
@@ -155,7 +155,7 @@ namespace lightdb::optimization {
                 else if(physical_parent.is<physical::CPUMap>() && physical_parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
                     plan().emplace<physical::CPUIdentity>(logical, physical_parent);
                 //TODO this is silly -- every physical operator should declare an output type and we should just use that
-                else if(physical_parent.is<physical::TeedPhysicalLightFieldAdapter::TeedPhysicalLightField>() && physical_parent->parents()[0].is<physical::CPUMap>() && physical_parent->parents()[0].downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
+                else if(physical_parent.is<physical::TeedPhysicalOperatorAdapter::TeedPhysicalOperator>() && physical_parent->parents()[0].is<physical::CPUMap>() && physical_parent->parents()[0].downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
                     plan().emplace<physical::CPUIdentity>(logical, physical_parent);
                 else if(physical_parent->device() == physical::DeviceType::CPU) {
                     //auto gpu = plan().environment().gpus()[0];
@@ -228,7 +228,7 @@ namespace lightdb::optimization {
 
                 auto children = plan().children(plan().lookup(node));
                 if(children.size() > 1) {
-                    auto tees = physical::TeedPhysicalLightFieldAdapter::make(unioned, children.size());
+                    auto tees = physical::TeedPhysicalOperatorAdapter::make(unioned, children.size());
                     for (auto index = 0u; index < children.size(); index++) {
                         if (unioned->device() == physical::DeviceType::CPU)
                             plan().assign(plan().lookup(node), tees->physical(index));
@@ -308,7 +308,7 @@ namespace lightdb::optimization {
 
                     auto children = plan().children(plan().lookup(node));
                     if(children.size() > 1) {
-                        auto tees = physical::TeedPhysicalLightFieldAdapter::make(mapped, children.size());
+                        auto tees = physical::TeedPhysicalOperatorAdapter::make(mapped, children.size());
                         for(auto index = 0u; index < children.size(); index++) {
                             if(mapped->device() == physical::DeviceType::CPU)
                                 plan().assign(plan().lookup(node), tees->physical(index));
@@ -425,7 +425,7 @@ namespace lightdb::optimization {
         void teeIfNecessary(const LightField& node, PhysicalOperatorReference physical) {
             auto children = plan().children(plan().lookup(node));
             if(children.size() > 1) {
-                auto tees = physical::TeedPhysicalLightFieldAdapter::make(physical, children.size());
+                auto tees = physical::TeedPhysicalOperatorAdapter::make(physical, children.size());
                 for (auto index = 0u; index < children.size(); index++) {
                     if (physical->device() == physical::DeviceType::CPU)
                         plan().assign(plan().lookup(node), tees->physical(index));
@@ -575,7 +575,7 @@ namespace lightdb::optimization {
         void teeIfNecessary(const LightField& node, const PhysicalOperatorReference &physical) {
             auto children = plan().children(plan().lookup(node));
             if(children.size() > 1) {
-                auto tees = physical::TeedPhysicalLightFieldAdapter::make(physical, children.size());
+                auto tees = physical::TeedPhysicalOperatorAdapter::make(physical, children.size());
                 for (auto index = 0u; index < children.size(); index++) {
                     plan().assign(plan().lookup(node), tees->physical(index));
                     /*if (physical->device() == physical::DeviceType::CPU)
@@ -635,9 +635,9 @@ namespace lightdb::optimization {
             } else if(parent.is<physical::CPUMap>() && parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
                 //TODO this is silly -- every physical operator should declare an output type and we should just use that
-            } else if(parent.is<physical::TeedPhysicalLightFieldAdapter::TeedPhysicalLightField>() && parent->parents()[0].is<physical::CPUMap>() && parent->parents()[0].downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name()) {
+            } else if(parent.is<physical::TeedPhysicalOperatorAdapter::TeedPhysicalOperator>() && parent->parents()[0].is<physical::CPUMap>() && parent->parents()[0].downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
-            } else if(parent.is<physical::TeedPhysicalLightFieldAdapter::TeedPhysicalLightField>() && parent->parents()[0].is<physical::GPUAngularSubquery>()) {
+            } else if(parent.is<physical::TeedPhysicalOperatorAdapter::TeedPhysicalOperator>() && parent->parents()[0].is<physical::GPUAngularSubquery>()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent->device() != physical::DeviceType::GPU) {
                 //auto gpu = plan().environment().gpus()[0];
@@ -688,7 +688,7 @@ namespace lightdb::optimization {
             } else if(parent.is<physical::GPUOperator>()) {
                 return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
                 //TODO this is silly -- every physical operator should declare an output type and we should just use that
-            } else if(parent.is<physical::TeedPhysicalLightFieldAdapter::TeedPhysicalLightField>() && parent->parents()[0].is<physical::GPUAngularSubquery>()) {
+            } else if(parent.is<physical::TeedPhysicalOperatorAdapter::TeedPhysicalOperator>() && parent->parents()[0].is<physical::GPUAngularSubquery>()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent->device() != physical::DeviceType::GPU) {
                 //auto gpu = plan().environment().gpus()[0];
