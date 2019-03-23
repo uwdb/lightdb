@@ -37,7 +37,7 @@ private:
             : runtime::UnaryRuntime<GPUAngularSubquery, GPUDecodedFrameData>(physical),
               subplan_(CreatePlan()),
               subiterator_(ExecutePlan()),
-              streams_(TeedPhysicalLightFieldAdapter::make(
+              streams_(TeedPhysicalOperatorAdapter::make(
                       physical.parent(),
                       physical.parent().logical()->volume().components().size()))
         { }
@@ -50,7 +50,7 @@ private:
         }
 
     private:
-        TeedPhysicalLightFieldAdapter& streams() { return *streams_; }
+        TeedPhysicalOperatorAdapter& streams() { return *streams_; }
 
         optimization::Plan CreatePlan();
         inline LightFieldReference ExecuteSubquery(size_t index);
@@ -61,7 +61,7 @@ private:
 
         optimization::Plan subplan_;
         runtime::RuntimeIterator subiterator_;
-        std::shared_ptr<TeedPhysicalLightFieldAdapter> streams_;
+        std::shared_ptr<TeedPhysicalOperatorAdapter> streams_;
     };
 
     const optimization::OptimizerReference optimizer_;

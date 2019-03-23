@@ -82,15 +82,16 @@ private:
 
 };
 
-class TeedPhysicalLightFieldAdapter {
+//TODO can probably drop the adapter once an explicit teeing rule is added
+class TeedPhysicalOperatorAdapter {
 public:
-    static std::shared_ptr<TeedPhysicalLightFieldAdapter> make(const PhysicalOperatorReference &source,
-                                                               const size_t size) {
-        return std::make_shared<TeedPhysicalLightFieldAdapter>(source, size);
+    static std::shared_ptr<TeedPhysicalOperatorAdapter> make(const PhysicalOperatorReference &source,
+                                                             const size_t size) {
+        return std::make_shared<TeedPhysicalOperatorAdapter>(source, size);
     }
 
-    TeedPhysicalLightFieldAdapter(const PhysicalOperatorReference &source,
-                                  const size_t size) {
+    TeedPhysicalOperatorAdapter(const PhysicalOperatorReference &source,
+                                const size_t size) {
         auto mutex = std::make_shared<std::mutex>();
         auto queues = std::make_shared<std::vector<std::queue<MaterializedLightFieldReference>>>(size);
 
@@ -103,12 +104,12 @@ public:
             else
                 tees_.emplace_back(
                         LightFieldReference::make<PhysicalToLogicalLightFieldAdapter>(
-                                    PhysicalOperatorReference::make<TeedPhysicalLightField>(
+                                    PhysicalOperatorReference::make<TeedPhysicalOperator>(
                                             mutex, queues, source, index)));
     }
 
-    TeedPhysicalLightFieldAdapter(const TeedPhysicalLightFieldAdapter&) = delete;
-    TeedPhysicalLightFieldAdapter(TeedPhysicalLightFieldAdapter&& other) = default;
+    TeedPhysicalOperatorAdapter(const TeedPhysicalOperatorAdapter&) = delete;
+    TeedPhysicalOperatorAdapter(TeedPhysicalOperatorAdapter&& other) = default;
 
     size_t size() const {
         return tees_.size();
@@ -122,10 +123,10 @@ public:
         return (*this)[index].downcast<PhysicalToLogicalLightFieldAdapter>().source();
     }
 
-    //TODO these should be private
-    class TeedPhysicalLightField: public PhysicalOperator {
+    //TODO make these private after a rule is added (or promoted to top-level)
+    class TeedPhysicalOperator: public PhysicalOperator {
     public:
-        TeedPhysicalLightField(std::shared_ptr<std::mutex> mutex,
+        TeedPhysicalOperator(std::shared_ptr<std::mutex> mutex,
                                std::shared_ptr<std::vector<std::queue<MaterializedLightFieldReference>>> queues,
                                const PhysicalOperatorReference &source,
                                const size_t index)
@@ -135,8 +136,8 @@ public:
                                      runtime::make<Runtime>(*this, mutex, queues, source, index))
         { }
 
-        TeedPhysicalLightField(const TeedPhysicalLightField&) = delete;
-        TeedPhysicalLightField(TeedPhysicalLightField&&) noexcept = default;
+        TeedPhysicalOperator(const TeedPhysicalOperator&) = delete;
+        TeedPhysicalOperator(TeedPhysicalOperator&&) noexcept = default;
 
     protected:
         class Runtime: public runtime::Runtime<> {
@@ -181,14 +182,14 @@ public:
         };
     };
 
-    class GPUTeedPhysicalLightField : public TeedPhysicalLightField, public GPUOperator {
+    class GPUTeedPhysicalLightField : public TeedPhysicalOperator, public GPUOperator {
     public:
         GPUTeedPhysicalLightField(std::shared_ptr<std::mutex> mutex,
                                   std::shared_ptr<std::vector<std::queue<MaterializedLightFieldReference>>> queues,
                                   const PhysicalOperatorReference &source,
                                   const size_t index,
                                   const execution::GPU& gpu)
-                : TeedPhysicalLightField(std::move(mutex), std::move(queues), source, index),
+                : TeedPhysicalOperator(std::move(mutex), std::move(queues), source, index),
                   GPUOperator(gpu)
         { }
     };
