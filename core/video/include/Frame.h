@@ -367,11 +367,4 @@ private:
 //TODO this should be CPUFrameRef
 using LocalFrameReference = lightdb::shared_reference<LocalFrame>;
 
-//TODO Make EncodeBuffer a "EncodableFrame" derived from Frame
-//TODO Believe these can be removed; Functor.cc has replacements
-class EncodeBuffer;
-typedef std::function<EncodeBuffer&(VideoLock&, EncodeBuffer&)> EncodableFrameTransform;
-typedef std::function<Frame&(VideoLock&, Frame&)> FrameTransform;
-typedef std::function<const Frame&(VideoLock&, const std::vector<Frame>&)> NaryFrameTransform;
-
 #endif //LIGHTDB_FRAME_H

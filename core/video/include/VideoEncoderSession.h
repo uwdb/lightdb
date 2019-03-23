@@ -42,7 +42,7 @@ public:
     }
 
     void Encode(std::vector<Frame> &frames, const FrameCopierFunction &copier,
-                const EncodableFrameTransform &transform) {
+                const std::function<EncodeBuffer&(VideoLock&, EncodeBuffer&)> &transform) {
         auto &buffer = GetAvailableBuffer();
 
         if(frames.empty())
