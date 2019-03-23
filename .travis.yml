@@ -51,7 +51,7 @@ install:
         popd
         export CMAKE_OPTIONS=${CMAKE_OPTIONS}" -DBOOST_ROOT=${TRAVIS_BUILD_DIR}/boost"
         ls ${TRAVIS_BUILD_DIR}/boost #TODO
-    
+
 script:
 #  - source .travis/install-cuda-trusty.sh
 #  - export CXX=g++-8
