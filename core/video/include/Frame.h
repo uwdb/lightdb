@@ -306,8 +306,12 @@ public:
     { }
 
     LocalFrame(unsigned int height, unsigned int width, const lightdb::bytestring &data)
+            : LocalFrame(height, width, std::make_shared<lightdb::bytestring>(data.begin(), data.end()))
+    { }
+
+    LocalFrame(unsigned int height, unsigned int width, std::shared_ptr<lightdb::bytestring> data)
             : Frame(height, width, NV_ENC_PIC_STRUCT_FRAME),
-              data_(std::make_shared<lightdb::bytestring>(data.begin(), data.end()))
+              data_(std::move(data))
     { }
 
     LocalFrame(const LocalFrame &frame, const size_t size)
@@ -360,6 +364,7 @@ private:
     const std::shared_ptr<lightdb::bytestring> data_;
 };
 
+//TODO this should be CPUFrameRef
 using LocalFrameReference = lightdb::shared_reference<LocalFrame>;
 
 //TODO Make EncodeBuffer a "EncodableFrame" derived from Frame

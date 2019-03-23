@@ -8,6 +8,13 @@
 #include "VideoDecoderSession.h"
 #include "Runtime.h"
 
+extern "C" {
+#include <libavformat/avio.h>
+#include <libavformat/avformat.h>
+#include <libavutil/imgutils.h>
+#include <libavutil/error.h>
+};
+
 namespace lightdb::physical {
 
 class GPUDecodeFromCPU : public PhysicalOperator, public GPUOperator {
@@ -99,34 +106,186 @@ private:
         explicit Runtime(CPUDecode &physical)
                 : runtime::UnaryRuntime<CPUDecode, CPUEncodedFrameData>(physical),
                   configuration_{configuration(), codec()},
-                  geometry_{geometry()}
-        { }
+                  geometry_{geometry()},
+                  buffer_size_(65536),
+                  buffer_(reinterpret_cast<unsigned char*>(av_malloc(buffer_size_ + AV_INPUT_BUFFER_PADDING_SIZE)), av_free),
+                  context_(avio_alloc_context(buffer_.get(), static_cast<int>(buffer_size_), 0,
+                                              this, &read_next_packet, nullptr, nullptr), [](auto &c) {
+                                                  avio_context_free(&c); /* avio_close */ }),
+                  format_(create_format()),
+                  stream_index_(get_stream_index()),
+                  codec_(get_codec()),
+                  codec_context_(create_codec_context()),
+                  frames_(256),
+                  packet_worker_(&Runtime::decode_all, this) {
+            CHECK_NOTNULL(buffer_.get());
+            CHECK_NOTNULL(context_.get());
+            CHECK_NOTNULL(format_.get());
+            CHECK_NOTNULL(codec_.get());
+            CHECK_NOTNULL(codec_context_.get());
+        }
+
+        ~Runtime() {
+            decoding_ = false;
+            packet_worker_.join();
+        }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
-            std::vector<GPUFrameReference> frames;
+            CPUDecodedFrameData output(configuration_, geometry_);
 
-            LOG_IF(WARNING, configuration_.output_surfaces < 8)
-            << "Decode configuration output surfaces is low, limiting throughput";
+            frames_.consume_all([&output](const auto &frame) {
+                output.frames().push_back(frame); });
 
-            if(!decoder_.frame_queue().isComplete())
-                do {
-                    auto frame = session_.decode(physical().poll_duration());
-                    if (frame.has_value())
-                        frames.emplace_back(frame.value());
-                } while(!decoder_.frame_queue().isEmpty() &&
-                        !decoder_.frame_queue().isEndOfDecode() &&
-                        frames.size() <= configuration_.output_surfaces / 4);
-
-            if(!frames.empty() || !decoder_.frame_queue().isComplete())
-                return std::optional<physical::MaterializedLightFieldReference>{
-                        GPUDecodedFrameData(configuration_, geometry_, frames)};
-            else
-                return std::nullopt;
+            return decoding_ || !output.frames().empty()
+                ? std::optional{output}
+                : std::nullopt;
         }
 
     private:
+        std::shared_ptr<AVFormatContext> create_format() {
+            std::shared_ptr<AVFormatContext> format(avformat_alloc_context(), [](auto &f) { avformat_close_input(&f); });
+            auto pointer = format.get();
+            int result;
+
+            format->pb = context_.get();
+
+            if((result = avformat_open_input(&pointer, ".mp4", nullptr, nullptr)) != 0)
+                throw get_ffmpeg_error(result);
+            else
+                return format;
+        }
+
+        unsigned int get_stream_index() {
+            int result;
+            if ((result = avformat_find_stream_info(format_.get(), nullptr)) != 0)
+                throw get_ffmpeg_error(result);
+            else if((result = av_find_best_stream(format_.get(), AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0)) < 0)
+                throw get_ffmpeg_error(result);
+            else
+                return static_cast<unsigned int>(result);
+        }
+
+        std::shared_ptr<AVCodec> get_codec() {
+            AVCodec *codec;
+
+            CHECK_EQ(av_find_best_stream(format_.get(), AVMEDIA_TYPE_VIDEO, stream_index_, -1, &codec, 0),
+                     stream_index_);
+
+            return std::shared_ptr<AVCodec>(codec, [](auto&) {});
+        }
+
+        std::shared_ptr<AVCodecContext> create_codec_context() {
+            #pragma clang diagnostic push
+            #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+                // codecpar is the replacement, but it's not clear how to open it
+                auto context = format_->streams[stream_index_]->codec;
+            #pragma clang diagnostic pop
+
+            avcodec_open2(context, codec_.get(), nullptr);
+
+            return std::shared_ptr<AVCodecContext>(context, avcodec_close);
+        }
+
+        int send_frames(const std::shared_ptr<AVFrame>& frame) {
+            int result;
+
+            switch(result = avcodec_receive_frame(codec_context_.get(), frame.get())) {
+                case 0: {
+                    CHECK_EQ(frame->width, configuration_.width);
+                    CHECK_EQ(frame->height, configuration_.height);
+                    CHECK_EQ(frame->format, AV_PIX_FMT_YUV420P);
+
+                    auto format = static_cast<AVPixelFormat>(frame->format);
+                    auto size = av_image_get_buffer_size(format, frame->width, frame->height, 1);
+                    auto buffer = std::make_shared<bytestring>(size);
+                    if((result = av_image_copy_to_buffer(
+                            reinterpret_cast<unsigned char *>(buffer->data()), buffer->size(), frame->data,
+                            frame->linesize, format, frame->width, frame->height, 1)) != size)
+                            throw get_ffmpeg_error(result);
+
+                    frames_.push(std::make_shared<LocalFrame>(frame->height, frame->width, buffer));
+                    break;
+                }
+                case AVERROR(EAGAIN):
+                    break;
+                case AVERROR_EOF:
+                    decoding_ = false;
+                    break;
+                default:
+                    throw get_ffmpeg_error(result);
+            }
+
+            return result;
+        }
+
+        void decode_all() {
+            const std::shared_ptr<AVPacket> packet(av_packet_alloc(), [](auto &p) { av_packet_free(&p); });
+            const std::shared_ptr<AVFrame> frame(av_frame_alloc(), [](auto &f) { av_frame_free(&f); });
+            int result;
+
+            while(decoding_) {
+                // Read and send packet
+                switch(result = av_read_frame(format_.get(), packet.get())) {
+                    case 0:
+                        if((result = avcodec_send_packet(codec_context_.get(), packet.get())) != 0)
+                            throw get_ffmpeg_error(result);
+                        break;
+                    case AVERROR_EOF:
+                        if((result = avcodec_send_packet(codec_context_.get(), nullptr)) != 0 &&
+                           result != AVERROR_EOF)
+                            throw get_ffmpeg_error(result);
+                        break;
+                    default:
+                        throw get_ffmpeg_error(result);
+                }
+
+                // Read and send frames
+                while(send_frames(frame) == 0)
+                    ;
+            }
+        }
+
+        static int read_next_packet(void* opaque, unsigned char* buffer, int size) {
+            auto &runtime = *static_cast<Runtime*>(opaque);
+
+            if(runtime.iterator() == runtime.iterator().eos()) {
+                return AVERROR_EOF;
+            } else {
+                auto data = runtime.iterator()++;
+
+                CHECK_GE(size, data.value().size());
+                CHECK_LE(data.value().size(), std::numeric_limits<int>::max());
+
+                std::copy(
+                        std::begin(data.value()),
+                        std::end(data.value()),
+                        buffer);
+
+                return data.value().size() != 0
+                       ? static_cast<int>(data.value().size())
+                       : read_next_packet(opaque, buffer, size);
+            }
+        }
+
+        std::exception get_ffmpeg_error(int error) {
+            char message[256];
+            av_strerror(error, message, sizeof(message));
+            return FfmpegRuntimeError(message);
+        }
+
         const DecodeConfiguration configuration_;
         const GeometryReference geometry_;
+        const size_t buffer_size_;
+        const std::shared_ptr<unsigned char> buffer_;
+        const std::shared_ptr<AVIOContext> context_;
+        const std::shared_ptr<AVFormatContext> format_;
+        const unsigned int stream_index_;
+        const std::shared_ptr<AVCodec> codec_;
+        const std::shared_ptr<AVCodecContext> codec_context_;
+
+        lightdb::spsc_queue<std::shared_ptr<LocalFrame>> frames_;
+        bool decoding_ = true;
+        std::thread packet_worker_;
     };
 };
 

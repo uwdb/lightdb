@@ -14,6 +14,7 @@ public:
     }
 
 private:
+    //TODO this should extend UnaryRuntime<SaveToFile, SerializableData>, but Unary needs adjustments
     class Runtime: public runtime::Runtime<SaveToFile> {
     public:
         explicit Runtime(SaveToFile &physical)

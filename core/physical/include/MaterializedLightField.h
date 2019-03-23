@@ -59,7 +59,7 @@ namespace lightdb::physical {
 
     class SerializedData: public SerializableData {
     public:
-        virtual const bytestring& value() { return *value_; }
+        const bytestring& value() override { return *value_; }
 
     protected:
         SerializedData(DeviceType device, const bytestring &value)
@@ -70,6 +70,8 @@ namespace lightdb::physical {
         SerializedData(DeviceType device, Input begin, Input end)
                 : SerializableData(device), value_(std::make_unique<bytestring>(begin, end))
         { }
+
+        inline MaterializedLightFieldReference ref() const override { return MaterializedLightFieldReference::make<SerializedData>(*this); }
 
     private:
         const std::shared_ptr<bytestring> value_;

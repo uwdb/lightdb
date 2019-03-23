@@ -55,13 +55,14 @@ namespace lightdb::optimization {
         using OptimizerRule::OptimizerRule;
 
         bool visit(const logical::ScannedLightField &node) override {
-            if(!plan().has_physical_assignment(node) && !plan().environment().gpus().empty()) {
+            if(!plan().has_physical_assignment(node)) {
                 for(const auto &stream: node.metadata().streams()) {
                     //auto stream = node.metadata().streams()[0];
                     auto logical = plan().lookup(node);
 
-                    if(stream.codec() == Codec::h264() ||
-                       stream.codec() == Codec::hevc()) {
+                    if((stream.codec() == Codec::h264() ||
+                        stream.codec() == Codec::hevc()) &&
+                       !plan().environment().gpus().empty()) {
                         auto gpu = plan().allocator().gpu();
                         //auto gpu = plan().environment().gpus()[0];
 
@@ -69,11 +70,22 @@ namespace lightdb::optimization {
                         auto decode = plan().emplace<physical::GPUDecodeFromCPU>(logical, scan, gpu);
 
                         auto children = plan().children(plan().lookup(node));
-                        if(children.size() > 1) {
+                        if (children.size() > 1) {
                             auto tees = physical::TeedPhysicalLightFieldAdapter::make(decode, children.size());
                             for (auto index = 0u; index < children.size(); index++)
                                 plan().add(tees->physical(index));
                             //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
+                        }
+                    } else if(stream.codec() == Codec::h264() ||
+                              stream.codec() == Codec::hevc()) {
+                        auto &scan = plan().emplace<physical::ScanSingleFileDecodeReader>(logical, stream);
+                        auto decode = plan().emplace<physical::CPUDecode>(logical, scan);
+
+                        auto children = plan().children(plan().lookup(node));
+                        if(children.size() > 1) {
+                            auto tees = physical::TeedPhysicalLightFieldAdapter::make(decode, children.size());
+                            for (auto index = 0u; index < children.size(); index++)
+                                plan().add(tees->physical(index));
                         }
                     } else if(stream.codec() == Codec::boxes()) {
                         auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, stream);
