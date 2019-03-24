@@ -54,8 +54,8 @@ TEST_F(DecodeTestFixture, testDecodeCPU) {
     EXPECT_VIDEO_FRAMES(output_h264, Resources.red10.frames);
     EXPECT_VIDEO_RESOLUTION(output_h264, Resources.red10.height, Resources.red10.width);
     EXPECT_VIDEO_RED(output_h264);
-    //EXPECT_EQ(remove(Resources.out.raw), 0);
-    //EXPECT_EQ(remove(output_h264.c_str()), 0);
+    EXPECT_EQ(remove(Resources.out.raw), 0);
+    EXPECT_EQ(remove(output_h264.c_str()), 0);
 }
 
 
@@ -71,4 +71,5 @@ TEST_F(DecodeTestFixture, testDecodeMP4) {
     EXPECT_VIDEO_RESOLUTION(Resources.out.h264, Resources.videos.black.mp4.height, Resources.videos.black.mp4.width);
     EXPECT_VIDEO_RED(Resources.out.h264);
     EXPECT_EQ(remove(Resources.out.h264), 0);
+<<<<<<< HEAD
 }*/
