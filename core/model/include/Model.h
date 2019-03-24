@@ -282,19 +282,23 @@ namespace lightdb::logical {
     public:
         explicit StoredLightField(const LightFieldReference &source,
                                   std::string name,
+                                  const catalog::Catalog &catalog,
                                   Codec codec=Codec::hevc())
                 : LightField(source),
                   name_(std::move(name)),
+                  catalog_(catalog),
                   codec_(std::move(codec))
         { }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<StoredLightField>(visitor); }
 
         const std::string& name() const { return name_; }
+        const catalog::Catalog& catalog() const {return catalog_; }
         const Codec& codec() const { return codec_; }
 
     private:
         const std::string name_;
+        const catalog::Catalog catalog_;
         const Codec codec_;
     };
 

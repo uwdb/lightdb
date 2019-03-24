@@ -661,8 +661,6 @@ namespace lightdb::optimization {
                 if(physical_parents.empty())
                     return false;
 
-                LOG(WARNING) << "Randomly picking HEVC as codec";
-
                 auto encode = Encode(node, physical_parents[0]);
                 plan().emplace<physical::Store>(plan().lookup(node), encode);
                 return true;

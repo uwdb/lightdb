@@ -62,7 +62,11 @@ namespace lightdb::logical {
     }
 
     LightFieldReference Algebra::Store(const std::string &name, const Codec &codec) {
-        return LightFieldReference::make<StoredLightField>(this_, name, codec);
+        return LightFieldReference::make<StoredLightField>(this_, name, catalog::Catalog::instance(), codec);
+    }
+
+    LightFieldReference Algebra::Store(const std::string &name, const catalog::Catalog &catalog, const Codec &codec) {
+        return LightFieldReference::make<StoredLightField>(this_, name, catalog, codec);
     }
 
     LightFieldReference Algebra::Sink() {

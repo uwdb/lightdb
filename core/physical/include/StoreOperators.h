@@ -15,6 +15,7 @@ public:
     { }
 
     const Codec &codec() const { return store_.codec(); }
+    const logical::StoredLightField store() const { return store_; }
 
 private:
     explicit Store(const LightFieldReference &logical,
@@ -22,7 +23,6 @@ private:
                    PhysicalOperatorReference &parent)
             : PhysicalOperator(logical, {parent}, DeviceType::CPU, runtime::make<Runtime>(*this, store)),
               store_(store) {
-        LOG(INFO) << "Storing to ambient catalog";
         CHECK_EQ(parents().size(), 1);
     }
 
@@ -30,10 +30,10 @@ private:
     public:
         explicit Runtime(Store &physical, const logical::StoredLightField &logical)
             : runtime::UnaryRuntime<Store, CPUEncodedFrameData>(physical),
-              output_(catalog::Catalog::instance().create(
-                      logical.name(),
-                      logical.codec(),
-                      configuration()))
+              output_(physical.store().catalog().create(
+                          logical.name(),
+                          logical.codec(),
+                          configuration()))
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {

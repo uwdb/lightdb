@@ -46,6 +46,7 @@ namespace lightdb {
             LightFieldReference Encode(const Codec& = Codec::hevc(), const lightdb::options<>& = {});
 
             LightFieldReference Store(const std::string &name, const Codec &codec=Codec::hevc());
+            LightFieldReference Store(const std::string &name, const catalog::Catalog&, const Codec &codec=Codec::hevc());
             LightFieldReference Save(const std::filesystem::path&);
             LightFieldReference Sink();
 
