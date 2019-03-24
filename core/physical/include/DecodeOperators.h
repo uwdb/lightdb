@@ -175,15 +175,18 @@ private:
         }
 
         std::shared_ptr<AVCodecContext> create_codec_context() {
-            #pragma clang diagnostic push
-            #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-                // codecpar is the replacement, but it's not clear how to open it
-                auto context = format_->streams[stream_index_]->codec;
-            #pragma clang diagnostic pop
+            auto parameters = format_->streams[stream_index_]->codecpar;
+            AVCodecContext *codec_context;
+            int result;
 
-            avcodec_open2(context, codec_.get(), nullptr);
-
-            return std::shared_ptr<AVCodecContext>(context, avcodec_close);
+            if((codec_context = avcodec_alloc_context3(codec_.get())) == nullptr)
+                throw FfmpegRuntimeError("Error allocating codec context");
+            else if ((result = avcodec_parameters_to_context(codec_context, parameters)) != 0)
+                throw get_ffmpeg_error(result);
+            else if((result = avcodec_open2(codec_context, codec_.get(), nullptr)) != 0)
+                throw get_ffmpeg_error(result);
+            else
+                return std::shared_ptr<AVCodecContext>(codec_context, avcodec_close);
         }
 
         int send_frames(const std::shared_ptr<AVFrame>& frame) {
