@@ -71,5 +71,4 @@ TEST_F(DecodeTestFixture, testDecodeMP4) {
     EXPECT_VIDEO_RESOLUTION(Resources.out.h264, Resources.videos.black.mp4.height, Resources.videos.black.mp4.width);
     EXPECT_VIDEO_RED(Resources.out.h264);
     EXPECT_EQ(remove(Resources.out.h264), 0);
-<<<<<<< HEAD
 }*/
