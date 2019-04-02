@@ -1,4 +1,5 @@
 #include "Display.h"
+#include "PhysicalOperators.h"
 #include <queue>
 
 namespace lightdb {

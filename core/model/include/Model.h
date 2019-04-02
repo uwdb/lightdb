@@ -212,21 +212,21 @@ namespace lightdb::logical {
 
     class StreamBackedLightField {
     public:
-        virtual const std::vector<catalog::Stream> streams() const = 0;
+        virtual const std::vector<catalog::Source> sources() const = 0;
     };
 
     class ScannedLightField : public LightField, public StreamBackedLightField {
     public:
-        explicit ScannedLightField(catalog::Catalog::Metadata metadata)
-                : LightField({}, metadata.volume(), metadata.colorSpace()), metadata_(std::move(metadata)) { }
+        explicit ScannedLightField(catalog::Entry entry)
+                : LightField({}, entry.volume(), entry.colorSpace()), entry_(std::move(entry)) { }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<ScannedLightField>(visitor); }
 
-        const catalog::Catalog::Metadata& metadata() const noexcept { return metadata_; }
-        const std::vector<catalog::Stream> streams() const override { return metadata().streams(); }
+        const catalog::Entry& entry() const noexcept { return entry_; }
+        const std::vector<catalog::Source> sources() const override { return entry().sources(); }
 
     private:
-        const catalog::Catalog::Metadata metadata_;
+        const catalog::Entry entry_;
     };
 
     class ExternalLightField : public LightField, public StreamBackedLightField, public OptionContainer<> {
@@ -238,20 +238,20 @@ namespace lightdb::logical {
                            const GeometryReference &geometry,
                            lightdb::options<> options)
                 : LightField({}, volume, colorSpace),
-                  stream_{filename, codec,
+                  source_{0u, filename, codec,
                           video::ffmpeg::GetStreamConfiguration(filename, 0, true)},
                   geometry_(geometry),
                   options_(std::move(options)) { }
 
-        inline const catalog::Stream& stream() const noexcept { return stream_; }
-        inline const Codec& codec() const noexcept { return stream_.codec(); }
-        inline const std::vector<catalog::Stream> streams() const override { return {stream()}; }
+        inline const catalog::Source& source() const noexcept { return source_; }
+        inline const Codec& codec() const noexcept { return source_.codec(); }
+        inline const std::vector<catalog::Source> sources() const override { return {source()}; }
         inline const lightdb::options<>& options() const override {return options_; }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<ExternalLightField>(visitor); }
 
     private:
-        const catalog::Stream stream_;
+        const catalog::Source source_;
         const GeometryReference geometry_;
         const lightdb::options<> options_;
     };
@@ -282,35 +282,43 @@ namespace lightdb::logical {
     public:
         explicit StoredLightField(const LightFieldReference &source,
                                   std::string name,
+                                  const catalog::Catalog &catalog,
                                   Codec codec=Codec::hevc())
                 : LightField(source),
                   name_(std::move(name)),
-                  codec_(std::move(codec))
+                  codec_(std::move(codec)),
+                  catalog_(catalog)
         { }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<StoredLightField>(visitor); }
 
-        const std::string& name() const { return name_; }
-        const Codec& codec() const { return codec_; }
+        inline const std::string& name() const { return name_; }
+        inline const catalog::Catalog& catalog() const {return catalog_; }
+        inline const Codec& codec() const { return codec_; }
 
     private:
         const std::string name_;
         const Codec codec_;
+        const catalog::Catalog catalog_;
     };
 
     class SavedLightField : public LightField {
     public:
         SavedLightField(const LightFieldReference &parent,
-                           std::filesystem::path filename)
+                           std::filesystem::path filename,
+                           Codec codec=Codec::hevc())
                 : LightField(parent),
-                  filename_(std::move(filename)) { }
+                  filename_(std::move(filename)),
+                  codec_(std::move(codec)) { }
 
         inline const std::filesystem::path& filename() const noexcept { return filename_; }
+        inline const Codec& codec() const { return codec_; }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<SavedLightField>(visitor); }
 
     private:
         const std::filesystem::path filename_;
+        const Codec codec_;
     };
 
     class SunkLightField : public LightField {

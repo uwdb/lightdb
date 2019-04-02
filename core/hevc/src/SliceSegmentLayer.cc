@@ -46,7 +46,7 @@ namespace lightdb::hevc {
     }
 
 
-    IDRSliceSegmentLayer::IDRSliceSegmentLayer(const Context &context, const bytestring &data, const Headers &headers)
+    IDRSliceSegmentLayer::IDRSliceSegmentLayer(const StitchContext &context, const bytestring &data, const Headers &headers)
             : SliceSegmentLayer(context, data, headers) {
 
         GetBitStream().CollectValue("first_slice_segment_in_pic_flag", 1, true);
@@ -64,7 +64,7 @@ namespace lightdb::hevc {
         GetBitStream().MarkPosition("end");
     }
 
-    TrailRSliceSegmentLayer::TrailRSliceSegmentLayer(const Context &context, const bytestring &data, const Headers &headers)
+    TrailRSliceSegmentLayer::TrailRSliceSegmentLayer(const StitchContext &context, const bytestring &data, const Headers &headers)
             : SliceSegmentLayer(context, data, headers) {
 
         GetBitStream().CollectValue("first_slice_segment_in_pic_flag", 1, true);

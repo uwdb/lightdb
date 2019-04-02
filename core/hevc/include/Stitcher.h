@@ -2,7 +2,7 @@
 #define LIGHTDB_STITCHER_H
 
 #include "Headers.h"
-#include "Context.h"
+#include "StitchContext.h"
 #include <vector>
 
 namespace lightdb::hevc {
@@ -16,7 +16,7 @@ namespace lightdb::hevc {
          * @param data A vector with each element being the bytestring of a tile. All data is moved from this vector, rendering it useless post
          * processing
          */
-        Stitcher(Context context, std::vector<bytestring> &data)
+        Stitcher(StitchContext context, std::vector<bytestring> &data)
                 : tiles_(data), context_(std::move(context)), headers_(context_, GetNals().front())
         { }
 
@@ -51,7 +51,7 @@ namespace lightdb::hevc {
 
         const std::vector<bytestring> tiles_;
         std::vector<std::vector<bytestring>> tile_nals_;
-        const Context context_;
+        const StitchContext context_;
         const Headers headers_;
     };
 

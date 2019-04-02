@@ -15,7 +15,7 @@ namespace lightdb::hevc {
          * @param context The context surrounding the Nal
          * @param data The byte stream
          */
-        PictureParameterSet(const Context &context, const bytestring &data)
+        PictureParameterSet(const StitchContext &context, const bytestring &data)
                 : Nal(context, data),
                   data_(RemoveEmulationPrevention(data, GetHeaderSize(), data.size())),
                   metadata_(data_.begin(), data_.begin() + GetHeaderSizeInBits()),

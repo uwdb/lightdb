@@ -48,9 +48,9 @@ public:
                                                    const MaterializedLightFieldReference &source,
                                                    const std::vector<PhysicalOperatorReference> &parents)
             : PhysicalOperator(logical,
-                                 parents,
-                                 source->device(),
-                                 runtime::make<Runtime>(*this, source))
+                               parents,
+                               source->device(),
+                               runtime::make<Runtime>(*this, source))
     { }
 
     MaterializedToPhysicalOperatorAdapter(const MaterializedToPhysicalOperatorAdapter &) = default;
@@ -61,7 +61,8 @@ public:
 private:
     class Runtime: public runtime::Runtime<> {
     public:
-        explicit Runtime(PhysicalOperator &physical, const MaterializedLightFieldReference &source)
+        explicit Runtime(PhysicalOperator &physical,
+                         const MaterializedLightFieldReference &source)
             : runtime::Runtime<>(physical),
               source_(source),
               read_(false)
@@ -137,7 +138,7 @@ public:
         { }
 
         TeedPhysicalOperator(const TeedPhysicalOperator&) = delete;
-        TeedPhysicalOperator(TeedPhysicalOperator&&) noexcept = default;
+        TeedPhysicalOperator(TeedPhysicalOperator&&) = default;
 
     protected:
         class Runtime: public runtime::Runtime<> {

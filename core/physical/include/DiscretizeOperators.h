@@ -32,7 +32,7 @@ private:
     public:
         explicit Runtime(GPUDownsampleResolution &physical)
             : runtime::GPUUnaryRuntime<GPUDownsampleResolution, GPUDecodedFrameData>(physical),
-              scaler_(context())
+              scaler_(this->context())
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {

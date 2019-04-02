@@ -42,10 +42,10 @@ private:
 
                 return CPUEncodedFrameData(Codec::hevc(), configuration_, geometry_, bytestring{});
             } else if(!materializedData_.empty()) {
-                lightdb::hevc::Context context({physical().rows(), physical().columns()},
-                                               {configuration_.height / physical().rows(),
-                                                configuration_.width / physical().columns()});
-                lightdb::hevc::Stitcher stitcher(context, materializedData_);
+                hevc::StitchContext context({physical().rows(), physical().columns()},
+                                            {configuration_.height / physical().rows(),
+                                             configuration_.width / physical().columns()});
+                hevc::Stitcher stitcher(context, materializedData_);
                 materializedData_.clear();
 
                 return CPUEncodedFrameData(Codec::hevc(), configuration_, geometry_, stitcher.GetStitchedSegments());

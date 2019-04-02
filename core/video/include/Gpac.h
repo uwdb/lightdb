@@ -5,7 +5,10 @@
 #include <filesystem>
 
 namespace lightdb::video::gpac {
-    std::vector<catalog::Stream> GetStreams(const std::filesystem::path&);
-} // namespace lightdb::video::gpac
+    std::vector<catalog::Source> get_streams(const std::filesystem::path&);
+    void write_metadata(const std::filesystem::path&, const std::vector<std::filesystem::path>&);
+    void mux_media(const std::filesystem::path &source, const std::filesystem::path &destination,
+                   const std::optional<Codec>& ={}, bool remove_source=true);
+    } // namespace lightdb::video::gpac
 
 #endif //LIGHTDB_GPAC_H

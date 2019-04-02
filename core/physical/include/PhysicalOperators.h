@@ -25,14 +25,18 @@ namespace lightdb {
         inline const std::vector<PhysicalOperatorReference>& parents() const noexcept { return parents_; }
         inline runtime::RuntimeReference runtime() { return runtime_; }
 
+        inline const execution::ExecutionContextReference &context() { return context_; }
+        inline execution::ExecutionContextReference context(const execution::ExecutionContextReference &context) {
+            return context_ = context;
+        }
+
         virtual ~PhysicalOperator() = default;
 
     protected:
         PhysicalOperator(const LightFieldReference &logical,
-                           const physical::DeviceType deviceType,
-                           const lazy<runtime::RuntimeReference> &runtime)
-                : PhysicalOperator(
-                        logical, std::vector<PhysicalOperatorReference>{}, deviceType, runtime)
+                         const physical::DeviceType deviceType,
+                         const lazy<runtime::RuntimeReference> &runtime)
+                : PhysicalOperator(logical, std::vector<PhysicalOperatorReference>{}, deviceType, runtime)
         { }
         PhysicalOperator(const LightFieldReference &logical,
                            std::vector<PhysicalOperatorReference> parents,
@@ -41,7 +45,8 @@ namespace lightdb {
                 : parents_(std::move(parents)),
                   logical_(logical),
                   deviceType_(deviceType),
-                  runtime_(std::move(runtime))
+                  runtime_(std::move(runtime)),
+                  context_(execution::NullExecutionContext::instance())
         { }
 
     private:
@@ -50,6 +55,7 @@ namespace lightdb {
         const LightFieldReference logical_;
         const physical::DeviceType deviceType_;
         lazy<runtime::RuntimeReference> runtime_;
+        execution::ExecutionContextReference context_;
     };
 
     namespace physical {

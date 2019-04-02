@@ -7,7 +7,7 @@
 #include "Opaque.h"
 
 namespace lightdb::hevc {
-    std::shared_ptr<Nal> Load(const Context &context, const bytestring &data) {
+    std::shared_ptr<Nal> Load(const StitchContext &context, const bytestring &data) {
         switch(PeekType(data)) {
             case NalUnitSPS:
                 return std::make_shared<SequenceParameterSet>(context, data);
@@ -22,7 +22,7 @@ namespace lightdb::hevc {
         }
     }
 
-    SliceSegmentLayer Load(const Context &context, const bytestring &data, const Headers &headers) {
+    SliceSegmentLayer Load(const StitchContext &context, const bytestring &data, const Headers &headers) {
         switch(PeekType(data)) {
             case NalUnitCodedSliceIDRWRADL:
                 return IDRSliceSegmentLayer(context, data, headers);

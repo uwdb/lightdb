@@ -1,6 +1,7 @@
 #ifndef LIGHTDB_REFERENCE_H
 #define LIGHTDB_REFERENCE_H
 
+#include "errors.h"
 #include <memory>
 #include <unordered_map>
 #include <optional>

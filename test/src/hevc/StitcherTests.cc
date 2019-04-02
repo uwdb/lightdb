@@ -1,4 +1,4 @@
-#include "Context.h"
+#include "StitchContext.h"
 #include "Stitcher.h"
 #include "AssertVideo.h"
 #include "functional.h"
@@ -39,7 +39,7 @@ TEST_F(StitcherTestFixture, testStitch2x1) {
             [](auto i) { return load_tile(i); });
 
     {
-        lightdb::hevc::Context context({rows, columns}, {height, width});
+        lightdb::hevc::StitchContext context({rows, columns}, {height, width});
         lightdb::hevc::Stitcher stitcher(context, tiles);
         std::ofstream out(kOutputFilename);
 
@@ -62,7 +62,7 @@ TEST_F(StitcherTestFixture, testStitch1x2) {
             [](auto i) { return load_tile(i); });
 
     {
-        lightdb::hevc::Context context({rows, columns}, {height, width});
+        lightdb::hevc::StitchContext context({rows, columns}, {height, width});
         lightdb::hevc::Stitcher stitcher(context, tiles);
         std::ofstream out(kOutputFilename);
 
@@ -86,7 +86,7 @@ TEST_F(StitcherTestFixture, testStitch2x2) {
             [](auto i) { return load_tile(i); });
 
     {
-        lightdb::hevc::Context context({rows, columns}, {height, width});
+        lightdb::hevc::StitchContext context({rows, columns}, {height, width});
         lightdb::hevc::Stitcher stitcher(context, tiles);
         std::ofstream out(kOutputFilename);
 
@@ -112,7 +112,7 @@ TEST_F(StitcherTestFixture, testStitch4x4) {
             [](auto i) { return load_tile(i); });
 
    {
-       lightdb::hevc::Context context({rows, columns}, {height, width});
+       lightdb::hevc::StitchContext context({rows, columns}, {height, width});
        lightdb::hevc::Stitcher stitcher(context, tiles);
        std::ofstream out(kOutputFilename);
 

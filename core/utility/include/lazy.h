@@ -16,6 +16,8 @@ public:
 
     lazy(const lazy&) = default;
     lazy(lazy &&) noexcept = default;
+    lazy& operator=(const lazy&) = default;
+    lazy& operator=(lazy&&) noexcept = default;
 
     constexpr T* operator->() { return &value(); }
     constexpr T& operator*() & { return value(); }

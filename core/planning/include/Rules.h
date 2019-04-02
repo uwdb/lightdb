@@ -56,8 +56,8 @@ namespace lightdb::optimization {
 
         bool visit(const logical::ScannedLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
-                for(const auto &stream: node.metadata().streams()) {
-                    //auto stream = node.metadata().streams()[0];
+                for(const auto &stream: node.entry().sources()) {
+                    //auto stream = node.entry().streams()[0];
                     auto logical = plan().lookup(node);
 
                     if((stream.codec() == Codec::h264() ||
@@ -108,7 +108,7 @@ namespace lightdb::optimization {
                     //auto gpu = plan().environment().gpus()[0];
                     auto gpu = plan().allocator().gpu();
 
-                    auto &scan = plan().emplace<physical::ScanSingleFileDecodeReader>(logical, node.stream());
+                    auto &scan = plan().emplace<physical::ScanSingleFileDecodeReader>(logical, node.source());
                     auto decode = plan().emplace<physical::GPUDecodeFromCPU>(logical, scan, gpu);
 
                     auto children = plan().children(plan().lookup(node));
@@ -119,7 +119,7 @@ namespace lightdb::optimization {
                             //plan().emplace<physical::GPUOperatorAdapter>(tees->physical(index), decode);
                     }
                 } else if(node.codec() == Codec::boxes()) {
-                    auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, node.stream());
+                    auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, node.source());
                     auto decode = plan().emplace<physical::CPUFixedLengthRecordDecode<Rectangle>>(logical, scan);
                 }
 
@@ -216,10 +216,10 @@ namespace lightdb::optimization {
             else if(!node.parents()[0].is<logical::ScannedLightField>() || !node.parents()[1].is<logical::ScannedLightField>())
                 return false;
             //TODO should pay attention to all streams
-            else if(node.parents()[0].downcast<logical::ScannedLightField>().metadata().streams()[0].codec() != Codec::boxes())
+            else if(node.parents()[0].downcast<logical::ScannedLightField>().entry().sources()[0].codec() != Codec::boxes())
                 return false;
-            else if(node.parents()[1].downcast<logical::ScannedLightField>().metadata().streams()[0].codec() != Codec::h264() &&
-                    node.parents()[1].downcast<logical::ScannedLightField>().metadata().streams()[0].codec() != Codec::hevc())
+            else if(node.parents()[1].downcast<logical::ScannedLightField>().entry().sources()[0].codec() != Codec::h264() &&
+                    node.parents()[1].downcast<logical::ScannedLightField>().entry().sources()[0].codec() != Codec::hevc())
                 return false;
             else {
                 auto unioned = plan().emplace<physical::GPUBoxOverlayUnion>(
@@ -470,19 +470,19 @@ namespace lightdb::optimization {
             } else if(!plan().has_physical_assignment(node) && is_discrete) {
                 auto downsampled = hardcoded_parent->logical().try_downcast<logical::DiscretizedLightField>();
                 auto scanned = downsampled.has_value() ? hardcoded_parent->logical()->parents()[0].downcast<logical::ScannedLightField>() : hardcoded_parent->logical().downcast<logical::ScannedLightField>();
-                auto &parent_geometry = scanned.metadata().geometry();
+                auto &parent_geometry = scanned.entry().geometry();
                 auto &discrete_geometry = node.geometry();
 
-                if(scanned.metadata().streams().size() != 1)
+                if(scanned.entry().sources().size() != 1)
                     return false;
                 else if(!discrete_geometry.is<IntervalGeometry>())
                     return false;
                 else if(!parent_geometry.is<EquirectangularGeometry>())
                     return false;
                 else if((discrete_geometry.downcast<IntervalGeometry>().dimension() == Dimension::Theta &&
-                         scanned.metadata().streams()[0].configuration().width % discrete_geometry.downcast<IntervalGeometry>().size().value_or(1) == 0) ||
+                         scanned.entry().sources()[0].configuration().width % discrete_geometry.downcast<IntervalGeometry>().size().value_or(1) == 0) ||
                         (discrete_geometry.downcast<IntervalGeometry>().dimension() == Dimension::Phi &&
-                         scanned.metadata().streams()[0].configuration().height % discrete_geometry.downcast<IntervalGeometry>().size().value_or(1) == 0))
+                         scanned.entry().sources()[0].configuration().height % discrete_geometry.downcast<IntervalGeometry>().size().value_or(1) == 0))
                 {
                     if(hardcoded_parent->device() == physical::DeviceType::GPU)
                     {
@@ -521,10 +521,10 @@ namespace lightdb::optimization {
 
             if(!plan().has_physical_assignment(node) && is_linear_interpolated) {
                 auto scanned = hardcoded_grandparent->logical().is<logical::ScannedLightField>() ? hardcoded_grandparent->logical().downcast<logical::ScannedLightField>() : hardcoded_greatgrandparent->logical().downcast<logical::ScannedLightField>();
-                auto &scanned_geometry = scanned.metadata().geometry();
+                auto &scanned_geometry = scanned.entry().geometry();
                 auto &discrete_geometry = node.geometry();
 
-                if(scanned.metadata().streams().size() != 1)
+                if(scanned.entry().sources().size() != 1)
                     return false;
                 else if(!discrete_geometry.is<IntervalGeometry>())
                     return false;
@@ -661,8 +661,6 @@ namespace lightdb::optimization {
                 if(physical_parents.empty())
                     return false;
 
-                LOG(WARNING) << "Randomly picking HEVC as codec";
-
                 auto encode = Encode(node, physical_parents[0]);
                 plan().emplace<physical::Store>(plan().lookup(node), encode);
                 return true;
@@ -733,7 +731,7 @@ namespace lightdb::optimization {
                 if(physical_parents.empty())
                     return false;
 
-                plan().emplace<physical::SaveToFile>(plan().lookup(node), physical_parents.at(0));
+                plan().emplace<physical::SaveToFile>(plan().lookup(node), physical_parents.front());
                 return true;
             }
             return false;
