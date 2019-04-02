@@ -19,7 +19,7 @@ namespace lightdb::hevc {
         * @param data The byte stream
         * @param headers The headers associated with this segment
         */
-        SliceSegmentLayer(const Context &context, const bytestring &data, Headers headers)
+        SliceSegmentLayer(const StitchContext &context, const bytestring &data, Headers headers)
                 : Nal(context, data),
                   data_(RemoveEmulationPrevention(data, GetHeaderSize(), kMaxHeaderLength)),
                   headers_(std::move(headers)),
@@ -78,7 +78,7 @@ namespace lightdb::hevc {
         * @param data The byte stream
         * @param headers The headers associated with this segment
         */
-        IDRSliceSegmentLayer(const Context &context, const bytestring &data, const Headers &headers);
+        IDRSliceSegmentLayer(const StitchContext &context, const bytestring &data, const Headers &headers);
     };
 
     class TrailRSliceSegmentLayer : public SliceSegmentLayer {
@@ -90,7 +90,7 @@ namespace lightdb::hevc {
         * @param data The byte stream
         * @param headers The headers associated with this segment
         */
-        TrailRSliceSegmentLayer(const Context &context, const bytestring &data, const Headers &headers);
+        TrailRSliceSegmentLayer(const StitchContext &context, const bytestring &data, const Headers &headers);
 
     };
 }; //namespace lightdb::hevc

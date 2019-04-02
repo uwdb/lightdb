@@ -3,9 +3,15 @@
 #include "errors.h"
 #include "Gpac.h"
 #include "isomedia.h"
+#include "media_tools.h"
 
 namespace lightdb::video::gpac {
-    Codec GetStreamCodec(GF_ISOFile *file, unsigned int track, unsigned int stream) {
+    auto disable_gpac_progress_stderr = []() {
+        gf_set_progress_callback(nullptr, [](auto data, auto title, auto done, auto total) {});
+        return true;
+    }();
+
+    Codec get_codec(GF_ISOFile *file, unsigned int track, unsigned int stream) {
         if(gf_isom_get_avc_svc_type(file, track, stream) != GF_ISOM_AVCTYPE_NONE)
             return Codec::h264();
         else if(gf_isom_get_hevc_lhvc_type(file, track, stream) != GF_ISOM_HEVCTYPE_NONE)
@@ -14,8 +20,8 @@ namespace lightdb::video::gpac {
             throw GpacRuntimeError("Unsupported GPAC codec", GF_IO_ERR);
     }
 
-    std::vector<catalog::Stream> GetStreams(const std::filesystem::path &filename) {
-        std::vector<catalog::Stream> results;
+    std::vector<catalog::Source> get_streams(const std::filesystem::path &filename) {
+        std::vector<catalog::Source> results;
         GF_ISOFile *file;
         unsigned int tracks;
         const char *url, *urn;
@@ -23,7 +29,7 @@ namespace lightdb::video::gpac {
 
         if((file = gf_isom_open(filename.c_str(), GF_ISOM_OPEN_READ_DUMP, nullptr)) == nullptr)
             throw GpacRuntimeError("Error opening file", GF_IO_ERR);
-        else if((tracks = gf_isom_get_track_count(file)) == std::numeric_limits<unsigned int>::max())
+        else if((tracks = gf_isom_get_track_count(file)) == static_cast<unsigned int>(-1))
             throw GpacRuntimeError("Error opening file", GF_IO_ERR);
 
         for(auto track = 1u; track < tracks + 1; track++) {
@@ -58,10 +64,11 @@ namespace lightdb::video::gpac {
                     std::filesystem::path stream_filename(url);
 
                     results.emplace_back(
+                            0u,
                             stream_filename.is_relative()
                             ? filename.parent_path() / stream_filename
                             : stream_filename,
-                            GetStreamCodec(file, track, stream),
+                            get_codec(file, track, stream),
                             Configuration{
                                     width,
                                     height,
@@ -80,4 +87,50 @@ namespace lightdb::video::gpac {
 
         return results;
     }
+
+    void mux_media(const std::filesystem::path &source,
+                   const std::filesystem::path &destination,
+                   const std::optional<Codec> &codec,
+                   const bool remove_source) {
+        GF_MediaImporter import{};
+        GF_Err result;
+        auto input = source.string();
+        auto extension = std::string(codec.has_value() ? codec.value().extension() : source.extension().string());
+
+        import.in_name = input.data();
+        import.force_ext = extension.data();
+
+        if((import.dest = gf_isom_open(destination.c_str(), GF_ISOM_OPEN_WRITE, nullptr)) == nullptr)
+            throw GpacRuntimeError("Error opening destination file", GF_IO_ERR);
+        else if((result = gf_media_import(&import)) != GF_OK)
+            throw GpacRuntimeError("Error importing track", result);
+        else if((result = gf_isom_close(import.dest)) != GF_OK)
+            throw GpacRuntimeError("Error closing file", result);
+        else if(remove_source && !std::filesystem::remove(source))
+            throw InvalidArgumentError("Error deleting source file", "source");
+    }
+
+    void write_metadata(const std::filesystem::path &metadata_filename,
+                        const std::vector<std::filesystem::path> &stream_filenames) {
+        GF_MediaImporter import{};
+        GF_Err result;
+
+        import.flags = GF_IMPORT_USE_DATAREF;
+
+        if((import.dest = gf_isom_open(metadata_filename.c_str(), GF_ISOM_OPEN_WRITE, nullptr)) == nullptr)
+            throw GpacRuntimeError("Error opening metadata file", GF_IO_ERR);
+
+        for(const auto &stream_filename: stream_filenames) {
+            if((import.orig = gf_isom_open(stream_filename.c_str(), GF_ISOM_OPEN_READ, nullptr)) == nullptr)
+                throw GpacRuntimeError("Error opening stream file", GF_IO_ERR);
+            else if((result = gf_media_import(&import)) != GF_OK)
+                throw GpacRuntimeError("Error importing reference track", result);
+            else if((result = gf_isom_close(import.orig)) != GF_OK)
+                throw GpacRuntimeError("Error closing file", result);
+        }
+
+        if((result = gf_isom_close(import.dest)) != GF_OK)
+            throw GpacRuntimeError("Error closing file", result);
+    }
+
 } // namespace lightdb::video::gpac

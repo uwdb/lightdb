@@ -4,7 +4,7 @@
 #include "Nal.h"
 #include "BitStream.h"
 #include "BitArray.h"
-#include "Context.h"
+#include "StitchContext.h"
 #include "Profile.h"
 #include "Emulation.h"
 #include <vector>
@@ -23,7 +23,7 @@ namespace lightdb::hevc {
          * @param context The context surrounding the Nal
          * @param data The byte stream
          */
-        SequenceParameterSet(const Context &context, const bytestring &data);
+        SequenceParameterSet(const StitchContext &context, const bytestring &data);
 
         /**
          * Sets the tile dimensions in the byte stream to be dimensions, unit of measurement being luma samples

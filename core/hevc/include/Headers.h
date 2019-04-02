@@ -1,7 +1,7 @@
 #ifndef LIGHTDB_HEADERS_H
 #define LIGHTDB_HEADERS_H
 
-#include "Context.h"
+#include "StitchContext.h"
 #include "SequenceParameterSet.h"
 #include "VideoParameterSet.h"
 #include "PictureParameterSet.h"
@@ -20,7 +20,7 @@ namespace lightdb::hevc {
          * @param context The context of the nals
          * @param nals The byte streams of the nals
          */
-        Headers(const Context &context, std::vector<bytestring> nals);
+        Headers(const StitchContext &context, std::vector<bytestring> nals);
 
         /**
          *

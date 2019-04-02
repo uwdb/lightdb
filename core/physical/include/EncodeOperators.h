@@ -36,7 +36,7 @@ private:
         explicit Runtime(GPUEncodeToCPU &physical)
             : runtime::GPUUnaryRuntime<GPUEncodeToCPU, GPUDecodedFrameData>(physical),
               encodeConfiguration_{configuration(), this->physical().codec().nvidiaId().value(), gop()},
-              encoder_{context(), encodeConfiguration_, lock()},
+              encoder_{this->context(), encodeConfiguration_, lock()},
               writer_{encoder_.api()},
               encodeSession_{encoder_, writer_}
         { }

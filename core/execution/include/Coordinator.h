@@ -57,6 +57,7 @@ public:
 
     void execute(const optimization::Plan &plan) {
         auto outputs = submit(plan);
+        auto context = execution::make<transactions::SingleNodeVolatileTransaction>(plan);
         auto iterators = functional::transform<runtime::RuntimeIterator>(
                 outputs.begin(), outputs.end(),
                 [](auto &out) { return out->runtime()->begin(); });
@@ -80,9 +81,11 @@ public:
 
     std::vector<std::string> serialize(const optimization::Plan &plan) {
         auto outputs = submit(plan);
+        auto context = execution::make<transactions::SingleNodeVolatileTransaction>(plan);
         auto iterators = functional::transform<std::pair<runtime::RuntimeIterator, std::ostringstream>>(
                 outputs.begin(), outputs.end(),
-                [](auto &out) { return std::make_pair(out->runtime()->begin(), std::ostringstream{}); });
+                [](auto &out) { return std::make_pair(out->runtime()->begin(),
+                                                              std::ostringstream{}); });
         std::vector<std::string> result;
         Progress progress(static_cast<int>(iterators.size()));
 
@@ -115,7 +118,9 @@ public:
     [[deprecated]]
     void save(const optimization::Plan &plan, std::vector<std::ostream*> streams) {
         auto outputs = submit(plan);
-        auto iterators = functional::transform<runtime::RuntimeIterator>(outputs.begin(), outputs.end(), [](auto &out) { return out->runtime()->begin(); });
+        auto context = execution::make<transactions::SingleNodeVolatileTransaction>(plan);
+        auto iterators = functional::transform<runtime::RuntimeIterator>(outputs.begin(), outputs.end(), [](auto &out) {
+            return out->runtime()->begin(); });
         Progress progress(static_cast<int>(iterators.size()));
 
         if(iterators.size() != streams.size())

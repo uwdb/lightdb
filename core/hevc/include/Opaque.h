@@ -8,7 +8,7 @@ namespace lightdb::hevc {
   class Opaque : public Nal {
   public:
 
-      Opaque(const Context &context, const bytestring &data)
+      Opaque(const StitchContext &context, const bytestring &data)
               : Nal(context, data)
       { }
 

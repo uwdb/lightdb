@@ -13,8 +13,10 @@ using namespace lightdb::execution;
 class VisitorTestFixture : public testing::Test {
 public:
     VisitorTestFixture()
-            : catalog("resources")
-    { Catalog::instance(catalog); }
+            : catalog("resources") {
+        Catalog::instance(catalog);
+        Optimizer::instance<HeuristicOptimizer>(LocalEnvironment());
+    }
 
 protected:
     Catalog catalog;
@@ -26,13 +28,7 @@ TEST_F(VisitorTestFixture, testBaz) {
     auto temporal = input.Select(SpatiotemporalDimension::Time, TemporalRange{2, 5});
     auto encoded = temporal.Encode();
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize(encoded);
-
-    //print_plan(plan);
-
-    coordinator.save(plan, "out.hevc");
+    Coordinator().execute(encoded);
 }
 
 TEST_F(VisitorTestFixture, testFoo) {
@@ -56,13 +52,7 @@ TEST_F(VisitorTestFixture, testFoo) {
     //auto encoded = gray.Encode(Codec::boxes());
     auto encoded = gray.Encode(); //Codec::boxes());
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize(encoded);
-
-    //print_plan(plan);
-
-    coordinator.save(plan, "dout.hevc");
+    Coordinator().execute(encoded);
 }
 
 TEST_F(VisitorTestFixture, testBar) {
@@ -72,13 +62,8 @@ TEST_F(VisitorTestFixture, testBar) {
     auto stored = input.Store("postred10_2");
     auto stored2 = input.Store("postred10_3");
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize({stored, stored2});
 
-    //print_plan(plan);
-
-    coordinator.save(plan, std::vector<std::string>{"dout1.hevc", "dout2.hevc"});
+    Coordinator().execute({stored, stored2});
 }
 
 TEST_F(VisitorTestFixture, testScanStore) {
@@ -86,11 +71,17 @@ TEST_F(VisitorTestFixture, testScanStore) {
     auto input = Scan(name);
     auto stored = input.Store("postred10");
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize(stored);
+    Coordinator().execute(stored);
+}
 
-    coordinator.save(plan, "dout1.hevc");
+TEST_F(VisitorTestFixture, testScanSave) {
+    auto name = "red10";
+    auto input = Scan(name);
+    auto stored = input.Encode(Codec::hevc()).Save("dout.mp4");
+
+    print_plan(stored);
+
+    Coordinator().execute(stored);
 }
 
 TEST_F(VisitorTestFixture, testInterpolateDiscretizeMap) {
@@ -105,13 +96,7 @@ TEST_F(VisitorTestFixture, testInterpolateDiscretizeMap) {
     auto boxes = downsampled.Map(yolo);
     auto encoded = boxes.Encode(Codec::boxes());
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize(encoded);
-
-    //print_plan(plan);
-
-    //coordinator.save(plan, "dout.hevc");
+    //Coordinator().execute(encoded);
     GTEST_SKIP();
 }
 
@@ -121,13 +106,7 @@ TEST_F(VisitorTestFixture, testPartitionEncode) {
     auto partitioned = input.Partition(Dimension::Theta, rational_times_real({2, 4}, PI));
     auto encoded = partitioned.Encode(Codec::hevc());
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize(encoded);
-
-    //print_plan(plan);
-
-    coordinator.save(plan, "out.hevc");
+    Coordinator().execute(encoded);
 }
 
 TEST_F(VisitorTestFixture, testPartitionPartitionEncode) {
@@ -137,13 +116,7 @@ TEST_F(VisitorTestFixture, testPartitionPartitionEncode) {
     auto partitioned2 = partitioned1.Partition(Dimension::Theta, rational_times_real({2, 4}, PI));
     auto encoded = partitioned2.Encode(Codec::hevc());
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize(encoded);
-
-    //print_plan(plan);
-
-    coordinator.save(plan, "out.hevc");
+    Coordinator().execute(encoded);
 }
 
 TEST_F(VisitorTestFixture, testPartitionSubqueryUnion) {
@@ -155,12 +128,5 @@ TEST_F(VisitorTestFixture, testPartitionSubqueryUnion) {
     auto transcoded = partitioned.Subquery([](auto l) { return l.Encode(Codec::hevc()); });
     auto encoded = transcoded.Encode(Codec::hevc());
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize(encoded);
-
-    //print_plan(plan);
-
-    coordinator.save(plan, "out.hevc");
-    //GTEST_SKIP();
+    Coordinator().execute(encoded);
 }

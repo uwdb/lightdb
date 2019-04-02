@@ -9,35 +9,36 @@ class SaveToFile: public PhysicalOperator {
 public:
     explicit SaveToFile(const LightFieldReference &logical,
                         PhysicalOperatorReference &parent)
-            : PhysicalOperator(logical, {parent}, DeviceType::CPU, runtime::make<Runtime>(*this)) {
+            : PhysicalOperator(logical, {parent}, DeviceType::CPU,
+                               runtime::make<Runtime>(*this, logical.downcast<logical::SavedLightField>())) {
         CHECK_EQ(parents().size(), 1);
     }
 
 private:
-    //TODO this should extend UnaryRuntime<SaveToFile, SerializableData>, but Unary needs adjustments
-    class Runtime: public runtime::Runtime<SaveToFile> {
+    class Runtime: public runtime::UnaryRuntime<SaveToFile, SerializableData> {
     public:
-        explicit Runtime(SaveToFile &physical)
-                : runtime::Runtime<SaveToFile>(physical),
-                  out_(physical.logical().downcast<logical::SavedLightField>().filename())
+        Runtime(SaveToFile &physical, const logical::SavedLightField &logical)
+                : runtime::UnaryRuntime<SaveToFile, SerializableData>(physical),
+                        outputs_{functional::transform<std::reference_wrapper<transactions::OutputStream>>(
+                                 physical.parents().begin(), physical.parents().end(),
+                                 [this, &logical](auto &parent) {
+                                     return std::reference_wrapper(this->physical().context()->transaction().write(logical)); }) }
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if(!all_parent_eos()) {
-                auto data = iterators().at(0)++;
-                auto &serialized = data.downcast<physical::SerializedData>();
+                auto &input = *iterator();
+                auto &output = outputs_.front().get();
 
-                std::copy(serialized.value().begin(), serialized.value().end(),
-                          std::ostreambuf_iterator<char>(out_));
-                return data;
-            } else {
-                out_.close();
+                std::copy(input.value().begin(), input.value().end(),
+                          std::ostreambuf_iterator<char>(output.stream()));
+                return iterator()++;
+            } else
                 return std::nullopt;
-            }
         }
 
     private:
-        std::ofstream out_;
+        std::vector<std::reference_wrapper<transactions::OutputStream>> outputs_;
     };
 };
 
@@ -59,8 +60,8 @@ public:
                       const std::vector<PhysicalOperatorReference> &parents)
             : PhysicalOperator(logical, parents, DeviceType::CPU, runtime::make<Runtime>(*this)),
               sources_{functional::transform<std::filesystem::path>(
-                          logical.expect_downcast<logical::StreamBackedLightField>().streams(),
-                          [](auto &s) { return s.path(); })},
+                          logical.expect_downcast<logical::StreamBackedLightField>().sources(),
+                          [](auto &s) { return s.filename(); })},
               destinations_{std::move(destinations)}
     { CHECK_EQ(sources_.size(), destinations_.size()); }
 

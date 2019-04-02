@@ -1,7 +1,7 @@
 #ifndef LIGHTDB_NAL_H
 #define LIGHTDB_NAL_H
 
-#include "Context.h"
+#include "StitchContext.h"
 #include "Encoding.h"
 #include "NalType.h"
 
@@ -28,7 +28,7 @@ namespace lightdb::hevc {
          * @param context The context of the Nal
          * @param data The bytes representing the Nal
          */
-        Nal(Context context, const lightdb::bytestring &data)
+        Nal(StitchContext context, const lightdb::bytestring &data)
                 : context_(std::move(context)),
                   byte_data_(data),
                   type_(PeekType(data)),
@@ -40,7 +40,7 @@ namespace lightdb::hevc {
          *
          * @return The context associated with this Nal
          */
-        inline const Context& GetContext() const {
+        inline const StitchContext& GetContext() const {
             return context_;
         }
 
@@ -104,7 +104,7 @@ namespace lightdb::hevc {
         static constexpr const unsigned int kForbiddenZeroIndex = 0u;
         static constexpr const unsigned int kForbiddenZeroMask = 0x80u;
 
-        const Context context_;
+        const StitchContext context_;
         const bytestring byte_data_;
         const unsigned int type_;
         const bool is_header_;
@@ -154,7 +154,7 @@ inline bool IsKeyframe(const bytestring &data) {
  * @param data The byte stream
  * @return A Nal with the correct type
  */
-std::shared_ptr<Nal> Load(const Context &context, const bytestring &data);
+std::shared_ptr<Nal> Load(const StitchContext &context, const bytestring &data);
 
 /**
  * Returns a Nal with type based on the value returned by PeekType on data
@@ -164,7 +164,7 @@ std::shared_ptr<Nal> Load(const Context &context, const bytestring &data);
  * SliceSegmentLayer)
  * @return A Nal with the correct type
  */
-SliceSegmentLayer Load(const Context &context, const bytestring &data, const Headers &headers);
+SliceSegmentLayer Load(const StitchContext &context, const bytestring &data, const Headers &headers);
 
 }; //namespace lightdb::hevc
 

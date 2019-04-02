@@ -48,13 +48,13 @@ namespace lightdb::optimization {
 
             do {
                 modified = std::any_of(_rules.begin(), _rules.end(), [this, &plan](auto &rule) {
-                    return rule->apply(environment_, plan); });
+                    return rule->apply(environment(), plan); });
             } while (modified && iteration_limit--);
 
             return plan;
         }
 
-        const execution::Environment environment() const noexcept { return environment_; }
+        inline const execution::Environment &environment() const noexcept { return environment_; }
 
     protected:
         virtual const rule_vector rules() const = 0;

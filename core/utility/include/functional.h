@@ -196,13 +196,23 @@ namespace lightdb::functional {
             ++iterator_;
         }
 
-        Element operator++(int) {
+        // We can't return a T for an abstract class, and ++this invalidates the reference, so
+        // disable this function for abstract classes
+        template <typename T=Element, typename = typename std::enable_if<!std::is_abstract<T>::value>>
+        T operator++(int) {
             auto value = **this;
             ++*this;
             return std::move(value);
         }
 
-        Element operator*() { return (*iterator_).template expect_downcast<Element>(); }
+        // This is the fallback postincrement for abstract classes -- best we can do is return the underlying iterator
+        template <typename T=Element, typename = typename std::enable_if<std::is_abstract<T>::value>>
+        auto operator++(typename std::enable_if<std::is_abstract<T>::value, int>::type) {
+            assert(iterator_ != Iterator::eos());
+            return iterator_++;
+        }
+
+        Element& operator*() { return (*iterator_).template expect_downcast<Element>(); }
 
         static const downcast_iterator<Element, Iterator> eos() {
             return downcast_iterator<Element, Iterator>();

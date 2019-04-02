@@ -2,6 +2,7 @@
 #define LIGHTDB_STOREOPERATORS_H
 
 #include "PhysicalOperators.h"
+#include "Transaction.h"
 
 namespace lightdb::physical {
 
@@ -10,46 +11,57 @@ public:
     explicit Store(const LightFieldReference &logical,
                    PhysicalOperatorReference &parent)
             : Store(logical,
-                    logical->downcast<logical::StoredLightField>(),
-                    parent)
+                    std::vector<PhysicalOperatorReference>{parent})
     { }
 
-    const Codec &codec() const { return store_.codec(); }
-    const logical::StoredLightField store() const { return store_; }
+    explicit Store(const LightFieldReference &logical,
+                   const std::vector<PhysicalOperatorReference> &parents)
+            : Store(logical,
+                    logical->downcast<logical::StoredLightField>(),
+                    parents)
+    { }
+
+    const Codec &codec() const { return codec_; }
 
 private:
     explicit Store(const LightFieldReference &logical,
                    const logical::StoredLightField &store,
-                   PhysicalOperatorReference &parent)
-            : PhysicalOperator(logical, {parent}, DeviceType::CPU, runtime::make<Runtime>(*this, store)),
-              store_(store) {
-        CHECK_EQ(parents().size(), 1);
+                   const std::vector<PhysicalOperatorReference> &parents)
+            : PhysicalOperator(logical, parents, DeviceType::CPU, runtime::make<Runtime>(*this, store)),
+              codec_(store.codec()) {
+        CHECK_GT(parents.size(), 0);
     }
 
-    class Runtime: public runtime::UnaryRuntime<Store, CPUEncodedFrameData> {
+    class Runtime: public runtime::Runtime<Store> {
     public:
-        explicit Runtime(Store &physical, const logical::StoredLightField &logical)
-            : runtime::UnaryRuntime<Store, CPUEncodedFrameData>(physical),
-              output_(physical.store().catalog().create(
-                          logical.name(),
-                          logical.codec(),
-                          configuration()))
+        Runtime(Store &physical, const logical::StoredLightField &logical)
+                : runtime::Runtime<Store>(physical),
+                  outputs_{functional::transform<std::reference_wrapper<transactions::OutputStream>>(
+                          physical.parents().begin(), physical.parents().end(),
+                          [this, &logical](auto &parent) {
+                              return std::reference_wrapper(this->physical().context()->transaction().write(logical)); }) }
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if(!all_parent_eos()) {
-                auto data = iterator()++;
-                std::copy(data.value().begin(),data.value().end(), std::ostreambuf_iterator<char>(output_.stream()));
-                return data;
+                for(auto i = 0u; i < iterators().size(); i++) {
+                    auto input = iterators().at(i)++;
+                    auto &output =  outputs_.at(i).get();
+                    auto &data = input.downcast<SerializableData>();
+
+                    std::copy(data.value().begin(),data.value().end(), std::ostreambuf_iterator<char>(output.stream()));
+                }
+
+                return EmptyData(DeviceType::CPU);
             } else
                 return std::nullopt;
         }
 
     private:
-        catalog::OutputStream output_;
+        std::vector<std::reference_wrapper<transactions::OutputStream>> outputs_;
     };
 
-    const logical::StoredLightField &store_;
+    const Codec codec_;
 };
 
 } // namespace lightdb::physical

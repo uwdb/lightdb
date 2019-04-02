@@ -7,20 +7,20 @@ namespace lightdb::physical {
 
 class ScanSingleFileDecodeReader: public PhysicalOperator {
 public:
-    explicit ScanSingleFileDecodeReader(const LightFieldReference &logical, catalog::Stream stream)
+    explicit ScanSingleFileDecodeReader(const LightFieldReference &logical, catalog::Source source)
             : PhysicalOperator(logical, DeviceType::CPU, runtime::make<Runtime>(*this)),
-              stream_(std::move(stream))
+              source_(std::move(source))
     { }
 
-    const catalog::Stream &stream() const { return stream_; }
-    const Codec &codec() const { return stream_.codec(); }
+    const catalog::Source &source() const { return source_; }
+    const Codec &codec() const { return source_.codec(); }
 
 private:
     class Runtime: public runtime::Runtime<ScanSingleFileDecodeReader> {
     public:
         explicit Runtime(ScanSingleFileDecodeReader &physical)
             : runtime::Runtime<ScanSingleFileDecodeReader>(physical),
-              reader_(physical.stream().path())
+              reader_(physical.source().filename())
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
@@ -28,9 +28,9 @@ private:
             return packet.has_value()
                    ? std::optional<physical::MaterializedLightFieldReference>{
                             physical::MaterializedLightFieldReference::make<CPUEncodedFrameData>(
-                                    physical().stream().codec(),
-                                    physical().stream().configuration(),
-                                    physical().stream().geometry(),
+                                    physical().source().codec(),
+                                    physical().source().configuration(),
+                                    physical().source().geometry(),
                                     packet.value())}
                    : std::nullopt;
         }
@@ -38,19 +38,19 @@ private:
         FileDecodeReader reader_;
     };
 
-    const catalog::Stream stream_;
+    const catalog::Source source_;
 };
 
 template<size_t Size=131072>
 class ScanSingleFile: public PhysicalOperator {
 public:
-    explicit ScanSingleFile(const LightFieldReference &logical, catalog::Stream stream)
+    explicit ScanSingleFile(const LightFieldReference &logical, catalog::Source source)
             : PhysicalOperator(logical, DeviceType::CPU, runtime::make<Runtime>(*this)),
-              stream_(std::move(stream))
+              source_(std::move(source))
     { }
 
-    const catalog::Stream &stream() const { return stream_; }
-    const Codec &codec() const { return stream_.codec(); }
+    const catalog::Source &source() const { return source_; }
+    const Codec &codec() const { return source_.codec(); }
 
 private:
     class Runtime: public runtime::Runtime<ScanSingleFile<Size>> {
@@ -58,16 +58,16 @@ private:
         explicit Runtime(ScanSingleFile &physical)
             : runtime::Runtime<ScanSingleFile<Size>>(physical),
               buffer_(Size, 0),
-              reader_(physical.stream().path())
+              reader_(physical.source().filename())
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if(!reader_.eof()) {
                 reader_.read(buffer_.data(), buffer_.size());
                 return {CPUEncodedFrameData(
-                        this->physical().stream().codec(),
-                        this->physical().stream().configuration(),
-                        this->physical().stream().geometry(),
+                        this->physical().source().codec(),
+                        this->physical().source().configuration(),
+                        this->physical().source().geometry(),
                         buffer_)};
 
             } else {
@@ -81,7 +81,7 @@ private:
         std::ifstream reader_;
     };
 
-    const catalog::Stream stream_;
+    const catalog::Source source_;
 };
 
 } // namespace lightdb::physical

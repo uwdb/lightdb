@@ -7,7 +7,7 @@ namespace lightdb::hevc {
 
     class AccessDelimiter : public Nal {
     public:
-        AccessDelimiter(const Context &context, bytestring const &data) : Nal(context, data) {}
+        AccessDelimiter(const StitchContext &context, bytestring const &data) : Nal(context, data) {}
 
         inline bytestring GetBytes() const override {
             bytestring data = Nal::GetBytes();

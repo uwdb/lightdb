@@ -16,37 +16,30 @@ namespace lightdb {
     using LightFieldReference = shared_reference<LightField, logical::Algebra>;
 
     namespace catalog {
-        class Stream {
+        class Entry;
+
+        class Source {
         public:
-            Stream(std::filesystem::path path, Codec codec, Configuration configuration)
-                    : path_(std::move(path)),
+            Source(const unsigned int index, std::filesystem::path filename,
+                   Codec codec, const Configuration &configuration)
+                    : index_(index),
+                      filename_(std::move(filename)),
                       codec_(std::move(codec)),
                       configuration_(configuration)
             { }
 
-            const std::filesystem::path& path() const { return path_; }
+            unsigned int index() const { return index_; }
+            const std::filesystem::path& filename() const { return filename_; }
             const Codec& codec() const { return codec_; }
             const Configuration& configuration() const { return configuration_; }
             //TODO
             GeometryReference geometry() const { return GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples{0u, 0u}); }
 
         private:
-            const std::filesystem::path path_;
+            const unsigned int index_;
+            const std::filesystem::path filename_;
             const Codec codec_;
             const Configuration configuration_;
-        };
-
-        class OutputStream: public Stream {
-        public:
-            OutputStream(const std::filesystem::path &path, const Codec &codec, const Configuration &configuration)
-                    : Stream(path, codec, configuration),
-                      stream_(path)
-            { }
-
-            std::ofstream& stream() { return stream_; }
-
-        private:
-            std::ofstream stream_;
         };
 
         class Catalog {
@@ -54,14 +47,6 @@ namespace lightdb {
             Catalog(const Catalog &catalog) = default;
             explicit Catalog(std::filesystem::path path)
                     : path_(std::move(asserts::CHECK_NONEMPTY(path)))
-            { }
-
-            //TODO these overloads are superfluous, but cause issues with syntax highlighting
-            explicit Catalog(const char *path)
-                : Catalog(std::filesystem::path(path))
-            { }
-            explicit Catalog(const std::string &path)
-                : Catalog(std::filesystem::path(path))
             { }
 
             static const Catalog &instance()
@@ -72,52 +57,64 @@ namespace lightdb {
                     throw CatalogError("No ambient catalog specified", "instance");
             }
             static const Catalog &instance(Catalog catalog) { return instance_.emplace(catalog); }
-
             static bool catalog_exists(const std::filesystem::path &path);
 
-            LightFieldReference get(const std::string &name) const;
+            LightFieldReference get(const std::string &name, bool create=false) const;
+            LightFieldReference create(const std::string& name) const;
             bool exists(const std::string &name) const;
-            OutputStream create(const std::string& name, const Codec &codec, const Configuration &configuration) const;
-
-            class Metadata {
-                friend class Catalog;
-
-                Metadata(const Catalog &catalog, std::string name, std::filesystem::path path)
-                        : catalog_(catalog), name_(std::move(name)), path_(std::move(path)),
-                        //TODO grab boxes and load volume/geometry, detect colorspace
-                          volume_({{0, 0}, {0, 0}, {0, 0}, {0, 10}, ThetaRange::limits(), PhiRange::limits()}),
-                          colorSpace_(YUVColorSpace::instance()),
-                        //TODO move geometry to streams
-                          geometry_(EquirectangularGeometry(EquirectangularGeometry::Samples())),
-                          streams_(get_streams(path_))
-                { }
-
-            public:
-                const Volume& volume() const noexcept { return volume_; }
-                const ColorSpace& colorSpace() const noexcept { return colorSpace_; }
-                const GeometryReference geometry() const noexcept { return geometry_; }
-                const std::string path() const noexcept { return path_; }
-                const std::vector<Stream>& streams() const noexcept { return streams_; }
-
-            private:
-                const Catalog &catalog_;
-                const std::string name_;
-                const std::filesystem::path path_;
-                const Volume volume_;
-                const ColorSpace colorSpace_;
-                const GeometryReference geometry_;
-                const std::vector<Stream> streams_;
-            };
 
         private:
             Catalog() : path_("") { }
 
             const std::filesystem::path path_;
 
-            static constexpr const char *metadataFilename_ = "metadata.mp4";
+            inline Entry entry(const std::string &name) const;
+
             static std::optional<Catalog> instance_;
-            static std::vector<Stream> get_streams(const std::filesystem::path&);
-            inline Catalog::Metadata metadata(const std::string &name) const;
+        };
+
+        class Entry {
+            friend class Catalog;
+
+            Entry(const Catalog &catalog, std::string name, std::filesystem::path path)
+                    : catalog_(catalog),
+                      name_(std::move(name)),
+                      path_(std::move(path)),
+                    //TODO grab boxes and load volume/geometry, detect colorspace
+                      volume_({{0, 0}, {0, 0}, {0, 0}, {0, 10}, ThetaRange::limits(), PhiRange::limits()}),
+                      colorSpace_(YUVColorSpace::instance()),
+                    //TODO move geometry to streams
+                      geometry_(EquirectangularGeometry(EquirectangularGeometry::Samples())),
+                      version_(load_version(path_)),
+                      sources_(load_sources())
+            { CHECK(std::filesystem::exists(path_)); }
+
+        public:
+            inline const std::string& name() const noexcept { return name_; }
+            inline const Catalog& catalog() const noexcept { return catalog_; }
+            inline const Volume& volume() const noexcept { return volume_; }
+            inline const ColorSpace& colorSpace() const noexcept { return colorSpace_; }
+            inline const GeometryReference geometry() const noexcept { return geometry_; }
+            inline const std::filesystem::path path() const noexcept { return path_; }
+            inline const std::vector<Source>& sources() const noexcept { return sources_; }
+            inline unsigned int version() const { return version_; }
+            inline unsigned int version(const unsigned int version) { return version_ = version; }
+
+            static unsigned int load_version(const std::filesystem::path &path);
+            static unsigned int write_version(const std::filesystem::path &path, unsigned int version);
+            static unsigned int increment_version(const std::filesystem::path &path);
+
+        private:
+            std::vector<Source> load_sources();
+
+            const Catalog &catalog_;
+            const std::string name_;
+            const std::filesystem::path path_;
+            const Volume volume_;
+            const ColorSpace colorSpace_;
+            const GeometryReference geometry_;
+            unsigned int version_;
+            std::vector<Source> sources_;
         };
     } //namespace catalog
 } //namespace lightdb

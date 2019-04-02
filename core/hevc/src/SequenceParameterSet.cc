@@ -4,7 +4,7 @@
 
 namespace lightdb::hevc {
 
-    SequenceParameterSet::SequenceParameterSet(const Context &context, const bytestring &data)
+    SequenceParameterSet::SequenceParameterSet(const StitchContext &context, const bytestring &data)
             : Nal(context, data),
               data_(RemoveEmulationPrevention(data, GetHeaderSize(), data.size())),
               metadata_(data_.begin(), data_.begin() + GetHeaderSizeInBits()) {

@@ -2,10 +2,14 @@
 #define LIGHTDB_PLAN_H
 
 #include "LightField.h"
-#include "PhysicalOperators.h"
 #include "Environment.h"
 #include "Allocator.h"
 #include "set.h"
+
+namespace lightdb {
+    class PhysicalOperator;
+    using PhysicalOperatorReference = shared_reference<PhysicalOperator, AddressableMixin<PhysicalOperator>>;
+}
 
 namespace lightdb::optimization {
     class Plan {
@@ -25,17 +29,16 @@ namespace lightdb::optimization {
             std::for_each(first, last, std::bind(&Plan::associate, this, std::placeholders::_1));
         }
 
+        Plan(const Plan&) = default;
+        Plan(Plan&&) = default;
+
         void associate(const LightFieldReference &node) {
             nodes_.insert(std::make_pair(node.operator->(), node));
             std::for_each(node->parents().begin(), node->parents().end(),
                           std::bind(&Plan::associate, this, std::placeholders::_1));
         }
 
-        const PhysicalOperatorReference& add(const PhysicalOperatorReference &physical) {
-            physical_.insert(physical);
-            assign(physical->logical(), physical);
-            return physical;
-        }
+        const PhysicalOperatorReference& add(const PhysicalOperatorReference &physical);
 
         template<typename PhysicalLightField, typename... Args>
         const PhysicalOperatorReference& emplace(Args&&... args) {
@@ -44,11 +47,7 @@ namespace lightdb::optimization {
             return value;
         }
 
-        void assign(const LightFieldReference &node, const PhysicalOperatorReference &physical) {
-            if(assigned_.find(&*node) == assigned_.end())
-                assigned_[&*node] = {};
-            assigned_[&*node].insert(physical);
-        }
+        void assign(const LightFieldReference &node, const PhysicalOperatorReference &physical);
 
         inline bool has_physical_assignment(const LightField &node) { return has_physical_assignment(lookup(node)); }
 
@@ -58,43 +57,11 @@ namespace lightdb::optimization {
 
         inline auto assignments(const LightField &node) const { return assignments(lookup(node)); }
 
-        const set<PhysicalOperatorReference> assignments(const LightFieldReference &reference) const {
-            auto element = assigned_.find(&*reference);
-            return element != assigned_.end()
-                   ? element->second
-                   : set<PhysicalOperatorReference>{};
-        }
+        const set<PhysicalOperatorReference> assignments(const LightFieldReference &reference) const;
 
-        set<PhysicalOperatorReference> assignments(const LightFieldReference &reference) {
-            auto element = assigned_.find(&*reference);
-            return element != assigned_.end()
-                   ? element->second
-                   : set<PhysicalOperatorReference>{};
-        }
+        set<PhysicalOperatorReference> assignments(const LightFieldReference &reference);
 
-        std::vector<PhysicalOperatorReference> unassigned(const LightFieldReference &reference, const bool global=true) const {
-            auto assignments = this->assignments(reference);
-            std::set<PhysicalOperator*> nonleafs;
-            std::vector<PhysicalOperatorReference> leafs;
-
-            for(const auto &assignment: assignments)
-                for(auto& parent: assignment->parents())
-                    nonleafs.insert(&*parent);
-
-            for(const auto &assignment: assignments)
-                if(nonleafs.find(&*assignment) == nonleafs.end())
-                    leafs.push_back(assignment);
-
-            //TODO this is like O(n^999) :-/
-            if(global)
-                for (const auto &child: children(reference))
-                    for (const auto &assignment: this->assignments(child))
-                        for (const auto &parent: assignment->parents())
-                            for (auto index = 0u; index < leafs.size(); index++)
-                                if (parent == leafs[index])
-                                    leafs.erase(leafs.begin() + index--);
-            return leafs;
-        }
+        std::vector<PhysicalOperatorReference> unassigned(const LightFieldReference &reference, bool global=true) const;
 
         std::vector<LightFieldReference> children(const LightFieldReference &reference) const {
             std::vector<LightFieldReference> children;
@@ -107,35 +74,11 @@ namespace lightdb::optimization {
             return children;
         }
 
-        set<PhysicalOperatorReference> children(const PhysicalOperatorReference &reference) const {
-            set<PhysicalOperatorReference> children;
+        set<PhysicalOperatorReference> children(const PhysicalOperatorReference &reference) const;
 
-            for(const auto &node: physical_)
-                for(const auto &parent: node->parents())
-                    if(parent == reference)
-                        children.insert(node);
+        void replace_assignments(const PhysicalOperatorReference &original, const PhysicalOperatorReference &replacement);
 
-            return children;
-        }
-
-        void replace_assignments(const PhysicalOperatorReference &original, const PhysicalOperatorReference &replacement) {
-            for(auto &[logical, assignments]: assigned_)
-                if(assignments.find(original) != assignments.end()) {
-                    assignments.erase(original);
-                    assignments.insert(replacement);
-                }
-
-            for(auto &physical: physical_) {
-                auto &parents = physical->parents();
-                if(std::find(parents.begin(), parents.end(), original) != parents.end()) {
-                    parents.erase(std::remove(parents.begin(), parents.end(), replacement), parents.end());
-                    std::replace(parents.begin(), parents.end(), original, replacement);
-                }
-            }
-
-            physical_.erase(original);
-        }
-
+        inline auto& physical() { return physical_; }
         inline const auto& physical() const { return physical_; }
         inline const auto& environment() const { return environment_; }
         inline auto& allocator() const { return *allocator_; }

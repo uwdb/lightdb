@@ -18,7 +18,7 @@ namespace lightdb::hevc {
          * @param context The context surrounding the Nal
          * @param data The byte stream
          */
-        VideoParameterSet(const Context &context, const bytestring &data)
+        VideoParameterSet(const StitchContext &context, const bytestring &data)
                 : Nal(context, data),
                   data_(data),
                   profile_size_(GetSizeInBits(VPSMaxSubLayersMinus1())) {

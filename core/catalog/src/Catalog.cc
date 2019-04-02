@@ -2,6 +2,7 @@
 #include "LightField.h"
 #include "PhysicalOperators.h"
 #include "Model.h"
+#include "Transaction.h"
 #include "Gpac.h"
 
 namespace lightdb::catalog {
@@ -14,38 +15,65 @@ namespace lightdb::catalog {
 
     bool Catalog::exists(const std::string &name) const {
         auto path = std::filesystem::absolute(path_ / name);
-        auto metadataFilename = path / metadataFilename_;
-        return std::filesystem::exists(metadataFilename) &&
-               std::filesystem::is_regular_file(metadataFilename);
+        return std::filesystem::exists(path) &&
+               std::filesystem::is_directory(path);
     }
 
-    Catalog::Metadata Catalog::metadata(const std::string &name) const {
+    Entry Catalog::entry(const std::string &name) const {
         auto path = std::filesystem::absolute(path_ / name);
-        return Catalog::Metadata{*this, name, path};
+        return Entry{*this, name, path};
     }
 
-    LightFieldReference Catalog::get(const std::string &name) const {
-        if(!exists(name))
-            throw CatalogError(std::string("Light field ") + name + " does not exist in catalog " + path_.string(), name);
+    unsigned int Entry::load_version(const std::filesystem::path &path) {
+        auto filename = Files::version_filename(path);
+
+        if(std::filesystem::exists(filename)) {
+            std::ifstream f(filename);
+            return static_cast<unsigned int>(stoul(std::string(std::istreambuf_iterator<char>(f),
+                                                   std::istreambuf_iterator<char>())));
+        } else
+            return 0u;
+    }
+
+    unsigned int Entry::write_version(const std::filesystem::path &path, const unsigned int version) {
+        auto string = std::to_string(version);
+
+        std::ofstream output(catalog::Files::version_filename(path));
+        std::copy(string.begin(), string.end(), std::ostreambuf_iterator<char>(output));
+
+        return version;
+    }
+
+    unsigned int Entry::increment_version(const std::filesystem::path &path) {
+        return write_version(path, load_version(path) + 1);
+    }
+
+
+    std::vector<Source> Entry::load_sources() {
+        auto filename = Files::metadata_filename(path(), version());
+
+        return std::filesystem::exists(filename)
+            ? video::gpac::get_streams(filename)
+            : std::vector<Source>{};
+    }
+
+    LightFieldReference Catalog::get(const std::string &name, const bool create) const {
+        if(exists(name))
+            return LightFieldReference::make<logical::ScannedLightField>(entry(name));
+        else if(create)
+            return this->create(name);
         else
-            return LightFieldReference::make<logical::ScannedLightField>(metadata(name));
+            throw CatalogError(std::string("Light field ") + name + " does not exist in catalog " + path_.string(), name);
     }
 
-    OutputStream Catalog::create(const std::string& name, const Codec &codec, const Configuration &configuration) const {
+    LightFieldReference Catalog::create(const std::string& name) const {
         auto path = std::filesystem::absolute(path_ / name);
-        auto metadataFilename = path / metadataFilename_;
-        auto streamFilename = path / "stream0.hevc";
 
         if(!std::filesystem::exists(path))
             std::filesystem::create_directory(path);
+        else
+            throw CatalogError("Entry already exists", name);
 
-        LOG(INFO) << "Assuming TLF version 0";
-        LOG(WARNING) << "Not creating catalog metadata";
-        return OutputStream(streamFilename, codec, configuration);
+        return LightFieldReference::make<logical::ScannedLightField>(Entry{*this, name, path});
     }
-
-    std::vector<Stream> Catalog::get_streams(const std::filesystem::path &path) {
-        return video::gpac::GetStreams(path / metadataFilename_);
-    }
-
 } // namespace lightdb::catalog

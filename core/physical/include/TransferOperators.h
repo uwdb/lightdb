@@ -15,7 +15,9 @@ public:
 private:
     class Runtime: public runtime::Runtime<> {
     public:
-        explicit Runtime(PhysicalOperator &physical) : runtime::Runtime<>(physical) { }
+        explicit Runtime(PhysicalOperator &physical)
+            : runtime::Runtime<>(physical)
+        { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if(iterators()[0] != iterators()[0].eos()) {

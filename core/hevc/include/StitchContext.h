@@ -1,11 +1,11 @@
-#ifndef LIGHTDB_CONTEXT_H
-#define LIGHTDB_CONTEXT_H
+#ifndef LIGHTDB_STITCHCONTEXT_H
+#define LIGHTDB_STITCHCONTEXT_H
 
 #include <utility>
 
 namespace lightdb::hevc {
 
-    class Context {
+    class StitchContext {
     public:
 
         /**
@@ -15,8 +15,8 @@ namespace lightdb::hevc {
          * @param video_dimensions  The video dimensions, first element being the height and the second
          * the width
          */
-        Context(const std::pair<unsigned int, unsigned int>& tile_dimensions,
-                const std::pair<unsigned int, unsigned int>& video_dimensions)
+        StitchContext(const std::pair<unsigned int, unsigned int>& tile_dimensions,
+                      const std::pair<unsigned int, unsigned int>& video_dimensions)
                 : tile_dimensions_{tile_dimensions},
                   video_dimensions_{tile_dimensions.first * video_dimensions.first, tile_dimensions.second * video_dimensions.second}
         { }
@@ -46,4 +46,4 @@ namespace lightdb::hevc {
 
 }; //namespace lightdb::hevc
 
-#endif //LIGHTDB_CONTEXT_H
+#endif //LIGHTDB_STITCHCONTEXT_H
