@@ -1,0 +1,48 @@
+FROM ubuntu:18.04
+MAINTAINER Brandon Haynes "bhaynes@cs.washington.edu"
+
+ARG CUDA_URL=https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
+ARG INTEL_REPOSITORY_URL=https://apt.repos.intel.com/setup/intelproducts.list
+ARG INTEL_KEY_URL=https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+
+# Update timezone
+RUN apt-get update
+RUN apt-get install -y tzdata gnupg wget
+RUN dpkg-reconfigure -f noninteractive tzdata
+
+# Install Intel IPP
+RUN wget $INTEL_REPOSITORY_URL -O /etc/apt/sources.list.d/intelproducts.list
+RUN wget $INTEL_KEY_URL -O intel-key.pub
+RUN apt-key add intel-key.pub
+RUN apt-get update
+RUN apt install intel-ipp-2019.3-062
+
+# Install apt dependencies
+RUN apt-get install \
+        -y \
+        --no-install-recommends \
+      ca-certificates \
+      g++-8 \
+      libmodule-install-perl \
+      libgoogle-glog-dev \
+      libgtest-dev \
+      libopencv-dev \
+      libavcodec-dev \
+      libavformat-dev \
+      libboost1.65-all-dev \
+      libgpac-dev \
+      nvidia-384 \
+      cmake \
+      git \
+      python3-dev
+
+# Install CUDA 8.0
+RUN wget $CUDA_URL -q -O cuda.run && \
+    chmod +x cuda.run && \
+    PERL5LIB=. sh cuda.run --override --silent -toolkit \
+    rm cuda.run
+
+# Set gcc-8 to be default compiler
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 --slave /usr/bin/g++ g++ /usr/bin/g++-8
+
+WORKDIR /lightdb

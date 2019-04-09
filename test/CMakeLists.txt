@@ -2,11 +2,6 @@ enable_testing()
 
 include(${PROJECT_SOURCE_DIR}/cmake/gtest.cmake)
 
-#find_package(GTest 1.9.1 REQUIRED)
-
-# Include GTest headers
-#include_directories(${GTEST_INCLUDE_DIRS})
-
 # Include test header directories
 file(GLOB LIGHTDB_TEST_INCLUDE_DIRS "include/*")
 include_directories(${LIGHTDB_TEST_INCLUDE_DIRS})
@@ -34,6 +29,10 @@ target_compile_definitions(lightdb_test PRIVATE LIGHTDB_BENCHMARK_DATASET_PATH="
 # Build plugins used by tests
 include(ExternalProject)
 file(GLOB LIGHTDB_PLUGIN_DIRS ${CMAKE_SOURCE_DIR}/plugins/*)
+
+get_property(LIGHTDB_INCLUDES DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+string(REPLACE ";" "|" LIGHTDB_INCLUDES_STRING "${LIGHTDB_INCLUDES}")
+
 foreach(LIGHTDB_PLUGIN_DIR ${LIGHTDB_PLUGIN_DIRS})
     if (IS_DIRECTORY ${LIGHTDB_PLUGIN_DIR})
         get_filename_component(LIGHTDB_PLUGIN_NAME ${LIGHTDB_PLUGIN_DIR} NAME_WE)
@@ -44,7 +43,8 @@ foreach(LIGHTDB_PLUGIN_DIR ${LIGHTDB_PLUGIN_DIRS})
                 SOURCE_DIR ${LIGHTDB_PLUGIN_DIR}
                 BINARY_DIR ${LIGHTDB_PLUGIN_BINARY_DIR}
                 INSTALL_DIR ${CMAKE_CURRENT_BINARY_DIR}/plugins
-                CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+                LIST_SEPARATOR |
+                CMAKE_ARGS -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DLIGHTDB_INCLUDES:list=${LIGHTDB_INCLUDES_STRING}
                 EXCLUDE_FROM_ALL TRUE
                 BUILD_ALWAYS TRUE
                 INSTALL_COMMAND ""

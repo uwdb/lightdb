@@ -1,5 +1,5 @@
 project(LightDB)
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.10)
 
 SET(BOOST_MIN_VERSION "1.64.0")
 
@@ -36,14 +36,13 @@ set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g -DNDEBUG -Wall -Wextra -Wno-unused-pa
 set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG --coverage -g3 -Wall -Wextra -Wno-unused-parameter")
 
 # Find required library dependencies
-set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} cuda nvcuvid dl pthread glog gflags stdc++fs)
+set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} nvcuvid dl pthread glog gflags stdc++fs)
 
 include(cmake/nvenc.cmake)
 
 find_package(CUDA 7.5 REQUIRED)
 include_directories(${CUDA_INCLUDE_DIRS})
-#set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${CUDA_nppi_LIBRARY})
-set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${CUDA_nvcuvenc_LIBRARY})
+set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${CUDA_CUDA_LIBRARY} ${CUDA_nvcuvenc_LIBRARY})
 
 #TODO add FindLLV.cmake; clean this up
 #TODO Do we still depend on OpenCV outside of plugins?
@@ -58,7 +57,7 @@ set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${CUDA_nvcuvenc_LIBRARY
 #include_directories(SYSTEM ${NVIDIASDK_INCLUDE_DIR})
 #set(CLANG_TIDY_EXCLUDED_SOURCES ${NVIDIASDK_SOURCES})
 
-find_package(PythonLibs 2.7 REQUIRED)
+find_package(PythonLibs 3)
 include_directories(SYSTEM ${PYTHON_INCLUDE_DIRS})
 
 find_package(Boost 1.64 COMPONENTS python filesystem system REQUIRED)
@@ -76,9 +75,9 @@ find_package (Glog REQUIRED)
 #include_directories(${Bento4_INCLUDE_DIRS})
 #add_subdirectory(${Bento4_SOURCE_DIR})
 
-#TODO Add FindGPAC.cmake
-set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} gpac)
-include_directories(SYSTEM /usr/local/include/gpac)
+find_package(GPAC REQUIRED)
+include_directories(SYSTEM ${GPAC_INCLUDE_DIRS})
+set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${GPAC_LIBRARIES})
 
 # Build LightDB library
 add_subdirectory(core)
