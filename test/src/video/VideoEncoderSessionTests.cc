@@ -9,7 +9,7 @@ class VideoEncoderSessionTestFixture : public testing::Test {
 public:
     VideoEncoderSessionTestFixture()
         : context(0),
-          configuration({1920, 1080, 0, 0, 1024*1024, {24, 1}}, NV_ENC_HEVC, 30),
+          configuration({1920, 1080, 0, 0, 1024*1024, {24, 1}, {0, 0}}, NV_ENC_HEVC, 30),
           lock(context),
           encoder(context, configuration, lock),
           writer(encoder, FILENAME),

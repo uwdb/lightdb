@@ -129,45 +129,45 @@ public:
               size_t destination_top=0, size_t destination_left=0) {
 
         CUDA_MEMCPY2D lumaPlaneParameters = {
-                srcXInBytes:   source_left,
-                srcY:          source_top,
-                srcMemoryType: CU_MEMORYTYPE_DEVICE,
-                srcHost:       nullptr,
-                srcDevice:     source.handle(),
-                srcArray:      nullptr,
-                srcPitch:      source.pitch(),
+                .srcXInBytes   =   source_left,
+                .srcY          = source_top,
+                .srcMemoryType = CU_MEMORYTYPE_DEVICE,
+                .srcHost       = nullptr,
+                .srcDevice     = source.handle(),
+                .srcArray      = nullptr,
+                .srcPitch      = source.pitch(),
 
-                dstXInBytes:   destination_left,
-                dstY:          destination_top,
-                dstMemoryType: CU_MEMORYTYPE_DEVICE,
-                dstHost:       nullptr,
-                dstDevice:     handle(),
-                dstArray:      nullptr,
-                dstPitch:      pitch(),
+                .dstXInBytes   = destination_left,
+                .dstY          = destination_top,
+                .dstMemoryType = CU_MEMORYTYPE_DEVICE,
+                .dstHost       = nullptr,
+                .dstDevice     = handle(),
+                .dstArray      = nullptr,
+                .dstPitch      = pitch(),
 
-                WidthInBytes:  std::min(width() - destination_left, source.width() - source_left),
-                Height:        std::min(height() - destination_top, source.height() - source_top) ,
+                .WidthInBytes  = std::min(width() - destination_left, source.width() - source_left),
+                .Height        = std::min(height() - destination_top, source.height() - source_top) ,
         };
 
         CUDA_MEMCPY2D chromaPlaneParameters = {
-                srcXInBytes:   source_left,
-                srcY:          source.height() + source_top / 2,
-                srcMemoryType: CU_MEMORYTYPE_DEVICE,
-                srcHost:       nullptr,
-                srcDevice:     source.handle(),
-                srcArray:      nullptr,
-                srcPitch:      source.pitch(),
+                .srcXInBytes   = source_left,
+                .srcY          = source.height() + source_top / 2,
+                .srcMemoryType = CU_MEMORYTYPE_DEVICE,
+                .srcHost       = nullptr,
+                .srcDevice     = source.handle(),
+                .srcArray      = nullptr,
+                .srcPitch      = source.pitch(),
 
-                dstXInBytes:   destination_left,
-                dstY:          height() + destination_top / 2,
-                dstMemoryType: CU_MEMORYTYPE_DEVICE,
-                dstHost:       nullptr,
-                dstDevice:     handle(),
-                dstArray:      nullptr,
-                dstPitch:      pitch(),
+                .dstXInBytes   = destination_left,
+                .dstY          = height() + destination_top / 2,
+                .dstMemoryType = CU_MEMORYTYPE_DEVICE,
+                .dstHost       = nullptr,
+                .dstDevice     = handle(),
+                .dstArray      = nullptr,
+                .dstPitch      = pitch(),
 
-                WidthInBytes:  std::min(width() - destination_left, source.width() - source_left),
-                Height:        std::min(height() - destination_top, source.height() - source_top) / 2
+                .WidthInBytes  = std::min(width() - destination_left, source.width() - source_left),
+                .Height        = std::min(height() - destination_top, source.height() - source_top) / 2
         };
 
         copy(lock, {lumaPlaneParameters, chromaPlaneParameters});
@@ -286,7 +286,7 @@ private:
                 .second_field = 0,
                 .top_field_first = frame.parameters().top_field_first,
                 .unpaired_field = frame.parameters().progressive_frame == 1 || frame.parameters().repeat_first_field <= 1,
-                0, 0, 0, 0, 0, 0, 0, {}, {}};
+                0, 0, 0, 0, 0, 0, 0, {0}, {0}};
         if((result = cuvidMapVideoFrame(frame.decoder().handle(), frame.parameters().picture_index,
                                         &handle, &pitch, &mapParameters)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuvidMapVideoFrame failed", result);

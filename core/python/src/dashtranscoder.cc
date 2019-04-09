@@ -9,7 +9,7 @@
 #include <boost/python/class.hpp>
 #include <boost/python/def.hpp>
 #include <boost/python/module.hpp>
-#include <boost/python/numeric.hpp>
+//#include <boost/python/numeric.hpp>
 
 #pragma GCC diagnostic pop
 

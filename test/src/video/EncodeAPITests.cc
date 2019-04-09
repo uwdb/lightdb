@@ -8,7 +8,7 @@ class EncodeAPITestFixture : public testing::Test {
 public:
     EncodeAPITestFixture()
       : context(0),
-        configuration(Configuration{1920, 1080, 0, 0, 1024*1024, {30, 1}}, NV_ENC_HEVC, 30),
+        configuration(Configuration{1920, 1080, 0, 0, 1024*1024, {30, 1}, {0, 0}}, NV_ENC_HEVC, 30),
         lock(context),
         encoder(context, configuration, lock)
     { }
