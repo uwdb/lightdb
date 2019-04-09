@@ -14,7 +14,7 @@ CUVIDDECODECREATEINFO DecodeConfiguration::AsCuvidCreateInfo(CUvideoctxlock lock
     else if(!codec.cudaId().has_value())
         throw GpuCudaRuntimeError("Codec does not have a CUDA equivalent", CUDA_ERROR_INVALID_VALUE);
     else
-        return {
+        return CUVIDDECODECREATEINFO{
                 .ulWidth = width,
                 .ulHeight = height,
                 .ulNumDecodeSurfaces = decode_surfaces,
