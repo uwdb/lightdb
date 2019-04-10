@@ -6,5 +6,4 @@ ENV NVIDIA_DRIVER_CAPABILITIES compute,utility,video
 
 COPY . /lightdb
 
-RUN mkdir build && cd build && cmake ..
-RUN make
+RUN mkdir build && cd build && cmake .. && make
