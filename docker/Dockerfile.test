@@ -1,8 +1,7 @@
-FROM lightdb-environment:18.04
+FROM lightdb-core
 MAINTAINER Brandon Haynes "bhaynes@cs.washington.edu"
 
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility,video
 
-COPY . /lightdb
-
+RUN cd build && make lightdb_test && test/lightdb_test
