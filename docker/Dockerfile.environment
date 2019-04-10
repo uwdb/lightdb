@@ -15,7 +15,7 @@ RUN wget $INTEL_REPOSITORY_URL -O /etc/apt/sources.list.d/intelproducts.list
 RUN wget $INTEL_KEY_URL -O intel-key.pub
 RUN apt-key add intel-key.pub
 RUN apt-get update
-RUN apt install intel-ipp-2019.3-062
+RUN apt install -y intel-ipp-2019.3-062
 
 # Install apt dependencies
 RUN apt-get install \
