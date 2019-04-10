@@ -1,4 +1,4 @@
-FROM lightdb-core
+FROM lightdb/core
 MAINTAINER Brandon Haynes "bhaynes@cs.washington.edu"
 
 ENV NVIDIA_VISIBLE_DEVICES all
