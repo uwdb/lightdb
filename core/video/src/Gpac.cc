@@ -2,8 +2,8 @@
 #include "Codec.h"
 #include "errors.h"
 #include "Gpac.h"
-#include "isomedia.h"
-#include "media_tools.h"
+#include "gpac/isomedia.h"
+#include "gpac/media_tools.h"
 
 namespace lightdb::video::gpac {
     auto disable_gpac_progress_stderr = []() {
@@ -14,10 +14,19 @@ namespace lightdb::video::gpac {
     Codec get_codec(GF_ISOFile *file, unsigned int track, unsigned int stream) {
         if(gf_isom_get_avc_svc_type(file, track, stream) != GF_ISOM_AVCTYPE_NONE)
             return Codec::h264();
-        else if(gf_isom_get_hevc_lhvc_type(file, track, stream) != GF_ISOM_HEVCTYPE_NONE)
+        else if(gf_isom_get_hevc_shvc_type(file, track, stream) != GF_ISOM_HEVCTYPE_NONE)
             return Codec::hevc();
         else
             throw GpacRuntimeError("Unsupported GPAC codec", GF_IO_ERR);
+    }
+
+    // This is a temporarly function until GPAC 0.7, when we can use gf_isom_get_bitrate
+    unsigned int get_average_bitrate(GF_ISOFile *file, const unsigned int track, const unsigned int stream) {
+        std::shared_ptr<GF_DecoderConfig> decoder_configuration(gf_isom_get_decoder_config(file, track, stream));
+        if(decoder_configuration == nullptr)
+            throw GpacRuntimeError("Could not get decoder configuration from stream", GF_IO_ERR);
+        else
+            return decoder_configuration->avgBitrate;
     }
 
     std::vector<catalog::Source> get_streams(const std::filesystem::path &filename) {
@@ -43,15 +52,15 @@ namespace lightdb::video::gpac {
                     throw GpacRuntimeError("Unexpected urn associated with stream", GF_NOT_SUPPORTED);
                 else {
                     unsigned int height, width;
-                    unsigned int samples, scale, bitrate;
+                    unsigned int samples, scale;
                     unsigned long duration;
                     int left, top;
 
-                    if((result = gf_isom_get_bitrate(file, track, stream, &bitrate, nullptr, nullptr)) != GF_OK)
-                        throw GpacRuntimeError("Unexpected error getting bitrate", result);
-                    else if((samples = gf_isom_get_sample_count(file, track)) == 0)
+                    auto bitrate = get_average_bitrate(file, track, stream);
+
+                    if((samples = gf_isom_get_sample_count(file, track)) == 0)
                         throw GpacRuntimeError("Unexpected error getting sample count", GF_NOT_FOUND);
-                    else if((duration = gf_isom_get_media_original_duration(file, track)) == 0)
+                    else if((duration = gf_isom_get_media_duration(file, track)) == 0)
                         throw GpacRuntimeError("Unexpected error getting duration", GF_NOT_FOUND);
                     else if((scale = gf_isom_get_media_timescale(file, track)) == 0)
                         throw GpacRuntimeError("Unexpected error getting scale", GF_NOT_FOUND);
