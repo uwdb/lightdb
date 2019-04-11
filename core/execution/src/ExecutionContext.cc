@@ -13,8 +13,7 @@ namespace lightdb::execution {
     ExecutionContext::ExecutionContext(optimization::Plan plan, const transactions::TransactionReference &transaction)
         : plan_(std::move(plan)),
           transaction_(transaction) {
-        auto weak = this->weak_from_this();
-        set_context(plan_, !weak.expired() ? ExecutionContextReference(weak.lock()) : *this);
+        set_context(plan_, *this);
     }
 
     ExecutionContext::~ExecutionContext() {

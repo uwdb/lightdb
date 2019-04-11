@@ -11,7 +11,7 @@ namespace lightdb::optimization {
 
 namespace lightdb::execution {
 
-class ExecutionContext: public std::enable_shared_from_this<ExecutionContext> {
+class ExecutionContext {
     public:
         ExecutionContext(optimization::Plan, const transactions::TransactionReference&);
         ~ExecutionContext();
@@ -42,6 +42,10 @@ class ExecutionContext: public std::enable_shared_from_this<ExecutionContext> {
             : ExecutionContext(optimization::Plan{NullEnvironment{}, {}},
                                transactions::TransactionReference::make<NullTransaction>())
         { }
+
+        NullExecutionContext(const NullExecutionContext&) = delete;
+        NullExecutionContext(NullExecutionContext&&) = default;
+
 
     private:
         class NullEnvironment: public Environment {
