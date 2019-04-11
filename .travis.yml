@@ -4,15 +4,17 @@ services:
 dist: xenial
 
 install:
-  - docker pull lightdb:environment
-  - docker build -t lightdb:core -f docker/Dockerfile.lightdb .
+  - docker pull lightdb/core
 
 script:
-  - docker run lightdb:core ./script/test
+  - docker build -t lightdb:test -f docker/Dockerfile.test .
 
-after_success:
-  - docker build -t travis-docker-prod -f Dockerfile.prod .
-  - ./script/upload-to-docker-hub
+#script:
+#  - docker run lightdb/core mkdir build && cd build && cmake .. && make lightdb_test && cd test && ./lightdb_test
+
+#after_success:
+#  - docker build -t travis-docker-prod -f Dockerfile.prod .
+#  - ./script/upload-to-docker-hub
 #- notify on Slack \o/
 
 #  - mkdir -p build
