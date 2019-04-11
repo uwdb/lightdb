@@ -159,7 +159,7 @@ public:
     template<typename TDerived, typename... _Args>
     inline static shared_reference
     make(_Args&&... args) {
-        return shared_reference{static_cast<std::shared_ptr<T>>(std::make_shared<TDerived>(args...))};
+        return shared_reference{static_cast<std::shared_ptr<T>>(std::make_shared<TDerived>(std::forward<_Args>(args)...))};
     }
 
 private:
