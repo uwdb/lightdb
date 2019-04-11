@@ -24,11 +24,11 @@ protected:
 };
 
 TEST_F(TranscodeOptimizerTestFixture, testTranscode) {
-    auto source = Scan(Resources.red10.name);
-    auto encoded = source.Encode(Codec::hevc());
+    auto query = Scan(Resources.red10.name)
+                     .Encode(Codec::hevc())
+                     .Save(Resources.out.hevc);
 
-    auto plan = Optimizer::instance().optimize(encoded);
-    Coordinator().save(plan, Resources.out.hevc);
+    Coordinator().execute(query);
 
     EXPECT_VIDEO_VALID(Resources.out.hevc);
     EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);

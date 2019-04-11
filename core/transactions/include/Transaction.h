@@ -49,6 +49,11 @@ private:
 
 class Transaction {
 public:
+    Transaction(const Transaction&) = delete;
+    Transaction(Transaction&&) = default;
+
+    virtual ~Transaction() = default;
+
     unsigned long id() const { return id_; }
     std::vector<OutputStream> &outputs() { return outputs_; }
     const std::vector<OutputStream> &outputs() const { return outputs_; }
@@ -88,7 +93,7 @@ public:
           complete_(false)
     { }
 
-    ~SingleNodeVolatileTransaction() {
+    ~SingleNodeVolatileTransaction() override {
         if(!complete_)
             commit();
     }

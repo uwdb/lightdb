@@ -150,6 +150,8 @@ public:
                : std::nullopt;
     }
 
+    inline long use_count() const noexcept { return pointer_.use_count(); }
+
     inline std::string type() const {
         return typeid(*pointer_.get()).name();
     }

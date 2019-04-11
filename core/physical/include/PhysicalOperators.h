@@ -25,8 +25,8 @@ namespace lightdb {
         inline const std::vector<PhysicalOperatorReference>& parents() const noexcept { return parents_; }
         inline runtime::RuntimeReference runtime() { return runtime_; }
 
-        inline const execution::ExecutionContextReference &context() { return context_; }
-        inline execution::ExecutionContextReference context(const execution::ExecutionContextReference &context) {
+        inline const execution::ExecutionContextReference& context() { return context_; }
+        inline const execution::ExecutionContextReference& context(const execution::ExecutionContextReference &context) {
             return context_ = context;
         }
 

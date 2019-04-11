@@ -11,11 +11,10 @@ namespace lightdb::optimization {
 
 namespace lightdb::execution {
 
-    class ExecutionContext {
+class ExecutionContext: public std::enable_shared_from_this<ExecutionContext> {
     public:
         ExecutionContext(optimization::Plan, const transactions::TransactionReference&);
-
-        virtual ~ExecutionContext() = default;
+        ~ExecutionContext();
 
         inline const auto &environment() const { return plan_.environment(); }
         inline const auto &plan() const { return plan_; }
@@ -23,7 +22,7 @@ namespace lightdb::execution {
         inline auto &transaction() const { return *transaction_; }
 
     private:
-        const optimization::Plan plan_;
+        optimization::Plan plan_;
         const transactions::TransactionReference transaction_;
     };
 
