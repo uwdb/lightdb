@@ -14,7 +14,7 @@ namespace lightdb::video::gpac {
     Codec get_codec(GF_ISOFile *file, unsigned int track, unsigned int stream) {
         if(gf_isom_get_avc_svc_type(file, track, stream) != GF_ISOM_AVCTYPE_NONE)
             return Codec::h264();
-        else if(gf_isom_get_hevc_shvc_type(file, track, stream) != GF_ISOM_HEVCTYPE_NONE)
+        else if(gf_isom_get_hevc_lhvc_type(file, track, stream) != GF_ISOM_HEVCTYPE_NONE)
             return Codec::hevc();
         else
             throw GpacRuntimeError("Unsupported GPAC codec", GF_IO_ERR);
