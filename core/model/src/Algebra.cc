@@ -4,6 +4,8 @@
 using namespace lightdb::catalog;
 
 namespace lightdb::logical {
+    bool Check() { return true; }
+
     LightFieldReference Scan(const std::string &name) {
         return Scan(Catalog::instance(), name);
     }

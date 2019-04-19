@@ -16,6 +16,7 @@ namespace lightdb {
     }
 
     namespace logical {
+        bool Check();
         LightFieldReference Scan(const std::string &name);
         LightFieldReference Scan(const catalog::Catalog&, const std::string &name);
         LightFieldReference Load(const std::filesystem::path&, const lightdb::options<>& = {});

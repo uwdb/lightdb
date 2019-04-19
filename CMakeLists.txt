@@ -114,3 +114,6 @@ add_custom_target(
    COMMAND xargs rm -f < install_manifest.txt
    COMMAND echo "LightDB uninstalled"
 )
+
+# Python modules.
+add_subdirectory(python EXCLUDE_FROM_ALL)
