@@ -121,6 +121,26 @@ namespace lightdb {
             Physical &physical_;
         };
 
+        template<typename Physical, typename Data>
+        class Runtime<Physical, Data>: public Runtime<Physical> {
+        protected:
+            explicit Runtime(Physical &physical)
+                    : Runtime<Physical>(physical)
+            { }
+
+            template <typename T=Data, typename = typename std::enable_if<std::is_base_of<physical::FrameData, T>::value>>
+            const GeometryReference geometry(const PhysicalOperatorReference &physical) {
+                auto it = std::find(this->physical().parents().begin(), this->physical().parents().end(), physical);
+                return geometry(static_cast<size_t>(std::distance(it, std::begin(this->physical().parents()))));
+            }
+
+            template <typename T=Data, typename = typename std::enable_if<std::is_base_of<physical::FrameData, T>::value>>
+            const GeometryReference geometry(const size_t index) {
+                return (*(this->iterators().at(index).template downcast<Data>())).geometry();
+            }
+        };
+
+
         template<typename Physical, typename Data, typename BaseRuntime=Runtime<Physical>>
         class UnaryRuntime: public BaseRuntime {
         protected:
