@@ -1,0 +1,45 @@
+package lightdb.serialization;
+
+message Metadata {
+  required uint32 version = 1;
+
+  enum EntryType {
+      COMPOSITE = 0;
+      POINT     = 1;
+      PLANE     = 2;
+  };
+
+  message Volume {
+      optional double x1     = 1;
+      optional double x2     = 2;
+      optional double y1     = 3;
+      optional double y2     = 4;
+      optional double z1     = 5;
+      optional double z2     = 6;
+      optional double t1     = 7;
+      optional double t2     = 8;
+      optional double theta1 = 9;
+      optional double theta2 = 10;
+      optional double phi1   = 11;
+      optional double phi2   = 12;
+  }
+
+  message Equirectangular {
+      message Samples {
+        optional uint32 x = 1;
+        optional uint32 y = 2;
+      }
+    optional Samples samples = 1;
+  }
+
+  message Entry {
+      required EntryType type    = 1;
+      repeated Volume partitions = 2;
+
+      oneof projection {
+        Equirectangular equirectangular = 3;
+      }
+  }
+
+  repeated Entry entries = 2;
+}
