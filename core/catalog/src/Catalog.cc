@@ -53,7 +53,7 @@ namespace lightdb::catalog {
         auto filename = Files::metadata_filename(path(), version());
 
         return std::filesystem::exists(filename)
-            ? video::gpac::get_streams(filename)
+            ? video::gpac::load_metadata(filename)
             : std::vector<Source>{};
     }
 

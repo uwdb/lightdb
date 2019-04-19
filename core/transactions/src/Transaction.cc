@@ -57,16 +57,16 @@ void SingleNodeVolatileTransaction::abort() {
 }
 
 void SingleNodeVolatileTransaction::write_metadata(const std::filesystem::path& path, const unsigned int version) {
-    std::vector<std::filesystem::path> stream_filenames;
+    std::vector<OutputStream> outputs_in_this_path;
     auto filename = catalog::Files::metadata_filename(path, version);
-    auto stream_count = std::count_if(outputs().begin(), outputs().end(), [&path](auto &output) {
-        return output.entry().has_value() && output.entry().value().path() == path;
-    });
 
-    for(auto index = 0u; index < stream_count; index++)
-        stream_filenames.emplace_back(path / catalog::Files::stream_filename(path, version, index));
+    for(auto index = 0u; index < outputs().size(); index++) {
+        const auto &output = outputs().at(index);
+        if(output.entry().has_value() && output.entry().value().path() == path)
+            outputs_in_this_path.emplace_back(OutputStream(output, path, version, index));
+    }
 
-    video::gpac::write_metadata(filename, stream_filenames);
+    video::gpac::write_metadata(filename, outputs_in_this_path);
 }
 
 } // namespace lightdb::transactions

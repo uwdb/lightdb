@@ -57,22 +57,24 @@ class ExecutionContext {
         public:
             NullTransaction() : Transaction(0u) { }
 
-            transactions::OutputStream& write(const logical::StoredLightField &store) override {
+            transactions::OutputStream& write(const logical::StoredLightField &store, const GeometryReference &geometry) override {
                 LOG(WARNING) << "Writing to null transaction; this is probably not intended";
-                return transactions::Transaction::write(store);
+                return transactions::Transaction::write(store, geometry);
             }
-            transactions::OutputStream& write(const logical::SavedLightField &save) override {
+            transactions::OutputStream& write(const logical::SavedLightField &save, const GeometryReference &geometry) override {
                 LOG(WARNING) << "Writing to null transaction; this is probably not intended";
-                return transactions::Transaction::write(save);
+                return transactions::Transaction::write(save, geometry);
             }
 
-            transactions::OutputStream& write(const catalog::Catalog &catalog, const std::string &name, const Codec& codec) override {
+            transactions::OutputStream& write(const catalog::Catalog &catalog, const std::string &name,
+                                              const CompositeVolume &volume, const GeometryReference &geometry, const Codec& codec) override {
                 LOG(WARNING) << "Writing to null transaction; this is probably not intended";
-                return transactions::Transaction::write(catalog, name, codec);
+                return transactions::Transaction::write(catalog, name, volume, geometry, codec);
             }
-            transactions::OutputStream& write(const std::filesystem::path &path, const Codec &codec) override {
+            transactions::OutputStream& write(const std::filesystem::path &path, const CompositeVolume &volume,
+                                              const GeometryReference &geometry, const Codec &codec) override {
                 LOG(WARNING) << "Writing to null transaction; this is probably not intended";
-                return transactions::Transaction::write(path, codec);
+                return transactions::Transaction::write(path, volume, geometry, codec);
             }
 
             void commit() override {

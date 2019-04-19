@@ -32,14 +32,16 @@ private:
         CHECK_GT(parents.size(), 0);
     }
 
-    class Runtime: public runtime::Runtime<Store> {
+    class Runtime: public runtime::Runtime<Store, FrameData> {
     public:
         Runtime(Store &physical, const logical::StoredLightField &logical)
-                : runtime::Runtime<Store>(physical),
+                : runtime::Runtime<Store, FrameData>(physical),
                   outputs_{functional::transform<std::reference_wrapper<transactions::OutputStream>>(
                           physical.parents().begin(), physical.parents().end(),
                           [this, &logical](auto &parent) {
-                              return std::reference_wrapper(this->physical().context()->transaction().write(logical)); }) }
+                              return std::reference_wrapper(this->physical().context()->transaction().write(
+                                      logical,
+                                      this->geometry(parent))); }) }
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {

@@ -16,6 +16,8 @@
 
 #define CatalogError(message, name) \
     ::lightdb::errors::_CatalogError(message, name, __FILE__, __LINE__, __func__)
+#define SerializationError(message) \
+    ::lightdb::errors::_SerializationError(message, __FILE__, __LINE__, __func__)
 
 #define CoordinatorError(message) \
     ::lightdb::errors::_CoordinatorError(message, __FILE__, __LINE__, __func__)
@@ -120,6 +122,13 @@ namespace lightdb::errors {
 
     private:
         const std::string name_;
+    };
+
+    class _SerializationError: public LightDBError<std::runtime_error> {
+    public:
+        _SerializationError(const char *message, const char* file, int line, const char* function)
+                : LightDBError(message ? message : "Serialization error", file, line, function)
+        {  }
     };
 
     class _CoordinatorError: public LightDBError<std::runtime_error> {

@@ -21,25 +21,29 @@ namespace lightdb {
         class Source {
         public:
             Source(const unsigned int index, std::filesystem::path filename,
-                   Codec codec, const Configuration &configuration)
+                   Codec codec, const Configuration &configuration,
+                   CompositeVolume volume, GeometryReference geometry)
                     : index_(index),
                       filename_(std::move(filename)),
                       codec_(std::move(codec)),
-                      configuration_(configuration)
+                      configuration_(configuration),
+                      volume_(std::move(volume)),
+                      geometry_(geometry)
             { }
 
             unsigned int index() const { return index_; }
             const std::filesystem::path& filename() const { return filename_; }
             const Codec& codec() const { return codec_; }
             const Configuration& configuration() const { return configuration_; }
-            //TODO
-            GeometryReference geometry() const { return GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples{0u, 0u}); }
+            const GeometryReference &geometry() const { return geometry_; }
 
         private:
             const unsigned int index_;
             const std::filesystem::path filename_;
             const Codec codec_;
             const Configuration configuration_;
+            const CompositeVolume volume_;
+            const GeometryReference geometry_;
         };
 
         class Catalog {

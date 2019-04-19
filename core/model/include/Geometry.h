@@ -429,6 +429,7 @@ namespace lightdb {
                 : samples_(samples)
         { }
 
+        const Samples &samples() const noexcept { return samples_; }
 
         double u(const angle theta, const angle phi) const override { return 0; }
 

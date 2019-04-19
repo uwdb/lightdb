@@ -61,12 +61,14 @@ namespace lightdb::logical {
         return LightFieldReference::make<SubsetLightField>(this_, volume);
     }
 
-    LightFieldReference Algebra::Store(const std::string &name, const Codec &codec) {
-        return LightFieldReference::make<StoredLightField>(this_, name, catalog::Catalog::instance(), codec);
+    LightFieldReference Algebra::Store(const std::string &name, const Codec &codec,
+                                       const std::optional<GeometryReference> &geometry) {
+        return LightFieldReference::make<StoredLightField>(this_, name, catalog::Catalog::instance(), geometry, codec);
     }
 
-    LightFieldReference Algebra::Store(const std::string &name, const catalog::Catalog &catalog, const Codec &codec) {
-        return LightFieldReference::make<StoredLightField>(this_, name, catalog, codec);
+    LightFieldReference Algebra::Store(const std::string &name, const catalog::Catalog &catalog,
+                                       const Codec &codec, const std::optional<GeometryReference> &geometry) {
+        return LightFieldReference::make<StoredLightField>(this_, name, catalog, geometry, codec);
     }
 
     LightFieldReference Algebra::Sink() {

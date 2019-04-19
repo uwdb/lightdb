@@ -1,5 +1,5 @@
 project(LightDB)
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 
 SET(BOOST_MIN_VERSION "1.64.0")
 
@@ -67,6 +67,13 @@ set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${Boost_LIBRARIES})
 find_package(FFmpeg REQUIRED COMPONENTS AVCODEC AVFORMAT AVUTIL SWSCALE)
 include_directories(SYSTEM ${FFMPEG_INCLUDE_DIRS})
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${FFMPEG_LIBRARIES})
+
+# Protobufs
+find_package(Protobuf REQUIRED)
+include_directories(${PROTOBUF_INCLUDE_DIR})
+include_directories(SYSTEM ${CMAKE_BINARY_DIR}/protobuf)
+set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${Protobuf_LIBRARIES} lightdb_protobuf)
+add_subdirectory(protobuf)
 
 find_package (Glog REQUIRED)
 #find_package(ClangTidy)

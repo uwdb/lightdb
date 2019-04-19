@@ -15,14 +15,15 @@ public:
     }
 
 private:
-    class Runtime: public runtime::UnaryRuntime<SaveToFile, SerializableData> {
+    class Runtime: public runtime::UnaryRuntime<SaveToFile, FrameData> {
     public:
         Runtime(SaveToFile &physical, const logical::SavedLightField &logical)
-                : runtime::UnaryRuntime<SaveToFile, SerializableData>(physical),
+                : runtime::UnaryRuntime<SaveToFile, FrameData>(physical),
                         outputs_{functional::transform<std::reference_wrapper<transactions::OutputStream>>(
                                  physical.parents().begin(), physical.parents().end(),
                                  [this, &logical](auto &parent) {
-                                     return std::reference_wrapper(this->physical().context()->transaction().write(logical)); }) }
+                                     return std::reference_wrapper(this->physical().context()->transaction().write(
+                                             logical, this->geometry())); }) }
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
