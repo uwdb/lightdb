@@ -11,6 +11,9 @@ namespace lightdb::optimization {
 
 namespace lightdb::execution {
 
+class ExecutionContext;
+using ExecutionContextReference = shared_reference<ExecutionContext>;
+
 class ExecutionContext {
     public:
         ExecutionContext(optimization::Plan, const transactions::TransactionReference&);
@@ -22,11 +25,10 @@ class ExecutionContext {
         inline auto &transaction() const { return *transaction_; }
 
     private:
+        static const ExecutionContextReference null_context_;
         optimization::Plan plan_;
         const transactions::TransactionReference transaction_;
     };
-
-    using ExecutionContextReference = shared_reference<ExecutionContext>;
 
     template<typename Transaction>
     ExecutionContextReference make(optimization::Plan plan) {
@@ -45,7 +47,6 @@ class ExecutionContext {
 
         NullExecutionContext(const NullExecutionContext&) = delete;
         NullExecutionContext(NullExecutionContext&&) = default;
-
 
     private:
         class NullEnvironment: public Environment {

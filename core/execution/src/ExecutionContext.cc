@@ -3,6 +3,7 @@
 
 namespace lightdb::execution {
     ExecutionContextReference NullExecutionContext::instance_ = ExecutionContextReference::make<NullExecutionContext>();
+    const ExecutionContextReference ExecutionContext::null_context_ = NullExecutionContext::instance();
 
     void set_context(optimization::Plan &plan, const ExecutionContextReference &context) {
         std::for_each(plan.physical().begin(), plan.physical().end(),
@@ -17,6 +18,6 @@ namespace lightdb::execution {
     }
 
     ExecutionContext::~ExecutionContext() {
-        set_context(plan_, NullExecutionContext::instance());
+        set_context(plan_, null_context_); //NullExecutionContext::instance());
     }
 } // namespace lightdb::execution
