@@ -120,7 +120,7 @@ namespace lightdb::video::gpac {
                                     0u,
                                     0u,
                                     bitrate,
-                                    {samples * static_cast<unsigned int>(duration), scale},
+                                    {scale * samples, static_cast<unsigned int>(duration)},
                                     {static_cast<unsigned int>(left), static_cast<unsigned int>(top)}},
                              serialization::as_composite_volume(entry),
                              serialization::as_geometry(entry));
