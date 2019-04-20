@@ -41,8 +41,7 @@ void SingleNodeVolatileTransaction::commit() {
 
         auto committed_filename = output.destination_filename(
                 output.entry().has_value()
-                    ? versions[output.entry().value().path()]
-                    : 0u);
+                    ? versions[output.entry().value().path()] : 0u);
 
         if(video::gpac::can_mux(output.filename()))
             video::gpac::mux_media(output.filename(), committed_filename, output.codec());
