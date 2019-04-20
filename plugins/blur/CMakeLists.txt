@@ -8,7 +8,7 @@ include_directories(/opt/intel/ipp/include)
 include_directories(${LIGHTDB_INCLUDES})
 
 find_package(CUDA 7.5 REQUIRED)
-set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${CUDA_nppi_LIBRARY})
+set(BLUR_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ippi ippcc) #${CUDA_nppi_LIBRARY})
 
 link_directories(/opt/intel/ipp/lib/intel64)
 
