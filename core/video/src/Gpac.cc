@@ -11,6 +11,7 @@
 
 namespace lightdb::video::gpac {
     static auto constexpr METADATA_VERSION = 1u;
+    static auto constexpr MP4_EXTENSION = "mp4";
     static auto constexpr TLFD_FOURCC = v4l2_fourcc('d', 'f', 'l', 't');
     static auto _ = []() {
         GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -175,6 +176,10 @@ namespace lightdb::video::gpac {
         }
 
         write_metadata(metadata_filename, filenames, metadata);
+    }
+
+    bool can_mux(const std::filesystem::path &filename) {
+        return filename.extension() == MP4_EXTENSION;
     }
 
     void mux_media(const std::filesystem::path &source,

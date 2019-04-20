@@ -63,7 +63,7 @@ namespace lightdb::catalog {
         else if(create)
             return this->create(name);
         else
-            throw CatalogError(std::string("Light field ") + name + " does not exist in catalog " + path_.string(), name);
+            throw CatalogError(std::string("Light field '") + name + "' does not exist in catalog " + path_.string(), name);
     }
 
     LightFieldReference Catalog::create(const std::string& name) const {

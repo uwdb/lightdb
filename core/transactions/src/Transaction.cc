@@ -38,11 +38,16 @@ void SingleNodeVolatileTransaction::commit() {
     // Commit files to new version
     for(auto &output: outputs()) {
         output.stream().close();
-        video::gpac::mux_media(output.filename(),
-                               output.destination_filename(output.entry().has_value()
-                                   ? versions[output.entry().value().path()]
-                                   : 0u),
-        output.codec());
+
+        auto committed_filename = output.destination_filename(
+                output.entry().has_value()
+                    ? versions[output.entry().value().path()]
+                    : 0u);
+
+        if(video::gpac::can_mux(output.filename()))
+            video::gpac::mux_media(output.filename(), committed_filename, output.codec());
+        else
+            std::filesystem::rename(output.filename(), committed_filename);
     }
 
     // Write metadata now that streams have committed
