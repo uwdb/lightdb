@@ -1,48 +1,44 @@
 #include "VideoEncoderSession.h"
 #include "TestResources.h"
 #include "AssertVideo.h"
-#include <gtest/gtest.h>
+#include "RequiresGPUTest.h"
 
 #define FILENAME "resources/result-VideoEncoderSessionTestFixture.h265"
 
-class VideoEncoderSessionTestFixture : public testing::Test {
+class VideoEncoderSessionTestFixture : public RequiresGPUTest {
 public:
     VideoEncoderSessionTestFixture()
-        : context(0),
-          configuration({1920, 1080, 0, 0, 1024*1024, {24, 1}, {0, 0}}, NV_ENC_HEVC, 30),
-          lock(context),
-          encoder(context, configuration, lock),
-          writer(encoder, FILENAME),
-          session(encoder, writer)
+        : configuration({1920, 1080, 0, 0, 1024*1024, {24, 1}, {0, 0}}, NV_ENC_HEVC, 30),
+          encoder([this]() { return VideoEncoder(context, configuration, lock); }),
+          writer([this]() { return FileEncodeWriter(encoder, FILENAME); }),
+          session([this]() { return VideoEncoderSession(encoder, writer); })
     {}
 
 protected:
-    GPUContext context;
     EncodeConfiguration configuration;
-    VideoLock lock;
-    VideoEncoder encoder;
-    FileEncodeWriter writer;
-    VideoEncoderSession session;
+    lightdb::lazy<VideoEncoder> encoder;
+    lightdb::lazy<FileEncodeWriter> writer;
+    lightdb::lazy<VideoEncoderSession> session;
 };
 
 
 TEST_F(VideoEncoderSessionTestFixture, testConstructor) {
-    EXPECT_EQ(session.frameCount(), 0);
+    EXPECT_EQ(session->frameCount(), 0);
 }
 
 TEST_F(VideoEncoderSessionTestFixture, testFlush) {
-    ASSERT_NO_THROW(session.Flush());
-    EXPECT_EQ(session.frameCount(), 0);
+    ASSERT_NO_THROW(session->Flush());
+    EXPECT_EQ(session->frameCount(), 0);
 }
 
 TEST_F(VideoEncoderSessionTestFixture, testEncodeSingleFrame) {
     auto blackFrame = CREATE_BLACK_FRAME(configuration);
 
-    ASSERT_NO_THROW(session.Encode(blackFrame));
+    ASSERT_NO_THROW(session->Encode(blackFrame));
 
-    EXPECT_EQ(session.frameCount(), 1);
+    EXPECT_EQ(session->frameCount(), 1);
 
-    EXPECT_NO_THROW(session.Flush());
+    EXPECT_NO_THROW(session->Flush());
 
     EXPECT_VIDEO_VALID(FILENAME);
     EXPECT_VIDEO_FRAMES(FILENAME, 1);
@@ -59,11 +55,11 @@ TEST_F(VideoEncoderSessionTestFixture, testEncodeMultipleFrames) {
     auto blackFrame = CREATE_BLACK_FRAME(configuration);
 
     for(int i = 0; i < count; i++)
-        ASSERT_NO_THROW(session.Encode(blackFrame));
+        ASSERT_NO_THROW(session->Encode(blackFrame));
 
-    EXPECT_EQ(session.frameCount(), count);
+    EXPECT_EQ(session->frameCount(), count);
 
-    EXPECT_NO_THROW(session.Flush());
+    EXPECT_NO_THROW(session->Flush());
     EXPECT_VIDEO_VALID(FILENAME);
     EXPECT_VIDEO_FRAMES(FILENAME, 60);
     EXPECT_VIDEO_RESOLUTION(FILENAME, configuration.height, configuration.width);

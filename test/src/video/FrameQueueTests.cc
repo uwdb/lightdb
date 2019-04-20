@@ -1,54 +1,49 @@
 #include "FrameQueue.h"
-#include <gtest/gtest.h>
-#include <GPUContext.h>
-#include <VideoLock.h>
+#include "VideoLock.h"
+#include "RequiresGPUTest.h"
 
-class FrameQueueTestFixture : public testing::Test {
+class FrameQueueTestFixture : public RequiresGPUTest {
 public:
-    FrameQueueTestFixture () :
-            context(0),
-            lock(context),
-            queue(lock.get())
+    FrameQueueTestFixture ()
+        : queue([this]() { return CUVIDFrameQueue(lock); })
     { }
 
 protected:
-    GPUContext context;
-    VideoLock lock;
-    CUVIDFrameQueue queue;
+    lightdb::lazy<CUVIDFrameQueue> queue;
 };
 
 TEST_F(FrameQueueTestFixture, testInit) {
-  ASSERT_TRUE(queue.isEmpty());
-  ASSERT_FALSE(queue.isEndOfDecode());
+  ASSERT_TRUE(queue->isEmpty());
+  ASSERT_FALSE(queue->isEndOfDecode());
 }
 
 TEST_F(FrameQueueTestFixture, testEmptyDequeue) {
-  ASSERT_TRUE(queue.dequeue() == nullptr);
+  ASSERT_TRUE(queue->dequeue() == nullptr);
 }
 
 TEST_F(FrameQueueTestFixture, testEndOfDecode) {
-  queue.endDecode();
-  ASSERT_TRUE(queue.isEndOfDecode());
-  ASSERT_TRUE(queue.isComplete());
+  queue->endDecode();
+  ASSERT_TRUE(queue->isEndOfDecode());
+  ASSERT_TRUE(queue->isComplete());
 }
 
 TEST_F(FrameQueueTestFixture, testEnqueue) {
   CUVIDPARSERDISPINFO parameters = {.picture_index = 1};
 
-  ASSERT_TRUE(queue.isEmpty());
-  queue.enqueue(&parameters);
-  ASSERT_FALSE(queue.isEmpty());
-  ASSERT_FALSE(queue.isComplete());
+  ASSERT_TRUE(queue->isEmpty());
+  queue->enqueue(&parameters);
+  ASSERT_FALSE(queue->isEmpty());
+  ASSERT_FALSE(queue->isComplete());
 }
 
 TEST_F(FrameQueueTestFixture, testEnqueueDequeue) {
   CUVIDPARSERDISPINFO parameters = {.picture_index = 1};
 
-  ASSERT_TRUE(queue.isEmpty());
-  queue.enqueue(&parameters);
-  ASSERT_FALSE(queue.isEmpty());
-  ASSERT_TRUE(queue.dequeue() != nullptr);
-  ASSERT_TRUE(queue.isEmpty());
+  ASSERT_TRUE(queue->isEmpty());
+  queue->enqueue(&parameters);
+  ASSERT_FALSE(queue->isEmpty());
+  ASSERT_TRUE(queue->dequeue() != nullptr);
+  ASSERT_TRUE(queue->isEmpty());
   ASSERT_EQ(parameters.picture_index, 1);
 }
 
@@ -56,16 +51,16 @@ TEST_F(FrameQueueTestFixture, testMultipleEnqueue) {
   CUVIDPARSERDISPINFO parameters = {.picture_index = 0};
 
   for (unsigned int i = 0; i < FrameQueue::cnMaximumSize; i++, parameters.picture_index++) {
-    queue.enqueue(&parameters);
+    queue->enqueue(&parameters);
   }
 
-  ASSERT_FALSE(queue.isEmpty());
+  ASSERT_FALSE(queue->isEmpty());
 
   for (unsigned int i = 0; i < FrameQueue::cnMaximumSize; i++) {
-    auto frame = queue.dequeue();
+    auto frame = queue->dequeue();
     ASSERT_NE(nullptr, frame);
     ASSERT_EQ(frame->picture_index, i);
   }
 
-  ASSERT_TRUE(queue.isEmpty());
+  ASSERT_TRUE(queue->isEmpty());
 }

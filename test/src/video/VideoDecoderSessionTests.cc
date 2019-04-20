@@ -2,36 +2,33 @@
 #include "VideoDecoderSession.h"
 #include "AssertVideo.h"
 #include "TestResources.h"
+#include "RequiresGPUTest.h"
 
-class VideoDecoderSessionTestFixture : public testing::Test {
+class VideoDecoderSessionTestFixture : public RequiresGPUTest {
 public:
     VideoDecoderSessionTestFixture()
-        : context(0),
-          configuration{Resources.videos.black.h264.height, Resources.videos.black.h264.width,
+        : configuration{Resources.videos.black.h264.height, Resources.videos.black.h264.width,
                         Resources.videos.black.h264.fps, lightdb::Codec::h264()},
-          lock(context),
-          queue(lock),
-          decoder(configuration, queue, lock),
-          reader(Resources.videos.black.h264.name)
+          queue([this]() { return CUVIDFrameQueue(lock); }),
+          decoder([this]() { return CudaDecoder(configuration, queue, lock); }),
+          reader([]() { return FileDecodeReader(Resources.videos.black.h264.name); })
     { }
 
 protected:
-    GPUContext context;
     DecodeConfiguration configuration;
-    VideoLock lock;
-    CUVIDFrameQueue queue;
-    CudaDecoder decoder;
-    FileDecodeReader reader;
+    lightdb::lazy<CUVIDFrameQueue> queue;
+    lightdb::lazy<CudaDecoder> decoder;
+    lightdb::lazy<FileDecodeReader> reader;
 };
 
 
 TEST_F(VideoDecoderSessionTestFixture, testConstructor) {
-    VideoDecoderSession session(decoder, reader.begin(), reader.end());
-    ASSERT_EQ(session.decoder().handle(), decoder.handle());
+    VideoDecoderSession session(decoder, reader->begin(), reader->end());
+    ASSERT_EQ(session.decoder().handle(), decoder->handle());
 }
 
 TEST_F(VideoDecoderSessionTestFixture, testDecodeSingleFrame) {
-    VideoDecoderSession<> session(decoder, reader.begin(), reader.end());
+    VideoDecoderSession<> session(decoder, reader->begin(), reader->end());
 
     auto frame = session.decode();
     ASSERT_EQ(frame.width(), configuration.width);
@@ -39,9 +36,9 @@ TEST_F(VideoDecoderSessionTestFixture, testDecodeSingleFrame) {
     ASSERT_BLACK_FRAME(frame);
 }
 
-TEST_F(VideoDecoderSessionTestFixture, testEncodeMultipleFrames) {
+TEST_F(VideoDecoderSessionTestFixture, testDecodeMultipleFrames) {
     auto count = 60;
-    VideoDecoderSession<> session(decoder, reader.begin(), reader.end());
+    VideoDecoderSession<> session(decoder, reader->begin(), reader->end());
 
     for(int i = 0; i < count; i++) {
         auto frame = session.decode();

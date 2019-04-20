@@ -1,23 +1,19 @@
 #include "VideoEncoder.h"
 #include "VideoLock.h"
-#include <gtest/gtest.h>
-#include <FrameQueue.h>
-#include <VideoDecoder.h>
+#include "FrameQueue.h"
+#include "VideoDecoder.h"
+#include "RequiresGPUTest.h"
 
-class VideoDecoderTestFixture : public testing::Test {
+class VideoDecoderTestFixture : public RequiresGPUTest {
 public:
     VideoDecoderTestFixture()
-        : context(0),
-          configuration{1920, 1080, 30, lightdb::Codec::h264()},
-          lock(context),
-          queue(lock)
+        : configuration{1920, 1080, 30, lightdb::Codec::h264()},
+          queue([this]() { return CUVIDFrameQueue(lock); })
     {}
 
 protected:
-    GPUContext context;
     DecodeConfiguration configuration;
-    VideoLock lock;
-    CUVIDFrameQueue queue;
+    lightdb::lazy<CUVIDFrameQueue> queue;
 };
 
 
@@ -25,5 +21,5 @@ TEST_F(VideoDecoderTestFixture, testCudaConstructor) {
     CudaDecoder decoder(configuration, queue, lock);
     ASSERT_EQ(decoder.configuration().width, configuration.width);
     ASSERT_EQ(decoder.configuration().height, configuration.height);
-    ASSERT_EQ(&decoder.frame_queue(), &queue);
+    ASSERT_EQ(&decoder.frame_queue(), &queue.value());
 }
