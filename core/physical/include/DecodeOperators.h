@@ -109,7 +109,7 @@ private:
                   geometry_{geometry()},
                   buffer_size_(65536),
                   buffer_(reinterpret_cast<unsigned char*>(av_malloc(buffer_size_ + AV_INPUT_BUFFER_PADDING_SIZE)), av_free),
-                  context_(avio_alloc_context(buffer_.get(), static_cast<int>(buffer_size_), 0,
+                  context_(avio_alloc_context(buffer_.release(), static_cast<int>(buffer_size_), 0,
                                               this, &read_next_packet, nullptr, nullptr), [](auto &c) {
                                                   avio_context_free(&c); /* avio_close */ }),
                   format_(create_format()),
@@ -118,14 +118,16 @@ private:
                   codec_context_(create_codec_context()),
                   frames_(256),
                   packet_worker_(&Runtime::decode_all, this) {
-            CHECK_NOTNULL(buffer_.get());
             CHECK_NOTNULL(context_.get());
             CHECK_NOTNULL(format_.get());
             CHECK_NOTNULL(codec_.get());
             CHECK_NOTNULL(codec_context_.get());
         }
 
-        ~Runtime() {
+        Runtime(const Runtime&) = delete;
+        Runtime(Runtime&&) = delete;
+
+        ~Runtime() override {
             decoding_ = false;
             packet_worker_.join();
         }
@@ -279,7 +281,7 @@ private:
         const DecodeConfiguration configuration_;
         const GeometryReference geometry_;
         const size_t buffer_size_;
-        const std::shared_ptr<unsigned char> buffer_;
+        std::unique_ptr<unsigned char, void(*)(void*)> buffer_;
         const std::shared_ptr<AVIOContext> context_;
         const std::shared_ptr<AVFormatContext> format_;
         const unsigned int stream_index_;
