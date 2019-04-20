@@ -134,7 +134,7 @@ struct EncodeBuffer
               size_t buffer_top=0, size_t buffer_left=0) {
         auto cudaFrame = dynamic_cast<GPUFrame&>(frame).cuda();
         //CudaDecodedFrame cudaFrame(frame);
-        CUDA_MEMCPY2D lumaPlaneParameters = {
+        CUDA_MEMCPY2D lumaPlaneParameters{
                 srcXInBytes:   frame_left,
                 srcY:          frame_top,
                 srcMemoryType: CU_MEMORYTYPE_DEVICE,
@@ -155,7 +155,7 @@ struct EncodeBuffer
                 Height:        std::min(input_buffer.height - buffer_top, cudaFrame->height() - frame_top) ,
         };
 
-        CUDA_MEMCPY2D chromaPlaneParameters = {
+        CUDA_MEMCPY2D chromaPlaneParameters{
                 srcXInBytes:   frame_left,
                 srcY:          frame.height() + frame_top / 2,
                 srcMemoryType: CU_MEMORYTYPE_DEVICE,

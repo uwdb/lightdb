@@ -160,30 +160,37 @@ public:
 
     FileEncodeWriter(EncodeAPI &api, const char *filename)
             : FileEncodeWriter(api, fopen(filename, "wb")) {
-        if(file == nullptr)
+        if(file_ == nullptr)
             throw std::system_error(EFAULT, std::system_category());
     }
 
-    FileEncodeWriter(EncodeAPI &api, FILE *file): EncodeWriter(api), file(file) { }
+    FileEncodeWriter(EncodeAPI &api, FILE *file): EncodeWriter(api), file_(file) { }
+
+    FileEncodeWriter(const FileEncodeWriter&) = delete;
+    FileEncodeWriter(FileEncodeWriter &&other) noexcept
+        : FileEncodeWriter(other.api, other.file_) {
+        other.file_ = nullptr;
+    }
 
     ~FileEncodeWriter() {
-        if(file != nullptr)
-            fclose(file);
+        if(file_ != nullptr)
+            fclose(file_);
+        file_ = nullptr;
     }
 
     NVENCSTATUS Flush() override {
-        return fflush(file) == 0 ? NV_ENC_SUCCESS : NV_ENC_ERR_GENERIC;
+        return fflush(file_) == 0 ? NV_ENC_SUCCESS : NV_ENC_ERR_GENERIC;
     }
 
 protected:
     NVENCSTATUS WriteFrame(const void *buffer, const size_t size) override {
-        return fwrite(buffer, size, 1, file) == size
+        return fwrite(buffer, size, 1, file_) == size
                ? NV_ENC_SUCCESS
                : NV_ENC_ERR_GENERIC;
     }
 
 private:
-    FILE* file;
+    FILE* file_;
 };
 
 #endif //LIGHTDB_ENCODEWRITER_H
