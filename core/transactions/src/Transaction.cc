@@ -43,7 +43,7 @@ void SingleNodeVolatileTransaction::commit() {
                 output.entry().has_value()
                     ? versions[output.entry().value().path()] : 0u);
 
-        if(video::gpac::can_mux(output.filename()))
+        if(video::gpac::can_mux(committed_filename))
             video::gpac::mux_media(output.filename(), committed_filename, output.codec());
         else
             std::filesystem::rename(output.filename(), committed_filename);

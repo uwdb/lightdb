@@ -11,7 +11,7 @@
 
 namespace lightdb::video::gpac {
     static auto constexpr METADATA_VERSION = 1u;
-    static auto constexpr MP4_EXTENSION = "mp4";
+    static auto constexpr MP4_EXTENSION = ".mp4";
     static auto constexpr TLFD_FOURCC = v4l2_fourcc('d', 'f', 'l', 't');
     static auto _ = []() {
         GOOGLE_PROTOBUF_VERIFY_VERSION;
