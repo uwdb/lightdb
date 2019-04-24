@@ -81,7 +81,6 @@ public:
             return 0;
         }
 
-
         if((result = cuDeviceGetCount(&count)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuDeviceGetCount failed", result);
         else

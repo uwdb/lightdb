@@ -28,7 +28,9 @@ TEST_F(FrameQueueTestFixture, testEndOfDecode) {
 }
 
 TEST_F(FrameQueueTestFixture, testEnqueue) {
-  CUVIDPARSERDISPINFO parameters = {.picture_index = 1};
+  CUVIDPARSERDISPINFO parameters{};
+
+  parameters.picture_index = 1;
 
   ASSERT_TRUE(queue->isEmpty());
   queue->enqueue(&parameters);
@@ -37,7 +39,9 @@ TEST_F(FrameQueueTestFixture, testEnqueue) {
 }
 
 TEST_F(FrameQueueTestFixture, testEnqueueDequeue) {
-  CUVIDPARSERDISPINFO parameters = {.picture_index = 1};
+  CUVIDPARSERDISPINFO parameters{};
+
+  parameters.picture_index = 1;
 
   ASSERT_TRUE(queue->isEmpty());
   queue->enqueue(&parameters);
@@ -48,7 +52,7 @@ TEST_F(FrameQueueTestFixture, testEnqueueDequeue) {
 }
 
 TEST_F(FrameQueueTestFixture, testMultipleEnqueue) {
-  CUVIDPARSERDISPINFO parameters = {.picture_index = 0};
+  CUVIDPARSERDISPINFO parameters = {};
 
   for (unsigned int i = 0; i < FrameQueue::cnMaximumSize; i++, parameters.picture_index++) {
     queue->enqueue(&parameters);
