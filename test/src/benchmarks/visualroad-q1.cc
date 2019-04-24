@@ -16,6 +16,7 @@ public:
               random("random"),
               visualroad("visualroad"),
               vrdetrac("vr-detrac") {
+        Optimizer::instance<HeuristicOptimizer>(LocalEnvironment());
     }
 
 protected:
@@ -27,7 +28,7 @@ protected:
 
     static bool initialize() {
         //google::InitGoogleLogging("LightDB");
-        google::SetCommandLineOption("GLOG_minloglevel", "5");
+        //google::SetCommandLineOption("GLOG_minloglevel", "5");
         return true;
     }
 };
@@ -35,12 +36,13 @@ protected:
 TEST_F(Q1TestFixture, testQ1duplicate) {
     Catalog::instance(uadetrac);
 
-    auto duplicates = 60u;
+    auto duplicates = 2u;
     //auto name = "random960x540x60";
     auto name = "MVI_40244";
+    auto path = uadetrac.path() / name / "stream0.h264";
     std::vector<LightFieldReference> sinks;
 
-    auto input = Scan(name);
+    auto input = Load(path);
 
     for(auto i = 0u; i < duplicates; i++)
         sinks.emplace_back(
@@ -48,11 +50,7 @@ TEST_F(Q1TestFixture, testQ1duplicate) {
                      .Select(SpatiotemporalDimension::Time, {1, 2})
                      .Store(std::string(name) + '-' + std::to_string(i)));
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize(sinks);
-
-    coordinator.save(plan, {duplicates, "out"});
+    Coordinator().execute(sinks);
 }
 
 TEST_F(Q1TestFixture, testQ1random) {
