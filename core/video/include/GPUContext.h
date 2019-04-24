@@ -71,11 +71,18 @@ public:
 
     static size_t device_count() {
         CUresult result;
-        int count = 2;
+        int count;
 
-        if(!GPUContext::Initialize())
-            throw GpuRuntimeError("GPU context initialization failed");
-        else if((result = cuDeviceGetCount(&count)) != CUDA_SUCCESS)
+        try {
+            if(!GPUContext::Initialize())
+                throw GpuRuntimeError("GPU context initialization failed");
+        } catch(const lightdb::errors::_GpuCudaRuntimeError&) {
+            LOG(INFO) << "GPU context initialization failed; assuming no GPUs on host";
+            return 0;
+        }
+
+
+        if((result = cuDeviceGetCount(&count)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuDeviceGetCount failed", result);
         else
             CHECK_GE(count, 0);
