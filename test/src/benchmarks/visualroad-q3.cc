@@ -174,8 +174,6 @@ TEST_F(Q3TestFixture, testQ3_scale1) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
-
     coordinator.save(plan, {duplicates, "out"});
 }
 
@@ -199,8 +197,6 @@ TEST_F(Q3TestFixture, testQ3_scale2) {
     auto environment = LocalEnvironment();
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
-
-    print_plan(plan);
 
     coordinator.save(plan, {duplicates, "out"});
 }
@@ -226,8 +222,6 @@ TEST_F(Q3TestFixture, testQ3_scale4) {
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
 
-    print_plan(plan);
-
     coordinator.save(plan, {duplicates, "out"});
 }
 
@@ -251,8 +245,6 @@ TEST_F(Q3TestFixture, testQ3_scale8) {
     auto environment = LocalEnvironment();
     auto coordinator = Coordinator();
     Plan plan = HeuristicOptimizer(environment).optimize(sinks);
-
-    print_plan(plan);
 
     coordinator.save(plan, {duplicates, "out"});
 }
