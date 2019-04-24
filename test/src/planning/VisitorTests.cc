@@ -79,8 +79,6 @@ TEST_F(VisitorTestFixture, testScanSave) {
     auto input = Scan(name);
     auto stored = input.Encode(Codec::hevc()).Save("dout.mp4");
 
-    print_plan(stored);
-
     Coordinator().execute(stored);
 }
 
