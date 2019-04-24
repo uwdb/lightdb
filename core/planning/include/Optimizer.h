@@ -45,10 +45,13 @@ namespace lightdb::optimization {
             Plan plan(environment(), first, last);
             bool modified;
             auto _rules = rules();
+            auto iterations = 0u;
 
             do {
                 modified = std::any_of(_rules.begin(), _rules.end(), [this, &plan](auto &rule) {
                     return rule->apply(environment(), plan); });
+
+                LOG_IF(WARNING, iterations++ == 1000) << "Optimizer modified plan >1000 times; may not converge";
             } while (modified && iteration_limit--);
 
             return plan;

@@ -66,6 +66,7 @@ namespace lightdb {
             LightFieldReference get(const std::string &name, bool create=false) const;
             LightFieldReference create(const std::string& name) const;
             bool exists(const std::string &name) const;
+            const std::filesystem::path &path() const { return path_; }
 
         private:
             Catalog() : path_("") { }

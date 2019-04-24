@@ -3,47 +3,73 @@
 #include <queue>
 
 namespace lightdb {
+    #ifdef __GNUG__
+        #include <cxxabi.h>
 
-    void print_plan(const LightFieldReference &lightField, const std::optional<optimization::Plan> &plan) {
-        std::deque<std::pair<LightFieldReference, unsigned int>> queue{{{lightField, 0u}}};
+        std::string demangle(const char* name) {
+            int status;
 
-        while(!queue.empty()) {
-            auto current = queue.front();
-            queue.pop_front();
+            std::unique_ptr<char, void(*)(void*)> res {
+                    abi::__cxa_demangle(name, nullptr, nullptr, &status),
+                    std::free
+            };
 
-            printf("L:%*s %s\n",
-                   current.second + static_cast<int>(strlen(typeid(*current.first).name())),
-                   typeid(*current.first).name(),
-                   (plan.has_value() ? std::to_string(plan.value().assignments(current.first).size())
-                                     : std::string{}).c_str());
-
-            for(const auto &field: current.first->parents())
-                queue.push_front({field, current.second + 4});
+            return status == 0 ? res.get() : name;
         }
+    #else
+        // Identity transform if not g++
+        std::string demangle(const char* name) { return name; }
+    #endif
+
+    std::string to_string(const std::vector<LightFieldReference> &fields) {
+        std::string result;
+
+        for(const auto &field: fields)
+            result += to_string(field);
+
+        return result;
     }
 
-    void print_plan(const optimization::Plan &plan) {
-        std::deque<std::pair<PhysicalOperatorReference, unsigned int>> queue{};
-
-        for(auto &sink: plan.sinks()) {
-            print_plan(sink, plan);
-
-            for(auto &physical: plan.assignments(sink))
-                queue.push_front({physical, 0u});
-            }
+    std::string to_string(const LightFieldReference &lightField) {
+        std::deque<std::pair<LightFieldReference, unsigned int>> queue{{{lightField, 0u}}};
+        std::string result;
 
         while(!queue.empty()) {
-            auto current = queue.front();
+            const auto current = queue.front();
+            const auto &ref = *current.first;
+            const auto name = demangle(typeid(ref).name());
             queue.pop_front();
 
-            printf("P:%*s\n",
-                   current.second + static_cast<int>(strlen(typeid(*current.first).name())),
-                   typeid(*current.first).name());
+            result += std::string(current.second, ' ') + name + '\n';
 
             for(const auto &field: current.first->parents())
-                queue.push_front({field, current.second + 4});
+                queue.push_front({field, current.second + 2});
         }
-        printf("===\n");
+
+        return result;
+    }
+
+    std::string to_string(const optimization::Plan &plan) {
+        std::deque<std::pair<PhysicalOperatorReference, unsigned int>> queue{};
+        std::string result;
+
+        for(auto &physical: plan.physical())
+            if (plan.children(physical).empty())
+                queue.push_front({physical, 0u});
+
+        while(!queue.empty()) {
+            const auto current = queue.front();
+            const auto &ref = *current.first;
+            const auto name = demangle(typeid(ref).name());
+            queue.pop_front();
+
+            result += std::string(current.second, ' ') + name + '\n';
+
+            for(const auto &field: current.first->parents())
+                queue.push_front({field, current.second + 2});
+        }
+
+        return result;
     }
 
 } // namespace lightdb
