@@ -139,6 +139,14 @@ TEST_F(SelectionTestFixture, testTemporalThetaSelect) {
     EXPECT_EQ(remove(Resources.out.hevc), 0);
 }
 
+TEST_F(SelectionTestFixture, testPythonQuery) {
+    auto query = Load("/home/maureen/lightdb/test/resources/tiles/tile-0.hevc")
+                .Encode()
+                .Save("/home/maureen/saved-tile-0.hevc");
+
+    Coordinator().execute(query);
+}
+
 TEST_F(SelectionTestFixture, testDegenerateTimeSelect) {
     auto query = Scan(Resources.red10.name)
             .Select(TemporalRange::limits())
