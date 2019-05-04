@@ -7,14 +7,14 @@
 
 namespace lightdb::functional {
     template<typename T, template<typename> typename TContainer>
-    inline T single(TContainer<T> &container) {
+    inline T& single(TContainer<T> &container) {
         const auto begin = std::begin(container);
         assert(begin + 1 == std::end(container));
         return *begin;
     }
 
     template<typename T, template<typename> typename TContainer>
-    inline const T single(const TContainer<T> &container) {
+    inline const T& single(const TContainer<T> &container) {
         const auto begin = std::cbegin(container);
         assert(begin + 1 == std::cend(container));
         return *begin;
