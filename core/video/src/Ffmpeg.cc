@@ -4,9 +4,9 @@ extern "C" {
 }
 
 namespace lightdb::video::ffmpeg {
-    DecodeConfiguration GetConfigurationFromContext(const AVStream*, unsigned int bitrate);
+    static StreamConfiguration GetConfigurationFromContext(AVFormatContext*, AVStream*, unsigned int bitrate);
 
-    DecodeConfiguration GetStreamConfiguration(const std::string &filename, const size_t index, const bool probe) {
+    StreamConfiguration GetStreamConfiguration(const std::string &filename, const size_t index, const bool probe) {
         auto configurations = GetStreamConfigurations(filename, probe);
 
         if (configurations.size() < index)
@@ -15,10 +15,10 @@ namespace lightdb::video::ffmpeg {
             return configurations.at(index);
     }
 
-    std::vector<DecodeConfiguration> GetStreamConfigurations(const std::string &filename, const bool probe) {
+    std::vector<StreamConfiguration> GetStreamConfigurations(const std::string &filename, const bool probe) {
         int result;
         char error[AV_ERROR_MAX_STRING_SIZE];
-        std::vector<DecodeConfiguration> configurations;
+        std::vector<StreamConfiguration> configurations;
 
         auto context = avformat_alloc_context();
 
@@ -32,7 +32,7 @@ namespace lightdb::video::ffmpeg {
             }
 
             for(auto i = 0u; i < context->nb_streams; i++)
-                configurations.emplace_back(GetConfigurationFromContext(context->streams[i],
+                configurations.emplace_back(GetConfigurationFromContext(context, context->streams[i],
                                             static_cast<unsigned int>(context->bit_rate)));
 
             avformat_close_input(&context);
@@ -46,7 +46,27 @@ namespace lightdb::video::ffmpeg {
         }
     }
 
-    DecodeConfiguration GetConfigurationFromContext(const AVStream *stream, const unsigned int bitrate) {
+    static int64_t get_duration_using_physical_scan(AVFormatContext *context, const AVStream *stream) {
+        AVPacket packet;
+        auto duration = 0u;
+        int result;
+
+        LOG(WARNING) << "Retrieving stream duration required a complete physical scan";
+
+        for(av_init_packet(&packet); (result = av_read_frame(context, &packet)) >= 0; av_packet_unref(&packet))
+            if(packet.duration >= 0)
+                duration += packet.duration;
+            else
+                throw FfmpegRuntimeError("Could not determine stream duration; packet had duration <= 0");
+
+        if(result < 0 && result != AVERROR_EOF)
+            throw FfmpegRuntimeError("Error reading packet while determining stream duration");
+
+        return duration;
+    }
+
+    static StreamConfiguration GetConfigurationFromContext(AVFormatContext *context, AVStream *stream,
+                                                           const unsigned int bitrate) {
         if (stream->codecpar->height <= 0 ||
             stream->codecpar->width <= 0)
             throw FfmpegRuntimeError("Frame size not detected");
@@ -54,19 +74,30 @@ namespace lightdb::video::ffmpeg {
             throw FfmpegRuntimeError("No frames detected");
 
         auto codec = Codec::get(stream->codecpar->codec_id);
+
+        if(stream->duration == AV_NOPTS_VALUE)
+            stream->duration = get_duration_using_physical_scan(context, stream);
+
         if(!codec.has_value())
             throw FfmpegRuntimeError("Unsupported codec type");
+        else if(stream->duration < 0)
+            throw FfmpegRuntimeError("No duration associated with stream");
+        else if(stream->time_base.num == 0 || stream->time_base.den == 0)
+            throw FfmpegRuntimeError("No time base associated with stream");
         else
-            return DecodeConfiguration{
+            return StreamConfiguration{
+                DecodeConfiguration{
                     static_cast<unsigned int>(stream->codecpar->height),
                     static_cast<unsigned int>(stream->codecpar->width),
                     0u,
                     0u,
                     lightdb::rational{stream->r_frame_rate.num,
                                       stream->r_frame_rate.den},
-                    bitrate,
-                    codec.value()
-            };
+                                      bitrate,
+                                      codec.value()
+
+                },
+                rational{stream->duration * stream->time_base.num, stream->time_base.den}};
     }
 
     /*

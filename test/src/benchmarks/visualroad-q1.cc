@@ -36,13 +36,13 @@ protected:
 TEST_F(Q1TestFixture, testQ1duplicate) {
     Catalog::instance(uadetrac);
 
-    auto duplicates = 2u;
+    auto duplicates = 60u;
     //auto name = "random960x540x60";
     auto name = "MVI_40244";
-    auto path = uadetrac.path() / name / "stream0.h264";
+    auto path = uadetrac.path() / name / "stream0.mp4";
     std::vector<LightFieldReference> sinks;
 
-    auto input = Load(path);
+    auto input = Load(path, {{GeometryOptions::Volume, Volume::zero()}, {GeometryOptions::Projection, GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples())}});
 
     for(auto i = 0u; i < duplicates; i++)
         sinks.emplace_back(

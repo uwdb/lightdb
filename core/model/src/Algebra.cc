@@ -12,21 +12,17 @@ namespace lightdb::logical {
         return catalog.get(name);
     }
 
-    LightFieldReference Load(const std::filesystem::path& filename, const lightdb::options<>& options) {
-        auto codec_name = std::any_cast<std::string>(options.get("Codec").value_or(
-                          std::any{filename.extension().string()}));
-        auto codec = Codec::get(codec_name);
-
-        if(codec.has_value())
-            return Load(filename, codec.value());
-        else
-            throw InvalidArgumentError("Could not infer codec from options or uri", "options");
+    LightFieldReference Load(const std::filesystem::path &filename,
+                             const lightdb::options<>& options) {
+        auto entry = catalog::ExternalEntry(filename, options.get<Volume>(GeometryOptions::Volume),
+                                                      options.get<GeometryReference>(GeometryOptions::Projection));
+        return LightFieldReference::make<ExternalLightField>(filename, entry, YUVColorSpace::instance(), options);
     }
 
-    LightFieldReference Load(const std::filesystem::path &filename, const Codec& codec, const Volume& volume,
-                             const ColorSpace &colorSpace, const GeometryReference &geometry,
-                             const lightdb::options<>& options) {
-        return LightFieldReference::make<ExternalLightField>(filename, codec, volume, colorSpace, geometry, options);
+    LightFieldReference Load(const std::filesystem::path &filename, const Volume &volume,
+                             const GeometryReference &geometry, const lightdb::options<>& options) {
+        auto entry = catalog::ExternalEntry(filename, volume, geometry);
+        return LightFieldReference::make<ExternalLightField>(filename, entry, YUVColorSpace::instance(), options);
     }
 
     LightFieldReference Algebra::Save(const std::filesystem::path &filename) {

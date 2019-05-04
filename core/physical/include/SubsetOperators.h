@@ -10,6 +10,7 @@
 #include "VideoEncoderSession.h"
 #include "MaterializedLightField.h"
 #include <cstdio>
+#include <cmath>
 #include <utility>
 
 namespace lightdb::physical {
@@ -46,14 +47,14 @@ private:
                 throw InvalidArgumentError("Attempt to take frame subset of interpolated data.", "iterator");
             else if(!(*iterator()).geometry().is<EquirectangularGeometry>())
                 throw InvalidArgumentError("Attempt to take cropped subset of non-equirectangular frames.", "iterator");
-            else if(logical()->volume().bounding().theta() == physical().parent().logical()->volume().bounding().theta() &&
-               logical()->volume().bounding().phi() == physical().parent().logical()->volume().bounding().phi())
+            else if(logical()->volume().bounding().theta() == physical().parent()->logical()->volume().bounding().theta() &&
+               logical()->volume().bounding().phi() == physical().parent()->logical()->volume().bounding().phi())
                 return base;
             else {
-                auto left   = base.width * (logical()->volume().bounding().theta().start() - physical().parent().logical()->volume().bounding().theta().start()) / number(TWOPI),
-                     right  = base.width - (base.width * (physical().parent().logical()->volume().bounding().theta().end() - logical()->volume().bounding().theta().end()) / number(TWOPI)),
-                     top    = base.height * (logical()->volume().bounding().phi().start() - physical().parent().logical()->volume().bounding().phi().start()) / number(PI),
-                     bottom = base.height - (base.height * (physical().parent().logical()->volume().bounding().phi().end() - logical()->volume().bounding().phi().end()) / number(PI));
+                auto left   = base.width * (logical()->volume().bounding().theta().start() - physical().parent()->logical()->volume().bounding().theta().start()) / number(TWOPI),
+                     right  = base.width - (base.width * (physical().parent()->logical()->volume().bounding().theta().end() - logical()->volume().bounding().theta().end()) / number(TWOPI)),
+                     top    = base.height * (logical()->volume().bounding().phi().start() - physical().parent()->logical()->volume().bounding().phi().start()) / number(PI),
+                     bottom = base.height - (base.height * (physical().parent()->logical()->volume().bounding().phi().end() - logical()->volume().bounding().phi().end()) / number(PI));
 
                 LOG(INFO) << "Subset: " << static_cast<unsigned int>(right - left) << "x" <<
                           static_cast<unsigned int>(bottom - top);
@@ -192,25 +193,28 @@ private:
 
     private:
         unsigned long DefaultDelay() {
-            const auto delay = logical()->volume().bounding().t().start() - physical().parent().logical()->volume().bounding().t().start();
-            const auto delay_frames = static_cast<unsigned long>(configuration().framerate * delay);
+            const auto delay = logical()->volume().bounding().t().start() - physical().parent()->logical()->volume().bounding().t().start();
+            const auto delay_frames = std::lround(static_cast<double>(configuration().framerate * delay));
 
             CHECK_GE(delay, 0);
-            CHECK_EQ(static_cast<double>(configuration().framerate * delay), delay_frames);
+            CHECK_GE(delay_frames, 0);
 
-            return delay_frames;
+            LOG(INFO) << "Delaying output by " << delay_frames << " frames";
+
+            return static_cast<unsigned long>(delay_frames);
         }
 
         unsigned long DefaultPending() {
             const auto duration = logical()->volume().bounding().t().magnitude();
-            const auto pending_frames = static_cast<unsigned long>(configuration().framerate * duration);
+            const auto pending_frames = std::lround(static_cast<double>(configuration().framerate * duration));
 
             CHECK_GE(duration, 0);
-            CHECK_EQ(static_cast<double>(configuration().framerate * duration), pending_frames);
+            CHECK_GE(pending_frames, 0);
 
             LOG_IF(WARNING, pending_frames == 0) << "Subset op has zero pending frames; optimizer should have just omitted it";
+            LOG(INFO) << "Emitting only " << pending_frames << " frames";
 
-            return pending_frames;
+            return static_cast<unsigned long>(pending_frames);
         }
 
         unsigned long pending_frames_;

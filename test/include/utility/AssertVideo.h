@@ -158,6 +158,7 @@
 #define EXPECT_VIDEO_RED(filename) EXPECT_VIDEO_RGB(filename, 255, 0, 0, DEFAULT_RGB_THRESHOLD)
 #define EXPECT_VIDEO_GREEN(filename) EXPECT_VIDEO_RGB(filename, 0, 255, 0, DEFAULT_RGB_THRESHOLD)
 #define EXPECT_VIDEO_BLUE(filename) EXPECT_VIDEO_RGB(filename, 0, 0, 255, DEFAULT_RGB_THRESHOLD)
+#define EXPECT_VIDEO_BLACK(filename) EXPECT_VIDEO_RGB(filename, 0, 0, 0, DEFAULT_RGB_THRESHOLD)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -22,7 +22,7 @@ namespace lightdb {
         public:
             Source(const unsigned int index, std::filesystem::path filename,
                    Codec codec, const Configuration &configuration,
-                   CompositeVolume volume, GeometryReference geometry)
+                   CompositeVolume volume, const GeometryReference &geometry)
                     : index_(index),
                       filename_(std::move(filename)),
                       codec_(std::move(codec)),
@@ -34,6 +34,7 @@ namespace lightdb {
             unsigned int index() const { return index_; }
             const std::filesystem::path& filename() const { return filename_; }
             const Codec& codec() const { return codec_; }
+            const CompositeVolume volume() const { return volume_; }
             const Configuration& configuration() const { return configuration_; }
             const GeometryReference &geometry() const { return geometry_; }
 
@@ -120,6 +121,28 @@ namespace lightdb {
             const GeometryReference geometry_;
             unsigned int version_;
             std::vector<Source> sources_;
+        };
+
+        class ExternalEntry {
+        public:
+            explicit ExternalEntry(const std::filesystem::path &filename)
+                    : ExternalEntry(filename, {}, {})
+            { }
+
+            explicit ExternalEntry(std::filesystem::path filename, const std::optional<Volume> &volume,
+                                                                   const std::optional<GeometryReference> &geometry)
+                    : filename_(std::move(filename)),
+                      sources_(load_sources(volume, geometry))
+            { CHECK(std::filesystem::exists(filename_)); }
+
+            inline const std::filesystem::path &filename() const noexcept { return filename_; }
+            inline const std::vector<Source>& sources() const noexcept { return sources_; }
+
+        private:
+            std::vector<Source> load_sources(const std::optional<Volume>&, const std::optional<GeometryReference>&);
+
+            const std::filesystem::path filename_;
+            const std::vector<Source> sources_;
         };
     } //namespace catalog
 } //namespace lightdb

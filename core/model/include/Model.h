@@ -92,8 +92,11 @@ namespace lightdb::logical {
                              CompositeVolume{functional::transform_if<Volume>(
                                      lightfield->volume().components().begin(),
                                      lightfield->volume().components().end(),
-                                     [&volume](const auto &v) { return v & volume; },
-                                     [&volume](const auto &v) { return volume.has_nonempty_intersection(v); })})
+                                     [&volume](const auto &v) {
+                                         return v & volume; },
+                                     [&volume](const auto &v) {
+                                         return volume.has_nonempty_intersection(v); }),
+                                 lightfield->volume().bounding() & volume})
         { }
 
         std::set<Dimension> dimensions() const {
@@ -102,7 +105,7 @@ namespace lightdb::logical {
             std::copy_if(std::begin(Dimensions::All), std::end(Dimensions::All),
                          std::inserter(values, values.begin()),
                          [this](const auto &d) {
-                             return volume().bounding().get(d) != parents()[0]->volume().bounding().get(d); });
+                             return volume().bounding().get(d) != functional::single(parents())->volume().bounding().get(d); });
 
             return values;
         }
@@ -232,26 +235,24 @@ namespace lightdb::logical {
     class ExternalLightField : public LightField, public StreamBackedLightField, public OptionContainer<> {
     public:
         ExternalLightField(const std::filesystem::path &filename,
-                           const Codec &codec,
-                           const Volume &volume,
+                           const catalog::ExternalEntry &entry,
                            const ColorSpace &colorSpace,
-                           const GeometryReference &geometry,
                            lightdb::options<> options)
-                : LightField({}, volume, colorSpace),
-                  source_{0u, filename, codec,
-                          video::ffmpeg::GetStreamConfiguration(filename, 0, true),
-                          volume, geometry},
-                  options_(std::move(options)) { }
+                : LightField({}, entry.sources().front().volume(), colorSpace),
+                  entry_(entry),
+                  options_(std::move(options)) {
+            CHECK_EQ(entry_.sources().size(), 1) << "External TLFs do not currently support >1 source";
+        }
 
-        inline const catalog::Source& source() const noexcept { return source_; }
-        inline const Codec& codec() const noexcept { return source_.codec(); }
-        inline const std::vector<catalog::Source> sources() const override { return {source()}; }
+        inline const catalog::Source& source() const noexcept { return entry_.sources().front(); }
+        inline const Codec& codec() const noexcept { return entry_.sources().front().codec(); }
+        inline const std::vector<catalog::Source> sources() const override { return entry_.sources(); }
         inline const lightdb::options<>& options() const override {return options_; }
 
         void accept(LightFieldVisitor &visitor) override { LightField::accept<ExternalLightField>(visitor); }
 
     private:
-        const catalog::Source source_;
+        const catalog::ExternalEntry entry_;
         const lightdb::options<> options_;
     };
 
@@ -310,11 +311,11 @@ namespace lightdb::logical {
         SavedLightField(const LightFieldReference &parent,
                         std::filesystem::path filename,
                         Codec codec=Codec::hevc(),
-                        const std::optional<GeometryReference> &geometry={})
+                        std::optional<GeometryReference> geometry={})
                 : LightField(parent),
                   filename_(std::move(filename)),
                   codec_(std::move(codec)),
-                  geometry_(geometry) { }
+                  geometry_(std::move(geometry)) { }
 
         inline const std::filesystem::path& filename() const noexcept { return filename_; }
         inline const std::optional<GeometryReference>& geometry() const noexcept { return geometry_; }

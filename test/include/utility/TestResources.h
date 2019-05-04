@@ -6,6 +6,7 @@
 struct {
     struct {
         const std::string name = "red10";
+        const std::string metadata_path = "resources/red10/1-metadata.mp4";
         const size_t height = 240;
         const size_t width = 320;
         const size_t frames = 250;
@@ -22,18 +23,19 @@ struct {
 
     struct {
         struct {
+            const unsigned int height = 2160;
+            const unsigned int width = 3840;
+            const unsigned int frames = 250;
+            const unsigned int duration = 10;
+
             struct {
                 const std::string name = "resources/black.h264";
-                const unsigned int height = 2160;
-                const unsigned int width = 3840;
-                const unsigned int fps = 30;
             } h264;
 
             struct {
                 const std::string name = "resources/black.mp4";
                 const std::string codec = "h264";
-                const unsigned int height = 2160;
-                const unsigned int width = 3840;
+                const unsigned int fps = 30;
             } mp4;
         } black;
     } videos;

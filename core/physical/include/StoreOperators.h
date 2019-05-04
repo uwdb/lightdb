@@ -39,19 +39,20 @@ private:
                   outputs_{functional::transform<std::reference_wrapper<transactions::OutputStream>>(
                           physical.parents().begin(), physical.parents().end(),
                           [this, &logical](auto &parent) {
-                              return std::reference_wrapper(this->physical().context()->transaction().write(
+                              return std::ref(
+                                  this->physical().context()->transaction().write(
                                       logical,
-                                      this->geometry(parent))); }) }
+                                      this->geometry(parent))); })}
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if(!all_parent_eos()) {
                 for(auto i = 0u; i < iterators().size(); i++) {
                     auto input = iterators().at(i)++;
-                    auto &output =  outputs_.at(i).get();
                     auto &data = input.downcast<SerializableData>();
+                    auto &output = outputs_.at(i).get();
 
-                    std::copy(data.value().begin(),data.value().end(), std::ostreambuf_iterator<char>(output.stream()));
+                    std::copy(data.value().begin(), data.value().end(), std::ostreambuf_iterator<char>(output.stream()));
                 }
 
                 return EmptyData(DeviceType::CPU);

@@ -53,12 +53,12 @@ public:
     }
 
     void execute(const std::vector<LightFieldReference> &query, const optimization::Optimizer& optimizer) {
-        LOG(INFO) << "Executing logical plan\n" + to_string(query);
+        LOG(INFO) << "Executing logical plan:\n" << to_string(query);
         execute(optimizer.optimize(query));
     }
 
     void execute(const optimization::Plan &plan) {
-        LOG(INFO) << "Executing physical plan:\n" + to_string(plan);
+        LOG(INFO) << "Executing physical plan:\n" << to_string(plan);
 
         auto outputs = submit(plan);
         auto context = execution::make<transactions::SingleNodeVolatileTransaction>(plan);

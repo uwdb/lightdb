@@ -57,17 +57,17 @@ void SingleNodeVolatileTransaction::commit() {
 void SingleNodeVolatileTransaction::abort() {
     complete_ = true;
     for(const auto &output: outputs())
-    std::filesystem::remove(output.filename());
+        std::filesystem::remove(output.filename());
 }
 
 void SingleNodeVolatileTransaction::write_metadata(const std::filesystem::path& path, const unsigned int version) {
     std::vector<OutputStream> outputs_in_this_path;
     auto filename = catalog::Files::metadata_filename(path, version);
+    auto index = 0u;
 
-    for(auto index = 0u; index < outputs().size(); index++) {
-        const auto &output = outputs().at(index);
+    for(const auto &output: outputs()) {
         if(output.entry().has_value() && output.entry().value().path() == path)
-            outputs_in_this_path.emplace_back(OutputStream(output, path, version, index));
+            outputs_in_this_path.emplace_back(OutputStream(output, path, version, index++));
     }
 
     video::gpac::write_metadata(filename, outputs_in_this_path);

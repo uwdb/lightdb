@@ -6,7 +6,9 @@
 #include <filesystem>
 
 namespace lightdb::video::gpac {
-    std::vector<catalog::Source> load_metadata(const std::filesystem::path&);
+    std::vector<catalog::Source> load_metadata(const std::filesystem::path&, bool strict=true,
+                                               const std::optional<Volume>& ={},
+                                               const std::optional<GeometryReference>& ={});
     void write_metadata(const std::filesystem::path &metadata_filename,
                         const std::vector<transactions::OutputStream>&);
     bool can_mux(const std::filesystem::path&);

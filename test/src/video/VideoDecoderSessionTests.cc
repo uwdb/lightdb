@@ -7,8 +7,8 @@
 class VideoDecoderSessionTestFixture : public RequiresGPUTest {
 public:
     VideoDecoderSessionTestFixture()
-        : configuration{Resources.videos.black.h264.height, Resources.videos.black.h264.width,
-                        Resources.videos.black.h264.fps, lightdb::Codec::h264()},
+        : configuration{Resources.videos.black.height, Resources.videos.black.width,
+                        Resources.videos.black.mp4.fps, lightdb::Codec::h264()},
           queue([this]() { return CUVIDFrameQueue(lock); }),
           decoder([this]() { return CudaDecoder(configuration, queue, lock); }),
           reader([]() { return FileDecodeReader(Resources.videos.black.h264.name); })

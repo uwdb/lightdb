@@ -19,11 +19,7 @@ namespace lightdb {
         LightFieldReference Scan(const std::string &name);
         LightFieldReference Scan(const catalog::Catalog&, const std::string &name);
         LightFieldReference Load(const std::filesystem::path&, const lightdb::options<>& = {});
-        LightFieldReference Load(const std::filesystem::path&,
-                                 const Codec&,
-                                 const Volume& = Volume::zero(),
-                                 const ColorSpace& = YUVColorSpace::instance(),
-                                 const GeometryReference& = EquirectangularGeometry(EquirectangularGeometry::Samples()),
+        LightFieldReference Load(const std::filesystem::path&, const Volume&, const GeometryReference&,
                                  const lightdb::options<>& = {});
 
         class Algebra: public DefaultMixin {

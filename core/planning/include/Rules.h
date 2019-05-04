@@ -722,6 +722,38 @@ namespace lightdb::optimization {
     public:
         using OptimizerRule::OptimizerRule;
 
+        //TODO Duplicate of ChooseStore::Encode, this is lame
+        PhysicalOperatorReference Encode(const logical::SavedLightField &node, PhysicalOperatorReference parent) {
+            auto logical = plan().lookup(node);
+
+            // Can we leverage the ChooseEncode rule to automatically do this stuff, which is an exact duplicate?
+
+            if(parent.is<physical::GPUAngularSubquery>() && parent.downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
+                return plan().emplace<physical::CPUIdentity>(logical, parent);
+                //} else if(parent.is<physical::GPUOperatorAdapter>() && parent->parents()[0].is<physical::GPUAngularSubquery>() && parent->parents()[0].downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
+                //    return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent.is<physical::GPUOperator>()) {
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
+            } else if(parent.is<physical::CPUMap>() && parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name()) {
+                return plan().emplace<physical::CPUIdentity>(logical, parent);
+                //TODO this is silly -- every physical operator should declare an output type and we should just use that
+            } else if(parent.is<physical::TeedPhysicalOperatorAdapter::TeedPhysicalOperator>() && parent->parents()[0].is<physical::CPUMap>() && parent->parents()[0].downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name()) {
+                return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent.is<physical::TeedPhysicalOperatorAdapter::TeedPhysicalOperator>() && parent->parents()[0].is<physical::GPUAngularSubquery>()) {
+                return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent->device() != physical::DeviceType::GPU) {
+                //auto gpu = plan().environment().gpus()[0];
+                auto gpu = plan().allocator().gpu();
+                auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, parent, gpu);
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, transfer, Codec::hevc());
+            } else if(!parent.is<physical::GPUOperator>()) {
+                //auto gpuop = plan().emplace<physical::GPUOperatorAdapter>(parent);
+                //return plan().emplace<physical::GPUEncodeToCPU>(logical, gpuop, Codec::hevc());
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
+            } else
+                return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
+        }
+
         bool visit(const logical::SavedLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
                 auto physical_parents = functional::flatmap<std::vector<PhysicalOperatorReference>>(
@@ -731,7 +763,8 @@ namespace lightdb::optimization {
                 if(physical_parents.empty())
                     return false;
 
-                plan().emplace<physical::SaveToFile>(plan().lookup(node), physical_parents.front());
+                auto encode = Encode(node, physical_parents.front());
+                plan().emplace<physical::SaveToFile>(plan().lookup(node), encode);
                 return true;
             }
             return false;

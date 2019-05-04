@@ -38,7 +38,7 @@ namespace lightdb {
                                         Dimension::Theta, Dimension::Phi};
     };
 
-    typedef number angle; //TODO change to union double/rational/inf-precision type, also add to Spatiotemporal range
+    typedef number angle;
 
     class UnknownRange;
 
@@ -201,9 +201,17 @@ namespace lightdb {
                     theta() | other.theta(), phi() | other.phi()};
         }
 
+        inline Volume operator|(const TemporalRange &time) const {
+            return {x(), y(), z(), t() | time, theta(), phi()};
+        }
+
         inline Volume operator&(const Volume &other) const {
             return {x() & other.x(), y() & other.y(), z() & other.z(), t() & other.t(),
                     theta() & other.theta(), phi() & other.phi()};
+        }
+
+        inline Volume operator&(const TemporalRange &time) const {
+            return {x(), y(), z(), t() & time, theta(), phi()};
         }
 
         bool operator==(const Volume &other) const {
@@ -268,8 +276,8 @@ namespace lightdb {
 
     class Volume::iterable {
     public:
-        iterable(Volume model, const Dimension dimension, const number &interval)
-                : model_(std::move(model)), dimension_(dimension), interval_(interval)
+        iterable(const Volume &model, const Dimension dimension, const number &interval)
+                : model_(model), dimension_(dimension), interval_(interval)
         { }
 
         iterator begin() const;
@@ -292,7 +300,12 @@ namespace lightdb {
                                 ? volumes
                                 : std::vector<Volume>{Volume::zero()}),
                   bounding_(std::accumulate(components_.begin() + 1, components_.end(), components_.front(),
-                                           [](auto &result, auto &current) { return current | result; }))
+                                           [](auto &result, auto &current) { return current | result; })) {
+            CHECK(!volumes.empty()) << "Cannot create a composite volume with no components";
+        }
+
+        explicit CompositeVolume(const std::vector<Volume> &volumes, const Volume &default_volume)
+                : CompositeVolume(!volumes.empty() ? volumes : std::vector<Volume>{default_volume})
         { }
 
         explicit operator const Volume &() const {

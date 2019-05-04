@@ -6,6 +6,7 @@
 #include "Files.h"
 #include "Plan.h"
 #include "reference.h"
+#include <list>
 
 namespace lightdb::transactions {
 
@@ -80,8 +81,8 @@ public:
     virtual ~Transaction() = default;
 
     unsigned long id() const { return id_; }
-    std::vector<OutputStream> &outputs() { return outputs_; }
-    const std::vector<OutputStream> &outputs() const { return outputs_; }
+    std::list<OutputStream> &outputs() { return outputs_; }
+    const std::list<OutputStream> &outputs() const { return outputs_; }
 
     virtual void commit() = 0;
     virtual void abort() = 0;
@@ -115,7 +116,7 @@ protected:
 
 private:
     unsigned long id_;
-    std::vector<OutputStream> outputs_;
+    std::list<OutputStream> outputs_; // Write returns references, which container must not invalidate
 };
 
 class SingleNodeVolatileTransaction: public Transaction {

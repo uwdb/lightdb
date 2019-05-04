@@ -36,7 +36,7 @@ public:
 
         EXPECT_VIDEO_VALID(Resources.out.h264);
         EXPECT_VIDEO_FRAMES(Resources.out.h264, frames);
-        EXPECT_VIDEO_RESOLUTION(Resources.out.h264, configuration.height, configuration.width);
+        EXPECT_VIDEO_RESOLUTION(Resources.out.h264, configuration.decode.height, configuration.decode.width);
         EXPECT_EQ(remove(Resources.out.h264), 0);
     }
 
@@ -56,7 +56,7 @@ public:
 
         EXPECT_VIDEO_VALID(Resources.out.h264);
         EXPECT_VIDEO_FRAMES(Resources.out.h264, frames);
-        EXPECT_VIDEO_RESOLUTION(Resources.out.h264, configuration.height, configuration.width);
+        EXPECT_VIDEO_RESOLUTION(Resources.out.h264, configuration.decode.height, configuration.decode.width);
         EXPECT_EQ(remove(Resources.out.h264), 0);
     }
 

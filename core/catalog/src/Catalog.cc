@@ -76,4 +76,22 @@ namespace lightdb::catalog {
 
         return LightFieldReference::make<logical::ScannedLightField>(Entry{*this, name, path});
     }
+
+    std::vector<Source> ExternalEntry::load_sources(const std::optional<Volume>& volume,
+                                                    const std::optional<GeometryReference>& geometry) {
+        if(video::gpac::can_mux(filename()))
+            return video::gpac::load_metadata(filename(), false, volume, geometry);
+        else if(!volume.has_value())
+            throw CatalogError("Volume must be supplied for external files with no metadata", filename());
+        else if(!geometry.has_value())
+            throw CatalogError("Geometry must be supplied for external files with no metadata", filename());
+        else
+            return functional::transform<Source>(video::ffmpeg::GetStreamConfigurations(filename(), true),
+                    [this, &volume, &geometry](const auto &configuration) {
+                        return Source{
+                            0, filename(), configuration.decode.codec, configuration.decode,
+                            volume.value() | TemporalRange{volume->t().start(),
+                                                           volume->t().start() + configuration.duration},
+                            geometry.value()}; });
+    }
 } // namespace lightdb::catalog

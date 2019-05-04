@@ -35,11 +35,11 @@ private:
     public:
         explicit Runtime(GPUAngularSubquery &physical)
             : runtime::UnaryRuntime<GPUAngularSubquery, GPUDecodedFrameData>(physical),
-              subplan_(CreatePlan()),
-              subiterator_(ExecutePlan()),
               streams_(TeedPhysicalOperatorAdapter::make(
                       physical.parent(),
-                      physical.parent().logical()->volume().components().size()))
+                      physical.parent()->logical()->volume().components().size())),
+              subplan_(CreatePlan()),
+              subiterator_(ExecutePlan())
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
@@ -59,9 +59,9 @@ private:
             return execution::Coordinator().submit<0u>(subplan_).runtime()->begin();
         }
 
+        std::shared_ptr<TeedPhysicalOperatorAdapter> streams_;
         optimization::Plan subplan_;
         runtime::RuntimeIterator subiterator_;
-        std::shared_ptr<TeedPhysicalOperatorAdapter> streams_;
     };
 
     const optimization::OptimizerReference optimizer_;

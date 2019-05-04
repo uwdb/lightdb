@@ -63,6 +63,8 @@ namespace lightdb {
         public:
             inline const execution::GPU& gpu() const { return gpu_; }
 
+            virtual ~GPUOperator() = default;
+
         protected:
             explicit GPUOperator(PhysicalOperatorReference &parent)
                     : GPUOperator(parent.expect_downcast<GPUOperator>())
@@ -80,7 +82,11 @@ namespace lightdb {
 
         class UnaryOperator {
         protected:
-            template<typename Physical=PhysicalOperator>
+            PhysicalOperatorReference parent() noexcept {
+                return functional::single(reinterpret_cast<PhysicalOperator*>(this)->parents());
+            }
+
+            template<typename Physical>
             Physical& parent() noexcept {
                 return functional::single(reinterpret_cast<PhysicalOperator*>(this)->parents()).template downcast<Physical>();
             }

@@ -1,5 +1,6 @@
 #include "SubqueryOperators.h"
 #include "HeuristicOptimizer.h"
+#include "Display.h"
 
 namespace lightdb::physical {
 
@@ -15,7 +16,12 @@ optimization::Plan GPUAngularSubquery::Runtime::CreatePlan() {
     for(auto index = 1u; index < streams().size(); index++)
         unions = unions.Union(ExecuteSubquery(index));
 
-    return physical().optimizer()->optimize(unions);
+    auto plan = physical().optimizer()->optimize(unions);
+
+    LOG(INFO) << "Generated logical subquery:\n" << to_string(unions);
+    LOG(INFO) << "Generated physical subquery:\n" << to_string(plan);
+
+    return plan;
 }
 
 }; // namespace lightdb::physical
