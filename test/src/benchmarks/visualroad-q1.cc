@@ -34,10 +34,9 @@ protected:
 };
 
 TEST_F(Q1TestFixture, testQ1duplicate) {
-    Catalog::instance(uadetrac);
+    //Catalog::instance(uadetrac);
 
     auto duplicates = 60u;
-    //auto name = "random960x540x60";
     auto name = "MVI_40244";
     auto path = uadetrac.path() / name / "stream0.mp4";
     std::vector<LightFieldReference> sinks;
@@ -54,13 +53,12 @@ TEST_F(Q1TestFixture, testQ1duplicate) {
 }
 
 TEST_F(Q1TestFixture, testQ1random) {
-    Catalog::instance(random);
-
     auto duplicates = 60u;
     auto name = "random960x540x60";
+    auto path = random.path() / name / "stream0.h264";
     std::vector<LightFieldReference> sinks;
 
-    auto input = Scan(name);
+    auto input = Load(path, {{GeometryOptions::Volume, Volume::zero()}, {GeometryOptions::Projection, GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples())}});
 
     for(auto i = 0u; i < duplicates; i++)
         sinks.emplace_back(
@@ -68,15 +66,11 @@ TEST_F(Q1TestFixture, testQ1random) {
                      .Select(SpatiotemporalDimension::Time, {1, 2})
                      .Store(std::string(name) + '-' + std::to_string(i)));
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize(sinks);
-
-    coordinator.save(plan, {duplicates, "out"});
+    Coordinator().execute(sinks);
 }
 
 TEST_F(Q1TestFixture, testQ1unique) {
-    Catalog::instance(vrdetrac);
+    //Catalog::instance(vrdetrac);
 
     std::vector<std::string> names = {
             "MVI_20011", "MVI_40152", "MVI_39811", "MVI_40244", "MVI_39781", "MVI_40962", "MVI_40213", "MVI_40141",
@@ -91,18 +85,13 @@ TEST_F(Q1TestFixture, testQ1unique) {
     std::vector<LightFieldReference> sinks;
 
     for(const auto &name: names) {
-        auto input = Scan(name);
+        auto input = Load(vrdetrac.path() / name / "stream0.h264", {{GeometryOptions::Volume, Volume::zero()}, {GeometryOptions::Projection, GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples())}});
         sinks.emplace_back(
                 input.Select(PhiRange{0, rational_times_real({2, 4}, PI)})
                      .Store(name + "_out"));
     }
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize(sinks);
-
-    //Temporarily disabled, was core dumping
-    //coordinator.save(plan, {names.size(), "out"});
+    Coordinator().execute(sinks);
 }
 
 TEST_F(Q1TestFixture, testQ1_scale1) {
@@ -112,7 +101,7 @@ TEST_F(Q1TestFixture, testQ1_scale1) {
     auto name = "scale1";
     std::vector<LightFieldReference> sinks;
 
-    auto input = Scan(name);
+    auto input = Load(visualroad.path() / name / "stream0.h264");
 
     for(auto i = 0u; i < duplicates; i++)
         sinks.emplace_back(
@@ -120,11 +109,13 @@ TEST_F(Q1TestFixture, testQ1_scale1) {
                      .Select(SpatiotemporalDimension::Time, {1, 2})
                      .Store(std::string(name) + '-' + std::to_string(i)));
 
-    auto environment = LocalEnvironment();
-    auto coordinator = Coordinator();
-    Plan plan = HeuristicOptimizer(environment).optimize(sinks);
+    Coordinator().execute(sinks);
 
-    coordinator.save(plan, {duplicates, "out"});
+    //auto environment = LocalEnvironment();
+    //auto coordinator = Coordinator();
+    //Plan plan = HeuristicOptimizer(environment).optimize(sinks);
+
+    //coordinator.save(plan, {duplicates, "out"});
 }
 
 TEST_F(Q1TestFixture, testQ1_scale2) {
