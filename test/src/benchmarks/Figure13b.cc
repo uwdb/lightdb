@@ -28,13 +28,16 @@ public:
         auto configuration = GetStreamConfiguration(filename, 0, true);
         auto frames = COUNT_FRAMES(filename);
 
+printf("Before query\n");
         auto query = Load(filename, Volume::zero(),  GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples()))
                 .Map(Greyscale)
                 .Encode()
                 .Save(Resources.out.h264);
 
+        printf("Before execution\n");
         LOG_DURATION(dataset, Coordinator().execute(query));
 
+        printf("After execution\n");
         EXPECT_VIDEO_VALID(Resources.out.h264);
         EXPECT_VIDEO_FRAMES(Resources.out.h264, frames);
         EXPECT_VIDEO_RESOLUTION(Resources.out.h264, configuration.decode.height, configuration.decode.width);
