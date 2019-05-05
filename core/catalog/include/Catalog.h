@@ -50,9 +50,14 @@ namespace lightdb {
         class Catalog {
         public:
             Catalog(const Catalog &catalog) = default;
-            explicit Catalog(std::filesystem::path path)
-                    : path_(std::move(asserts::CHECK_NONEMPTY(path)))
+            explicit Catalog(const std::filesystem::path &path)
+                    : Catalog(path, false)
             { }
+            explicit Catalog(std::filesystem::path path, const bool create_if_new)
+                    : path_(std::move(asserts::CHECK_NONEMPTY(path))) {
+                if(create_if_new && !catalog_exists(path))
+                    std::filesystem::create_directory(path_);
+            }
 
             static const Catalog &instance()
             {
