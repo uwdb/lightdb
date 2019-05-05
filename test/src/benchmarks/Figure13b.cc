@@ -20,7 +20,9 @@ public:
     Figure13b()
             : path(std::filesystem::absolute(LIGHTDB_BENCHMARK_DATASET_PATH)) {
         google::InstallFailureSignalHandler();
+        printf("Before optimizer init\n");
         Optimizer::instance<HeuristicOptimizer>(LocalEnvironment());
+        printf("After optimizer init\n");
     }
 
     void testMapGreyscale(const std::string &dataset) {
