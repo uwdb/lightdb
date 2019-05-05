@@ -27,7 +27,7 @@ public:
         auto configuration = GetStreamConfiguration(filename, 0, true);
         auto frames = COUNT_FRAMES(filename);
 
-        auto query = Load(filename)
+        auto query = Load(filename, Volume::zero(),  GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples()))
                 .Map(Greyscale)
                 .Encode()
                 .Save(Resources.out.h264);

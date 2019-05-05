@@ -84,7 +84,7 @@ public:
             LOG(INFO) << "GPU context initialization failed; assuming no GPUs on host";
             return 0;
         }
-        
+
         return static_cast<size_t>(count);
     }
 
