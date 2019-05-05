@@ -72,7 +72,7 @@ public:
     static size_t device_count() {
         CUresult result;
         int count;
-printf("Before device count\n");
+LOG(ERROR) << "Before device count\n";//TODO foo
         try {
             if(!GPUContext::Initialize())
                 throw GpuRuntimeError("GPU context initialization failed");
@@ -81,12 +81,12 @@ printf("Before device count\n");
             else
                 CHECK_GE(count, 0);
         } catch(const lightdb::errors::_GpuCudaRuntimeError&) {
-            printf("Device count failed\n");
+            LOG(ERROR) << "Device count failed\n";//TODO foo
             LOG(INFO) << "GPU context initialization failed; assuming no GPUs on host";
             return 0;
         }
 
-        printf("After device count\n");
+        LOG(ERROR) << "After device count\n";//TODO foo
         return static_cast<size_t>(count);
     }
 

@@ -20,9 +20,9 @@ public:
     Figure13b()
             : path(std::filesystem::absolute(LIGHTDB_BENCHMARK_DATASET_PATH)) {
         google::InstallFailureSignalHandler();
-        printf("Before optimizer init\n");
+        LOG(ERROR) << "Before optimizer init\n";//TODO foo
         Optimizer::instance<HeuristicOptimizer>(LocalEnvironment());
-        printf("After optimizer init\n");
+        LOG(ERROR) << "After optimizer init\n";//TODO foo
     }
 
     void testMapGreyscale(const std::string &dataset) {
@@ -30,16 +30,16 @@ public:
         auto configuration = GetStreamConfiguration(filename, 0, true);
         auto frames = COUNT_FRAMES(filename);
 
-printf("Before query\n");
+LOG(ERROR)<<"Before query\n";//TODO foo
         auto query = Load(filename, Volume::zero(),  GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples()))
                 .Map(Greyscale)
                 .Encode()
                 .Save(Resources.out.h264);
 
-        printf("Before execution\n");
+        LOG(ERROR) << "Before execution\n";//TODO foo
         LOG_DURATION(dataset, Coordinator().execute(query));
 
-        printf("After execution\n");
+        LOG(ERROR)<<"After execution\n";;//TODO foo
         EXPECT_VIDEO_VALID(Resources.out.h264);
         EXPECT_VIDEO_FRAMES(Resources.out.h264, frames);
         EXPECT_VIDEO_RESOLUTION(Resources.out.h264, configuration.decode.height, configuration.decode.width);
