@@ -11,6 +11,7 @@ class GPUContext {
 public:
     explicit GPUContext(const unsigned int deviceId): device_(0), owned_(true) {
         CUresult result;
+        LOG(ERROR) << "Construct GPUContext\n";//TODO foo
 
         if(!Initialize())
             throw GpuRuntimeError("GPU context initialization failed");
