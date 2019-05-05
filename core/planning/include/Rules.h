@@ -630,6 +630,8 @@ namespace lightdb::optimization {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             //} else if(parent.is<physical::GPUOperatorAdapter>() && parent->parents()[0].is<physical::GPUAngularSubquery>() && parent->parents()[0].downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
             //    return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent.is<physical::GPUEncodeToCPU>()) {
+                return plan().emplace<physical::GPUIdentity>(logical, parent);
             } else if(parent.is<physical::GPUOperator>()) {
                 return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
             } else if(parent.is<physical::CPUMap>() && parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name()) {
@@ -683,6 +685,8 @@ namespace lightdb::optimization {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
                 //} else if(parent.is<physical::GPUOperatorAdapter>() && parent->parents()[0].is<physical::GPUAngularSubquery>() && parent->parents()[0].downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
                 //    return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent.is<physical::GPUEncodeToCPU>()) {
+                return plan().emplace<physical::GPUIdentity>(logical, parent);
             } else if(parent.is<physical::GPUOperator>()) {
                 return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
                 //TODO this is silly -- every physical operator should declare an output type and we should just use that
@@ -732,6 +736,8 @@ namespace lightdb::optimization {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
                 //} else if(parent.is<physical::GPUOperatorAdapter>() && parent->parents()[0].is<physical::GPUAngularSubquery>() && parent->parents()[0].downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
                 //    return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent.is<physical::GPUEncodeToCPU>()) {
+                return plan().emplace<physical::GPUIdentity>(logical, parent);
             } else if(parent.is<physical::GPUOperator>()) {
                 return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
             } else if(parent.is<physical::CPUMap>() && parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name()) {
