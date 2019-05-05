@@ -14,8 +14,8 @@ public:
         LOG(ERROR) << "Construct"
                       " GPUContext\n";//TODO foo
 
-        if(!Initialize())
-            throw GpuRuntimeError("GPU context initialization failed");
+        if(device_count() == 0)
+            throw GpuRuntimeError("No CUDA devices were found");
         else if((result = cuCtxGetCurrent(&context_)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuCtxGetCurrent failed", result);
         else if(context_ != nullptr)
@@ -60,24 +60,12 @@ public:
         }
     }
 
-private:
-    static bool Initialize() {
-        CUresult result;
-
-        if(isInitialized)
-            return true;
-        else if((result = cuInit(0)) != CUDA_SUCCESS)
-            throw GpuCudaRuntimeError("Call to cuInit failed", result);
-        else
-            return (isInitialized = true);
-    }
-public:
     static size_t device_count() {
         CUresult result;
         int count;
 LOG(ERROR) << "Before device count\n";//TODO foo
         try {
-            if(!GPUContext::Initialize())
+            if(!Initialize())
                 throw GpuRuntimeError("GPU context initialization failed");
             if((result = cuDeviceGetCount(&count)) != CUDA_SUCCESS)
                 throw GpuCudaRuntimeError("Call to cuDeviceGetCount failed", result);
@@ -94,6 +82,17 @@ LOG(ERROR) << "Before device count\n";//TODO foo
     }
 
 private:
+    static bool Initialize() {
+        CUresult result;
+
+        if(isInitialized)
+            return true;
+        else if((result = cuInit(0)) != CUDA_SUCCESS)
+            throw GpuCudaRuntimeError("Call to cuInit failed", result);
+        else
+            return (isInitialized = true);
+    }
+
     static bool isInitialized;
 
     CUdevice device_;
