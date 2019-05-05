@@ -19,6 +19,7 @@ class Figure13b: public testing::Test {
 public:
     Figure13b()
             : path(std::filesystem::absolute(LIGHTDB_BENCHMARK_DATASET_PATH)) {
+        google::InstallFailureSignalHandler();
         Optimizer::instance<HeuristicOptimizer>(LocalEnvironment());
     }
 
