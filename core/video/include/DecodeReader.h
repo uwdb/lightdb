@@ -172,8 +172,8 @@ private:
 
         if(!std::experimental::filesystem::exists(filename))
             throw InvalidArgumentError("File does not exist", "filename");
-        else if(!GPUContext::Initialize())
-            throw GpuCudaRuntimeError("Could not initialize CUDA runtime", CUDA_ERROR_NOT_INITIALIZED);
+        else if(GPUContext::device_count() == 0)
+            throw GpuCudaRuntimeError("No CUDA device was found", CUDA_ERROR_NOT_INITIALIZED);
         if((status = cuvidCreateVideoSource(&source, filename, &videoSourceParameters)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuvidCreateVideoSource failed", status);
         else if((status = cuvidSetVideoSourceState(source, cudaVideoState_Started)) != CUDA_SUCCESS)

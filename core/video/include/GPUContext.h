@@ -11,7 +11,8 @@ class GPUContext {
 public:
     explicit GPUContext(const unsigned int deviceId): device_(0), owned_(true) {
         CUresult result;
-        LOG(ERROR) << "Construct GPUContext\n";//TODO foo
+        LOG(ERROR) << "Construct"
+                      " GPUContext\n";//TODO foo
 
         if(!Initialize())
             throw GpuRuntimeError("GPU context initialization failed");
@@ -59,6 +60,7 @@ public:
         }
     }
 
+private:
     static bool Initialize() {
         CUresult result;
 
@@ -69,7 +71,7 @@ public:
         else
             return (isInitialized = true);
     }
-
+public:
     static size_t device_count() {
         CUresult result;
         int count;
