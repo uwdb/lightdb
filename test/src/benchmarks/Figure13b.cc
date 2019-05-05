@@ -47,7 +47,7 @@ public:
 
         auto blur = lightdb::extensibility::Load("blur");
 
-        auto query = Load(filename)
+        auto query = Load(filename, Volume::zero(),  GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples()))
                 .Map(blur)
                 .Encode()
                 .Save(Resources.out.h264);
