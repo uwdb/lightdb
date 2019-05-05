@@ -3,10 +3,11 @@ services:
   - docker
 dist: xenial
 
-install:
-  - docker pull lightdb/core
+#install:
+#  - docker pull lightdb/core
 
 script:
+  - docker build -f docker/Dockerfile .
   - docker build -t lightdb:test -f docker/Dockerfile.test .
 
 #script:
