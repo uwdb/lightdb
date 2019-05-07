@@ -26,6 +26,8 @@ RUN apt-get install \
       ca-certificates \
       g++-8 \
       libmodule-install-perl \
+      libprotobuf-dev \
+      protobuf-compiler \
       libgoogle-glog-dev \
       libgtest-dev \
       libopencv-dev \
