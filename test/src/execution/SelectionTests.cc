@@ -140,9 +140,10 @@ TEST_F(SelectionTestFixture, testTemporalThetaSelect) {
 }
 
 TEST_F(SelectionTestFixture, testPythonQuery) {
-    auto query = Load("/home/maureen/lightdb/test/resources/tiles/tile-0.hevc")
+    auto query = Load("/home/maureen/lightdb/test/resources/tiles/tile-6.hevc")
+                .Select(PhiRange{0, rational_times_real({3, 4}, PI)})
                 .Encode()
-                .Save("/home/maureen/saved-tile-0.hevc");
+                .Save("/home/maureen/selected-tile-6-test.hevc");
 
     Coordinator().execute(query);
 }
