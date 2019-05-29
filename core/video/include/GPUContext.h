@@ -11,8 +11,6 @@ class GPUContext {
 public:
     explicit GPUContext(const unsigned int deviceId): device_(0), owned_(true) {
         CUresult result;
-        LOG(ERROR) << "Construct"
-                      " GPUContext\n";//TODO foo
 
         if(device_count() == 0)
             throw GpuRuntimeError("No CUDA devices were found");
@@ -63,7 +61,7 @@ public:
     static size_t device_count() {
         CUresult result;
         int count;
-LOG(ERROR) << "Before device count\n";//TODO foo
+
         try {
             if(!Initialize())
                 throw GpuRuntimeError("GPU context initialization failed");
@@ -72,12 +70,10 @@ LOG(ERROR) << "Before device count\n";//TODO foo
             else
                 CHECK_GE(count, 0);
         } catch(const lightdb::errors::_GpuCudaRuntimeError&) {
-            LOG(ERROR) << "Device count failed\n";//TODO foo
             LOG(INFO) << "GPU context initialization failed; assuming no GPUs on host";
             return 0;
         }
 
-        LOG(ERROR) << "After device count\n";//TODO foo
         return static_cast<size_t>(count);
     }
 
