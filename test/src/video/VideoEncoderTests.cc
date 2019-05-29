@@ -5,7 +5,7 @@
 class VideoEncoderTestFixture : public RequiresGPUTest {
 public:
     VideoEncoderTestFixture()
-        : configuration({1920, 1080, 0, 0, 1024*1024, {30, 1}}, NV_ENC_HEVC, 30),
+        : configuration({1920, 1080, 0, 0, 1024*1024, {30, 1}, {0, 0}}, NV_ENC_HEVC, 30),
           encoder([this]() { return VideoEncoder(context, configuration, lock); })
     {}
 
