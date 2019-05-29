@@ -5,6 +5,8 @@
 #include "Transaction.h"
 #include "Gpac.h"
 
+#include <iostream>
+
 namespace lightdb::catalog {
     std::optional<Catalog> Catalog::instance_;
 

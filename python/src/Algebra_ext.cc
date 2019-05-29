@@ -7,6 +7,10 @@
 #include <boost/python.hpp>
 #include <cassert>
 
+// This is following a different code path because it's an external light field. Does this matter?
+// Seems to matter. Test case in SelectionTests fails when run with Load() instead of Scan().
+// Need to implement something for catalogs.
+
 namespace Python {
 
 //lightdb::LightFieldReference (*Scan1)(const std::string&) = &lightdb::logical::Scan;
@@ -35,12 +39,14 @@ public:
         return PyAlgebra(selectedLightField);
     }
 
-    PyAlgebra SelectPhi(double start, double end) {
-        lightdb::LightFieldReference selectedLightField = lightField_.Select(lightdb::PhiRange(start, end));
+    PyAlgebra SelectPhi(int numerator, int denominator) {
+        lightdb::rational_times_real end = lightdb::rational_times_real({numerator, denominator}, lightdb::PI);
+        lightdb::LightFieldReference selectedLightField = lightField_.Select(lightdb::PhiRange(0, end));
         return PyAlgebra(selectedLightField);
     }
 
     void Execute() {
+        lightdb::optimization::Optimizer::instance<lightdb::optimization::HeuristicOptimizer>(lightdb::execution::LocalEnvironment());
         lightdb::execution::Coordinator().execute(lightField_);
     }
 
@@ -53,8 +59,16 @@ static PyAlgebra Load(std::string pathAsString) {
     return PyAlgebra(loadedLightField);
 }
 
+static PyAlgebra Scan(std::string resourceName) {
+    lightdb::catalog::Catalog catalog = lightdb::catalog::Catalog("/home/maureen/lightdb/test/resources/");
+    lightdb::catalog::Catalog::instance(catalog);
+    lightdb::LightFieldReference scannedLightField = lightdb::logical::Scan(resourceName);
+    return PyAlgebra(scannedLightField);
+}
+
 BOOST_PYTHON_MODULE (algebra_ext) {
     boost::python::def("Load", Load);
+    boost::python::def("Scan", Scan);
 
     boost::python::class_<PyAlgebra>("LightField", boost::python::no_init)
             .def("Save", &PyAlgebra::Save)

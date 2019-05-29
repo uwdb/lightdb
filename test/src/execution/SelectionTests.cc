@@ -77,6 +77,21 @@ TEST_F(SelectionTestFixture, testSelectPhi) {
     EXPECT_EQ(remove(Resources.out.hevc), 0);
 }
 
+TEST_F(SelectionTestFixture, testSelectPhi2) {
+    auto query = Load("/home/maureen/lightdb/cmake-build-debug-remote/test/resources/red10/stream0.h264")
+            .Select(PhiRange{0, rational_times_real({1, 4}, PI)})
+            .Encode()
+            .Save("/home/maureen/encoded0.hevc");
+
+    Coordinator().execute(query);
+
+    EXPECT_VIDEO_VALID(Resources.out.hevc);
+    EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height / 4, Resources.red10.width);
+    EXPECT_VIDEO_RED(Resources.out.hevc);
+    EXPECT_EQ(remove(Resources.out.hevc), 0);
+}
+
 TEST_F(SelectionTestFixture, testSelectTheta) {
     auto query = Scan(Resources.red10.name)
                      .Select(ThetaRange{0, rational_times_real({2, 4}, PI)})
