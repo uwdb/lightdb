@@ -56,6 +56,9 @@ namespace lightdb::optimization {
 
         bool visit(const logical::ScannedLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
+                if(node.entry().sources().empty())
+                    LOG(WARNING) << "Attempt to decode a catalog entry with no underlying streams";
+
                 for(const auto &stream: node.entry().sources()) {
                     //auto stream = node.entry().streams()[0];
                     auto logical = plan().lookup(node);
