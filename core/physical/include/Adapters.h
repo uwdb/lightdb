@@ -134,7 +134,7 @@ public:
                 : PhysicalOperator(source->logical(),
                                      {source},
                                      source->device(),
-                                     runtime::make<Runtime>(*this, mutex, queues, source, index))
+                                     runtime::make<Runtime>(*this, mutex, queues, index))
         { }
 
         TeedPhysicalOperator(const TeedPhysicalOperator&) = delete;
@@ -146,12 +146,10 @@ public:
             explicit Runtime(PhysicalOperator &physical,
                              std::shared_ptr<std::mutex> mutex,
                              std::shared_ptr<std::vector<std::queue<MaterializedLightFieldReference>>> queues,
-                             const PhysicalOperatorReference &source,
                              const size_t index)
                  : runtime::Runtime<>(physical),
                    index_(index),
                    mutex_(std::move(mutex)),
-                   source_(source),
                    queues_(std::move(queues))
             { }
 
@@ -162,10 +160,11 @@ public:
 
                 auto &queue = queues_->at(index_);
 
-                if(queue.empty())
+                if(queue.empty() && iterator() != iterator::eos()) {
                     // Teed stream's queue is empty, so read from base stream and broadcast to all queues
-                    if((value = functional::single(iterators())++).has_value())
-                        std::for_each(queues_->begin(), queues_->end(), [&value](auto &q) { q.push(value.value()); });
+                    value = iterator()++;
+                    std::for_each(queues_->begin(), queues_->end(), [&value](auto &q) { q.push(value.value()); });
+                }
 
                 // Now return a value (if any) from this tee's queue
                 if(!queue.empty()) {
@@ -176,11 +175,14 @@ public:
                     return {};
             }
 
+        private:
+            iterator& iterator() { return functional::single(iterators()); }
+
             const size_t index_;
             std::shared_ptr<std::mutex> mutex_;
-            PhysicalOperatorReference source_;
             std::shared_ptr<std::vector<std::queue<MaterializedLightFieldReference>>> queues_;
         };
+
     };
 
     class GPUTeedPhysicalLightField : public TeedPhysicalOperator, public GPUOperator {
