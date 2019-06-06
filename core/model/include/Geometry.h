@@ -116,12 +116,24 @@ namespace lightdb {
     };
     class SpatiotemporalRange: public internal::Range<SpatiotemporalRange, number, internal::limits::spatial>     {
         using internal::Range<SpatiotemporalRange, number, internal::limits::spatial>::Range;
+    public:
+        constexpr SpatiotemporalRange(const double start, const double end)
+            : internal::Range<SpatiotemporalRange, number, internal::limits::spatial>::Range(number(start), number(end))
+        {}
     };
     class ThetaRange: public internal::Range<ThetaRange, angle, internal::limits::theta> {
         using internal::Range<ThetaRange, angle, internal::limits::theta>::Range;
+    public:
+        constexpr ThetaRange(const double start, const double end)
+            : internal::Range<ThetaRange, angle, internal::limits::theta>::Range(angle(start), angle(end))
+        {}
     };
     class PhiRange: public internal::Range<PhiRange, angle, internal::limits::phi> {
         using internal::Range<PhiRange, angle, internal::limits::phi>::Range;
+    public:
+        constexpr PhiRange(const double start, const double end)
+            : internal::Range<PhiRange, angle, internal::limits::phi>::Range(angle(start), angle(end))
+        {}
     };
 
     using SpatialRange = SpatiotemporalRange;
@@ -230,6 +242,8 @@ namespace lightdb {
                     ThetaRange::limits(), PhiRange::limits()}; }
 
         static constexpr Volume zero() { return {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}}; }
+        static constexpr const Volume angular() { return {{0, 0}, {0, 0}, {0, 0}, {0, 0},
+                                                          ThetaRange::limits(), PhiRange::limits()}; }
 
     private:
         SpatialRange x_;

@@ -4,89 +4,203 @@
 #include "HeuristicOptimizer.h"
 #include "Visitor.h"
 #include "reference.h"
+#include "Coordinator.h"
+#include "extension.h"
 #include <boost/python.hpp>
 #include <cassert>
-
-// This is following a different code path because it's an external light field. Does this matter?
-// Seems to matter. Test case in SelectionTests fails when run with Load() instead of Scan().
-// Need to implement something for catalogs.
+#include <iostream>
 
 namespace Python {
 
-//lightdb::LightFieldReference (*Scan1)(const std::string&) = &lightdb::logical::Scan;
-//lightdb::LightFieldReference (*Scan2)(const lightdb::catalog::Catalog&, const std::string&) = &lightdb::logical::Scan;
+//lightdb::LightFieldReference (*LoadString)(const std::string&) = &lightdb::logical::Load;
+//lightdb::LightFieldReference (*ScanCatalogAndString)(const lightdb::catalog::Catalog&, const std::string&) = &lightdb::logical::Scan;
+//lightdb::LightFieldReference (lightdb::logical::Algebra::*SaveString)(const std::string&) = &lightdb::logical::Algebra::Save;
+//lightdb::LightFieldReference (lightdb::logical::Algebra::*PartitionDimensionAndDouble)(const lightdb::Dimension, const double) = &lightdb::logical::Algebra::Partition;
+//lightdb::LightFieldReference (lightdb::logical::Algebra::*SubqueryPyObject)(PyObject*) = &lightdb::logical::Algebra::Subquery;
+//lightdb::LightFieldReference (lightdb::logical::Algebra::*SelectPhi)(const lightdb::PhiRange&) = &lightdb::logical::Algebra::Select;
+//lightdb::LightFieldReference (lightdb::logical::Algebra::*SelectTheta)(const lightdb::ThetaRange&) = &lightdb::logical::Algebra::Select;
+//lightdb::LightFieldReference (lightdb::logical::Algebra::*SelectSpatiotemporal)(lightdb::SpatiotemporalDimension, const lightdb::SpatiotemporalRange&) = &lightdb::logical::Algebra::Select;
+//lightdb::LightFieldReference (lightdb::logical::Algebra::*StoreCatalog)(const lightdb::catalog::Catalog&, const std::string&) = &lightdb::logical::Algebra::Store;
+//lightdb::LightFieldReference (lightdb::logical::Algebra::*UnionOne)(lightdb::LightFieldReference) = &lightdb::logical::Algebra::Union;
+//lightdb::LightFieldReference (lightdb::logical::Algebra::*UnionMany)(std::vector<lightdb::LightFieldReference>) = &lightdb::logical::Algebra::Union;
+void (lightdb::execution::Coordinator::*ExecuteLightField)(const lightdb::LightFieldReference&) = &lightdb::execution::Coordinator::execute;
+void (lightdb::execution::Coordinator::*ExecuteLightFieldAndOptimizer)(const lightdb::LightFieldReference&, const lightdb::optimization::Optimizer&) = &lightdb::execution::Coordinator::execute;
 
-class PyAlgebra {
+
+static void SetUpLocalEnvironment() {
+    lightdb::optimization::Optimizer::instance<lightdb::optimization::HeuristicOptimizer>(lightdb::execution::LocalEnvironment());
+}
+
+class PythonLightField {
 public:
-    PyAlgebra(lightdb::LightFieldReference &lightField)
-            : lightField_(lightField)
-    {
-        lightdb::optimization::Optimizer::instance<lightdb::optimization::HeuristicOptimizer>(lightdb::execution::LocalEnvironment());
+    PythonLightField(const lightdb::LightFieldReference &lightField)
+        : _lightField(lightField)
+    {}
+
+    PythonLightField Partition(lightdb::Dimension dimension, const double interval) {
+        return PythonLightField(_lightField.Partition(dimension, interval));
     }
 
-    PyAlgebra Save(std::string pathAsString) {
-        lightdb::LightFieldReference savedLightField = lightField_.Save(pathAsString);
-        return PyAlgebra(savedLightField);
+    PythonLightField Select(const lightdb::PhiRange &phiRange) {
+        return PythonLightField(_lightField.Select(phiRange));
     }
 
-    PyAlgebra Encode() {
-        lightdb::LightFieldReference encodedLightField = lightField_.Encode();
-        return PyAlgebra(encodedLightField);
+    PythonLightField Select(const lightdb::ThetaRange &thetaRange) {
+        return PythonLightField(_lightField.Select(thetaRange));
     }
 
-    PyAlgebra Select(const lightdb::PhiRange &phiRange) {
-        lightdb::LightFieldReference selectedLightField = lightField_.Select(phiRange);
-        return PyAlgebra(selectedLightField);
+    PythonLightField Select(lightdb::SpatiotemporalDimension dimension, const lightdb::SpatiotemporalRange &range) {
+        return PythonLightField(_lightField.Select(dimension, range));
     }
 
-    PyAlgebra SelectPhi(int numerator, int denominator) {
-        lightdb::rational_times_real end = lightdb::rational_times_real({numerator, denominator}, lightdb::PI);
-        lightdb::LightFieldReference selectedLightField = lightField_.Select(lightdb::PhiRange(0, end));
-        return PyAlgebra(selectedLightField);
+    PythonLightField Subquery(PyObject *pyObject) {
+        return PythonLightField(_lightField.Subquery([pyObject](auto l) { return boost::python::call<PythonLightField>(pyObject, PythonLightField(l)).query(); }));
     }
 
-    void Execute() {
-        lightdb::optimization::Optimizer::instance<lightdb::optimization::HeuristicOptimizer>(lightdb::execution::LocalEnvironment());
-        lightdb::execution::Coordinator().execute(lightField_);
+    PythonLightField Union(PythonLightField &lightField) {
+        return PythonLightField(_lightField.Union(lightField.query()));
+    }
+
+    PythonLightField Union(boost::python::list &listOfLightFields) {
+        std::vector<PythonLightField> pythonLightFields = std::vector<PythonLightField>(
+                boost::python::stl_input_iterator<PythonLightField>(listOfLightFields),
+                boost::python::stl_input_iterator<PythonLightField>());
+
+        std::vector<lightdb::LightFieldReference> lightFields;
+        std::transform(pythonLightFields.begin(), pythonLightFields.end(), std::back_inserter(lightFields),
+                [](PythonLightField lightField) -> lightdb::LightFieldReference { return lightField.query(); });
+
+        return PythonLightField(_lightField.Union(lightFields));
+    }
+
+    PythonLightField Discretize(lightdb::Dimension dimension, double interval) {
+        return PythonLightField(_lightField.Discretize(dimension, lightdb::number(interval)));
+    }
+
+    PythonLightField Interpolate(lightdb::Dimension dimension) {
+        return PythonLightField(_lightField.Interpolate(dimension, lightdb::interpolation::Linear()));
+    }
+
+    PythonLightField Map(PyObject *udf, std::string path) {
+        auto yolo = lightdb::extensibility::Load("yolo", "libyolo.so", path);
+        return PythonLightField(_lightField.Map(yolo));
+    }
+
+    PythonLightField Encode(const lightdb::Codec& codec) {
+        return PythonLightField(_lightField.Encode(codec));
+    }
+
+    PythonLightField Save(const std::string &fileName) {
+        return PythonLightField(_lightField.Save(static_cast<std::filesystem::path>(fileName)));
+    }
+
+    PythonLightField Store(const lightdb::catalog::Catalog &catalog, const std::string &name) {
+        return PythonLightField(_lightField.Store(name, catalog));
+    }
+
+    lightdb::LightFieldReference query() {
+        return _lightField;
     }
 
 private:
-    lightdb::LightFieldReference lightField_;
+    lightdb::LightFieldReference _lightField;
 };
 
-static PyAlgebra Load(std::string pathAsString) {
-    lightdb::LightFieldReference loadedLightField = lightdb::logical::Load(pathAsString);
-    return PyAlgebra(loadedLightField);
+PythonLightField (PythonLightField::*SelectPhi)(const lightdb::PhiRange&) = &PythonLightField::Select;
+PythonLightField (PythonLightField::*SelectTheta)(const lightdb::ThetaRange&) = &PythonLightField::Select;
+PythonLightField (PythonLightField::*SelectSpatiotemporal)(lightdb::SpatiotemporalDimension, const lightdb::SpatiotemporalRange&) = &PythonLightField::Select;
+PythonLightField (PythonLightField::*UnionOne)(PythonLightField&) = &PythonLightField::Union;
+PythonLightField (PythonLightField::*UnionMany)(boost::python::list&) = &PythonLightField::Union;
+
+static PythonLightField Load(const std::string& filepath) {
+    lightdb::GeometryReference geometry = lightdb::GeometryReference::make<lightdb::EquirectangularGeometry>(lightdb::EquirectangularGeometry::Samples());
+    return PythonLightField(lightdb::logical::Load(filepath, lightdb::Volume::angular(), geometry));
 }
 
-static PyAlgebra Scan(std::string resourceName) {
-    lightdb::catalog::Catalog catalog = lightdb::catalog::Catalog("/home/maureen/lightdb/test/resources/");
-    lightdb::catalog::Catalog::instance(catalog);
-    lightdb::LightFieldReference scannedLightField = lightdb::logical::Scan(resourceName);
-    return PyAlgebra(scannedLightField);
+static PythonLightField Scan(const lightdb::catalog::Catalog &catalog, const std::string &name) {
+    return PythonLightField(lightdb::logical::Scan(catalog, name));
 }
+
+// Create wrapper that implements pure virtual function to make boost happy.
+class OptimizerWrapper : public lightdb::optimization::Optimizer, public boost::python::wrapper<lightdb::optimization::Optimizer> {
+protected:
+    const std::vector<std::shared_ptr<lightdb::optimization::OptimizerRule>> rules() const {
+        return this->get_override("rules")();
+    }
+};
 
 BOOST_PYTHON_MODULE (algebra_ext) {
     boost::python::def("Load", Load);
     boost::python::def("Scan", Scan);
+    boost::python::def("SetUpLocalEnvironment", SetUpLocalEnvironment);
 
-    boost::python::class_<PyAlgebra>("LightField", boost::python::no_init)
-            .def("Save", &PyAlgebra::Save)
-            .def("Encode", &PyAlgebra::Encode)
-            .def("Execute", &PyAlgebra::Execute)
-            .def("Select", &PyAlgebra::Select)
-            .def("SelectPhi", &PyAlgebra::SelectPhi);
+    boost::python::class_<lightdb::LightFieldReference>("LightField", boost::python::no_init);
+//            .def("Select", SelectPhi)
+//            .def("Select", SelectTheta)
+//            .def("Select", SelectSpatiotemporal)
+//            .def("Save", SaveString)
+//            .def("Partition", PartitionDimensionAndDouble)
+//            .def("Subquery", SubqueryPyObject)
+//            .def("Encode", &lightdb::logical::Algebra::Encode)
+//            .def("Store", StoreCatalog)
+//            .def("Union", UnionOne)
+//            .def("Union", UnionMany);
 
-    boost::python::class_<lightdb::number>("number", boost::python::init<int>())
-            .def(boost::python::init<long>())
-            .def(boost::python::init<long long>())
-            .def(boost::python::init<unsigned int>())
-            .def(boost::python::init<double>())
-            .def(boost::python::self_ns::str(boost::python::self_ns::self));
+    boost::python::class_<PythonLightField>("pyLightField", boost::python::no_init)
+            .def("Partition", &PythonLightField::Partition)
+            .def("Select", SelectPhi)
+            .def("Select", SelectTheta)
+            .def("Select", SelectSpatiotemporal)
+            .def("Subquery", &PythonLightField::Subquery)
+            .def("Union", UnionOne)
+            .def("Union", UnionMany)
+            .def("Discretize", &PythonLightField::Discretize)
+            .def("Interpolate", &PythonLightField::Interpolate)
+            .def("Map", &PythonLightField::Map)
+            .def("Encode", &PythonLightField::Encode)
+            .def("Save", &PythonLightField::Save)
+            .def("Store", &PythonLightField::Store)
+            .def("query", &PythonLightField::query);
 
-    boost::python::class_<lightdb::PhiRange>("PhiRange", boost::python::init<lightdb::number, lightdb::number>())
-            .def("start", &lightdb::PhiRange::start)
-            .def("end", &lightdb::PhiRange::end)
-            .def("contains", &lightdb::PhiRange::contains);
-}
+    boost::python::class_<lightdb::execution::Coordinator>("Coordinator")
+            .def("Execute", ExecuteLightField)
+            .def("Execute", ExecuteLightFieldAndOptimizer);
+
+    boost::python::enum_<lightdb::Dimension>("Dimension")
+            .value("X", lightdb::Dimension::X)
+            .value("Y", lightdb::Dimension::Y)
+            .value("Z", lightdb::Dimension::Z)
+            .value("Time", lightdb::Dimension::Time)
+            .value("Theta", lightdb::Dimension::Theta)
+            .value("Phi", lightdb::Dimension::Phi);
+
+    boost::python::enum_<lightdb::SpatiotemporalDimension>("SpatiotemporalDimension")
+            .value("X", lightdb::SpatiotemporalDimension::X)
+            .value("Y", lightdb::SpatiotemporalDimension::Y)
+            .value("Z", lightdb::SpatiotemporalDimension::Z)
+            .value("Time", lightdb::SpatiotemporalDimension::Time);
+
+    boost::python::class_<lightdb::Codec>("Codec", boost::python::no_init)
+            .def("hevc", &lightdb::Codec::hevc, boost::python::return_value_policy<boost::python::reference_existing_object>())
+                .staticmethod("hevc");
+
+    boost::python::class_<lightdb::options<>>("Options");
+
+    boost::python::class_<lightdb::PhiRange>("PhiRange", boost::python::init<double, double>());
+    boost::python::class_<lightdb::ThetaRange>("ThetaRange", boost::python::init<double, double>());
+    boost::python::class_<lightdb::SpatiotemporalRange>("SpatiotemporalRange", boost::python::init<double, double>());
+
+    boost::python::class_<lightdb::catalog::Catalog>("Catalog", boost::python::init<std::string>());
+
+    // Exposing Optimizer is necessary so that HeuristicOptimizer can inherit from it.
+    // Don't expose the initializer because Optimizer is an abstract class.
+    boost::python::class_<OptimizerWrapper, boost::noncopyable>("Optimizer", boost::python::no_init);
+    boost::python::class_<lightdb::optimization::HeuristicOptimizer, boost::python::bases<lightdb::optimization::Optimizer>>("HeuristicOptimizer", boost::python::init<lightdb::execution::Environment>());
+
+    // Exposing Environment is necessary so LocalEnvironment can inherit from it.
+    boost::python::class_<lightdb::execution::Environment>("Environment", boost::python::no_init);
+    boost::python::class_<lightdb::execution::LocalEnvironment, boost::python::bases<lightdb::execution::Environment>>("LocalEnvironment");
+
+    boost::python::class_<lightdb::interpolation::Linear>("Linear");
+};
 } // namespace Python

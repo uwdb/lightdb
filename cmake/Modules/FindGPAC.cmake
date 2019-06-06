@@ -21,6 +21,8 @@ find_package_handle_standard_args(GPAC  DEFAULT_MSG
 mark_as_advanced(GPAC_INCLUDE_DIR GPAC_LIBRARY )
 
 if(GPAC_FOUND)
+  message("**found gpac")
   set(GPAC_INCLUDE_DIRS ${GPAC_INCLUDE_DIR})
-  set(GPAC_LIBRARIES ${GPAC_LIBRARY})
+  set(GPAC_LIBRARIES "/usr/lib/x86_64-linux-gnu/libgpac.so")
+#  set(GPAC_LIBRARIES ${GPAC_LIBRARY})
 endif()
