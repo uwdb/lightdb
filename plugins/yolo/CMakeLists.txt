@@ -33,7 +33,7 @@ add_library(yolo SHARED udf.cc udf.h)
 
 add_dependencies(yolo libdarknet)
 
-target_link_libraries(yolo ${YOLO_LIB_DEPENDENCIES})
+target_link_libraries(yolo ${YOLO_LIB_DEPENDENCIES} ${DARKNET_DIR}/libdarknet.so)
 
 ADD_CUSTOM_COMMAND(TARGET yolo
         POST_BUILD
