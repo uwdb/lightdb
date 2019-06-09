@@ -5,10 +5,10 @@
 namespace lightdb::extensibility {
 
     std::shared_ptr<functor::unaryfunctor> Load(const std::string &name,
-                                                const std::experimental::filesystem::path &path) {
+                                                const std::filesystem::path &path) {
         try {
             auto plugin = boost::dll::import<functor::unaryfunctor>(
-                    std::string(path / name),
+                    (std::filesystem::absolute(path) / name).string(),
                     name,
                     boost::dll::load_mode::append_decorations);
 

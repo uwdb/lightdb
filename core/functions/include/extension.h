@@ -2,12 +2,12 @@
 #define LIGHTDB_EXTENSION_H
 
 #include "Functor.h"
-#include <experimental/filesystem>
+#include <filesystem>
 
 namespace lightdb::extensibility {
 
 std::shared_ptr<functor::unaryfunctor> Load(const std::string &name,
-                                            const std::experimental::filesystem::path &path="plugins");
+                                            const std::filesystem::path &path="plugins");
 
 }; // namespace lightdb
 
