@@ -561,7 +561,20 @@ namespace lightdb::optimization {
                 return false;
 
             //TODO clean this up, shouldn't just be randomly picking last parent
-            auto hardcoded_parent = physical_parents[physical_parents.size() - 1];
+            //OMG this is even more horrible now
+            size_t index;
+            if(physical_parents.size() == 1)
+                index = 0;
+            else if(physical_parents.size() == 2) {
+                // Pick the most parentiest of parents, wtf
+                if(!physical_parents[0]->parents().empty() && physical_parents[0]->parents()[0] == physical_parents[1])
+                    index = 0;
+                else
+                    index = 1;
+            } else
+                index = physical_parents.size() - 1;
+            //auto hardcoded_parent = physical_parents[physical_parents.size() - 1];
+            auto hardcoded_parent = physical_parents[index];
 
             if(!plan().has_physical_assignment(node)) {
                 if(hardcoded_parent->device() == physical::DeviceType::CPU)
