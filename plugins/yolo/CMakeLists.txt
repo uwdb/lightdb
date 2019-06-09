@@ -4,7 +4,7 @@ project(yolo)
 set(CMAKE_CXX_STANDARD 17)
 include(ExternalProject)
 
-set(DARKNET_DIR ${CMAKE_CURRENT_SOURCE_DIR}/darknet)
+get_filename_component(DARKNET_DIR ${CMAKE_CURRENT_SOURCE_DIR}/darknet ABSOLUTE /)
 
 ExternalProject_Add(darknet
         PREFIX darknet
@@ -27,7 +27,7 @@ include_directories(${LIGHTDB_INCLUDES})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/darknet/include)
 
 link_directories(/opt/intel/ipp/lib/intel64)
-set(YOLO_LIB_DEPENDENCIES ${YOLO_LIB_DEPENDENCIES} ipps ippi ippcc)
+set(YOLO_LIB_DEPENDENCIES ${YOLO_LIB_DEPENDENCIES} ipps ippi ippcc ${DARKNET_DIR}/libdarknet.so)
 
 add_library(yolo SHARED udf.cc udf.h)
 
