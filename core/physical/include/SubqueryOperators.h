@@ -37,7 +37,7 @@ private:
             : runtime::UnaryRuntime<GPUAngularSubquery, GPUDecodedFrameData>(physical),
               streams_(TeedPhysicalOperatorAdapter::make(
                       physical.parent(),
-                      physical.parent()->logical()->volume().components().size())),
+                      logical()->volume().components().size())),
               subplan_(CreatePlan()),
               subiterator_(ExecutePlan())
         { }
