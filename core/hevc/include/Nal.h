@@ -2,8 +2,15 @@
 #define LIGHTDB_NAL_H
 
 #include "StitchContext.h"
-#include "Encoding.h"
 #include "NalType.h"
+#include "errors.h"
+#include "bytestring.h"
+#include <glog/logging.h>
+#include <memory>
+#include <array>
+#include <cmath>
+#include <climits>
+#include <cassert>
 
 namespace lightdb::hevc {
 

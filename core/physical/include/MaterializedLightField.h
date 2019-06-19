@@ -1,7 +1,6 @@
 #ifndef LIGHTDB_DATA_H
 #define LIGHTDB_DATA_H
 
-#include "Encoding.h"
 #include "DecodeReader.h"
 #include "Pool.h"
 #include "Frame.h"
