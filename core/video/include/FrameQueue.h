@@ -135,11 +135,9 @@ public:
       return static_cast<FrameQueue*>(this)->try_dequeue<CUVIDPARSERDISPINFO>();
   }
 
-    //TODO this was protected, move back after debugging
-    void releaseFrame(const void *pPicParams) override;
-
 protected:
   bool dequeue(void *pData) override;
+  void releaseFrame(const void *pPicParams) override;
   CUVIDPARSERDISPINFO aDisplayQueue_[cnMaximumSize];
 };
 
