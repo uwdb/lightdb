@@ -2,6 +2,7 @@
 #define LIGHTDB_GEOMETRY_H
 
 #include "number.h"
+#include "functional.h"
 #include "asserts.h"
 #include <utility>
 #include <vector>
@@ -303,6 +304,12 @@ namespace lightdb {
                                            [](auto &result, auto &current) { return current | result; })) {
             CHECK(!volumes.empty()) << "Cannot create a composite volume with no components";
         }
+
+        explicit CompositeVolume(const std::vector<CompositeVolume> &volumes, const Volume &default_volume)
+            : CompositeVolume(functional::transform<Volume>(
+                    volumes.begin(), volumes.end(),
+                    [](const auto &composite) { return composite.bounding(); }), default_volume)
+        { }
 
         explicit CompositeVolume(const std::vector<Volume> &volumes, const Volume &default_volume)
                 : CompositeVolume(!volumes.empty() ? volumes : std::vector<Volume>{default_volume})
