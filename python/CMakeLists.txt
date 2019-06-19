@@ -17,10 +17,10 @@ include_directories(${LIGHTDB_CORE_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${Python2
 
 # Build Python modules.
 set(ALGEBRA_SOURCES "src/Algebra_ext.cc")
-add_library(algebra_ext SHARED ${ALGEBRA_SOURCES})
+add_library(pylightdb SHARED ${ALGEBRA_SOURCES})
 
 message("boost libraries: ${Boost_LIBRARIES}")
 
-target_link_libraries(algebra_ext ${Boost_LIBRARIES} ${Python2_LIBRARIES} ${LIGHTDB_LIB_DEPENDENCIES} lightdb)
-target_link_libraries(algebra_ext opencv_core)
-set_target_properties(algebra_ext PROPERTIES PREFIX "")
+target_link_libraries(pylightdb ${Boost_LIBRARIES} ${Python2_LIBRARIES} ${LIGHTDB_LIB_DEPENDENCIES} lightdb)
+target_link_libraries(pylightdb opencv_core)
+set_target_properties(pylightdb PROPERTIES PREFIX "")

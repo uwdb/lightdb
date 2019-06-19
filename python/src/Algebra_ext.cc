@@ -109,13 +109,6 @@ static PythonLightField Load(const std::string& filepath) {
     lightdb::GeometryReference geometry = lightdb::GeometryReference::make<lightdb::EquirectangularGeometry>(lightdb::EquirectangularGeometry::Samples());
     return PythonLightField(lightdb::logical::Load(filepath, lightdb::Volume::angular(), geometry));
 }
-//
-//class PythonCatalog : public lightdb::catalog::Catalog {
-//public:
-//    explicit PythonCatalog(const std::string &filepath)
-//            : lightdb::catalog::Catalog(static_cast<std::filesystem::path>(filepath))
-//    {}
-//};
 
 static PythonLightField Scan(const lightdb::catalog::Catalog &catalog, const std::string &name) {
     return PythonLightField(lightdb::logical::Scan(catalog, name));
@@ -131,7 +124,7 @@ protected:
 
 
 
-BOOST_PYTHON_MODULE (algebra_ext) {
+BOOST_PYTHON_MODULE (pylightdb) {
     boost::python::def("Load", Load);
     boost::python::def("Scan", Scan);
     boost::python::def("SetUpLocalEnvironment", SetUpLocalEnvironment);
