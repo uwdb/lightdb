@@ -31,6 +31,22 @@ struct Configuration {
     struct {
         unsigned int left, top;
     } offset;
+
+    inline bool operator==(const Configuration &other) const {
+        return this == &other ||
+                (width == other.width &&
+                height == other.height &&
+                max_width == other.max_width &&
+                max_height == other.max_height &&
+                bitrate == other.bitrate &&
+                framerate.fps() == other.framerate.fps() &&
+                offset.left == other.offset.left &&
+                offset.top == other.offset.top);
+    }
+
+    inline bool operator!=(const Configuration &other) const {
+        return !(*this == other);
+    }
 };
 
 struct EncodeConfiguration: public Configuration
