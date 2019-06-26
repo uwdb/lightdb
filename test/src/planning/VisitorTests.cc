@@ -1,6 +1,8 @@
+#include "AssertVideo.h"
 #include "HeuristicOptimizer.h"
 #include "Greyscale.h"
 #include "Display.h"
+#include "TestResources.h"
 #include "extension.h"
 #include <gtest/gtest.h>
 
@@ -127,4 +129,23 @@ TEST_F(VisitorTestFixture, testPartitionSubqueryUnion) {
     auto encoded = transcoded.Encode(Codec::hevc());
 
     Coordinator().execute(encoded);
+}
+
+TEST_F(VisitorTestFixture, testScanInterpolateDiscretize) {
+    auto outputResolution = 416;
+
+    auto input = Scan(Resources.red10.name);
+    auto continuous = input.Interpolate(Dimension::Theta, interpolation::Linear());
+    auto smallTheta = continuous.Discretize(Dimension::Theta, rational_times_real({2, outputResolution}, PI));
+    auto small = smallTheta.Discretize(Dimension::Phi, rational_times_real({1, outputResolution}, PI));
+    auto saved = small.Save(Resources.out.hevc);
+
+
+    Coordinator().execute(saved);
+
+    EXPECT_VIDEO_VALID(Resources.out.hevc);
+    EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, outputResolution, outputResolution);
+    EXPECT_VIDEO_RED(Resources.out.hevc);
+    EXPECT_EQ(remove(Resources.out.hevc), 0);
 }
