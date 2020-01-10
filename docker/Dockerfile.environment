@@ -56,7 +56,7 @@ RUN wget $CUDA_URL -q -O cuda.run && \
     PERL5LIB=. sh cuda.run --override --silent --toolkit \
     rm cuda.run
 
-# Set gcc-8 to be default compiler
+# Set gcc-8 as default compiler
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 --slave /usr/bin/g++ g++ /usr/bin/g++-8
 
 WORKDIR /lightdb
