@@ -31,6 +31,9 @@ public:
         auto filename = path / dataset;
 
         REQUIRE_FILE(filename);
+        LOG(ERROR)<<"AFTER REQUIRE_FILE\n"; \
+        GTEST_SKIP();
+        LOG(ERROR)<<"AFTER SKIP\n"; \
 
         auto configuration = GetStreamConfiguration(filename, 0, true);
         auto frames = COUNT_FRAMES(filename);
