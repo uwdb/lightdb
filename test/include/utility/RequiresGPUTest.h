@@ -5,6 +5,11 @@
 #include "lazy.h"
 #include <gtest/gtest.h>
 
+#define REQUIRE_GPU() { \
+    if(GPUContext::device_count() == 0) \
+        GTEST_SKIP(); \
+}
+
 class RequiresGPUTest : public testing::Test {
 public:
     explicit RequiresGPUTest(const unsigned int device_id=0u)

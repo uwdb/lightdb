@@ -5,6 +5,7 @@
 #include "TestResources.h"
 #include "AssertVideo.h"
 #include "AssertTime.h"
+#include "RequiresGPUTest.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
@@ -29,6 +30,8 @@ public:
         auto filename = path / dataset;
         auto configuration = GetStreamConfiguration(filename, 0, true);
         auto frames = COUNT_FRAMES(filename);
+
+        REQUIRE_GPU();
 
 LOG(ERROR)<<"Before query\n";//TODO foo
         auto query = Load(filename, Volume::zero(),  GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples()))
