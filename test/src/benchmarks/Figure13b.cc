@@ -5,6 +5,7 @@
 #include "TestResources.h"
 #include "AssertVideo.h"
 #include "AssertTime.h"
+#include "AssertUtility.h"
 #include "RequiresGPUTest.h"
 #include <gtest/gtest.h>
 
@@ -28,6 +29,9 @@ public:
 
     void testMapGreyscale(const std::string &dataset) {
         auto filename = path / dataset;
+
+        REQUIRE_FILE(filename);
+
         auto configuration = GetStreamConfiguration(filename, 0, true);
         auto frames = COUNT_FRAMES(filename);
 

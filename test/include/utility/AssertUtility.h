@@ -1,6 +1,13 @@
 #ifndef LIGHTDB_ASSERTUTILITY_H
 #define LIGHTDB_ASSERTUTILITY_H
 
+#include <filesystem>
+
+#define REQUIRE_FILE(filename) { \
+    if(!std::filesystem::exists(filename)) \
+        GTEST_SKIP(); \
+}
+
 #define ASSERT_TYPE(instance, type) \
   ASSERT_NE(dynamic_cast<const type*>(&(instance)), nullptr)
 
