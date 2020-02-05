@@ -30,15 +30,11 @@ public:
     void testMapGreyscale(const std::string &dataset) {
         auto filename = path / dataset;
 
-        REQUIRE_FILE(filename);
-        LOG(ERROR)<<"AFTER REQUIRE_FILE\n"; \
-        GTEST_SKIP();
-        LOG(ERROR)<<"AFTER SKIP\n"; \
+        REQUIRE_TIMELAPSE_DATASET();
+        //REQUIRE_GPU();
 
         auto configuration = GetStreamConfiguration(filename, 0, true);
         auto frames = COUNT_FRAMES(filename);
-
-        REQUIRE_GPU();
 
 LOG(ERROR)<<"Before query\n";//TODO foo
         auto query = Load(filename, Volume::zero(),  GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples()))

@@ -4,7 +4,6 @@
 #include <filesystem>
 
 #define REQUIRE_FILE(filename) { \
-LOG(ERROR)<<"foo\n"; \
     if(!std::filesystem::exists(filename)) \
         GTEST_SKIP(); \
 }
