@@ -7,6 +7,7 @@
     REQUIRE_FILE(std::filesystem::absolute(LIGHTDB_BENCHMARK_DATASET_PATH) / "timelapse")
 
 #define REQUIRE_FILE(filename) { \
+LOG(ERROR) << filename << std::filesystem::exists(filename); \
     if(!std::filesystem::exists(filename)) \
         GTEST_SKIP(); \
 }
