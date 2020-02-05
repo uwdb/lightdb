@@ -2,6 +2,7 @@
 #include "Greyscale.h"
 #include "extension.h"
 #include "Display.h"
+#include "AssertUtility.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
@@ -35,6 +36,8 @@ protected:
 };
 
 TEST_F(Q6aTestFixture, testQ6amakeboxes) {
+    REQUIRE_UA_DETRAC_DATASET();
+
     auto name = "MVI_40244";
     auto drawboxes = lightdb::extensibility::Load("boxes");
     std::vector<LightFieldReference> sinks;
@@ -53,6 +56,8 @@ TEST_F(Q6aTestFixture, testQ6amakeboxes) {
 }
 
 TEST_F(Q6aTestFixture, testQ6aduplicate) {
+    REQUIRE_UA_DETRAC_DATASET();
+
     auto duplicates = 60u;
     auto name = "MVI_40244";
     std::vector<LightFieldReference> sinks;
@@ -79,6 +84,8 @@ TEST_F(Q6aTestFixture, testQ6aduplicate) {
 }
 
 TEST_F(Q6aTestFixture, testQ6arandom) {
+    REQUIRE_RANDOM_DATASET();
+
     auto duplicates = 60u;
     auto name = "random960x540x60";
     std::vector<LightFieldReference> sinks;
@@ -102,6 +109,8 @@ TEST_F(Q6aTestFixture, testQ6arandom) {
 }
 
 TEST_F(Q6aTestFixture, testQ6avrdetrac) {
+    REQUIRE_UA_DETRAC_DATASET();
+
     Catalog::instance(vrdetrac);
 
     std::vector<std::string> names = {
@@ -129,6 +138,8 @@ TEST_F(Q6aTestFixture, testQ6avrdetrac) {
 }
 
 TEST_F(Q6aTestFixture, testQ6auadetrac) {
+    REQUIRE_UA_DETRAC_DATASET();
+
     Catalog::instance(uadetrac);
 
     std::vector<std::string> names = {
@@ -156,6 +167,8 @@ TEST_F(Q6aTestFixture, testQ6auadetrac) {
 }
 
 TEST_F(Q6aTestFixture, testQ6a_scale1) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 4u;
@@ -178,6 +191,8 @@ TEST_F(Q6aTestFixture, testQ6a_scale1) {
 }
 
 TEST_F(Q6aTestFixture, testQ6a_scale2) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 8u;
@@ -200,6 +215,8 @@ TEST_F(Q6aTestFixture, testQ6a_scale2) {
 }
 
 TEST_F(Q6aTestFixture, testQ6a_scale4) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 16u;
@@ -222,6 +239,8 @@ TEST_F(Q6aTestFixture, testQ6a_scale4) {
 }
 
 TEST_F(Q6aTestFixture, testQ6a_scale8) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 32u;

@@ -47,6 +47,9 @@ public:
     }
 
     void testDegenerateAngularSelect(const std::string &dataset) {
+        REQUIRE_GPU();
+        REQUIRE_TIMELAPSE_DATASET();
+
         auto filename = path / dataset;
         auto configuration = GetStreamConfiguration(filename, 0, true);
         auto frames = COUNT_FRAMES(filename);

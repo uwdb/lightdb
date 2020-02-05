@@ -1,5 +1,6 @@
 #include "HeuristicOptimizer.h"
 #include "Display.h"
+#include "AssertUtility.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
@@ -33,6 +34,8 @@ protected:
 };
 
 TEST_F(Q3TestFixture, testQ3duplicate) {
+    REQUIRE_UA_DETRAC_DATASET();
+
     Catalog::instance(uadetrac);
 
     auto duplicates = 60u;
@@ -59,6 +62,8 @@ TEST_F(Q3TestFixture, testQ3duplicate) {
 }
 
 TEST_F(Q3TestFixture, testQ3random) {
+    REQUIRE_RANDOM_DATASET();
+
     Catalog::instance(random);
 
     auto duplicates = 10u;
@@ -86,6 +91,8 @@ TEST_F(Q3TestFixture, testQ3random) {
 }
 
 TEST_F(Q3TestFixture, testQ3vrdetrac) {
+    REQUIRE_UA_DETRAC_DATASET();
+
     Catalog::instance(vrdetrac);
 
     std::vector<std::string> names = {
@@ -120,6 +127,8 @@ TEST_F(Q3TestFixture, testQ3vrdetrac) {
 }
 
 TEST_F(Q3TestFixture, testQ3uadetrac) {
+    REQUIRE_UA_DETRAC_DATASET();
+
     Catalog::instance(uadetrac);
 
     std::vector<std::string> names = {
@@ -154,6 +163,8 @@ TEST_F(Q3TestFixture, testQ3uadetrac) {
 }
 
 TEST_F(Q3TestFixture, testQ3_scale1) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 4u;
@@ -178,6 +189,8 @@ TEST_F(Q3TestFixture, testQ3_scale1) {
 }
 
 TEST_F(Q3TestFixture, testQ3_scale2) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 8u;
@@ -202,6 +215,8 @@ TEST_F(Q3TestFixture, testQ3_scale2) {
 }
 
 TEST_F(Q3TestFixture, testQ3_scale4) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 16u;
@@ -226,6 +241,8 @@ TEST_F(Q3TestFixture, testQ3_scale4) {
 }
 
 TEST_F(Q3TestFixture, testQ3_scale8) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 32u;
