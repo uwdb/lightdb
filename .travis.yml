@@ -7,8 +7,8 @@ dist: xenial
 #  - docker pull lightdb/core
 
 script:
-  - docker build -f docker/Dockerfile .
-  - docker build -t lightdb:test -f docker/Dockerfile.test .
+  - docker build -t lightdb/core -f docker/Dockerfile .
+  - docker build -t lightdb/test -f docker/Dockerfile.test .
 
 #script:
 #  - docker run lightdb/core mkdir build && cd build && cmake .. && make lightdb_test && cd test && ./lightdb_test
