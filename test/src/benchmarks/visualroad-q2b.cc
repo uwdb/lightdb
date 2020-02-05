@@ -1,6 +1,7 @@
 #include "HeuristicOptimizer.h"
 #include "extension.h"
 #include "Display.h"
+#include "AssertUtility.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
@@ -36,6 +37,8 @@ protected:
 };
 
 TEST_F(Q2bTestFixture, testQ2bduplicate) {
+    REQUIRE_UA_DETRAC_DATASET();
+
     auto duplicates = 60u;
     auto name = "MVI_40244";
     std::vector<LightFieldReference> sinks;
@@ -53,6 +56,8 @@ TEST_F(Q2bTestFixture, testQ2bduplicate) {
 }
 
 TEST_F(Q2bTestFixture, testQ2buadetrac) {
+    REQUIRE_UA_DETRAC_DATASET();
+
     std::vector<std::string> names = {
             "MVI_20011", "MVI_40152", "MVI_39811", "MVI_40244", "MVI_39781", "MVI_40962", "MVI_40213", "MVI_40141",
             "MVI_40191", "MVI_63562", "MVI_39931", "MVI_39761", "MVI_40871", "MVI_40192", "MVI_40981", "MVI_41073",
@@ -76,6 +81,8 @@ TEST_F(Q2bTestFixture, testQ2buadetrac) {
 }
 
 TEST_F(Q2bTestFixture, testQ2bvrdetrac) {
+    REQUIRE_UA_DETRAC_DATASET();
+
     std::vector<std::string> names = {
             "MVI_20011", "MVI_40152", "MVI_39811", "MVI_40244", "MVI_39781", "MVI_40962", "MVI_40213", "MVI_40141",
             "MVI_40191", "MVI_63562", "MVI_39931", "MVI_39761", "MVI_40871", "MVI_40192", "MVI_40981", "MVI_41073",
@@ -108,6 +115,8 @@ TEST_F(Q2bTestFixture, testQ2bvrdetrac) {
 }
 
 TEST_F(Q2bTestFixture, testQ2brandom) {
+    REQUIRE_RANDOM_DATASET();
+
     auto duplicates = 60u;
     auto name = "random960x540x60";
     std::vector<LightFieldReference> sinks;
@@ -133,6 +142,8 @@ TEST_F(Q2bTestFixture, testQ2brandom) {
 }
 
 TEST_F(Q2bTestFixture, testQ2b_scale1) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 4u;
@@ -158,6 +169,8 @@ TEST_F(Q2bTestFixture, testQ2b_scale1) {
 }
 
 TEST_F(Q2bTestFixture, testQ2b_scale2) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 8u;
@@ -183,6 +196,8 @@ TEST_F(Q2bTestFixture, testQ2b_scale2) {
 }
 
 TEST_F(Q2bTestFixture, testQ2b_scale4) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 16u;
@@ -208,6 +223,8 @@ TEST_F(Q2bTestFixture, testQ2b_scale4) {
 }
 
 TEST_F(Q2bTestFixture, testQ2b_scale8) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 32u;
@@ -233,6 +250,8 @@ TEST_F(Q2bTestFixture, testQ2b_scale8) {
 }
 
 TEST_F(Q2bTestFixture, testQ2b_scale4_sink) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 16u;
