@@ -1,6 +1,7 @@
 #include "HeuristicOptimizer.h"
 #include "Greyscale.h"
 #include "Display.h"
+#include "AssertUtility.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
