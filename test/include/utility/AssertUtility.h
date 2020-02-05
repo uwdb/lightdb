@@ -4,11 +4,13 @@
 #include "TestResources.h"
 #include <filesystem>
 
-#define REQUIRE_TIMELAPSE_DATASET() \
-    REQUIRE_FILE(Resources.datasets.timelapse.timelapse1k)
+#define REQUIRE_TIMELAPSE_DATASET() { \
+    REQUIRE_FILE(Resources.datasets.timelapse.timelapse1k); \
+    REQUIRE_FILE(Resources.datasets.timelapse.timelapse2k); \
+    REQUIRE_FILE(Resources.datasets.timelapse.timelapse4k); \
+}
 
 #define REQUIRE_FILE(filename) { \
-LOG(ERROR) << filename << std::filesystem::exists(filename); \
     if(!std::filesystem::exists(filename)) \
         GTEST_SKIP(); \
 }
