@@ -1,10 +1,11 @@
 #ifndef LIGHTDB_ASSERTUTILITY_H
 #define LIGHTDB_ASSERTUTILITY_H
 
+#include "TestResources.h"
 #include <filesystem>
 
 #define REQUIRE_TIMELAPSE_DATASET() \
-    REQUIRE_FILE(std::filesystem::absolute(LIGHTDB_BENCHMARK_DATASET_PATH) / "timelapse")
+    REQUIRE_FILE(Resources.datasets.timelapse.timelapse1k)
 
 #define REQUIRE_FILE(filename) { \
 LOG(ERROR) << filename << std::filesystem::exists(filename); \
