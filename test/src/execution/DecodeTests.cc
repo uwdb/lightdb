@@ -3,6 +3,7 @@
 #include "AssertVideo.h"
 #include "Display.h"
 #include "TestResources.h"
+#include "AssertUtility.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
@@ -25,6 +26,12 @@ protected:
 };
 
 TEST_F(DecodeTestFixture, testDecode) {
+    //REQUIRE_GPU();
+    std::system("ls -l >test.txt");
+    LOG(ERROR) << std::ifstream("test.txt").rdbuf();
+    std::system("ls -l resources >test2.txt");
+    LOG(ERROR) << std::ifstream("test2.txt").rdbuf();
+
     auto input = Scan(Resources.red10.name).Save(Resources.out.raw);
     Coordinator().execute(input);
 
