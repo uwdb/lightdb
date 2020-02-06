@@ -30,7 +30,7 @@ TEST_F(DecodeTestFixture, testDecode) {
 
     auto input = Scan(Resources.red10.name).Save(Resources.out.raw);
     LOG(ERROR) << "foo0";
-    //Coordinator().execute(input);
+    Coordinator().execute(input);
 LOG(ERROR) << "foo1";
     //auto output_h264 = TRANSCODE_RAW_TO_H264(Resources.out.raw,
     //        Resources.red10.height, Resources.red10.width,
