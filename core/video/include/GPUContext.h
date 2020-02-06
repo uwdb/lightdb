@@ -3,6 +3,7 @@
 
 #include "errors.h"
 #include <glog/logging.h>
+#include <dynlink_nvcuvid.h>
 #include <nvcuvid.h>
 #include <cuda.h>
 #include <stdexcept>
@@ -85,6 +86,8 @@ private:
             return true;
         else if((result = cuInit(0)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuInit failed", result);
+        else if((result = cuvidInit(0)) != CUDA_SUCCESS)
+            throw GpuCudaRuntimeError("Call to cuvidInit failed", result);
         else
             return (isInitialized = true);
     }
