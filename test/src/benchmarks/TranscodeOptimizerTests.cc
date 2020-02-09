@@ -3,6 +3,7 @@
 #include "Display.h"
 #include "TestResources.h"
 #include "AssertVideo.h"
+#include "AssertUtility.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
@@ -24,6 +25,8 @@ protected:
 };
 
 TEST_F(TranscodeOptimizerTestFixture, testTranscode) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::hevc())
                      .Save(Resources.out.hevc);

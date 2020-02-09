@@ -5,6 +5,8 @@
 #include "TestResources.h"
 #include "AssertVideo.h"
 #include "AssertTime.h"
+#include "AssertUtility.h"
+#include "RequiresGPUTest.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
@@ -26,6 +28,9 @@ public:
     }
 
     void testMapGreyscale(const std::string &dataset) {
+        REQUIRE_GPU();
+        REQUIRE_TIMELAPSE_DATASET();
+
         auto filename = path / dataset;
         auto configuration = GetStreamConfiguration(filename, 0, true);
         auto frames = COUNT_FRAMES(filename);
@@ -47,6 +52,9 @@ LOG(ERROR)<<"Before query\n";//TODO foo
     }
 
     void testMapGaussianBlur(const std::string &dataset) {
+        REQUIRE_GPU();
+        REQUIRE_TIMELAPSE_DATASET();
+
         auto filename = path / dataset;
         auto configuration = GetStreamConfiguration(filename, 0, true);
         auto frames = COUNT_FRAMES(filename);

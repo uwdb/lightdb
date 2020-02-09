@@ -14,8 +14,9 @@ class OutputStream {
     friend class SingleNodeVolatileTransaction;
 
 public:
-    OutputStream(const Transaction &transaction, const catalog::Entry &entry, const Codec &codec)
-            : OutputStream(transaction, entry, entry.volume(), entry.geometry(), codec)
+    OutputStream(const Transaction &transaction, const catalog::Entry &entry,
+                 const GeometryReference &geometry, const Codec &codec)
+            : OutputStream(transaction, entry, entry.volume(), geometry, codec)
     { }
 
     OutputStream(const Transaction &transaction, const catalog::Entry &entry,

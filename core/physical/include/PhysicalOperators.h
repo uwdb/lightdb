@@ -2,7 +2,6 @@
 #define LIGHTDB_PHYSICALOPERATORS_H
 
 #include "LightField.h"
-#include "Encoding.h"
 #include "Environment.h"
 #include "Runtime.h"
 #include "lazy.h"

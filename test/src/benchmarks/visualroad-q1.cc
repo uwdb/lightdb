@@ -1,5 +1,6 @@
 #include "HeuristicOptimizer.h"
 #include "Display.h"
+#include "AssertUtility.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
@@ -29,6 +30,8 @@ protected:
 };
 
 TEST_F(Q1TestFixture, testQ1duplicate) {
+    REQUIRE_UA_DETRAC_DATASET();
+
     auto duplicates = 60u;
     auto name = "MVI_40244";
     auto path = uadetrac.path() / name / "stream0.mp4";
@@ -46,6 +49,8 @@ TEST_F(Q1TestFixture, testQ1duplicate) {
 }
 
 TEST_F(Q1TestFixture, testQ1random) {
+    REQUIRE_RANDOM_DATASET();
+
     auto duplicates = 60u;
     auto name = "random960x540x60";
     auto path = random.path() / name / "stream0.h264";
@@ -63,6 +68,8 @@ TEST_F(Q1TestFixture, testQ1random) {
 }
 
 TEST_F(Q1TestFixture, testQ1unique) {
+    REQUIRE_UA_DETRAC_DATASET();
+
     std::vector<std::string> names = {
             "MVI_20011", "MVI_40152", "MVI_39811", "MVI_40244", "MVI_39781", "MVI_40962", "MVI_40213", "MVI_40141",
             "MVI_40191", "MVI_63562", "MVI_39931", "MVI_39761", "MVI_40871", "MVI_40192", "MVI_40981", "MVI_41073",
@@ -86,6 +93,8 @@ TEST_F(Q1TestFixture, testQ1unique) {
 }
 
 TEST_F(Q1TestFixture, testQ1_scale1) {
+    REQUIRE_VISUALROAD_DATASET();
+
     auto duplicates = 4u;
     auto name = "scale1";
     std::vector<LightFieldReference> sinks;
@@ -102,6 +111,8 @@ TEST_F(Q1TestFixture, testQ1_scale1) {
 }
 
 TEST_F(Q1TestFixture, testQ1_scale2) {
+    REQUIRE_VISUALROAD_DATASET();
+
     auto duplicates = 8u;
     auto name = "scale1";
     std::vector<LightFieldReference> sinks;
@@ -118,6 +129,8 @@ TEST_F(Q1TestFixture, testQ1_scale2) {
 }
 
 TEST_F(Q1TestFixture, testQ1_scale4) {
+    REQUIRE_VISUALROAD_DATASET();
+
     auto duplicates = 16u;
     auto name = "scale1";
     std::vector<LightFieldReference> sinks;
@@ -134,6 +147,8 @@ TEST_F(Q1TestFixture, testQ1_scale4) {
 }
 
 TEST_F(Q1TestFixture, testQ1_scale8) {
+    REQUIRE_VISUALROAD_DATASET();
+
     auto duplicates = 32u;
     auto name = "scale1";
     std::vector<LightFieldReference> sinks;
@@ -150,6 +165,8 @@ TEST_F(Q1TestFixture, testQ1_scale8) {
 }
 
 TEST_F(Q1TestFixture, testQ1_scale4_sink) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 16u;

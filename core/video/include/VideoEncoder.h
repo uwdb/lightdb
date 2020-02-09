@@ -70,7 +70,7 @@ private:
 
   friend class VideoEncoderSession;
 
-  size_t minimumBufferCount() const { return configuration().numB + 4; }
+  size_t minimumBufferCount() const { return configuration().numB + 40; }
 
 private:
   std::vector<std::shared_ptr<EncodeBuffer>> CreateBuffers(size_t size);

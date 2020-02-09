@@ -1,5 +1,5 @@
 file(GLOB protos *.proto)
 
 protobuf_generate_cpp(PROTO_SRC PROTO_HEADER "${protos}")
-message("proto header: ${PROTO_HEADER}")
-add_library(lightdb_protobuf SHARED ${PROTO_HEADER} ${PROTO_SRC})
+add_library(lightdb_protobuf ${PROTO_HEADER} ${PROTO_SRC})
+set_property(TARGET lightdb_protobuf PROPERTY POSITION_INDEPENDENT_CODE ON)

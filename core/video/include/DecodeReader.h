@@ -169,12 +169,12 @@ private:
                 .pfnAudioDataHandler = nullptr,
                 {nullptr}
         };
-
+LOG(ERROR) << "Calling cuvidCreateVideoSource";
         if(!std::experimental::filesystem::exists(filename))
             throw InvalidArgumentError("File does not exist", "filename");
         else if(GPUContext::device_count() == 0)
             throw GpuCudaRuntimeError("No CUDA device was found", CUDA_ERROR_NOT_INITIALIZED);
-        if((status = cuvidCreateVideoSource(&source, filename, &videoSourceParameters)) != CUDA_SUCCESS)
+        else if((status = cuvidCreateVideoSource(&source, filename, &videoSourceParameters)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuvidCreateVideoSource failed", status);
         else if((status = cuvidSetVideoSourceState(source, cudaVideoState_Started)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuvidSetVideoSourceState failed", status);

@@ -32,17 +32,19 @@ private:
     public:
         explicit Runtime(GPUDownsampleResolution &physical)
             : runtime::GPUUnaryRuntime<GPUDownsampleResolution, GPUDecodedFrameData>(physical),
-              scaler_(this->context())
+              scaler_(this->context()),
+              configurationIsValid_(false)
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
             if(iterator() != iterator().eos()) {
                 auto input = iterator()++;
-                GPUDecodedFrameData output{input.configuration(), input.geometry()};
+                Configuration outputConfiguration = downsampled_configuration(input.configuration());
+                GPUDecodedFrameData output{outputConfiguration, input.geometry()};
 
                 for(auto &frame: input.frames()) {
                     auto in = frame->cuda();
-                    CudaFrameReference out = CudaFrameReference::make<CudaFrame>(*frame);
+                    CudaFrameReference out = CudaFrameReference::make<CudaFrame>(outputConfiguration.height, outputConfiguration.width, in->type());
 
                     scaler_.nv12().scale(lock(), in, out);
 
@@ -66,8 +68,13 @@ private:
 
         }
 
-        Configuration downsampled_configuration() {
-            const auto &base = (*iterator()).configuration();
+        Configuration downsampled_configuration(const Configuration &base) {
+            if (configurationIsValid_ && base == lastBaseConfiguration_)
+                return lastDownsampledConfiguration_;
+
+            lastBaseConfiguration_ = base;
+            configurationIsValid_ = true;
+
             const auto &theta_geometry = get_geometry(Dimension::Theta);
             const auto &phi_geometry = get_geometry(Dimension::Phi);
             auto theta_samples = theta_geometry.has_value() && theta_geometry.value().size().has_value()
@@ -80,15 +87,23 @@ private:
             CHECK_LE(theta_samples, std::numeric_limits<unsigned int>::max());
             CHECK_LE(phi_samples, std::numeric_limits<unsigned int>::max());
 
-            LOG(INFO) << "Downsampling to " << theta_samples << 'x' << phi_samples;
+            Configuration proposedConfiguration = Configuration{static_cast<unsigned int>(theta_samples),
+                          static_cast<unsigned int>(phi_samples),
+                          base.max_width, base.max_height,
+                          base.bitrate, base.framerate, {}};
 
-            return Configuration{static_cast<unsigned int>(theta_samples),
-                                 static_cast<unsigned int>(phi_samples),
-                                 base.max_width, base.max_height,
-                                 base.bitrate, base.framerate, {}};
+            if (proposedConfiguration != lastDownsampledConfiguration_) {
+                LOG(INFO) << "Downsampling to " << theta_samples << 'x' << phi_samples;
+                lastDownsampledConfiguration_ = proposedConfiguration;
+            }
+
+            return lastDownsampledConfiguration_;
         }
 
         video::GPUScale scaler_;
+        Configuration lastDownsampledConfiguration_;
+        Configuration lastBaseConfiguration_;
+        bool configurationIsValid_;
     };
 
 private:

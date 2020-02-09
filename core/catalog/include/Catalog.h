@@ -5,6 +5,7 @@
 #include "Geometry.h"
 #include "Color.h"
 #include "Configuration.h"
+#include "functional.h"
 #include <filesystem>
 #include <utility>
 #include <fstream>
@@ -91,13 +92,11 @@ namespace lightdb {
                     : catalog_(catalog),
                       name_(std::move(name)),
                       path_(std::move(path)),
-                    //TODO grab boxes and load volume/geometry, detect colorspace
-                      volume_({{0, 0}, {0, 0}, {0, 0}, {0, 10}, ThetaRange::limits(), PhiRange::limits()}),
                       colorSpace_(YUVColorSpace::instance()),
-                    //TODO move geometry to streams
-                      geometry_(EquirectangularGeometry(EquirectangularGeometry::Samples())),
                       version_(load_version(path_)),
-                      sources_(load_sources())
+                      sources_(load_sources()),
+                      volume_(CompositeVolume(functional::transform<CompositeVolume>(sources_.begin(), sources_.end(),
+                              [](const auto &source) { return source.volume(); }), Volume::zero()).bounding())
             { CHECK(std::filesystem::exists(path_)); }
 
         public:
@@ -105,7 +104,6 @@ namespace lightdb {
             inline const Catalog& catalog() const noexcept { return catalog_; }
             inline const Volume& volume() const noexcept { return volume_; }
             inline const ColorSpace& colorSpace() const noexcept { return colorSpace_; }
-            inline const GeometryReference geometry() const noexcept { return geometry_; }
             inline const std::filesystem::path path() const noexcept { return path_; }
             inline const std::vector<Source>& sources() const noexcept { return sources_; }
             inline unsigned int version() const { return version_; }
@@ -121,11 +119,10 @@ namespace lightdb {
             const Catalog &catalog_;
             const std::string name_;
             const std::filesystem::path path_;
-            const Volume volume_;
             const ColorSpace colorSpace_;
-            const GeometryReference geometry_;
             unsigned int version_;
             std::vector<Source> sources_;
+            const Volume volume_;
         };
 
         class ExternalEntry {

@@ -213,6 +213,12 @@ namespace lightdb::optimization {
         bool TryGPUBoxOverlayUnion(const logical::CompositeLightField &node) {
             auto leafs0 = plan().unassigned(node.parents()[0]);
             auto leafs1 = plan().unassigned(node.parents()[1]);
+
+            /*if(leafs0.size() == 2 && leafs1.empty()) {
+                leafs1.push_back(leafs0[1]);
+                leafs0.pop_back();
+            }*/
+
             if(leafs0.size() != 1 || leafs1.size() != 1)
                 return false;
             //TODO shouldn't arbitrarily require a shallow union
@@ -473,7 +479,7 @@ namespace lightdb::optimization {
             } else if(!plan().has_physical_assignment(node) && is_discrete) {
                 auto downsampled = hardcoded_parent->logical().try_downcast<logical::DiscretizedLightField>();
                 auto scanned = downsampled.has_value() ? hardcoded_parent->logical()->parents()[0].downcast<logical::ScannedLightField>() : hardcoded_parent->logical().downcast<logical::ScannedLightField>();
-                auto &parent_geometry = scanned.entry().geometry();
+                auto &parent_geometry = scanned.entry().sources().front().geometry();
                 auto &discrete_geometry = node.geometry();
 
                 if(scanned.entry().sources().size() != 1)
@@ -524,7 +530,7 @@ namespace lightdb::optimization {
 
             if(!plan().has_physical_assignment(node) && is_linear_interpolated) {
                 auto scanned = hardcoded_grandparent->logical().is<logical::ScannedLightField>() ? hardcoded_grandparent->logical().downcast<logical::ScannedLightField>() : hardcoded_greatgrandparent->logical().downcast<logical::ScannedLightField>();
-                auto &scanned_geometry = scanned.entry().geometry();
+                auto &scanned_geometry = scanned.entry().sources().front().geometry();
                 auto &discrete_geometry = node.geometry();
 
                 if(scanned.entry().sources().size() != 1)

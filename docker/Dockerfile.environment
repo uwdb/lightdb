@@ -2,14 +2,14 @@ FROM ubuntu:18.04
 MAINTAINER Brandon Haynes "bhaynes@cs.washington.edu"
 
 ARG CUDA_URL=https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
+ARG GPAC_URL=https://github.com/gpac/gpac/archive/v0.7.1.tar.gz
 ARG INTEL_REPOSITORY_URL=https://apt.repos.intel.com/setup/intelproducts.list
 ARG INTEL_KEY_URL=https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
 
 ENV DEBIAN_FRONTEND noninteractive
 
 # Update timezone
-RUN apt-get update
-RUN apt-get install -y tzdata gnupg wget
+RUN apt-get update && apt-get install -y gnupg tzdata wget
 RUN dpkg-reconfigure -f noninteractive tzdata
 
 # Install Intel IPP
@@ -33,17 +33,27 @@ RUN apt-get install \
       libopencv-dev \
       libavcodec-dev \
       libavformat-dev \
+      libavdevice-dev \
       libboost1.65-all-dev \
-      libgpac-dev \
       nvidia-384 \
       cmake \
       git \
       python3-dev
 
-# Install CUDA 8.0
+# Install GPAC 
+RUN wget $GPAC_URL -q -O gpac.tar.gz && \
+    mkdir /opt/gpac && \
+    tar xzf gpac.tar.gz -C /opt/gpac --strip-components 1 && \
+    rm gpac.tar.gz && \
+    cd /opt/gpac && \
+    ./configure && \
+    make lib && \
+    make install-lib
+
+# Install CUDA
 RUN wget $CUDA_URL -q -O cuda.run && \
     chmod +x cuda.run && \
-    PERL5LIB=. sh cuda.run --override --silent -toolkit \
+    PERL5LIB=. sh cuda.run --override --silent --toolkit \
     rm cuda.run
 
 # Set gcc-8 to be default compiler

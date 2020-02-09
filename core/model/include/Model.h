@@ -6,7 +6,6 @@
 #include "Geometry.h"
 #include "Color.h"
 #include "Interpolation.h"
-#include "Encoding.h"
 #include "Catalog.h"
 #include "Functor.h"
 #include "Visitor.h"

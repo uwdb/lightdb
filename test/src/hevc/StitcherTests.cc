@@ -3,6 +3,7 @@
 #include "AssertVideo.h"
 #include "functional.h"
 #include <gtest/gtest.h>
+#include <fstream>
 
 using lightdb::bytestring;
 
