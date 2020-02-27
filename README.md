@@ -62,7 +62,7 @@ Open an [issue](https://github.com/uwdb/lightdb) with any questions or issues yo
 If you use LightDB, please cite our VLDB'18 paper:
 
 _LightDB: A DBMS for Virtual Reality Video_<br/>
-Brandon Haynes and Amrita Mazumdar and Armin Alaghi and Magdalena Balazinska and Luis Ceze and Alvin Cheung<br />
+Brandon Haynes, Amrita Mazumdar, Armin Alaghi, Magdalena Balazinska, Luis Ceze, and Alvin Cheung<br />
 VLDB:1192-1205 [[PDF]](http://www.vldb.org/pvldb/vol11/p1192-haynes.pdf)
 
 ```
