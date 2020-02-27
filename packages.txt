@@ -1,0 +1,16 @@
+ca-certificates 
+g++-8 
+libmodule-install-perl 
+libprotobuf-dev 
+protobuf-compiler 
+libgoogle-glog-dev 
+libgtest-dev 
+libopencv-dev 
+libavcodec-dev 
+ibavformat-dev 
+libavdevice-dev 
+libboost1.65-all-dev 
+nvidia-384 
+cmake 
+git 
+python3-dev
