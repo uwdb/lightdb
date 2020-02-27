@@ -57,19 +57,6 @@ Note that this query performs the workload presented in our SIGMOD'16 VideoCloud
 
 Open an [issue](https://github.com/uwdb/lightdb) with any questions or issues you might have.
 
-### Citations & Paper
-
-If you use LightDB, please cite our VLDB paper:
-
-_Visual Road: A Video Data Management Benchmark_<br />
-Brandon Haynes, Amrita Mazumdar, Magdalena Balazinska, Luis Ceze, Alvin Cheung<br />
-SIGMOD:972-987 [[PDF]](https://dl.acm.org/citation.cfm?doid=3299869.3324955)
-
-```
-### Questions?
-
-Open an [issue](https://github.com/uwdb/lightdb) with any questions or issues you might have.
-
 ## Citations & Paper
 
 If you use LightDB, please cite our VLDB'18 paper:
