@@ -1,3 +1,5 @@
+# About LightDB
+
 LightDB is a database management system (DBMS) designed
 to efficiently ingest, store, and deliver virtual reality (VR)
 content at scale. LightDB currently targets both live and prerecorded
@@ -6,6 +8,8 @@ as a multidimensional field that includes both spatiotemporal
 and angular (i.e., orientation) dimensions. 
 ontent delivered through LightDB offers improved throughput,
 less bandwidth, and scales to many concurrent connections.
+
+See our [website](http://lightdb.uwdb.io) for more details.
 
 ### Installing LightDB
 
@@ -55,7 +59,7 @@ Note that this query performs the workload presented in our SIGMOD'16 VideoCloud
 
 ### Questions?
 
-Open an [issue](https://github.com/uwdb/lightdb) with any questions or issues you might have.
+Open an [issue](https://github.com/uwdb/lightdb/issues) with any questions or issues you might have.
 
 ## Citations & Paper
 
