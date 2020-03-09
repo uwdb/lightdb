@@ -6,7 +6,12 @@
 #include "Coordinator.h"
 #include "extension.h"
 #include "reference.h"
+#include "options.h"
 #include <boost/python.hpp>
+#include <boost/any.hpp>
+#include <boost/python/suite/indexing/map_indexing_suite.hpp>
+#include "Dict2Map.hh"
+
 
 namespace Python {
 
@@ -105,13 +110,16 @@ PythonLightField (PythonLightField::*UnionMany)(boost::python::list&) = &PythonL
 PythonLightField (PythonLightField::*PythonMap)(PyObject*, std::string) = &PythonLightField::Map;
 PythonLightField (PythonLightField::*FunctorMap)(lightdb::functor::unaryfunctor) = &PythonLightField::Map;
 
-static PythonLightField Load(const std::string& filepath) {
+static PythonLightField Load(const std::string &filepath) {
     lightdb::GeometryReference geometry = lightdb::GeometryReference::make<lightdb::EquirectangularGeometry>(lightdb::EquirectangularGeometry::Samples());
+    // d = boost::python::dict d
+    // lightdb::auto entry = lightdb::catalog::Catalog::ExternalEntry(filepath, d.get(lightdb::GeometryOptions::Volume), d.get(lightdb::GeometryOptions::Projection));
+    
     return PythonLightField(lightdb::logical::Load(filepath, lightdb::Volume::angular(), geometry));
 }
 
-static PythonLightField Scan(const lightdb::catalog::Catalog &catalog, const std::string &name) {
-    return PythonLightField(lightdb::logical::Scan(catalog, name));
+static PythonLightField Scan(const std::string &name) {
+    return PythonLightField(lightdb::logical::Scan(name));
 }
 
 // Create wrapper that implements pure virtual function to make boost happy.
@@ -122,7 +130,14 @@ protected:
     }
 };
 
-
+// typedef std::map<std::string, boost::any> mymap_t;
+// class OptionsDict {
+// public:
+//     OptionsDict(cont mymap_t& m) {}
+//     std::map getMap() {
+//         return m;
+//     }
+// };
 
 BOOST_PYTHON_MODULE (pylightdb) {
     boost::python::def("Load", Load);
@@ -178,6 +193,14 @@ BOOST_PYTHON_MODULE (pylightdb) {
 
     boost::python::class_<lightdb::catalog::Catalog>("Catalog", boost::python::init<std::string>());
 
+    // volume  
+    boost::python::class_<lightdb::Volume>("Volume", boost::python::init<lightdb::SpatiotemporalRange, lightdb::SpatiotemporalRange, lightdb::SpatiotemporalRange>());
+    boost::python::class_<lightdb::Point3D>("Point3D", boost::python::init<double, double, double>());
+    boost::python::class_<lightdb::Point2D>("Point2D", boost::python::init<double, double>());
+    boost::python::class_<lightdb::options>("options", boost::python::init<boost::python::dict>());
+
+    // GOPszie is unsigned int, 0 is invalid
+
     // Exposing Optimizer is necessary so that HeuristicOptimizer can inherit from it.
     // Don't expose the initializer because Optimizer is an abstract class.
     boost::python::class_<OptimizerWrapper, boost::noncopyable>("Optimizer", boost::python::no_init);
@@ -191,5 +214,6 @@ BOOST_PYTHON_MODULE (pylightdb) {
 
     boost::python::class_<lightdb::functor::naryfunctor<1>>("UnaryFunctor", boost::python::no_init);
     boost::python::class_<class lightdb::Greyscale, boost::python::bases<lightdb::functor::unaryfunctor>>("Greyscale");
+    
 };
 } // namespace Python
