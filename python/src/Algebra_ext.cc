@@ -110,11 +110,26 @@ PythonLightField (PythonLightField::*UnionMany)(boost::python::list&) = &PythonL
 PythonLightField (PythonLightField::*PythonMap)(PyObject*, std::string) = &PythonLightField::Map;
 PythonLightField (PythonLightField::*FunctorMap)(lightdb::functor::unaryfunctor) = &PythonLightField::Map;
 
-static PythonLightField Load(const std::string &filepath) {
+static PythonLightField Load(const std::string &filepath, boost::python::dict mydict) {
     lightdb::GeometryReference geometry = lightdb::GeometryReference::make<lightdb::EquirectangularGeometry>(lightdb::EquirectangularGeometry::Samples());
-    // d = boost::python::dict d
-    // lightdb::auto entry = lightdb::catalog::Catalog::ExternalEntry(filepath, d.get(lightdb::GeometryOptions::Volume), d.get(lightdb::GeometryOptions::Projection));
-    
+    std::map<std::string, std::string> myMap;
+    boost::python::list keys = boost::python::list(mydict.keys());
+    for (int i = 0; i < len(keys); ++i) {
+        boost::python::extract<std::string> extractor_keys(keys[i]);
+        if (!extractor_keys.check()) {  
+                std::cout<<"Key invalid, map might be incomplete"<<std::endl;  
+                continue;                 
+        }  
+        std::string key = extractor_keys();
+        boost::python::extract<std::string> extractor_values(mydict[key]);
+        if (!extractor_values.check()) {  
+           std::cout<<"Value invalid, map might be incomplete"<<std::endl;  
+                continue;                 
+        }  
+        std::string value = extractor_values();
+        myMap[key] = value;
+    }
+    // std::cout<<myMap<<std::endl; 
     return PythonLightField(lightdb::logical::Load(filepath, lightdb::Volume::angular(), geometry));
 }
 
@@ -196,9 +211,9 @@ BOOST_PYTHON_MODULE (pylightdb) {
     // volume  
     boost::python::class_<lightdb::Volume>("Volume", boost::python::init<lightdb::SpatiotemporalRange, lightdb::SpatiotemporalRange, lightdb::SpatiotemporalRange>());
     boost::python::class_<lightdb::Point3D>("Point3D", boost::python::init<double, double, double>());
-    boost::python::class_<lightdb::Point2D>("Point2D", boost::python::init<double, double>());
-    boost::python::class_<lightdb::options>("options", boost::python::init<boost::python::dict>());
-
+    // boost::python::class_<lightdb::Point2D>("Point2D", boost::python::init<double, double>());
+    // boost::python::class_<lightdb::options>("options", boost::python::init<std::map<std::string, std::string>>());
+    // boost::python::class_<lightdb::GOP>("GOP", boost::python::init<int>());
     // GOPszie is unsigned int, 0 is invalid
 
     // Exposing Optimizer is necessary so that HeuristicOptimizer can inherit from it.
