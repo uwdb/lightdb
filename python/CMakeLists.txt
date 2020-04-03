@@ -17,7 +17,9 @@ include_directories(${LIGHTDB_CORE_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${Python2
 
 # Build Python modules.
 set(ALGEBRA_SOURCES "src/Algebra_ext.cc")
+set(CATALOG_SOURCES "src/Catalog.cc")
 add_library(pylightdb SHARED ${ALGEBRA_SOURCES})
+add_library(pycatalog SHARED ${CATALOG_SOURCES})
 
 message("boost libraries: ${Boost_LIBRARIES}")
 

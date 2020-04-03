@@ -7,10 +7,12 @@
 #include "extension.h"
 #include "reference.h"
 #include "options.h"
+#include "LightField.h"
 #include <boost/python.hpp>
 #include <boost/any.hpp>
 #include <boost/python/suite/indexing/map_indexing_suite.hpp>
 #include "Dict2Map.hh"
+
 
 
 namespace Python {
@@ -102,6 +104,19 @@ private:
     lightdb::LightFieldReference _lightField;
 };
 
+class ExternalEntry {
+public:
+    ExternalEntry(const std::filesystem::path &filename, std::map<std::string, std::string> options)
+        : _filename(filename),
+          _options(options)
+    {}
+private:
+    std::filesystem::path _filename;
+    std::map<std::string, std::string> _options;    
+};
+
+
+
 PythonLightField (PythonLightField::*SelectPhi)(const lightdb::PhiRange&) = &PythonLightField::Select;
 PythonLightField (PythonLightField::*SelectTheta)(const lightdb::ThetaRange&) = &PythonLightField::Select;
 PythonLightField (PythonLightField::*SelectSpatiotemporal)(lightdb::SpatiotemporalDimension, const lightdb::SpatiotemporalRange&) = &PythonLightField::Select;
@@ -130,7 +145,23 @@ static PythonLightField Load(const std::string &filepath, boost::python::dict my
         myMap[key] = value;
     }
     // std::cout<<myMap<<std::endl; 
+    ExternalEntry entry = ExternalEntry(filepath, myMap);
     return PythonLightField(lightdb::logical::Load(filepath, lightdb::Volume::angular(), geometry));
+    // return PythonLightField(lightdb::logical::Load(filepath, myMap));
+    // need to make an external lightfield with the filepath and empty options.
+    // expose the light field class?
+
+
+    /*
+        no known conversion for argument 2 from ‘std::map<std::__cxx11::basic_string<char>, std::__cxx11::basic_string<char> >’ to ‘const lightdb::options<>&’
+
+        how to convert myMap to an optionsMap? --> call the lightdb::Load function(fileapth, options<>)
+    */
+
+
+    // lightdb::LightFieldReference ref = lightdb::LightFieldReference::make<lightdb::logical::ExternalLightField>(filepath, entry, lightdb::YUVColorSpace::instance(), lightdb::options<>);
+    // return PythonLightField(ref);
+    // return PythonLightField
 }
 
 static PythonLightField Scan(const std::string &name) {
@@ -212,7 +243,7 @@ BOOST_PYTHON_MODULE (pylightdb) {
     boost::python::class_<lightdb::Volume>("Volume", boost::python::init<lightdb::SpatiotemporalRange, lightdb::SpatiotemporalRange, lightdb::SpatiotemporalRange>());
     boost::python::class_<lightdb::Point3D>("Point3D", boost::python::init<double, double, double>());
     // boost::python::class_<lightdb::Point2D>("Point2D", boost::python::init<double, double>());
-    // boost::python::class_<lightdb::options>("options", boost::python::init<std::map<std::string, std::string>>());
+    // boost::python::class_<lightdb::options, boost::python::bases<std::map<std::string, std::string>>>("options");
     // boost::python::class_<lightdb::GOP>("GOP", boost::python::init<int>());
     // GOPszie is unsigned int, 0 is invalid
 
@@ -229,6 +260,10 @@ BOOST_PYTHON_MODULE (pylightdb) {
 
     boost::python::class_<lightdb::functor::naryfunctor<1>>("UnaryFunctor", boost::python::no_init);
     boost::python::class_<class lightdb::Greyscale, boost::python::bases<lightdb::functor::unaryfunctor>>("Greyscale");
+
+    boost::python::class_<lightdb::catalog::ExternalEntry>("ExternalEntry", boost::python::no_init);
+
+    // boost::python::class_<lightdb::catalog::Source>("Source", boost::python::init<int, std::filesystem::path, lightdb::Codec, >())
     
 };
 } // namespace Python
