@@ -56,6 +56,7 @@ namespace lightdb::optimization {
 
         bool visit(const logical::ScannedLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
+                LOG(ERROR) << "Applying decode rule";
                 if(node.entry().sources().empty())
                     LOG(WARNING) << "Attempt to decode a catalog entry with no underlying streams";
 
@@ -903,6 +904,7 @@ namespace lightdb::optimization {
         bool ApplyRule(const LightField &node) {
             auto logical = plan().lookup(node);
 
+            LOG(ERROR) << "Applying scan identity rule";
             if(IsPhysicalChildASaveOperator(logical)) {
                 auto &scan = logical;
 
