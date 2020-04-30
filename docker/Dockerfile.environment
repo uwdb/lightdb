@@ -14,8 +14,9 @@ RUN apt-get update && apt-get install -y gnupg tzdata wget
 RUN dpkg-reconfigure -f noninteractive tzdata
 
 # Install Intel IPP
-RUN wget $INTEL_REPOSITORY_URL -O /etc/apt/sources.list.d/intelproducts.list
+RUN wget $INTEL_REPOSITORY_URL -O intelproducts.list
 RUN wget $INTEL_KEY_URL -O intel-key.pub
+RUN grep -v intelpython intelproducts.list > /etc/apt/sources.list.d/intelproducts.list # intelpython repo is broken
 RUN apt-key add intel-key.pub
 RUN apt-get update
 RUN apt install -y intel-ipp-2019.3-062
