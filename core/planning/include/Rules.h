@@ -62,11 +62,14 @@ namespace lightdb::optimization {
 
                 for(const auto &stream: node.entry().sources()) {
                     //auto stream = node.entry().streams()[0];
+		    LOG(ERROR) << "Applying rule to stream";
                     auto logical = plan().lookup(node);
 
+		    LOG(ERROR) << "Checking GPU condition";
                     if((stream.codec() == Codec::h264() ||
                         stream.codec() == Codec::hevc()) &&
                        !plan().environment().gpus().empty()) {
+   		        LOG(ERROR) << "Applying rule using GPU";
                         auto gpu = plan().allocator().gpu();
                         //auto gpu = plan().environment().gpus()[0];
 
@@ -82,6 +85,7 @@ namespace lightdb::optimization {
                         }
                     } else if(stream.codec() == Codec::h264() ||
                               stream.codec() == Codec::hevc()) {
+ 		        LOG(ERROR) << "Applying rule to CPU";
                         auto &scan = plan().emplace<physical::ScanSingleFileDecodeReader>(logical, stream);
                         auto decode = plan().emplace<physical::CPUDecode>(logical, scan);
 
