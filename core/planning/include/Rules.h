@@ -96,8 +96,10 @@ namespace lightdb::optimization {
                             auto tees = physical::TeedPhysicalOperatorAdapter::make(decode, children.size());
                             for (auto index = 0u; index < children.size(); index++)
                                 plan().add(tees->physical(index));
-                        } else
+                        } else {
+    		            LOG(ERROR) << "Adding single decode";
                             plan().add(decode);
+                        }
                     } else if(stream.codec() == Codec::boxes()) {
                         auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, stream);
                         auto decode = plan().emplace<physical::CPUFixedLengthRecordDecode<Rectangle>>(logical, scan);
@@ -792,6 +794,7 @@ namespace lightdb::optimization {
 
         bool visit(const logical::SavedLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
+                LOG(ERROR) << "Starting save rule";
                 auto physical_parents = functional::flatmap<std::vector<PhysicalOperatorReference>>(
                         node.parents().begin(), node.parents().end(),
                         [this](auto &parent) { return plan().unassigned(parent); });
@@ -799,8 +802,10 @@ namespace lightdb::optimization {
                 if(physical_parents.empty())
                     return false;
 
+                LOG(ERROR) << "Instantating physical operator";
                 auto encode = Encode(node, physical_parents.front());
                 plan().emplace<physical::SaveToFile>(plan().lookup(node), encode);
+                LOG(ERROR) << "Done applying save rule";
                 return true;
             }
             return false;
