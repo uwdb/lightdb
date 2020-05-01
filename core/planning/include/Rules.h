@@ -88,13 +88,16 @@ namespace lightdb::optimization {
  		        LOG(ERROR) << "Applying rule to CPU";
                         auto &scan = plan().emplace<physical::ScanSingleFileDecodeReader>(logical, stream);
                         auto decode = plan().emplace<physical::CPUDecode>(logical, scan);
+ 		        LOG(ERROR) << "Instantiated CPU decode";
 
                         auto children = plan().children(plan().lookup(node));
+ 		        LOG(ERROR) << "Found " << children.size() << " children";
                         if(children.size() > 1) {
                             auto tees = physical::TeedPhysicalOperatorAdapter::make(decode, children.size());
                             for (auto index = 0u; index < children.size(); index++)
                                 plan().add(tees->physical(index));
-                        }
+                        } else
+                            plan().add(decode);
                     } else if(stream.codec() == Codec::boxes()) {
                         auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, stream);
                         auto decode = plan().emplace<physical::CPUFixedLengthRecordDecode<Rectangle>>(logical, scan);
