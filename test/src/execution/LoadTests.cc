@@ -3,7 +3,7 @@
 #include "AssertVideo.h"
 #include "Display.h"
 #include "TestResources.h"
-#include "TestUtility.h"
+#include "AssertUtility.h"
 #include <gtest/gtest.h>
 #include <TestResources.h>
 
