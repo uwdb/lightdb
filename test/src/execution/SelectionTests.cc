@@ -3,6 +3,7 @@
 #include "TestResources.h"
 #include "AssertVideo.h"
 #include "AssertTime.h"
+#include "AssertUtility.h"
 
 using namespace lightdb;
 using namespace lightdb::logical;
@@ -23,6 +24,8 @@ protected:
 };
 
 TEST_F(SelectionTestFixture, testEmptySelection) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Select(Point6D::zero())
                      .Encode(Codec::raw());
@@ -31,6 +34,8 @@ TEST_F(SelectionTestFixture, testEmptySelection) {
 }
 
 TEST_F(SelectionTestFixture, testSelectThetaPhi) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                     .Select(ThetaRange{0, rational_times_real({2, 4}, PI)})
                     .Select(PhiRange{0, rational_times_real({1, 4}, PI)})
@@ -47,6 +52,8 @@ TEST_F(SelectionTestFixture, testSelectThetaPhi) {
 }
 
 TEST_F(SelectionTestFixture, testSelectPhiTheta) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                     .Select(PhiRange{0, rational_times_real({1, 4}, PI)})
                     .Select(ThetaRange{0, rational_times_real({2, 4}, PI)})
@@ -63,6 +70,8 @@ TEST_F(SelectionTestFixture, testSelectPhiTheta) {
 }
 
 TEST_F(SelectionTestFixture, testSelectPhi) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                     .Select(PhiRange{0, rational_times_real({1, 4}, PI)})
                     .Encode()
@@ -78,6 +87,8 @@ TEST_F(SelectionTestFixture, testSelectPhi) {
 }
 
 TEST_F(SelectionTestFixture, testSelectTheta) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Select(ThetaRange{0, rational_times_real({2, 4}, PI)})
                      .Encode()
@@ -93,6 +104,8 @@ TEST_F(SelectionTestFixture, testSelectTheta) {
 }
 
 TEST_F(SelectionTestFixture, testTemporalSelect) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Select(TemporalRange{2, 5})
                      .Encode()
@@ -108,6 +121,8 @@ TEST_F(SelectionTestFixture, testTemporalSelect) {
 }
 
 TEST_F(SelectionTestFixture, testThetaTemporalSelect) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                     .Select(ThetaRange{0, rational_times_real({2, 4}, PI)})
                     .Select(SpatiotemporalDimension::Time, TemporalRange{2, 5})
@@ -124,6 +139,8 @@ TEST_F(SelectionTestFixture, testThetaTemporalSelect) {
 }
 
 TEST_F(SelectionTestFixture, testTemporalThetaSelect) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                     .Select(SpatiotemporalDimension::Time, TemporalRange{2, 5})
                     .Select(ThetaRange{0, rational_times_real({2, 4}, PI)})
@@ -140,6 +157,8 @@ TEST_F(SelectionTestFixture, testTemporalThetaSelect) {
 }
 
 TEST_F(SelectionTestFixture, testDegenerateTimeSelect) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
             .Select(TemporalRange::limits())
             .Encode()
@@ -157,6 +176,8 @@ TEST_F(SelectionTestFixture, testDegenerateTimeSelect) {
 }
 
 TEST_F(SelectionTestFixture, testDegenerateAngularSelect) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
             .Select(ThetaRange::limits())
             .Encode()
