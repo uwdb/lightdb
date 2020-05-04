@@ -3,6 +3,7 @@
 #include "AssertVideo.h"
 #include "Display.h"
 #include "TestResources.h"
+#include "AssertUtility.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
