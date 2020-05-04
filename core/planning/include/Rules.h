@@ -779,8 +779,9 @@ namespace lightdb::optimization {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent.is<physical::TeedPhysicalOperatorAdapter::TeedPhysicalOperator>() && parent->parents()[0].is<physical::GPUAngularSubquery>()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
+//            } else if(parent->device() == physical::DeviceType::CPU && plan().environment().gpus().empty()) {
+//                return plan().emplace<physical::CPUEncode>(logical, parent, Codec::hevc());
             } else if(parent->device() != physical::DeviceType::GPU) {
-                LOG(ERROR) << "Applying CPU to GPU transfer for some reason";
                 //auto gpu = plan().environment().gpus()[0];
                 auto gpu = plan().allocator().gpu();
                 auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, parent, gpu);
