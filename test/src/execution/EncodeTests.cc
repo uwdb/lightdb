@@ -130,6 +130,8 @@ TEST_F(EncodeTestFixture, testImplicitGOP) {
 }
 
 TEST_F(EncodeTestFixture, testInvalidGOPType) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::hevc(), {{EncodeOptions::GOPSize, "invalid"}})
                      .Save(Resources.out.hevc);
@@ -138,6 +140,8 @@ TEST_F(EncodeTestFixture, testInvalidGOPType) {
 }
 
 TEST_F(EncodeTestFixture, testInvalidGOPRange) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::hevc(), {{EncodeOptions::GOPSize, -1}})
                      .Save(Resources.out.hevc);
