@@ -42,7 +42,7 @@ protected:
 };
 
 TEST_F(EncodeTestFixture, testEncodeH264) {
-    REQUIRES_GPU();
+    REQUIRE_GPU();
 
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::h264())
@@ -58,7 +58,7 @@ TEST_F(EncodeTestFixture, testEncodeH264) {
 }
 
 TEST_F(EncodeTestFixture, testEncodeHEVC) {
-    REQUIRES_GPU();
+    REQUIRE_GPU();
 
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::hevc())
@@ -74,7 +74,7 @@ TEST_F(EncodeTestFixture, testEncodeHEVC) {
 }
 
 TEST_F(EncodeTestFixture, testEncodeRaw) {
-    REQUIRES_GPU();
+    REQUIRE_GPU();
 
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::raw())
@@ -95,25 +95,25 @@ TEST_F(EncodeTestFixture, testEncodeRaw) {
 }
 
 TEST_F(EncodeTestFixture, testGOP30) {
-    REQUIRES_GPU();
+    REQUIRE_GPU();
 
     testEncodeGOP(30u);
 }
 
 TEST_F(EncodeTestFixture, testGOP15) {
-    REQUIRES_GPU();
+    REQUIRE_GPU();
 
     testEncodeGOP(15u);
 }
 
 TEST_F(EncodeTestFixture, testGOP7) {
-    REQUIRES_GPU();
+    REQUIRE_GPU();
 
     testEncodeGOP(7u);
 }
 
 TEST_F(EncodeTestFixture, testImplicitGOP) {
-    REQUIRES_GPU();
+    REQUIRE_GPU();
 
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::hevc())
