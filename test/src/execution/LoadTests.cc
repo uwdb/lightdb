@@ -3,6 +3,7 @@
 #include "AssertVideo.h"
 #include "Display.h"
 #include "TestResources.h"
+#include "TestUtility.h"
 #include <gtest/gtest.h>
 #include <TestResources.h>
 
@@ -21,6 +22,8 @@ public:
 };
 
 TEST_F(LoadTestFixture, testLoadMP4WithoutMetadata) {
+    REQUIRE_GPU();
+
     auto query = Load(Resources.videos.black.mp4.name,
                       {{GeometryOptions::Volume, Volume::zero()},
                       {GeometryOptions::Projection, GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples())}})
@@ -38,6 +41,8 @@ TEST_F(LoadTestFixture, testLoadMP4WithoutMetadata) {
 }
 
 TEST_F(LoadTestFixture, testLoadMP4WithMetadata) {
+    REQUIRE_GPU();
+
     auto query = Load(Resources.red10.metadata_path).Save(Resources.out.h264);
 
     EXPECT_EQ(query->volume().bounding().t(),
@@ -53,6 +58,8 @@ TEST_F(LoadTestFixture, testLoadMP4WithMetadata) {
 }
 
 TEST_F(LoadTestFixture, testLoadUnmuxed) {
+    REQUIRE_GPU();
+
     auto query = Load(Resources.videos.black.h264.name,
                       {{GeometryOptions::Volume, Volume::zero()},
                        {GeometryOptions::Projection, GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples())}})
@@ -70,6 +77,8 @@ TEST_F(LoadTestFixture, testLoadUnmuxed) {
 }
 
 TEST_F(LoadTestFixture, testLoadUnmuxedDifferentExtension) {
+    REQUIRE_GPU();
+
     auto filename = Resources.videos.black.h264.name + "foo";
     std::filesystem::copy(Resources.videos.black.h264.name, filename);
 
