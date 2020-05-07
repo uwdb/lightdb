@@ -33,18 +33,7 @@ namespace Python {
         lightdb::options<> options() {
             return typename lightdb::options<TKey, TValue>::options(internalMap);
         }
-
-        // std::optional<TValue> get(const TKey& key) const {
-        //     auto value = internalMap.find(key);
-        //     return value != internalMap.end() ? std::optional<TValue>{(*value).second} : std::optional<TValue>{};
-        // }
-
-        // template<typename TOptional>
-        // std::optional<TOptional> getb(const TKey& key) const {
-        //     auto value = internalMap.find(key);
-        //     return value != internalMap.end() ? std::optional<TOptional>{std::any_cast<TOptional>((*value).second)} : std::optional<TOptional>{};
-        // }
-
+        
     private:
         std::unordered_map<TKey, TValue> internalMap;
     }; 
