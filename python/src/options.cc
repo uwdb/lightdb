@@ -5,6 +5,7 @@
 #include <boost/python/suite/indexing/map_indexing_suite.hpp>
 #include "options.h"
 #include "Geometry.h"
+#include "errors.h"
 
 
 
@@ -25,6 +26,11 @@ namespace Python {
                 } else if (key.compare("Projection") == 0) {
                     boost::python::extract<lightdb::EquirectangularGeometry> extractor_values(optDict[key]); 
                     value = std::make_any<lightdb::GeometryReference>(extractor_values());
+                } else if (key.compare("GOP") == 0) {
+                    boost::python::extract<unsigned int> extractor_values(optDict[key]); 
+                    value = std::make_any<unsigned int >(extractor_values());
+                } else {
+                    throw InvalidArgumentError("Allowed dictionary keys : Volume, Projection, GOP", key);
                 }
                 internalMap[key] = value;
             } 
