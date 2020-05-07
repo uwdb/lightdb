@@ -1,3 +1,5 @@
+#include <boost/python.hpp>
+#include "options.cc"
 #include "Algebra.h"
 #include "Catalog.h"
 #include "Greyscale.h"
@@ -8,11 +10,7 @@
 #include "reference.h"
 #include "options.h"
 #include "LightField.h"
-#include <boost/python.hpp>
-#include <boost/any.hpp>
-#include <boost/python/suite/indexing/map_indexing_suite.hpp>
-#include "Dict2Map.hh"
-
+#include "number.h"
 
 
 namespace Python {
@@ -67,7 +65,7 @@ public:
         return PythonLightField(_lightField.Union(lightFields));
     }
 
-    PythonLightField Discretize(lightdb::Dimension dimension, double interval) {
+    PythonLightField Discretize(const lightdb::Dimension dimension, double interval) {
         return PythonLightField(_lightField.Discretize(dimension, lightdb::number(interval)));
     }
 
@@ -75,7 +73,7 @@ public:
         return PythonLightField(_lightField.Interpolate(dimension, lightdb::interpolation::Linear()));
     }
 
-    PythonLightField Map(PyObject *udf, std::string path) {
+    PythonLightField Map(PyObject *udf, std::filesystem::path path) {
         auto yolo = lightdb::extensibility::Load("yolo", path);
         return PythonLightField(_lightField.Map(yolo));
     }
@@ -104,71 +102,27 @@ private:
     lightdb::LightFieldReference _lightField;
 };
 
-class ExternalEntry {
-public:
-    ExternalEntry(const std::filesystem::path &filename, std::map<std::string, std::string> options)
-        : _filename(filename),
-          _options(options)
-    {}
-private:
-    std::filesystem::path _filename;
-    std::map<std::string, std::string> _options;    
-};
-
-
-
 PythonLightField (PythonLightField::*SelectPhi)(const lightdb::PhiRange&) = &PythonLightField::Select;
 PythonLightField (PythonLightField::*SelectTheta)(const lightdb::ThetaRange&) = &PythonLightField::Select;
 PythonLightField (PythonLightField::*SelectSpatiotemporal)(lightdb::SpatiotemporalDimension, const lightdb::SpatiotemporalRange&) = &PythonLightField::Select;
 PythonLightField (PythonLightField::*UnionOne)(PythonLightField&) = &PythonLightField::Union;
 PythonLightField (PythonLightField::*UnionMany)(boost::python::list&) = &PythonLightField::Union;
-PythonLightField (PythonLightField::*PythonMap)(PyObject*, std::string) = &PythonLightField::Map;
+PythonLightField (PythonLightField::*PythonMap)(PyObject*, std::filesystem::path) = &PythonLightField::Map;
 PythonLightField (PythonLightField::*FunctorMap)(lightdb::functor::unaryfunctor) = &PythonLightField::Map;
 
-static PythonLightField Load(const std::string &filepath, boost::python::dict mydict) {
-    lightdb::GeometryReference geometry = lightdb::GeometryReference::make<lightdb::EquirectangularGeometry>(lightdb::EquirectangularGeometry::Samples());
-    std::map<std::string, std::string> myMap;
-    boost::python::list keys = boost::python::list(mydict.keys());
-    for (int i = 0; i < len(keys); ++i) {
-        boost::python::extract<std::string> extractor_keys(keys[i]);
-        if (!extractor_keys.check()) {  
-                std::cout<<"Key invalid, map might be incomplete"<<std::endl;  
-                continue;                 
-        }  
-        std::string key = extractor_keys();
-        boost::python::extract<std::string> extractor_values(mydict[key]);
-        if (!extractor_values.check()) {  
-           std::cout<<"Value invalid, map might be incomplete"<<std::endl;  
-                continue;                 
-        }  
-        std::string value = extractor_values();
-        myMap[key] = value;
-    }
-    // std::cout<<myMap<<std::endl; 
-    ExternalEntry entry = ExternalEntry(filepath, myMap);
-    return PythonLightField(lightdb::logical::Load(filepath, lightdb::Volume::angular(), geometry));
-    // return PythonLightField(lightdb::logical::Load(filepath, myMap));
-    // need to make an external lightfield with the filepath and empty options.
-    // expose the light field class?
 
-
-    /*
-        no known conversion for argument 2 from ‘std::map<std::__cxx11::basic_string<char>, std::__cxx11::basic_string<char> >’ to ‘const lightdb::options<>&’
-
-        how to convert myMap to an optionsMap? --> call the lightdb::Load function(fileapth, options<>)
-    */
-
-
-    // lightdb::LightFieldReference ref = lightdb::LightFieldReference::make<lightdb::logical::ExternalLightField>(filepath, entry, lightdb::YUVColorSpace::instance(), lightdb::options<>);
-    // return PythonLightField(ref);
-    // return PythonLightField
+static PythonLightField Load(const std::string &filepath, boost::python::dict string_options) {
+    PythonOptions opt(string_options);
+    return PythonLightField(lightdb::logical::Load(filepath, opt.options()));
 }
 
 static PythonLightField Scan(const std::string &name) {
     return PythonLightField(lightdb::logical::Scan(name));
 }
 
-// Create wrapper that implements pure virtual function to make boost happy.
+
+// Create wrappers that implements pure virtual function to make boost happy.
+
 class OptimizerWrapper : public lightdb::optimization::Optimizer, public boost::python::wrapper<lightdb::optimization::Optimizer> {
 protected:
     const std::vector<std::shared_ptr<lightdb::optimization::OptimizerRule>> rules() const {
@@ -176,15 +130,29 @@ protected:
     }
 };
 
-// typedef std::map<std::string, boost::any> mymap_t;
-// class OptionsDict {
-// public:
-//     OptionsDict(cont mymap_t& m) {}
-//     std::map getMap() {
-//         return m;
-//     }
-// };
+class GeometryWrapper : public lightdb::Geometry, public boost::python::wrapper<lightdb::Geometry>  {
+    public:
+        bool is_monotonic() const {
+            return this->get_override("is_monotonic")();
+        }
+        bool defined_at(const lightdb::Point6D &point) const {
+            return this->get_override("defined_at")();
+        }
+};
 
+typedef lightdb::number angle;
+class MeshGeometryWrapper : public lightdb::MeshGeometry, public boost::python::wrapper<lightdb::MeshGeometry> {
+    public:
+        double u(angle theth, angle phi) const {
+            return this->get_override("u")();
+        }
+        double v(angle theth, angle phi) const {
+            return this->get_override("v")();
+        }
+};
+
+
+//#pragma GCC visibility push(default)
 BOOST_PYTHON_MODULE (pylightdb) {
     boost::python::def("Load", Load);
     boost::python::def("Scan", Scan);
@@ -239,13 +207,11 @@ BOOST_PYTHON_MODULE (pylightdb) {
 
     boost::python::class_<lightdb::catalog::Catalog>("Catalog", boost::python::init<std::string>());
 
-    // volume  
     boost::python::class_<lightdb::Volume>("Volume", boost::python::init<lightdb::SpatiotemporalRange, lightdb::SpatiotemporalRange, lightdb::SpatiotemporalRange>());
-    boost::python::class_<lightdb::Point3D>("Point3D", boost::python::init<double, double, double>());
-    // boost::python::class_<lightdb::Point2D>("Point2D", boost::python::init<double, double>());
-    // boost::python::class_<lightdb::options, boost::python::bases<std::map<std::string, std::string>>>("options");
-    // boost::python::class_<lightdb::GOP>("GOP", boost::python::init<int>());
-    // GOPszie is unsigned int, 0 is invalid
+    boost::python::class_<GeometryWrapper, boost::noncopyable>("Geometry", boost::python::no_init);
+    boost::python::class_<MeshGeometryWrapper, boost::noncopyable>("MeshGeometry", boost::python::no_init);
+    boost::python::class_<lightdb::EquirectangularGeometry, boost::python::bases<lightdb::MeshGeometry>>("EquirectangularGeometry", boost::python::init<std::size_t, std::size_t>());
+    
 
     // Exposing Optimizer is necessary so that HeuristicOptimizer can inherit from it.
     // Don't expose the initializer because Optimizer is an abstract class.
@@ -261,9 +227,8 @@ BOOST_PYTHON_MODULE (pylightdb) {
     boost::python::class_<lightdb::functor::naryfunctor<1>>("UnaryFunctor", boost::python::no_init);
     boost::python::class_<class lightdb::Greyscale, boost::python::bases<lightdb::functor::unaryfunctor>>("Greyscale");
 
-    boost::python::class_<lightdb::catalog::ExternalEntry>("ExternalEntry", boost::python::no_init);
-
-    // boost::python::class_<lightdb::catalog::Source>("Source", boost::python::init<int, std::filesystem::path, lightdb::Codec, >())
-    
+    boost::python::class_<typename lightdb::options<>>("PyOptions", boost::python::no_init);        
+        
 };
+//BH #pragma GCC visibility pop
 } // namespace Python

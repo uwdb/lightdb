@@ -3,6 +3,9 @@ project(pythonmodules)
 
 set(CMAKE_CXX_STANDARD 17)
 
+#set( CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--no-undefined")
+#set(CMAKE_CXX_FLAGS "-fvisibility=default")
+
 # Set the cmake Module path
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../cmake/Modules/")
 
@@ -17,12 +20,12 @@ include_directories(${LIGHTDB_CORE_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${Python2
 
 # Build Python modules.
 set(ALGEBRA_SOURCES "src/Algebra_ext.cc")
-set(CATALOG_SOURCES "src/Catalog.cc")
-add_library(pylightdb SHARED ${ALGEBRA_SOURCES})
-add_library(pycatalog SHARED ${CATALOG_SOURCES})
+set(OPTIONS_SOURCES "src/options.cc")
+add_library(pylightdb SHARED ${ALGEBRA_SOURCES} ${OPTIONS_SOURCES})
+target_compile_options(pylightdb PRIVATE "-fvisibility=default")
 
 message("boost libraries: ${Boost_LIBRARIES}")
 
-target_link_libraries(pylightdb ${Boost_LIBRARIES} ${Python2_LIBRARIES} ${LIGHTDB_LIB_DEPENDENCIES} lightdb)
+target_link_libraries(pylightdb ${Boost_LIBRARIES} ${Python2_LIBRARIES} ${LIGHTDB_LIB_DEPENDENCIES} lightdb_protobuf lightdb)
 target_link_libraries(pylightdb opencv_core)
 set_target_properties(pylightdb PROPERTIES PREFIX "")

@@ -10,6 +10,10 @@ namespace lightdb {
     public:
         using std::unordered_map<TKey, TValue>::unordered_map;
 
+        options(std::unordered_map<TKey, TValue> string_options)
+            : _internalMap(std::move(string_options))
+        {};    
+
         struct Encoding {
             static constexpr const char* GOPSize = "GOP";
         };
@@ -20,19 +24,21 @@ namespace lightdb {
 
 
         std::optional<TValue> get(const TKey& key) const {
-            auto value = this->find(key);
-            return value != this->end()
+            auto value = _internalMap.find(key);
+            return value != _internalMap.end()
                 ? std::optional<TValue>{(*value).second}
                 : std::optional<TValue>{};
         }
 
         template<typename TOptional>
         std::optional<TOptional> get(const TKey& key) const {
-            auto value = this->find(key);
-            return value != this->end()
+            auto value = _internalMap.find(key);
+            return value != _internalMap.end()
                    ? std::optional<TOptional>{std::any_cast<TOptional>((*value).second)}
                    : std::optional<TOptional>{};
         }
+    private:
+        std::unordered_map<TKey, TValue> _internalMap;    
     };
 
     template<typename TKey=std::string, typename TValue=std::any>
