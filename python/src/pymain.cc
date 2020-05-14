@@ -1,19 +1,9 @@
 #include <boost/python.hpp>
-#include "options.cc"
-#include "Algebra.h"
-#include "Catalog.h"
-#include "Greyscale.h"
-#include "HeuristicOptimizer.h"
-#include "Visitor.h"
-#include "Coordinator.h"
-#include "extension.h"
-#include "reference.h"
-#include "options.h"
-#include "LightField.h"
+#include "PythonLightField.h"
 #include "number.h"
 
 
-namespace Python {
+namespace LightDB::Python {
 
 void (lightdb::execution::Coordinator::*ExecuteLightField)(const lightdb::LightFieldReference&) = &lightdb::execution::Coordinator::execute;
 void (lightdb::execution::Coordinator::*ExecuteLightFieldAndOptimizer)(const lightdb::LightFieldReference&, const lightdb::optimization::Optimizer&) = &lightdb::execution::Coordinator::execute;
@@ -23,97 +13,9 @@ static void SetUpLocalEnvironment() {
     lightdb::optimization::Optimizer::instance<lightdb::optimization::HeuristicOptimizer>(lightdb::execution::LocalEnvironment());
 }
 
-class PythonLightField {
-public:
-    PythonLightField(const lightdb::LightFieldReference &lightField)
-        : _lightField(lightField)
-    {}
-
-    PythonLightField Partition(lightdb::Dimension dimension, const double interval) {
-        return PythonLightField(_lightField.Partition(dimension, interval));
-    }
-
-    PythonLightField Select(const lightdb::PhiRange &phiRange) {
-        return PythonLightField(_lightField.Select(phiRange));
-    }
-
-    PythonLightField Select(const lightdb::ThetaRange &thetaRange) {
-        return PythonLightField(_lightField.Select(thetaRange));
-    }
-
-    PythonLightField Select(lightdb::SpatiotemporalDimension dimension, const lightdb::SpatiotemporalRange &range) {
-        return PythonLightField(_lightField.Select(dimension, range));
-    }
-
-    PythonLightField Subquery(PyObject *pyObject) {
-        return PythonLightField(_lightField.Subquery([pyObject](auto l) { return boost::python::call<PythonLightField>(pyObject, PythonLightField(l)).query(); }));
-    }
-
-    PythonLightField Union(PythonLightField &lightField) {
-        return PythonLightField(_lightField.Union(lightField.query()));
-    }
-
-    PythonLightField Union(boost::python::list &listOfLightFields) {
-        std::vector<PythonLightField> pythonLightFields = std::vector<PythonLightField>(
-                boost::python::stl_input_iterator<PythonLightField>(listOfLightFields),
-                boost::python::stl_input_iterator<PythonLightField>());
-
-        std::vector<lightdb::LightFieldReference> lightFields;
-        std::transform(pythonLightFields.begin(), pythonLightFields.end(), std::back_inserter(lightFields),
-                [](PythonLightField lightField) -> lightdb::LightFieldReference { return lightField.query(); });
-
-        return PythonLightField(_lightField.Union(lightFields));
-    }
-
-    PythonLightField Discretize(const lightdb::Dimension dimension, double interval) {
-        return PythonLightField(_lightField.Discretize(dimension, lightdb::number(interval)));
-    }
-
-    PythonLightField Interpolate(lightdb::Dimension dimension) {
-        return PythonLightField(_lightField.Interpolate(dimension, lightdb::interpolation::Linear()));
-    }
-
-    PythonLightField Map(PyObject *udf, std::filesystem::path path) {
-        auto yolo = lightdb::extensibility::Load("yolo", path);
-        return PythonLightField(_lightField.Map(yolo));
-    }
-
-    PythonLightField Map(lightdb::functor::unaryfunctor functor) {
-        return PythonLightField(_lightField.Map(functor));
-    }
-
-    PythonLightField Encode() {
-        return PythonLightField(_lightField.Encode());
-    }
-
-    PythonLightField Save(const std::string &fileName) {
-        return PythonLightField(_lightField.Save(static_cast<std::filesystem::path>(fileName)));
-    }
-
-    PythonLightField Store(const lightdb::catalog::Catalog &catalog, const std::string &name) {
-        return PythonLightField(_lightField.Store(name, catalog));
-    }
-
-    lightdb::LightFieldReference query() {
-        return _lightField;
-    }
-
-private:
-    lightdb::LightFieldReference _lightField;
-};
-
-PythonLightField (PythonLightField::*SelectPhi)(const lightdb::PhiRange&) = &PythonLightField::Select;
-PythonLightField (PythonLightField::*SelectTheta)(const lightdb::ThetaRange&) = &PythonLightField::Select;
-PythonLightField (PythonLightField::*SelectSpatiotemporal)(lightdb::SpatiotemporalDimension, const lightdb::SpatiotemporalRange&) = &PythonLightField::Select;
-PythonLightField (PythonLightField::*UnionOne)(PythonLightField&) = &PythonLightField::Union;
-PythonLightField (PythonLightField::*UnionMany)(boost::python::list&) = &PythonLightField::Union;
-PythonLightField (PythonLightField::*PythonMap)(PyObject*, std::filesystem::path) = &PythonLightField::Map;
-PythonLightField (PythonLightField::*FunctorMap)(lightdb::functor::unaryfunctor) = &PythonLightField::Map;
-
-
 static PythonLightField Load(const std::string &filepath, boost::python::dict string_options) {
-    PythonOptions opt(string_options);
-    return PythonLightField(lightdb::logical::Load(filepath, opt.options()));
+PythonOptions opt(string_options);
+return PythonLightField(lightdb::logical::Load(filepath, opt.options()));
 }
 
 static PythonLightField Scan(const std::string &name) {
@@ -162,16 +64,16 @@ BOOST_PYTHON_MODULE (pylightdb) {
 
     boost::python::class_<PythonLightField>("PythonLightField", boost::python::no_init)
             .def("Partition", &PythonLightField::Partition)
-            .def("Select", SelectPhi)
-            .def("Select", SelectTheta)
-            .def("Select", SelectSpatiotemporal)
+            .def("Select", &PythonLightField::SelectPhi)
+            .def("Select", &PythonLightField::SelectTheta)
+            .def("Select", &PythonLightField::SelectSpatiotemporal)
             .def("Subquery", &PythonLightField::Subquery)
-            .def("Union", UnionOne)
-            .def("Union", UnionMany)
+            .def("Union", &PythonLightField::UnionOne)
+            .def("Union", &PythonLightField::UnionMany)
             .def("Discretize", &PythonLightField::Discretize)
             .def("Interpolate", &PythonLightField::Interpolate)
-            .def("Map", PythonMap)
-            .def("Map", FunctorMap)
+            .def("Map", &PythonLightField::PythonMap)
+            .def("Map", &PythonLightField::FunctorMap)
             .def("Encode", &PythonLightField::Encode)
             .def("Save", &PythonLightField::Save)
             .def("Store", &PythonLightField::Store)

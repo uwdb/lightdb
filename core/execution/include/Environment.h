@@ -3,7 +3,7 @@
 
 #include "GPUContext.h"
 
-#include <iostream>
+
 
 namespace lightdb::execution {
 

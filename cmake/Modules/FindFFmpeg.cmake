@@ -43,7 +43,6 @@ endif ()
 #
 macro(set_component_found _component )
   if (${_component}_LIBRARIES AND ${_component}_INCLUDE_DIRS)
-    message("Component libraries: ${${_component}_LIBRARIES}")
     message(STATUS "  ${_component} found.")
     set(${_component}_FOUND TRUE)
   else ()

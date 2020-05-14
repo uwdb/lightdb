@@ -1,3 +1,5 @@
+#ifndef LIGHTDB_PYTHON_OPTIONS_H
+#define LIGHTDB_PYTHON_OPTIONS_H
 #include <any>
 #include <unordered_map>
 #include <boost/python.hpp>
@@ -7,9 +9,7 @@
 #include "Geometry.h"
 #include "errors.h"
 
-
-
-namespace Python {
+namespace LightDB::Python {
    // PyOptions
     template<typename TKey=std::string, typename TValue=std::any>
     class PythonOptions {
@@ -45,3 +45,4 @@ namespace Python {
     }; 
 }
 
+#endif // LIGHTDB_PYTHON_OPTIONS_H

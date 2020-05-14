@@ -4,16 +4,11 @@ include_directories(${LIGHTDB_INCLUDE_DIRS})
 
 file(GLOB LIGHTDB_SOURCE_DIRS "*/src")
 foreach(subdir ${LIGHTDB_SOURCE_DIRS})
-  if (subdir MATCHES "../python/src")
-    message("Skipping ${subdir}")
-  else()
-    add_subdirectory(${subdir}/..)
-  endif()
+  add_subdirectory(${subdir}/..)
 endforeach()
 
 # Gather the core source files
 file(GLOB_RECURSE LIGHTDB_SOURCES "*.cc")
-list(FILTER LIGHTDB_SOURCES EXCLUDE REGEX "../python/src")
 set(LIGHTDB_SOURCES ${LIGHTDB_SOURCES} ${NVIDIASDK_SOURCES})
 
 # Compile sources with PIC
