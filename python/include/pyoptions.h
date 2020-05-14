@@ -9,7 +9,7 @@
 #include "Geometry.h"
 #include "errors.h"
 
-namespace LightDB::Python {
+namespace lightdb::python {
    // PyOptions
     template<typename TKey=std::string, typename TValue=std::any>
     class PythonOptions {

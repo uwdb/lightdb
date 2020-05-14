@@ -1,6 +1,6 @@
 #include "PythonLightField.h"
 
-namespace LightDB::Python {
+namespace lightdb::python {
     PythonLightField::PythonLightField(const lightdb::LightFieldReference &lightField)
         : _lightField(lightField)
     {}

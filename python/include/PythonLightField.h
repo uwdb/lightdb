@@ -11,7 +11,7 @@
 #include "reference.h"
 #include "LightField.h"
 
-namespace LightDB::Python {
+namespace lightdb::python {
 
     class PythonLightField {
     public:
