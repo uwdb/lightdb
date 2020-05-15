@@ -22,6 +22,5 @@ mark_as_advanced(GPAC_INCLUDE_DIR GPAC_LIBRARY )
 
 if(GPAC_FOUND)
   set(GPAC_INCLUDE_DIRS ${GPAC_INCLUDE_DIR})
-  set(GPAC_LIBRARIES "/usr/lib/x86_64-linux-gnu/libgpac.so")
-#  set(GPAC_LIBRARIES ${GPAC_LIBRARY})
+  set(GPAC_LIBRARIES ${GPAC_LIBRARY})
 endif()
