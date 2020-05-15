@@ -65,7 +65,6 @@ cmake-build-*
 *.mp4
 
 # plugins
-.blur-cfgmcd.txt
-.blur-cfgmcd.txt.in
-.yolo-cfgmd.txt
-.yolo-cfgmd.txt.in
+.*-cfgmd.txt*
+
+.CMakeLists.txt.swp

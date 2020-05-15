@@ -5,19 +5,19 @@ namespace lightdb::python {
         : _lightField(lightField)
     {}
 
-    PythonLightField PythonLightField::Partition(lightdb::Dimension dimension, const double interval) {
+    PythonLightField PythonLightField::Partition(lightdb::Dimension dimension, double interval) {
         return PythonLightField(_lightField.Partition(dimension, interval));
     }
 
-    PythonLightField PythonLightField::SelectPhi(const lightdb::PhiRange &phiRange) {
+    PythonLightField PythonLightField::Select(const lightdb::PhiRange &phiRange) {
         return PythonLightField(_lightField.Select(phiRange));
     }
 
-    PythonLightField PythonLightField::SelectTheta(const lightdb::ThetaRange &thetaRange) {
+    PythonLightField PythonLightField::Select(const lightdb::ThetaRange &thetaRange) {
         return PythonLightField(_lightField.Select(thetaRange));
     }
 
-    PythonLightField PythonLightField::SelectSpatiotemporal(lightdb::SpatiotemporalDimension dimension, const lightdb::SpatiotemporalRange &range) {
+    PythonLightField PythonLightField::Select(lightdb::SpatiotemporalDimension dimension, const lightdb::SpatiotemporalRange &range) {
         return PythonLightField(_lightField.Select(dimension, range));
     }
 
@@ -25,11 +25,11 @@ namespace lightdb::python {
         return PythonLightField(_lightField.Subquery([pyObject](auto l) { return boost::python::call<PythonLightField>(pyObject, PythonLightField(l)).query(); }));
     }
 
-    PythonLightField PythonLightField::UnionOne(PythonLightField &lightField) {
+    PythonLightField PythonLightField::Union(PythonLightField &lightField) {
         return PythonLightField(_lightField.Union(lightField.query()));
     }
 
-    PythonLightField PythonLightField::UnionMany(boost::python::list &listOfLightFields) {
+    PythonLightField PythonLightField::Union(boost::python::list &listOfLightFields) {
         std::vector<PythonLightField> pythonLightFields = std::vector<PythonLightField>(
                 boost::python::stl_input_iterator<PythonLightField>(listOfLightFields),
                 boost::python::stl_input_iterator<PythonLightField>());
@@ -49,12 +49,13 @@ namespace lightdb::python {
         return PythonLightField(_lightField.Interpolate(dimension, lightdb::interpolation::Linear()));
     }
 
-    PythonLightField PythonLightField::PythonMap(PyObject *udf, std::filesystem::path path) {
+    //toDo : Expose UDFs
+    PythonLightField PythonLightField::Map(PyObject *udf, std::filesystem::path path) {
         auto yolo = lightdb::extensibility::Load("yolo", path);
         return PythonLightField(_lightField.Map(yolo));
     }
 
-    PythonLightField PythonLightField::FunctorMap(lightdb::functor::unaryfunctor functor) {
+    PythonLightField PythonLightField::Map(lightdb::functor::unaryfunctor functor) {
         return PythonLightField(_lightField.Map(functor));
     }
 

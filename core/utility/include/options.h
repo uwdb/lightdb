@@ -10,9 +10,9 @@ namespace lightdb {
     public:
         using std::unordered_map<TKey, TValue>::unordered_map;
 
-        options(const std::unordered_map<TKey, TValue> string_options)
+        options(const std::unordered_map<TKey, TValue> &string_options)
             : std::unordered_map<TKey, TValue>(string_options)
-        {};    
+        {}; 
 
         struct Encoding {
             static constexpr const char* GOPSize = "GOP";
