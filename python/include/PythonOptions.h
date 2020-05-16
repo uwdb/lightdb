@@ -31,13 +31,13 @@ namespace lightdb::python {
 
         static std::any dictToMap(std::string key, boost::python::dict optDict) {
             std::any value = 1;
-            if (key.compare("Volume") == 0) {
+            if (key == "Volume") {
                 boost::python::extract<lightdb::Volume> extractor_values(optDict[key]); 
                 value = std::make_any<lightdb::Volume>(extractor_values());
-            } else if (key.compare("Projection") == 0) {
+            } else if (key == "Projection") {
                 boost::python::extract<lightdb::EquirectangularGeometry> extractor_values(optDict[key]); 
                 value = std::make_any<lightdb::GeometryReference>(extractor_values());
-            } else if (key.compare("GOP") == 0) {
+            } else if (key == "GOP") {
                 boost::python::extract<unsigned int> extractor_values(optDict[key]); 
                 value = std::make_any<unsigned int >(extractor_values());
             } else {
