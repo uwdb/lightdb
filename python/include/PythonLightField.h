@@ -1,16 +1,15 @@
 #ifndef LIGHTDB_PYTHON_LIGHT_FIELD_H
 #define LIGHTDB_PYTHON_LIGHT_FIELD_H
 
-
 #include "Algebra.h"
 #include "Catalog.h"
 #include "Greyscale.h"
-#include "PythonOptimizer.h"
 #include "Visitor.h"
 #include "Coordinator.h"
+#include "LightField.h"
 #include "extension.h"
 #include "reference.h"
-#include "LightField.h"
+#include "PythonOptimizer.h"
 #include "PythonOptions.h"
 
 namespace lightdb::python {
@@ -25,14 +24,15 @@ namespace lightdb::python {
         PythonLightField Subquery(PyObject *PyObject);
         PythonLightField Union(PythonLightField &lightField);
         PythonLightField Union(boost::python::list &listOfLightFields);
-        PythonLightField Discretize(const lightdb::Dimension dimension, double interval);
+        PythonLightField Discretize(lightdb::Dimension dimension, double interval);
         PythonLightField Interpolate(lightdb::Dimension dimension);
-        PythonLightField Map(PyObject *udf, std::filesystem::path path);
-        PythonLightField Map(lightdb::functor::unaryfunctor functor);
+        PythonLightField Map(PyObject *udf, const std::filesystem::path &path);
+        PythonLightField Map(const lightdb::functor::unaryfunctor &functor);
         PythonLightField Encode();
         PythonLightField Save(const std::string &filename);
         PythonLightField Store(const lightdb::catalog::Catalog &catalog, const std::string &name);
         lightdb::LightFieldReference query();
+
     private:
         lightdb::LightFieldReference _lightField;       
     };

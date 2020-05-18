@@ -1,23 +1,23 @@
 #ifndef LIGHTDB_PYTHON_OPTIONS_H
 #define LIGHTDB_PYTHON_OPTIONS_H
 
-#include <any>
-#include <unordered_map>
+#include "Geometry.h"
+#include "options.h"
+#include "errors.h"
 #include <boost/python.hpp>
 #include <boost/any.hpp>
 #include <boost/python/suite/indexing/map_indexing_suite.hpp>
-#include "options.h"
-#include "Geometry.h"
-#include "errors.h"
+#include <any>
+#include <unordered_map>
 
 namespace lightdb::python {
     template<typename TKey=std::string, typename TValue=std::any>
     class PythonOptions {
     public:
-        PythonOptions(const boost::python::dict &optDict) {
+        explicit PythonOptions(const boost::python::dict &optDict) {
             boost::python::list keys = boost::python::list(optDict.keys());
-            for (int i = 0; i < len(keys); ++i) {
-                boost::python::extract<std::string> extractor_keys(keys[i]); 
+            for (auto i = 0u; i < len(keys); ++i) {
+                boost::python::extract<std::string> extractor_keys(keys[i]);
                 std::string key = extractor_keys();
                 std::any value = dictToMap(key, optDict);
                 _internalMap[key] = value;
@@ -29,8 +29,9 @@ namespace lightdb::python {
     private:
         std::unordered_map<TKey, TValue> _internalMap;
 
-        static std::any dictToMap(std::string key, boost::python::dict optDict) {
-            std::any value = 1;
+        static std::any dictToMap(const std::string &key, const boost::python::dict &optDict) {
+            std::any value{};
+
             if (key == "Volume") {
                 boost::python::extract<lightdb::Volume> extractor_values(optDict[key]); 
                 value = std::make_any<lightdb::Volume>(extractor_values());
@@ -45,7 +46,7 @@ namespace lightdb::python {
             }
             return value;    
         }
-    }; 
+    };
 }
 
 #endif // LIGHTDB_PYTHON_OPTIONS_H

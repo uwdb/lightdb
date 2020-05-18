@@ -1,60 +1,41 @@
-#include <boost/python.hpp>
 #include "PythonLightField.h"
 #include "PythonGeometry.h"
-#include "number.h"
+#include <boost/python.hpp>
 
 
 namespace lightdb::python {
-
-    void (lightdb::execution::Coordinator::*ExecuteLightField)(const lightdb::LightFieldReference&) = &lightdb::execution::Coordinator::execute;
-    void (lightdb::execution::Coordinator::*ExecuteLightFieldAndOptimizer)(const lightdb::LightFieldReference&, const lightdb::optimization::Optimizer&) = &lightdb::execution::Coordinator::execute;
-
-    static PythonLightField Load(const std::string &filepath, boost::python::dict string_options) {
-        PythonOptions opt(string_options);
-        return PythonLightField(lightdb::logical::Load(filepath, opt));
-    }
-
-    static PythonLightField Scan(const std::string &name) {
-        return PythonLightField(lightdb::logical::Scan(name));
-    }
-
-    // Method overloads for PythonLightField
-    PythonLightField (PythonLightField::*SelectPhi)(const lightdb::PhiRange&) = &PythonLightField::Select;
-    PythonLightField (PythonLightField::*SelectTheta)(const lightdb::ThetaRange&) = &PythonLightField::Select;
-    PythonLightField (PythonLightField::*SelectSpatiotemporal)(lightdb::SpatiotemporalDimension, const lightdb::SpatiotemporalRange&) = &PythonLightField::Select;
-    PythonLightField (PythonLightField::*UnionOne)(PythonLightField&) = &PythonLightField::Union;
-    PythonLightField (PythonLightField::*UnionMany)(boost::python::list&) = &PythonLightField::Union;
-    PythonLightField (PythonLightField::*PythonMap)(PyObject*, std::filesystem::path) = &PythonLightField::Map;
-    PythonLightField (PythonLightField::*FunctorMap)(lightdb::functor::unaryfunctor) = &PythonLightField::Map;
-
     BOOST_PYTHON_MODULE (pylightdb) {
-        // SetUpLocalEnivronment()
         lightdb::optimization::Optimizer::instance<lightdb::optimization::HeuristicOptimizer>(lightdb::execution::LocalEnvironment());
-        boost::python::def("Load", Load);
-        boost::python::def("Scan", Scan);
+
+        boost::python::def("Load", +[](const std::string &filepath, boost::python::dict string_options) -> PythonLightField {
+            return PythonLightField(lightdb::logical::Load(filepath, PythonOptions{string_options}));
+        });
+        boost::python::def("Scan", +[](const std::string &name) -> PythonLightField {
+            return PythonLightField(lightdb::logical::Scan(name));
+        });
 
         boost::python::class_<lightdb::LightFieldReference>("LightFieldReference", boost::python::no_init);
 
         boost::python::class_<PythonLightField>("PythonLightField", boost::python::no_init)
                 .def("Partition", &PythonLightField::Partition)
-                .def("Select", SelectPhi)
-                .def("Select", SelectTheta)
-                .def("Select", SelectSpatiotemporal)
+                .def("Select", static_cast<PythonLightField(PythonLightField::*)(const lightdb::PhiRange&)>(&PythonLightField::Select))
+                .def("Select", static_cast<PythonLightField(PythonLightField::*)(const lightdb::ThetaRange&)>(&PythonLightField::Select))
+                .def("Select", static_cast<PythonLightField(PythonLightField::*)(lightdb::SpatiotemporalDimension, const lightdb::SpatiotemporalRange&)>(&PythonLightField::Select))
                 .def("Subquery", &PythonLightField::Subquery)
-                .def("Union", UnionOne)
-                .def("Union", UnionMany)
+                .def("Union", static_cast<PythonLightField(PythonLightField::*)(PythonLightField&)>(&PythonLightField::Union))
+                .def("Union", static_cast<PythonLightField(PythonLightField::*)(boost::python::list&)>(&PythonLightField::Union))
                 .def("Discretize", &PythonLightField::Discretize)
                 .def("Interpolate", &PythonLightField::Interpolate)
-                .def("Map", PythonMap)
-                .def("Map", FunctorMap)
+                .def("Map", static_cast<PythonLightField(PythonLightField::*)(PyObject*, const std::filesystem::path&)>(&PythonLightField::Map))
+                .def("Map", static_cast<PythonLightField(PythonLightField::*)(const lightdb::functor::unaryfunctor&)>(&PythonLightField::Map))
                 .def("Encode", &PythonLightField::Encode)
                 .def("Save", &PythonLightField::Save)
                 .def("Store", &PythonLightField::Store)
                 .def("query", &PythonLightField::query);
 
         boost::python::class_<lightdb::execution::Coordinator>("Coordinator")
-                .def("Execute", ExecuteLightField)
-                .def("Execute", ExecuteLightFieldAndOptimizer);
+                .def("Execute", static_cast<void(lightdb::execution::Coordinator::*)(const lightdb::LightFieldReference&)>(&lightdb::execution::Coordinator::execute))
+                .def("Execute", static_cast<void(lightdb::execution::Coordinator::*)(const lightdb::LightFieldReference&, const lightdb::optimization::Optimizer&)>(&lightdb::execution::Coordinator::execute));
 
         boost::python::enum_<lightdb::Dimension>("Dimension")
                 .value("X", lightdb::Dimension::X)
@@ -101,7 +82,6 @@ namespace lightdb::python {
         boost::python::class_<lightdb::functor::naryfunctor<1>>("UnaryFunctor", boost::python::no_init);
         boost::python::class_<class lightdb::Greyscale, boost::python::bases<lightdb::functor::unaryfunctor>>("Greyscale");
 
-        boost::python::class_<typename lightdb::options<>>("PyOptions", boost::python::no_init);        
-            
+        boost::python::class_<typename lightdb::options<>>("PyOptions", boost::python::no_init);
     };
 } // namespace Python

@@ -3,7 +3,7 @@
 namespace lightdb::python {
     PythonLightField::PythonLightField(const lightdb::LightFieldReference &lightField)
         : _lightField(lightField)
-    {}
+    { }
 
     PythonLightField PythonLightField::Partition(lightdb::Dimension dimension, double interval) {
         return PythonLightField(_lightField.Partition(dimension, interval));
@@ -49,13 +49,13 @@ namespace lightdb::python {
         return PythonLightField(_lightField.Interpolate(dimension, lightdb::interpolation::Linear()));
     }
 
-    //toDo : Expose UDFs
-    PythonLightField PythonLightField::Map(PyObject *udf, std::filesystem::path path) {
+    //TODO : Expose UDFs
+    PythonLightField PythonLightField::Map(PyObject *udf, const std::filesystem::path &path) {
         auto yolo = lightdb::extensibility::Load("yolo", path);
         return PythonLightField(_lightField.Map(yolo));
     }
 
-    PythonLightField PythonLightField::Map(lightdb::functor::unaryfunctor functor) {
+    PythonLightField PythonLightField::Map(const lightdb::functor::unaryfunctor &functor) {
         return PythonLightField(_lightField.Map(functor));
     }
 
