@@ -10,6 +10,10 @@ namespace lightdb {
     public:
         using std::unordered_map<TKey, TValue>::unordered_map;
 
+        options(const std::unordered_map<TKey, TValue> &string_options)
+            : std::unordered_map<TKey, TValue>(string_options)
+        {}; 
+
         struct Encoding {
             static constexpr const char* GOPSize = "GOP";
         };
@@ -33,6 +37,7 @@ namespace lightdb {
                    ? std::optional<TOptional>{std::any_cast<TOptional>((*value).second)}
                    : std::optional<TOptional>{};
         }
+
     };
 
     template<typename TKey=std::string, typename TValue=std::any>
