@@ -1,6 +1,7 @@
 #include "HeuristicOptimizer.h"
 #include "Greyscale.h"
 #include "Display.h"
+#include "AssertUtility.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
@@ -35,6 +36,8 @@ protected:
 };
 
 TEST_F(Q2aTestFixture, testQ2aduplicate) {
+    REQUIRE_UA_DETRAC_DATASET();
+
     auto duplicates = 60u;
     auto name = "MVI_40244";
     //auto name = "random960x540x60";
@@ -55,6 +58,8 @@ TEST_F(Q2aTestFixture, testQ2aduplicate) {
 }
 
 TEST_F(Q2aTestFixture, testQ2aunique) {
+    REQUIRE_UA_DETRAC_DATASET();
+
     std::vector<std::string> names = {
             "MVI_20011", "MVI_40152", "MVI_39811", "MVI_40244", "MVI_39781", "MVI_40962", "MVI_40213", "MVI_40141",
             "MVI_40191", "MVI_63562", "MVI_39931", "MVI_39761", "MVI_40871", "MVI_40192", "MVI_40981", "MVI_41073",
@@ -82,6 +87,8 @@ TEST_F(Q2aTestFixture, testQ2aunique) {
 }
 
 TEST_F(Q2aTestFixture, testQ2a_scale) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 16u;
@@ -102,6 +109,8 @@ TEST_F(Q2aTestFixture, testQ2a_scale) {
 }
 
 TEST_F(Q2aTestFixture, testQ2a_scale_sink) {
+    REQUIRE_VISUALROAD_DATASET();
+
     Catalog::instance(visualroad);
 
     auto duplicates = 16u;

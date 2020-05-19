@@ -63,3 +63,8 @@ cmake-build-*
 *.h265
 *.h264
 *.mp4
+
+# plugins
+.*-cfgmd.txt*
+
+.CMakeLists.txt.swp

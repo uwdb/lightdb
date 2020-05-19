@@ -12,10 +12,14 @@ struct EncodeBuffer;
 
 class VideoEncoder {
 public:
-    VideoEncoder(GPUContext& context, const EncodeConfiguration& configuration, VideoLock& lock)
+    VideoEncoder(GPUContext& context,
+                 const EncodeConfiguration& configuration,
+                 VideoLock& lock,
+                 NV_ENC_BUFFER_FORMAT input_format=NV_ENC_BUFFER_FORMAT_NV12_PL)
             : configuration_(configuration), context_(context), api_(std::make_shared<EncodeAPI>(context)), lock_(lock),
               encoderHandle_(VideoEncoderHandle(context, *api_, configuration)),
-              buffers(CreateBuffers(minimumBufferCount())) {
+              input_format_(input_format),
+              buffers(CreateBuffers(minimumBufferCount(), input_format)) {
         if(api().ValidatePresetGUID(configuration) != NV_ENC_SUCCESS)
             throw InvalidArgumentError("Invalid preset guid", "configuration");
     }
@@ -23,12 +27,14 @@ public:
   VideoEncoder(VideoEncoder &) = delete;
   //TODO this is inefficient, we really want to use the existing buffers, but they refer to the old encoder :(
   VideoEncoder(VideoEncoder &&other) noexcept
-          : configuration_(other.configuration_), context_(other.context_), api_(other.api_), lock_(other.lock_),
-            encoderHandle_(std::move(other.encoderHandle_)),
-            buffers(CreateBuffers(minimumBufferCount()))
-  { }
+            : configuration_(other.configuration_), context_(other.context_), api_(other.api_), lock_(other.lock_),
+              encoderHandle_(std::move(other.encoderHandle_)),
+              input_format_(other.input_format()),
+              buffers(CreateBuffers(minimumBufferCount(), input_format_))
+    { }
 
   EncodeAPI &api() { return *api_; }
+  NV_ENC_BUFFER_FORMAT input_format() const { return input_format_; }
   const EncodeConfiguration &configuration() const { return configuration_; }
 
 protected:
@@ -66,6 +72,7 @@ private:
         bool moved_ = false;
     } encoderHandle_;
 
+  NV_ENC_BUFFER_FORMAT input_format_;
   std::vector<std::shared_ptr<EncodeBuffer>> buffers;
 
   friend class VideoEncoderSession;
@@ -73,7 +80,7 @@ private:
   size_t minimumBufferCount() const { return configuration().numB + 4; }
 
 private:
-  std::vector<std::shared_ptr<EncodeBuffer>> CreateBuffers(size_t size);
+  std::vector<std::shared_ptr<EncodeBuffer>> CreateBuffers(size_t, NV_ENC_BUFFER_FORMAT);
 };
 
 #endif // LIGHTDB_VIDEOENCODER_H

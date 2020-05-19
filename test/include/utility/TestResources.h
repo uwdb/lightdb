@@ -46,6 +46,26 @@ struct {
         const char *raw = "out.raw";
     } out;
 
+    struct {
+        struct {
+            const std::string path = std::string(LIGHTDB_BENCHMARK_DATASET_PATH) + "/timelapse";
+            const std::string timelapse1k = path + "/timelapse1K.h264";
+            const std::string timelapse2k = path + "/timelapse2K.h264";
+            const std::string timelapse4k = path + "/timelapse4K.h264";
+        } timelapse;
+
+        struct {
+            const std::string path = std::string(LIGHTDB_BENCHMARK_DATASET_PATH) + "/ua-detrac";
+        } ua_detrac;
+
+        struct {
+            const std::string path = std::string(LIGHTDB_BENCHMARK_DATASET_PATH) + "/visualroad";
+        } visualroad;
+
+        struct {
+            const std::string path = std::string(LIGHTDB_BENCHMARK_DATASET_PATH) + "/random";
+        } random;
+    } datasets;
 
     struct {
         struct {

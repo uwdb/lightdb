@@ -15,6 +15,7 @@ file(GLOB_RECURSE LIGHTDB_TEST_SOURCES "src/*.cc")
 
 # Build tests
 add_executable(lightdb_test EXCLUDE_FROM_ALL ${LIGHTDB_TEST_SOURCES})
+#set_property(TARGET lightdb_test PROPERTY INTERPROCEDURAL_OPTIMIZATION False)
 target_link_libraries(
     lightdb_test   gtest #${GTEST_BOTH_LIBRARIES}
     lightdb_static ${LIGHTDB_LIB_DEPENDENCIES}

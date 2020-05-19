@@ -3,6 +3,7 @@
 
 #include "errors.h"
 #include <glog/logging.h>
+//#include <dynlink_nvcuvid.h>
 #include <nvcuvid.h>
 #include <cuda.h>
 #include <stdexcept>
@@ -78,18 +79,9 @@ public:
     }
 
 private:
-    static bool Initialize() {
-        CUresult result;
+    static bool Initialize();
 
-        if(isInitialized)
-            return true;
-        else if((result = cuInit(0)) != CUDA_SUCCESS)
-            throw GpuCudaRuntimeError("Call to cuInit failed", result);
-        else
-            return (isInitialized = true);
-    }
-
-    static bool isInitialized;
+    static bool initialized_;
 
     CUdevice device_;
     CUcontext context_ = nullptr;

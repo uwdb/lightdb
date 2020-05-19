@@ -3,6 +3,8 @@
 
 #include "GPUContext.h"
 
+
+
 namespace lightdb::execution {
 
 class GPU {
@@ -38,7 +40,6 @@ public:
 private:
     static std::vector<GPU> GetLocalGPUs() {
         std::vector<GPU> gpus;
-
         size_t count = GPUContext::device_count();
 
         for(auto index = 0u; index < count; index++)

@@ -31,7 +31,7 @@ set (CMAKE_CXX_STANDARD 17)
 
 # Set compiler flags
 set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -g3 -rdynamic -Wall -Wextra -Wno-unused-parameter")
-set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -fvisibility=hidden -Wall  -Wextra -Wno-unused-parameter")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O2 -fvisibility=hidden -Wall  -Wextra -Wno-unused-parameter")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g -DNDEBUG -Wall -Wextra -Wno-unused-parameter")
 set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG --coverage -g3 -Wall -Wextra -Wno-unused-parameter")
 
@@ -71,7 +71,8 @@ set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${FFMPEG_LIBRARIES})
 # Protobufs
 find_package(Protobuf REQUIRED)
 include_directories(${PROTOBUF_INCLUDE_DIR})
-include_directories(SYSTEM ${CMAKE_BINARY_DIR}/protobuf)
+include_directories(${CMAKE_BINARY_DIR}/protobuf)
+# This doesn't seem to work in forcing lightdb_protobuf to build before lightdb.
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${Protobuf_LIBRARIES} lightdb_protobuf)
 add_subdirectory(protobuf)
 
@@ -114,3 +115,6 @@ add_custom_target(
    COMMAND xargs rm -f < install_manifest.txt
    COMMAND echo "LightDB uninstalled"
 )
+
+# Python modules.
+add_subdirectory(python EXCLUDE_FROM_ALL)
