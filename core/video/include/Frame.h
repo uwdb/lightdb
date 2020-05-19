@@ -2,6 +2,7 @@
 #define LIGHTDB_FRAME_H
 
 #include "VideoDecoder.h"
+#include "Format.h"
 #include "lazy.h"
 #include "bytestring.h"
 #include "reference.h"
@@ -53,16 +54,19 @@ using GPUFrameReference = lightdb::shared_reference<GPUFrame>;
 
 class CudaFrame: public GPUFrame {
 public:
-    explicit CudaFrame(const Frame &frame)
-            : CudaFrame(frame, std::tuple_cat(allocate_frame(frame), std::make_tuple(true)))
+    explicit CudaFrame(const Frame &frame, const lightdb::video::Format &format=lightdb::video::Format::nv12())
+            : CudaFrame(frame, std::tuple_cat(allocate_frame(frame, format), std::make_tuple(true)))
     { }
 
     CudaFrame(const Frame &frame, const CUdeviceptr handle, const unsigned int pitch)
             : CudaFrame(frame, handle, pitch, false)
+
     { }
 
-    CudaFrame(const unsigned int height, const unsigned int width, const NV_ENC_PIC_STRUCT type)
-            : CudaFrame(Frame{height, width, type})
+    CudaFrame(const unsigned int height, const unsigned int width,
+              const NV_ENC_PIC_STRUCT type,
+              NV_ENC_BUFFER_FORMAT format=NV_ENC_BUFFER_FORMAT_NV12)
+            : CudaFrame(Frame{height, width, type}, lightdb::video::Format::get_format(format))
     { }
 
     CudaFrame(const unsigned int height, const unsigned int width,
@@ -206,7 +210,9 @@ private:
             : GPUFrame(frame), handle_(handle), pitch_(pitch), owner_(owner)
     { }
 
-    static std::pair<CUdeviceptr, unsigned int> allocate_frame(const Frame &frame)
+    static std::pair<CUdeviceptr, unsigned int> allocate_frame(
+            const Frame &frame,
+            const lightdb::video::Format &format=lightdb::video::Format::nv12())
     {
         CUresult result;
         CUdeviceptr handle;
@@ -214,8 +220,10 @@ private:
 
         if((result = cuMemAllocPitch(&handle,
                                      &pitch,
-                                     frame.width(),
-                                     frame.height() * 3 / 2,
+                                     format.allocation_width(frame.width()),
+                                     format.allocation_height(frame.height()),
+                                     //frame.width(),
+                                     //frame.height() * 3 / 2,
                                      16)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuMemAllocPitch failed", result);
         else
