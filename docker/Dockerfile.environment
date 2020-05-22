@@ -30,7 +30,7 @@ RUN apt-key add cmake-key.pub
 RUN echo deb $CMAKE_REPOSITORY_URL bionic main > /etc/apt/sources.list.d/cmake.list
 RUN apt-get update
 RUN apt search cmake
-RUN apt-get install cmake
+RUN apt-get install -y cmake
 
 # Install apt dependencies
 RUN apt-get install \
