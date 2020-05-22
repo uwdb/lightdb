@@ -160,12 +160,14 @@ namespace lightdb::optimization {
                 //TODO this is silly -- every physical operator should declare an output type and we should just use that
                 else if(physical_parent.is<physical::TeedPhysicalOperatorAdapter::TeedPhysicalOperator>() && physical_parent->parents()[0].is<physical::CPUMap>() && physical_parent->parents()[0].downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
                     plan().emplace<physical::CPUIdentity>(logical, physical_parent);
-                else if(physical_parent->device() == physical::DeviceType::CPU) {
+                else if(physical_parent->device() == physical::DeviceType::CPU && !plan().environment().gpus().empty()) {
                     //auto gpu = plan().environment().gpus()[0];
                     auto gpu = plan().allocator().gpu();
                     auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, physical_parent, gpu);
                     plan().emplace<physical::GPUEncodeToCPU>(plan().lookup(node), transfer, node.codec());
-                } else
+                } else if(physical_parent->device() == physical::DeviceType::CPU)
+                    plan().emplace<physical::CPUEncode>(logical, physical_parent, node.codec());
+                else
                     return false;
                 return true;
             } else {
@@ -758,6 +760,8 @@ namespace lightdb::optimization {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
                 //} else if(parent.is<physical::GPUOperatorAdapter>() && parent->parents()[0].is<physical::GPUAngularSubquery>() && parent->parents()[0].downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
                 //    return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent.is<physical::CPUEncode>()) {
+                return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent.is<physical::GPUEncodeToCPU>()) {
                 return plan().emplace<physical::GPUIdentity>(logical, parent);
             } else if(parent.is<physical::GPUOperator>()) {

@@ -306,29 +306,31 @@ private:
 class LocalFrame: public Frame {
 public:
     LocalFrame(const LocalFrame &frame)
-            : LocalFrame(frame, frame.data_)
+            : LocalFrame(frame, frame.data_, frame.format_)
     { }
 
-    LocalFrame(const LocalFrame &frame, const lightdb::bytestring &data)
-            : LocalFrame(frame, std::make_shared<lightdb::bytestring>(data.begin(), data.end()))
+    LocalFrame(const LocalFrame &frame, const lightdb::bytestring &data, const lightdb::video::Format &format)
+            : LocalFrame(frame, std::make_shared<lightdb::bytestring>(data.begin(), data.end()), format)
     { }
 
-    LocalFrame(unsigned int height, unsigned int width, const lightdb::bytestring &data)
-            : LocalFrame(height, width, std::make_shared<lightdb::bytestring>(data.begin(), data.end()))
+    LocalFrame(unsigned int height, unsigned int width, const lightdb::bytestring &data, const lightdb::video::Format &format)
+            : LocalFrame(height, width, std::make_shared<lightdb::bytestring>(data.begin(), data.end()), format)
     { }
 
-    LocalFrame(unsigned int height, unsigned int width, std::shared_ptr<lightdb::bytestring> data)
+    LocalFrame(unsigned int height, unsigned int width, std::shared_ptr<lightdb::bytestring> data, const lightdb::video::Format &format)
             : Frame(height, width, NV_ENC_PIC_STRUCT_FRAME),
-              data_(std::move(data))
+              data_(std::move(data)),
+              format_(format)
     { }
 
-    LocalFrame(const LocalFrame &frame, const size_t size)
-            : LocalFrame(frame, std::make_shared<lightdb::bytestring>(size, 0))
+    LocalFrame(const LocalFrame &frame, const size_t size, const lightdb::video::Format &format)
+            : LocalFrame(frame, std::make_shared<lightdb::bytestring>(size, 0), format)
     { }
 
-    LocalFrame(const LocalFrame &frame, std::shared_ptr<lightdb::bytestring> data)
+    LocalFrame(const LocalFrame &frame, std::shared_ptr<lightdb::bytestring> data, const lightdb::video::Format &format)
             : Frame(frame),
-              data_(std::move(data))
+              data_(std::move(data)),
+              format_(format)
     { }
 
     explicit LocalFrame(const CudaFrame &source)
@@ -336,7 +338,8 @@ public:
 
     explicit LocalFrame(const CudaFrame &source, const Configuration &configuration)
         : Frame(configuration, NV_ENC_PIC_STRUCT_FRAME),
-          data_(std::make_shared<lightdb::bytestring>(width() * height() * 3 / 2, 0))
+          data_(std::make_shared<lightdb::bytestring>(width() * height() * 3 / 2, 0)),
+          format_(lightdb::video::Format::nv12())
     {
         CUresult status;
         auto params = CUDA_MEMCPY2D {
@@ -369,9 +372,11 @@ public:
         return static_cast<unsigned char>(data_->at(x + y * width()));
     }
     const lightdb::bytestring& data() const { return *data_; }
+    const lightdb::video::Format &format() const { return format_; }
 
 private:
     const std::shared_ptr<lightdb::bytestring> data_;
+    const lightdb::video::Format& format_;
 };
 
 //TODO this should be CPUFrameRef

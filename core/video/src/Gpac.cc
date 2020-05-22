@@ -37,7 +37,7 @@ namespace lightdb::video::gpac {
         if(decoder_configuration == nullptr)
             throw GpacRuntimeError("Could not get decoder configuration from stream", GF_IO_ERR);
         else
-            return decoder_configuration->avgBitrate;
+            return decoder_configuration->avgBitrate * 1024;
     }
 
     static std::optional<serialization::Metadata> load_stream_metadata(GF_ISOFile *file, const bool required) {

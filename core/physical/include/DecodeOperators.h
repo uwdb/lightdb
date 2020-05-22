@@ -152,7 +152,7 @@ private:
             format->pb = context_.get();
 
             if((result = avformat_open_input(&pointer, ".mp4", nullptr, nullptr)) != 0)
-                throw get_ffmpeg_error(result);
+                throw FfmpegRuntimeError(result);
             else
                 return format;
         }
@@ -160,9 +160,9 @@ private:
         unsigned int get_stream_index() {
             int result;
             if ((result = avformat_find_stream_info(format_.get(), nullptr)) != 0)
-                throw get_ffmpeg_error(result);
+                throw FfmpegRuntimeError(result);
             else if((result = av_find_best_stream(format_.get(), AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0)) < 0)
-                throw get_ffmpeg_error(result);
+                throw FfmpegRuntimeError(result);
             else
                 return static_cast<unsigned int>(result);
         }
@@ -184,9 +184,9 @@ private:
             if((codec_context = avcodec_alloc_context3(codec_.get())) == nullptr)
                 throw FfmpegRuntimeError("Error allocating codec context");
             else if ((result = avcodec_parameters_to_context(codec_context, parameters)) != 0)
-                throw get_ffmpeg_error(result);
+                throw FfmpegRuntimeError(result);
             else if((result = avcodec_open2(codec_context, codec_.get(), nullptr)) != 0)
-                throw get_ffmpeg_error(result);
+                throw FfmpegRuntimeError(result);
             else
                 return std::shared_ptr<AVCodecContext>(codec_context, avcodec_close);
         }
@@ -206,9 +206,9 @@ private:
                     if((result = av_image_copy_to_buffer(
                             reinterpret_cast<unsigned char *>(buffer->data()), buffer->size(), frame->data,
                             frame->linesize, format, frame->width, frame->height, 1)) != size)
-                            throw get_ffmpeg_error(result);
+                            throw FfmpegRuntimeError(result);
 
-                    frames_.push(std::make_shared<LocalFrame>(frame->height, frame->width, buffer));
+                    frames_.push(std::make_shared<LocalFrame>(frame->height, frame->width, buffer, video::Format::yv12()));
                     break;
                 }
                 case AVERROR(EAGAIN):
@@ -217,7 +217,7 @@ private:
                     decoding_ = false;
                     break;
                 default:
-                    throw get_ffmpeg_error(result);
+                    throw FfmpegRuntimeError(result);
             }
 
             return result;
@@ -233,15 +233,15 @@ private:
                 switch(result = av_read_frame(format_.get(), packet.get())) {
                     case 0:
                         if((result = avcodec_send_packet(codec_context_.get(), packet.get())) != 0)
-                            throw get_ffmpeg_error(result);
+                            throw FfmpegRuntimeError(result);
                         break;
                     case AVERROR_EOF:
                         if((result = avcodec_send_packet(codec_context_.get(), nullptr)) != 0 &&
                            result != AVERROR_EOF)
-                            throw get_ffmpeg_error(result);
+                            throw FfmpegRuntimeError(result);
                         break;
                     default:
-                        throw get_ffmpeg_error(result);
+                        throw FfmpegRuntimeError(result);
                 }
 
                 // Read and send frames
@@ -270,12 +270,6 @@ private:
                        ? static_cast<int>(data.value().size())
                        : read_next_packet(opaque, buffer, size);
             }
-        }
-
-        std::exception get_ffmpeg_error(int error) {
-            char message[256];
-            av_strerror(error, message, sizeof(message));
-            return FfmpegRuntimeError(message);
         }
 
         const DecodeConfiguration configuration_;
@@ -323,7 +317,8 @@ private:
                     current < end;
                     current += sizeof(T))
                     output.frames().emplace_back(LocalFrameReference::make<LocalFrame>(
-                            0u, 0u, lightdb::bytestring(current, current + sizeof(T))));
+                            0u, 0u, lightdb::bytestring(current, current + sizeof(T)),
+                            video::Format::unknown()));
 
                 return output;
             } else

@@ -87,6 +87,36 @@ TEST_F(EncodeTestFixture, testEncodeRaw) {
     EXPECT_EQ(remove(output_h264.c_str()), 0);
 }
 
+TEST_F(EncodeTestFixture, testEncodeH264ForceCPU) {
+    auto query = Scan(Resources.red10.name)
+            .Encode(Codec::h264())
+            .Save(Resources.out.h264);
+
+    HeuristicOptimizer optimizer{LocalEnvironment(true)};
+    Coordinator().execute(query, optimizer);
+
+    EXPECT_VIDEO_VALID(Resources.out.h264);
+    EXPECT_VIDEO_FRAMES(Resources.out.h264, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.h264, Resources.red10.height, Resources.red10.width);
+    EXPECT_VIDEO_RED(Resources.out.h264);
+    EXPECT_EQ(remove(Resources.out.h264), 0);
+}
+
+TEST_F(EncodeTestFixture, testEncodeHEVCForceCPU) {
+    auto query = Scan(Resources.red10.name)
+            .Encode(Codec::hevc())
+            .Save(Resources.out.hevc);
+
+    HeuristicOptimizer optimizer{LocalEnvironment(true)};
+    Coordinator().execute(query, optimizer);
+
+    EXPECT_VIDEO_VALID(Resources.out.hevc);
+    EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height, Resources.red10.width);
+    EXPECT_VIDEO_RED(Resources.out.hevc);
+    EXPECT_EQ(remove(Resources.out.hevc), 0);
+}
+
 TEST_F(EncodeTestFixture, testGOP30) {
     testEncodeGOP(30u);
 }

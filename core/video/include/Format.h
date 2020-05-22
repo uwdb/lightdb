@@ -6,6 +6,8 @@
 #include "errors.h"
 
 namespace lightdb::video {
+    using AVPixelFormat = unsigned int;
+
     class Format {
     public:
 
@@ -13,21 +15,13 @@ namespace lightdb::video {
             { return static_cast<size_t>(height * allocation_height_ratio_); }
         size_t allocation_width(const size_t width) const
             { return static_cast<size_t>(width * allocation_width_ratio_); }
+        const std::optional<AVPixelFormat>& ffmpeg_format() const { return ffmpeg_format_; }
 
-        static const Format& nv12() {
-            static const Format nv12{rational{3, 2}, rational{1}};
-            return nv12;
-        }
-
-        static const Format& iyuv() {
-            static const Format iyuv{rational{3, 2}, rational{1}};
-            return iyuv;
-        }
-
-        static const Format& yv12() {
-            static const Format yv12{rational{2}, rational{1}};
-            return yv12;
-        }
+        static const Format& nv12();
+        static const Format& nv21();
+        static const Format& iyuv();
+        static const Format& yv12();
+        static const Format& unknown();
 
         static const Format& get_format(const NV_ENC_BUFFER_FORMAT format) {
             switch(format) {
@@ -43,12 +37,15 @@ namespace lightdb::video {
         }
 
     private:
-        Format(const rational &allocation_height_ratio, const rational &allocation_width_ratio)
+        Format(const rational &allocation_height_ratio, const rational &allocation_width_ratio,
+               const std::optional<AVPixelFormat> ffmpeg_format)
                 : allocation_height_ratio_(allocation_height_ratio),
-                  allocation_width_ratio_(allocation_width_ratio)
+                  allocation_width_ratio_(allocation_width_ratio),
+                  ffmpeg_format_(ffmpeg_format)
         { }
 
         const rational allocation_height_ratio_, allocation_width_ratio_;
+        std::optional<AVPixelFormat> ffmpeg_format_;
     };
 }
 
