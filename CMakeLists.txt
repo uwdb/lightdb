@@ -1,5 +1,5 @@
 project(LightDB)
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 
 SET(BOOST_MIN_VERSION "1.64.0")
 
