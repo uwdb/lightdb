@@ -56,20 +56,16 @@ namespace lightdb::optimization {
 
         bool visit(const logical::ScannedLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
-                LOG(ERROR) << "Applying decode rule";
                 if(node.entry().sources().empty())
                     LOG(WARNING) << "Attempt to decode a catalog entry with no underlying streams";
 
                 for(const auto &stream: node.entry().sources()) {
                     //auto stream = node.entry().streams()[0];
-		    LOG(ERROR) << "Applying rule to stream";
                     auto logical = plan().lookup(node);
 
-		    LOG(ERROR) << "Checking GPU condition";
                     if((stream.codec() == Codec::h264() ||
                         stream.codec() == Codec::hevc()) &&
                        !plan().environment().gpus().empty()) {
-   		        LOG(ERROR) << "Applying rule using GPU";
                         auto gpu = plan().allocator().gpu();
                         //auto gpu = plan().environment().gpus()[0];
 
@@ -85,19 +81,15 @@ namespace lightdb::optimization {
                         }
                     } else if(stream.codec() == Codec::h264() ||
                               stream.codec() == Codec::hevc()) {
- 		        LOG(ERROR) << "Applying rule to CPU";
                         auto &scan = plan().emplace<physical::ScanSingleFileDecodeReader>(logical, stream);
                         auto decode = plan().emplace<physical::CPUDecode>(logical, scan);
- 		        LOG(ERROR) << "Instantiated CPU decode";
 
                         auto children = plan().children(plan().lookup(node));
- 		        LOG(ERROR) << "Found " << children.size() << " children";
                         if(children.size() > 1) {
                             auto tees = physical::TeedPhysicalOperatorAdapter::make(decode, children.size());
                             for (auto index = 0u; index < children.size(); index++)
                                 plan().add(tees->physical(index));
                         } else {
-    		            LOG(ERROR) << "Adding single decode";
                             plan().add(decode);
                         }
                     } else if(stream.codec() == Codec::boxes()) {
@@ -783,8 +775,8 @@ namespace lightdb::optimization {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent.is<physical::TeedPhysicalOperatorAdapter::TeedPhysicalOperator>() && parent->parents()[0].is<physical::GPUAngularSubquery>()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
-//            } else if(parent->device() == physical::DeviceType::CPU && plan().environment().gpus().empty()) {
-//                return plan().emplace<physical::CPUEncode>(logical, parent, Codec::hevc());
+            } else if(parent->device() == physical::DeviceType::CPU && plan().environment().gpus().empty()) {
+                return plan().emplace<physical::CPUEncode>(logical, parent, Codec::hevc());
             } else if(parent->device() != physical::DeviceType::GPU) {
                 //auto gpu = plan().environment().gpus()[0];
                 auto gpu = plan().allocator().gpu();
@@ -800,7 +792,6 @@ namespace lightdb::optimization {
 
         bool visit(const logical::SavedLightField &node) override {
             if(!plan().has_physical_assignment(node)) {
-                LOG(ERROR) << "Starting save rule";
                 auto physical_parents = functional::flatmap<std::vector<PhysicalOperatorReference>>(
                         node.parents().begin(), node.parents().end(),
                         [this](auto &parent) { return plan().unassigned(parent); });
@@ -808,10 +799,8 @@ namespace lightdb::optimization {
                 if(physical_parents.empty())
                     return false;
 
-                LOG(ERROR) << "Instantating physical operator";
                 auto encode = Encode(node, physical_parents.front());
                 plan().emplace<physical::SaveToFile>(plan().lookup(node), encode);
-                LOG(ERROR) << "Done applying save rule";
                 return true;
             }
             return false;
@@ -922,7 +911,6 @@ namespace lightdb::optimization {
         bool ApplyRule(const LightField &node) {
             auto logical = plan().lookup(node);
 
-            LOG(ERROR) << "Applying scan identity rule";
             if(IsPhysicalChildASaveOperator(logical)) {
                 auto &scan = logical;
 

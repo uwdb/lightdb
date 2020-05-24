@@ -92,7 +92,6 @@ TEST_F(VisitorTestFixture, testScanSave) {
 }
 
 TEST_F(VisitorTestFixture, testInterpolateDiscretizeMap) {
-<<<<<<< HEAD
     REQUIRE_GPU();
 
     auto yolo = lightdb::extensibility::Load("yolo");

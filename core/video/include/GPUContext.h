@@ -4,7 +4,6 @@
 #include "errors.h"
 #include <glog/logging.h>
 #include <dynlink_nvcuvid.h>
-//#include <nvcuvid.h>
 #include <cuda.h>
 #include <stdexcept>
 
