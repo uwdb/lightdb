@@ -2,7 +2,7 @@
 #define LIGHTDB_DECODEREADER_H
 
 #include "spsc_queue.h"
-#include <dynlink_nvcuvid.h>
+#include <nvcuvid.h>
 #include <thread>
 #include <experimental/filesystem>
 
