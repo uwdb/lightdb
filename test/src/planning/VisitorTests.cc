@@ -92,18 +92,23 @@ TEST_F(VisitorTestFixture, testScanSave) {
 }
 
 TEST_F(VisitorTestFixture, testInterpolateDiscretizeMap) {
+<<<<<<< HEAD
     REQUIRE_GPU();
 
     auto yolo = lightdb::extensibility::Load("yolo");
 
     auto name = "red10";
     auto input = Scan(name);
-    auto continuous_t = input.Interpolate(Dimension::Theta, interpolation::Linear());
-    auto continuous = continuous_t.Interpolate(Dimension::Phi, interpolation::Linear());
-    auto discrete_t = continuous.Discretize(Dimension::Theta, rational_times_real({2, 416}, PI));
-    auto downsampled = discrete_t.Discretize(Dimension::Phi, rational_times_real({1, 416}, PI));
-    auto boxes = downsampled.Map(yolo);
-    auto encoded = boxes.Encode(Codec::boxes());
+//    auto input = Load("/home/maureen/lightdb/test/resources/tiles/tile-0.hevc",  Volume::zero(), GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples()));
+//    auto continuous_t = input.Interpolate(Dimension::Theta, interpolation::Linear());
+//    auto continuous = continuous_t.Interpolate(Dimension::Phi, interpolation::Linear());
+//    auto discrete_t = continuous.Discretize(Dimension::Theta, rational_times_real({2, 416}, PI));
+//    auto downsampled = discrete_t.Discretize(Dimension::Phi, rational_times_real({1, 416}, PI));
+    auto boxes = input.Map(yolo);
+//    auto unioned = input.Union(boxes);
+//    auto encoded = boxes.Encode(Codec::boxes());
+
+    Coordinator().execute(boxes);
 
     //Coordinator().execute(encoded);
     GTEST_SKIP();

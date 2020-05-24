@@ -24,9 +24,13 @@ public:
     void Encode(Frame &frame, size_t top=0, size_t left=0) {
         auto &buffer = GetAvailableBuffer();
 
-        if(buffer.input_buffer.buffer_format != NV_ENC_BUFFER_FORMAT_NV12_PL)
-            LOG(ERROR) << "buffer.input_buffer.buffer_format != NV_ENC_BUFFER_FORMAT_NV12_PL";
-        assert(buffer.input_buffer.buffer_format == NV_ENC_BUFFER_FORMAT_NV12_PL);
+        if(buffer.input_buffer.buffer_format != NV_ENC_BUFFER_FORMAT_NV12_PL &&
+           buffer.input_buffer.buffer_format != NV_ENC_BUFFER_FORMAT_IYUV &&
+           buffer.input_buffer.buffer_format != NV_ENC_BUFFER_FORMAT_YV12)
+            LOG(ERROR) << "buffer.input_buffer.buffer_format not supported";
+        assert(buffer.input_buffer.buffer_format == NV_ENC_BUFFER_FORMAT_NV12_PL ||
+               buffer.input_buffer.buffer_format == NV_ENC_BUFFER_FORMAT_IYUV ||
+               buffer.input_buffer.buffer_format == NV_ENC_BUFFER_FORMAT_YV12);
 
         if(top == 0 && left == 0 &&
            frame.width() == buffer.input_buffer.width &&

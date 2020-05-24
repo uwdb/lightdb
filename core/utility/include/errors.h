@@ -148,6 +148,13 @@ namespace lightdb::errors {
         _FfmpegRuntimeError(const std::string &message, const char* file, int line, const char* function)
                 : LightDBError(message, file, line, function)
         { }
+
+        _FfmpegRuntimeError(const int &error, const char* file, int line, const char* function)
+                : _FfmpegRuntimeError(get_ffmpeg_error_message(error), file, line, function)
+        { }
+
+    private:
+        std::string get_ffmpeg_error_message(int);
     };
 
     class _GpacRuntimeError: public LightDBError<std::runtime_error> {

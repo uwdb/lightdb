@@ -18,7 +18,7 @@ shared_reference<LightField> Blur::CPU::operator()(LightField& input) {
         auto y_in = reinterpret_cast<const unsigned char*>(frame->data().data());
         auto uv_in = y_in + frame_size_;
 
-        output.frames().emplace_back(LocalFrameReference::make<LocalFrame>(*frame, frame->data().size()));
+        output.frames().emplace_back(LocalFrameReference::make<LocalFrame>(*frame, frame->data().size(), video::Format::nv12()));
         auto y_out = output.frames().back()->data().data();
         auto uv_out = y_out + frame_size_;
 

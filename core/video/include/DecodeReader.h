@@ -169,7 +169,7 @@ private:
                 .pfnAudioDataHandler = nullptr,
                 {nullptr}
         };
-LOG(ERROR) << "Calling cuvidCreateVideoSource";
+
         if(!std::experimental::filesystem::exists(filename))
             throw InvalidArgumentError("File does not exist", "filename");
         else if(GPUContext::device_count() == 0)

@@ -4,6 +4,8 @@
 #include "Plan.h"
 #include "Optimizer.h"
 #include "Pool.h"
+#include "Transaction.h"
+#include "Runtime.h"
 #include "Display.h"
 #include "progress.h"
 

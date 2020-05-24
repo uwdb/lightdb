@@ -231,6 +231,8 @@ namespace lightdb {
                     ThetaRange::limits(), PhiRange::limits()}; }
 
         static constexpr Volume zero() { return {{0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}, {0, 0}}; }
+        static constexpr const Volume angular() { return {{0, 0}, {0, 0}, {0, 0}, {0, 0},
+                                                          ThetaRange::limits(), PhiRange::limits()}; }
 
     private:
         SpatialRange x_;
