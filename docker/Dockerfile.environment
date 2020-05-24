@@ -7,6 +7,8 @@ ARG CUDA_URL=https://developer.nvidia.com/compute/cuda/9.0/Prod/local_installers
 ARG GPAC_URL=https://github.com/gpac/gpac/archive/v0.7.1.tar.gz
 ARG INTEL_REPOSITORY_URL=https://apt.repos.intel.com/setup/intelproducts.list
 ARG INTEL_KEY_URL=https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+ARG CMAKE_KEY_URL=https://apt.kitware.com/keys/kitware-archive-latest.asc
+ARG CMAKE_REPOSITORY_URL=https://apt.kitware.com/ubuntu/
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -21,6 +23,14 @@ RUN grep -v intelpython intelproducts.list > /etc/apt/sources.list.d/intelproduc
 RUN apt-key add intel-key.pub
 RUN apt-get update
 RUN apt install -y intel-ipp-2019.3-062
+
+# Install cmake repository
+RUN wget $CMAKE_KEY_URL -O cmake-key.pub
+RUN apt-key add cmake-key.pub
+RUN echo deb $CMAKE_REPOSITORY_URL bionic main > /etc/apt/sources.list.d/cmake.list
+RUN apt-get update
+RUN apt search cmake
+RUN apt-get install -y cmake
 
 # Install apt dependencies
 RUN apt-get install \
@@ -39,7 +49,6 @@ RUN apt-get install \
       libavdevice-dev \
       libboost1.65-all-dev \
       nvidia-384 \
-      cmake \
       git \
       python3-dev
 
