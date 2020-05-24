@@ -66,6 +66,9 @@ cmake-build-*
 
 # plugins
 .*-cfgmd.txt*
+plugins/*/tmp
+plugins/*/src
+plugins/yolo/darknet
 
 # Other
 *.swp
