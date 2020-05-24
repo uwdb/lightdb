@@ -41,7 +41,7 @@ execute_process(COMMAND git submodule update --init
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 include(cmake/nvenc.cmake)
 
-find_package(CUDA 7.5 REQUIRED)
+find_package(CUDA 9.0 REQUIRED)
 include_directories(${CUDA_INCLUDE_DIRS})
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${CUDA_CUDA_LIBRARY} ${CUDA_nvcuvenc_LIBRARY})
 
