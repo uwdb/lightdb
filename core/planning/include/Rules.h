@@ -89,6 +89,8 @@ namespace lightdb::optimization {
                             auto tees = physical::TeedPhysicalOperatorAdapter::make(decode, children.size());
                             for (auto index = 0u; index < children.size(); index++)
                                 plan().add(tees->physical(index));
+                        } else {
+                            plan().add(decode);
                         }
                     } else if(stream.codec() == Codec::boxes()) {
                         auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, stream);
@@ -773,6 +775,8 @@ namespace lightdb::optimization {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent.is<physical::TeedPhysicalOperatorAdapter::TeedPhysicalOperator>() && parent->parents()[0].is<physical::GPUAngularSubquery>()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent->device() == physical::DeviceType::CPU && plan().environment().gpus().empty()) {
+                return plan().emplace<physical::CPUEncode>(logical, parent, Codec::hevc());
             } else if(parent->device() != physical::DeviceType::GPU) {
                 //auto gpu = plan().environment().gpus()[0];
                 auto gpu = plan().allocator().gpu();
