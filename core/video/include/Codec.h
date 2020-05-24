@@ -2,7 +2,7 @@
 #define LIGHTDB_CODEC_H
 
 #include "EncodeAPI.h"
-#include <cuviddec.h>
+#include <dynlink_cuviddec.h>
 #include <glog/logging.h>
 #include <vector>
 #include <optional>

@@ -6,7 +6,6 @@ SET(BOOST_MIN_VERSION "1.64.0")
 # Set the cmake Module path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
-
 # Set shared library suffix
 if(APPLE)
   set(SHARED_LIB_SUFFIX ".dylib")
@@ -37,6 +36,9 @@ set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG --coverage -g3 -Wall -Wextra -Wno-unused-p
 # Find required library dependencies
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} nvcuvid dl pthread glog gflags stdc++fs)
 
+# Update thirdparty dependenciesq
+execute_process(COMMAND git submodule update --init
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 include(cmake/nvenc.cmake)
 
 find_package(CUDA 7.5 REQUIRED)

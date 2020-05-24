@@ -2,6 +2,7 @@
 #include "Display.h"
 #include "TestResources.h"
 #include "AssertVideo.h"
+#include "AssertUtility.h"
 
 using namespace lightdb;
 using namespace lightdb::logical;
@@ -22,6 +23,8 @@ protected:
 };
 
 TEST_F(UnionTestFixture, testEmptyUnion) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                     .Select(Point6D::zero())
                     .Encode(Codec::raw());

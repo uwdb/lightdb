@@ -23,10 +23,8 @@ RUN apt-get update
 RUN apt install -y intel-ipp-2019.3-062
 
 # Install cmake repository
-#RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2> /dev/null | apt-key add -
 RUN wget $CMAKE_KEY_URL -O cmake-key.pub
 RUN apt-key add cmake-key.pub
-#RUN apt-add-repository 'deb https://apt.kitware.com/ubuntu/ bionic main'
 RUN echo deb $CMAKE_REPOSITORY_URL bionic main > /etc/apt/sources.list.d/cmake.list
 RUN apt-get update
 RUN apt search cmake

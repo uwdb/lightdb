@@ -26,7 +26,7 @@ protected:
 };
 
 TEST_F(DecodeTestFixture, testDecode) {
-    //REQUIRE_GPU();
+    REQUIRE_GPU();
 
     auto input = Scan(Resources.red10.name).Save(Resources.out.raw);
     Coordinator().execute(input);
@@ -43,6 +43,8 @@ TEST_F(DecodeTestFixture, testDecode) {
 }
 
 TEST_F(DecodeTestFixture, testDecodeCPU) {
+    REQUIRE_GPU();
+
     auto cpu_optimizer = OptimizerReference::make<HeuristicOptimizer>(LocalEnvironment(false));
 
     auto input = Scan(Resources.red10.name).Save(Resources.out.raw);

@@ -3,6 +3,7 @@
 #include "AssertVideo.h"
 #include "Display.h"
 #include "TestResources.h"
+#include "AssertUtility.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
@@ -41,6 +42,8 @@ protected:
 };
 
 TEST_F(EncodeTestFixture, testEncodeH264) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::h264())
                      .Save(Resources.out.h264);
@@ -55,6 +58,8 @@ TEST_F(EncodeTestFixture, testEncodeH264) {
 }
 
 TEST_F(EncodeTestFixture, testEncodeHEVC) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::hevc())
                      .Save(Resources.out.hevc);
@@ -69,6 +74,8 @@ TEST_F(EncodeTestFixture, testEncodeHEVC) {
 }
 
 TEST_F(EncodeTestFixture, testEncodeRaw) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::raw())
                      .Save(Resources.out.raw);
@@ -118,18 +125,26 @@ TEST_F(EncodeTestFixture, testEncodeHEVCForceCPU) {
 }
 
 TEST_F(EncodeTestFixture, testGOP30) {
+    REQUIRE_GPU();
+
     testEncodeGOP(30u);
 }
 
 TEST_F(EncodeTestFixture, testGOP15) {
+    REQUIRE_GPU();
+
     testEncodeGOP(15u);
 }
 
 TEST_F(EncodeTestFixture, testGOP7) {
+    REQUIRE_GPU();
+
     testEncodeGOP(7u);
 }
 
 TEST_F(EncodeTestFixture, testImplicitGOP) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::hevc())
                      .Save(Resources.out.hevc);
@@ -145,6 +160,8 @@ TEST_F(EncodeTestFixture, testImplicitGOP) {
 }
 
 TEST_F(EncodeTestFixture, testInvalidGOPType) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::hevc(), {{EncodeOptions::GOPSize, "invalid"}})
                      .Save(Resources.out.hevc);
@@ -153,6 +170,8 @@ TEST_F(EncodeTestFixture, testInvalidGOPType) {
 }
 
 TEST_F(EncodeTestFixture, testInvalidGOPRange) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::hevc(), {{EncodeOptions::GOPSize, -1}})
                      .Save(Resources.out.hevc);
