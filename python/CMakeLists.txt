@@ -7,6 +7,9 @@ find_package(Python2 COMPONENTS Development)
 message("python2 libraries: ${Python2_LIBRARIES}")
 message("python2 includes: ${Python2_INCLUDE_DIRS}")
 
+# Include ipp
+include_directories(/opt/intel/ipp/include)
+
 # Include core header directories
 file(GLOB LIGHTDB_CORE_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/../core/*/include/")
 message("includes: ${Boost_INCLUDE_DIRS}")
