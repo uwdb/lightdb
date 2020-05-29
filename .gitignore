@@ -67,4 +67,9 @@ cmake-build-*
 # plugins
 .*-cfgmd.txt*
 
+<<<<<<< HEAD
 .CMakeLists.txt.swp
+=======
+# Other
+*.swp
+>>>>>>> c14e97048875e596595388c7983d65b7b3b0245e

@@ -17,8 +17,6 @@ namespace lightdb::python {
 
         boost::python::class_<lightdb::LightFieldReference>("LightFieldReference", boost::python::no_init);
 
-        boost::python::class_<typename lightdb::Greyscale>("Greyscale", boost::python::no_init);
-
         boost::python::class_<PythonLightField>("PythonLightField", boost::python::no_init)
                 .def("Partition", &PythonLightField::Partition)
                 .def("Select", static_cast<PythonLightField(PythonLightField::*)(const lightdb::PhiRange&)>(&PythonLightField::Select))

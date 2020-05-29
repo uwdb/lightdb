@@ -2,7 +2,7 @@
 #define LIGHTDB_DECODEREADER_H
 
 #include "spsc_queue.h"
-#include <nvcuvid.h>
+#include <dynlink_nvcuvid.h>
 #include <thread>
 #include <experimental/filesystem>
 
@@ -169,7 +169,7 @@ private:
                 .pfnAudioDataHandler = nullptr,
                 {nullptr}
         };
-LOG(ERROR) << "Calling cuvidCreateVideoSource";
+
         if(!std::experimental::filesystem::exists(filename))
             throw InvalidArgumentError("File does not exist", "filename");
         else if(GPUContext::device_count() == 0)

@@ -1,11 +1,10 @@
 project(LightDB)
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.12)
 
 SET(BOOST_MIN_VERSION "1.64.0")
 
 # Set the cmake Module path
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
-
 
 # Set shared library suffix
 if(APPLE)
@@ -27,20 +26,22 @@ endif()
 
 # Set C++ standards
 set (CMAKE_CXX_STANDARD 17)
-#set (CLANG_TIDY_CXX_STANDARD 14)
 
 # Set compiler flags
 set(CMAKE_CXX_FLAGS_DEBUG "-DDEBUG -g3 -rdynamic -Wall -Wextra -Wno-unused-parameter")
-set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -fvisibility=hidden -Wall  -Wextra -Wno-unused-parameter")
+set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -fno-tree-slp-vectorize -Wall -Wextra -Wno-unused-parameter")
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g -DNDEBUG -Wall -Wextra -Wno-unused-parameter")
 set(CMAKE_CXX_FLAGS_COVERAGE "-DDEBUG --coverage -g3 -Wall -Wextra -Wno-unused-parameter")
 
 # Find required library dependencies
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} nvcuvid dl pthread glog gflags stdc++fs)
 
+# Update thirdparty dependenciesq
+execute_process(COMMAND git submodule update --init
+                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 include(cmake/nvenc.cmake)
 
-find_package(CUDA 7.5 REQUIRED)
+find_package(CUDA 9.0 REQUIRED)
 include_directories(${CUDA_INCLUDE_DIRS})
 set(LIGHTDB_LIB_DEPENDENCIES ${LIGHTDB_LIB_DEPENDENCIES} ${CUDA_CUDA_LIBRARY} ${CUDA_nvcuvenc_LIBRARY})
 

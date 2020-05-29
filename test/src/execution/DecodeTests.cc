@@ -26,32 +26,25 @@ protected:
 };
 
 TEST_F(DecodeTestFixture, testDecode) {
-    //REQUIRE_GPU();
+    REQUIRE_GPU();
 
     auto input = Scan(Resources.red10.name).Save(Resources.out.raw);
-    LOG(ERROR) << "foo0";
     Coordinator().execute(input);
-LOG(ERROR) << "foo1";
-    //auto output_h264 = TRANSCODE_RAW_TO_H264(Resources.out.raw,
-    //        Resources.red10.height, Resources.red10.width,
-    //        Resources.red10.framerate);
-    LOG(ERROR) << "foo2";
+    auto output_h264 = TRANSCODE_RAW_TO_H264(Resources.out.raw,
+            Resources.red10.height, Resources.red10.width,
+            Resources.red10.framerate);
 
-    //EXPECT_VIDEO_VALID(output_h264);
-    LOG(ERROR) << "foo3";
-    //EXPECT_VIDEO_FRAMES(output_h264, Resources.red10.frames);
-    LOG(ERROR) << "foo4";
-    //EXPECT_VIDEO_RESOLUTION(output_h264, Resources.red10.height, Resources.red10.width);
-    LOG(ERROR) << "foo5";
-    //EXPECT_VIDEO_RED(output_h264);
-    LOG(ERROR) << "foo6";
-    //EXPECT_EQ(remove(Resources.out.raw), 0);
-    LOG(ERROR) << "foo7";
-    //EXPECT_EQ(remove(output_h264.c_str()), 0);
-    LOG(ERROR) << "foo8";
+    EXPECT_VIDEO_VALID(output_h264);
+    EXPECT_VIDEO_FRAMES(output_h264, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(output_h264, Resources.red10.height, Resources.red10.width);
+    EXPECT_VIDEO_RED(output_h264);
+    EXPECT_EQ(remove(Resources.out.raw), 0);
+    EXPECT_EQ(remove(output_h264.c_str()), 0);
 }
 
 TEST_F(DecodeTestFixture, testDecodeCPU) {
+    REQUIRE_GPU();
+
     auto cpu_optimizer = OptimizerReference::make<HeuristicOptimizer>(LocalEnvironment(false));
 
     auto input = Scan(Resources.red10.name).Save(Resources.out.raw);

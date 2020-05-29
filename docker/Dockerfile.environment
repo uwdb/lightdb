@@ -1,10 +1,12 @@
 FROM ubuntu:18.04
 MAINTAINER Brandon Haynes "bhaynes@cs.washington.edu"
 
-ARG CUDA_URL=https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run
+ARG CUDA_URL=https://developer.nvidia.com/compute/cuda/9.0/Prod/local_installers/cuda_9.0.176_384.81_linux-run
 ARG GPAC_URL=https://github.com/gpac/gpac/archive/v0.7.1.tar.gz
 ARG INTEL_REPOSITORY_URL=https://apt.repos.intel.com/setup/intelproducts.list
 ARG INTEL_KEY_URL=https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS-2019.PUB
+ARG CMAKE_KEY_URL=https://apt.kitware.com/keys/kitware-archive-latest.asc
+ARG CMAKE_REPOSITORY_URL=https://apt.kitware.com/ubuntu/
 
 ENV DEBIAN_FRONTEND noninteractive
 
@@ -13,11 +15,20 @@ RUN apt-get update && apt-get install -y gnupg tzdata wget
 RUN dpkg-reconfigure -f noninteractive tzdata
 
 # Install Intel IPP
-RUN wget $INTEL_REPOSITORY_URL -O /etc/apt/sources.list.d/intelproducts.list
+RUN wget $INTEL_REPOSITORY_URL -O intelproducts.list
 RUN wget $INTEL_KEY_URL -O intel-key.pub
+RUN grep -v intelpython intelproducts.list > /etc/apt/sources.list.d/intelproducts.list # intelpython repo is broken
 RUN apt-key add intel-key.pub
 RUN apt-get update
 RUN apt install -y intel-ipp-2019.3-062
+
+# Install cmake repository
+RUN wget $CMAKE_KEY_URL -O cmake-key.pub
+RUN apt-key add cmake-key.pub
+RUN echo deb $CMAKE_REPOSITORY_URL bionic main > /etc/apt/sources.list.d/cmake.list
+RUN apt-get update
+RUN apt search cmake
+RUN apt-get install -y cmake
 
 # Install apt dependencies
 RUN apt-get install \
@@ -36,7 +47,6 @@ RUN apt-get install \
       libavdevice-dev \
       libboost1.65-all-dev \
       nvidia-384 \
-      cmake \
       git \
       python3-dev
 

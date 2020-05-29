@@ -4,6 +4,7 @@
 #include "Display.h"
 #include "TestResources.h"
 #include "extension.h"
+#include "AssertUtility.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
@@ -58,6 +59,8 @@ TEST_F(VisitorTestFixture, testFoo) {
 }
 
 TEST_F(VisitorTestFixture, testBar) {
+    REQUIRE_GPU();
+
     auto name = "red10";
     auto input = Scan(name);
     auto input2 = Scan(name);
@@ -69,6 +72,8 @@ TEST_F(VisitorTestFixture, testBar) {
 }
 
 TEST_F(VisitorTestFixture, testScanStore) {
+    REQUIRE_GPU();
+
     auto name = "red10";
     auto input = Scan(name);
     auto stored = input.Store("postred10");
@@ -77,6 +82,8 @@ TEST_F(VisitorTestFixture, testScanStore) {
 }
 
 TEST_F(VisitorTestFixture, testScanSave) {
+    REQUIRE_GPU();
+
     auto name = "red10";
     auto input = Scan(name);
     auto stored = input.Encode(Codec::hevc()).Save("dout.mp4");
@@ -85,7 +92,13 @@ TEST_F(VisitorTestFixture, testScanSave) {
 }
 
 TEST_F(VisitorTestFixture, testInterpolateDiscretizeMap) {
+<<<<<<< HEAD
     auto yolo = lightdb::extensibility::Load("yolo");//, "/home/maureen/lightdb/plugins/yolo/cmake-build-debug/");
+=======
+    REQUIRE_GPU();
+
+    auto yolo = lightdb::extensibility::Load("yolo");
+>>>>>>> c14e97048875e596595388c7983d65b7b3b0245e
 
     auto name = "red10";
     auto input = Scan(name);
@@ -105,6 +118,8 @@ TEST_F(VisitorTestFixture, testInterpolateDiscretizeMap) {
 }
 
 TEST_F(VisitorTestFixture, testPartitionEncode) {
+    REQUIRE_GPU();
+
     auto name = "red10";
     auto input = Scan(name);
     auto partitioned = input.Partition(Dimension::Theta, rational_times_real({2, 4}, PI));
@@ -114,6 +129,8 @@ TEST_F(VisitorTestFixture, testPartitionEncode) {
 }
 
 TEST_F(VisitorTestFixture, testPartitionPartitionEncode) {
+    REQUIRE_GPU();
+
     auto name = "red10";
     auto input = Scan(name);
     auto partitioned1 = input.Partition(Dimension::Theta, rational_times_real({2, 4}, PI));
@@ -124,6 +141,8 @@ TEST_F(VisitorTestFixture, testPartitionPartitionEncode) {
 }
 
 TEST_F(VisitorTestFixture, testPartitionSubqueryUnion) {
+    REQUIRE_GPU();
+
     auto name = "red10";
     auto input = Scan(name);
     auto partitioned_t = input.Partition(Dimension::Theta, rational_times_real({2, 4}, PI));
@@ -136,6 +155,8 @@ TEST_F(VisitorTestFixture, testPartitionSubqueryUnion) {
 }
 
 TEST_F(VisitorTestFixture, testScanInterpolateDiscretize) {
+    REQUIRE_GPU();
+
     auto outputResolution = 416;
 
     auto input = Scan(Resources.red10.name);

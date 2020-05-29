@@ -18,7 +18,7 @@ protected:
 };
 
 TEST_F(EncodeBufferTestFixture, testBuffer) {
-  ASSERT_NO_THROW(EncodeBuffer(encoder, 1024*1024));
+  ASSERT_NO_THROW(EncodeBuffer(encoder, NV_ENC_BUFFER_FORMAT_NV12_PL, 1024*1024));
 }
 
 TEST_F(EncodeBufferTestFixture, testLock) {
