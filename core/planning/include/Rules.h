@@ -766,6 +766,8 @@ namespace lightdb::optimization {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent.is<physical::GPUEncodeToCPU>()) {
                 return plan().emplace<physical::GPUIdentity>(logical, parent);
+            } else if(parent.is<physical::GPUOperator>() && node.codec() == Codec::raw()) {
+                return plan().emplace<physical::GPUIdentity>(logical, parent);
             } else if(parent.is<physical::GPUOperator>()) {
                 return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
             } else if(parent.is<physical::CPUMap>() && parent.downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name()) {
@@ -774,6 +776,8 @@ namespace lightdb::optimization {
             } else if(parent.is<physical::TeedPhysicalOperatorAdapter::TeedPhysicalOperator>() && parent->parents()[0].is<physical::CPUMap>() && parent->parents()[0].downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent.is<physical::TeedPhysicalOperatorAdapter::TeedPhysicalOperator>() && parent->parents()[0].is<physical::GPUAngularSubquery>()) {
+                return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent->device() == physical::DeviceType::CPU && plan().environment().gpus().empty() && node.codec() == Codec::raw()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent->device() == physical::DeviceType::CPU && plan().environment().gpus().empty()) {
                 return plan().emplace<physical::CPUEncode>(logical, parent, Codec::hevc());
@@ -896,7 +900,8 @@ namespace lightdb::optimization {
             const auto children = plan().children(node);
             return children.size() == 1 &&
                    plan().assignments(children.front()).size() == 1 &&
-                   plan().assignments(children.front()).front().is<physical::ScanSingleFileDecodeReader>();
+                   plan().assignments(children.front()).front().is<physical::SaveToFile>();
+                   //plan().assignments(children.front()).front().is<physical::ScanSingleFileDecodeReader>();
         }
 
         PhysicalOperatorReference CreateIdentity(const LightFieldReference& logical, PhysicalOperatorReference &parent) {

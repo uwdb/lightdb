@@ -16,6 +16,12 @@ namespace lightdb::video {
         size_t allocation_width(const size_t width) const
             { return static_cast<size_t>(width * allocation_width_ratio_); }
         const std::optional<AVPixelFormat>& ffmpeg_format() const { return ffmpeg_format_; }
+        const std::optional<NV_ENC_BUFFER_FORMAT>& nvenc_format() const { return nvenc_format_; }
+
+        static const std::vector<Format>& all() {
+            static const std::vector<Format> formats{nv12(), nv21(), iyuv(), yv12()};
+            return formats;
+        }
 
         static const Format& nv12();
         static const Format& nv21();
@@ -23,29 +29,26 @@ namespace lightdb::video {
         static const Format& yv12();
         static const Format& unknown();
 
-        static const Format& get_format(const NV_ENC_BUFFER_FORMAT format) {
-            switch(format) {
-                case NV_ENC_BUFFER_FORMAT_NV12:
-                    return nv12();
-                case NV_ENC_BUFFER_FORMAT_IYUV:
-                    return iyuv();
-                case NV_ENC_BUFFER_FORMAT_YV12:
-                    return yv12();
-                default:
-                    throw InvalidArgumentError("Unsupported encoded buffer format", "input_buffer.buffer_format");
-            }
+        static const std::optional<Format> get_by_nvenc(const NV_ENC_BUFFER_FORMAT &id) {
+            auto format = std::find_if(Format::all().begin(), Format::all().end(),
+                                       [&id](const auto &f) { return f.nvenc_format() == id; });
+            return format != Format::all().end()
+                   ? std::optional<Format>{*format} : std::nullopt;
         }
 
     private:
         Format(const rational &allocation_height_ratio, const rational &allocation_width_ratio,
-               const std::optional<AVPixelFormat> ffmpeg_format)
+               const std::optional<AVPixelFormat> ffmpeg_format,
+               const std::optional<NV_ENC_BUFFER_FORMAT> nvenc_format)
                 : allocation_height_ratio_(allocation_height_ratio),
                   allocation_width_ratio_(allocation_width_ratio),
-                  ffmpeg_format_(ffmpeg_format)
+                  ffmpeg_format_(ffmpeg_format),
+                  nvenc_format_(nvenc_format)
         { }
 
         const rational allocation_height_ratio_, allocation_width_ratio_;
         std::optional<AVPixelFormat> ffmpeg_format_;
+        std::optional<NV_ENC_BUFFER_FORMAT> nvenc_format_;
     };
 }
 

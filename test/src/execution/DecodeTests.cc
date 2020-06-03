@@ -25,7 +25,7 @@ protected:
     Catalog catalog;
 };
 
-TEST_F(DecodeTestFixture, testDecode) {
+TEST_F(DecodeTestFixture, testDecodeGPU) {
     REQUIRE_GPU();
 
     auto input = Scan(Resources.red10.name).Save(Resources.out.raw);

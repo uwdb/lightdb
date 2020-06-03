@@ -86,21 +86,6 @@ TEST_F(SelectionTestFixture, testSelectPhi) {
     EXPECT_EQ(remove(Resources.out.hevc), 0);
 }
 
-TEST_F(SelectionTestFixture, testSelectPhi2) {
-    auto query = Load("/home/maureen/lightdb/cmake-build-debug-remote/test/resources/red10/stream0.h264")
-            .Select(PhiRange{0, rational_times_real({1, 4}, PI)})
-            .Encode()
-            .Save("/home/maureen/encoded0.hevc");
-
-    Coordinator().execute(query);
-
-    EXPECT_VIDEO_VALID(Resources.out.hevc);
-    EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
-    EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height / 4, Resources.red10.width);
-    EXPECT_VIDEO_RED(Resources.out.hevc);
-    EXPECT_EQ(remove(Resources.out.hevc), 0);
-}
-
 TEST_F(SelectionTestFixture, testSelectTheta) {
     REQUIRE_GPU();
 
@@ -169,15 +154,6 @@ TEST_F(SelectionTestFixture, testTemporalThetaSelect) {
     EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height, Resources.red10.width / 4);
     EXPECT_VIDEO_RED(Resources.out.hevc);
     EXPECT_EQ(remove(Resources.out.hevc), 0);
-}
-
-TEST_F(SelectionTestFixture, testPythonQuery) {
-    auto query = Load("/home/maureen/lightdb/test/resources/tiles/tile-6.hevc")
-                .Select(PhiRange{0, rational_times_real({3, 4}, PI)})
-                .Encode()
-                .Save("/home/maureen/selected-tile-6-test.hevc");
-
-    Coordinator().execute(query);
 }
 
 TEST_F(SelectionTestFixture, testDegenerateTimeSelect) {

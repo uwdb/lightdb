@@ -6,7 +6,7 @@
 #include <thread>
 #include <chrono>
 
-template<typename Input=DecodeReader::iterator>
+template<typename Input=lightdb::video::DecodeReader::iterator>
 class VideoDecoderSession {
 public:
     VideoDecoderSession(CudaDecoder& decoder, Input reader, const Input end)
@@ -59,7 +59,7 @@ protected:
 
         do {
             if (reader != end) {
-                auto packet = static_cast<DecodeReaderPacket>(reader++);
+                auto packet = static_cast<lightdb::video::DecodeReaderPacket>(reader++);
                 if ((status = cuvidParseVideoData(parser, &packet)) != CUDA_SUCCESS) {
                     cuvidDestroyVideoParser(parser);
                     throw GpuCudaRuntimeError("Call to cuvidParseVideoData failed", status);
@@ -82,7 +82,7 @@ private:
         CUresult status;
         CUvideoparser parser = nullptr;
         CUVIDPARSERPARAMS parameters = {
-            .CodecType = decoder.configuration().codec.cudaId().value(),
+            .CodecType = static_cast<cudaVideoCodec>(decoder.configuration().codec.cudaId().value()),
             .ulMaxNumDecodeSurfaces = decoder.configuration().decode_surfaces,
             .ulClockRate = 0,
             .ulErrorThreshold = 0,

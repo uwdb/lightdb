@@ -66,7 +66,7 @@ public:
     CudaFrame(const unsigned int height, const unsigned int width,
               const NV_ENC_PIC_STRUCT type,
               NV_ENC_BUFFER_FORMAT format=NV_ENC_BUFFER_FORMAT_NV12)
-            : CudaFrame(Frame{height, width, type}, lightdb::video::Format::get_format(format))
+            : CudaFrame(Frame{height, width, type}, lightdb::video::Format::get_by_nvenc(format).value())
     { }
 
     CudaFrame(const unsigned int height, const unsigned int width,

@@ -137,7 +137,9 @@ struct EncodeBuffer
         auto cudaFrame = dynamic_cast<GPUFrame&>(frame).cuda();
 
         if(frame_top == 0 && frame_left == 0 &&
-           buffer_top == 0 && buffer_left == 0) {
+           buffer_top == 0 && buffer_left == 0 &&
+           frame.width() == input_buffer.width &&
+           frame.height() == input_buffer.height) {
             copy(lock, frame);
             return;
         }

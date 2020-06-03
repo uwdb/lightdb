@@ -18,7 +18,7 @@ CUVIDDECODECREATEINFO DecodeConfiguration::AsCuvidCreateInfo(CUvideoctxlock lock
                 .ulWidth = width,
                 .ulHeight = height,
                 .ulNumDecodeSurfaces = decode_surfaces,
-                .CodecType = codec.cudaId().value(),
+                .CodecType = static_cast<cudaVideoCodec>(codec.cudaId().value()),
                 .ChromaFormat = chroma_format,
                 .ulCreationFlags = creation_flags,
                 //.bitDepthMinus8 = 0,

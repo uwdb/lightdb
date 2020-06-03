@@ -142,8 +142,9 @@ namespace lightdb {
 
     template<class tolerance, typename T1, typename T2>
     constexpr inline bool epsilon_equal(const T1 &left, const T2 &right) noexcept {
-        return rational{tolerance::num, tolerance::den} >
-                 boost::math::relative_difference(left, right);
+        auto relative_difference = boost::math::relative_difference(left, right);
+        return relative_difference != std::numeric_limits<T1>::infinity() &&
+               rational{tolerance::num, tolerance::den} > relative_difference;
     }
 
     struct number {

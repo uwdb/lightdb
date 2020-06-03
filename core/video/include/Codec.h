@@ -10,6 +10,7 @@
 
 namespace lightdb {
     using AVCodecID = unsigned int;
+    using cudaVideoCodec = unsigned int;
 
     class Codec {
     public:
@@ -34,6 +35,13 @@ namespace lightdb {
         static std::optional<Codec> get(const AVCodecID &id) {
             auto codec = std::find_if(Codec::all().begin(), Codec::all().end(),
                                       [&id](const auto &c) { return c.ffmpegId() == id; });
+            return codec != Codec::all().end()
+                   ? std::optional<Codec>{*codec} : std::nullopt;
+        }
+
+        static std::optional<Codec> getByCudaId(const cudaVideoCodec &id) {
+            auto codec = std::find_if(Codec::all().begin(), Codec::all().end(),
+                                      [&id](const auto &c) { return c.cudaId() == id; });
             return codec != Codec::all().end()
                    ? std::optional<Codec>{*codec} : std::nullopt;
         }

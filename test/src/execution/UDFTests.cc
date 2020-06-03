@@ -27,7 +27,7 @@ TEST_F(UDFTestFixture, testGreyscale) {
     auto query = Scan(Resources.red10.name)
                     .Map(lightdb::Greyscale)
                     .Encode()
-                    .Save("/home/maureen/grey_test.hevc");
+                    .Save(Resources.out.hevc);
 
     Coordinator().execute(query);
 

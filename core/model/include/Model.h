@@ -309,7 +309,7 @@ namespace lightdb::logical {
     public:
         SavedLightField(const LightFieldReference &parent,
                         std::filesystem::path filename,
-                        Codec codec=Codec::hevc(),
+                        Codec codec,
                         std::optional<GeometryReference> geometry={})
                 : LightField(parent),
                   filename_(std::move(filename)),
