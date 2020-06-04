@@ -20,11 +20,14 @@ private:
     public:
         explicit Runtime(ScanSingleFileDecodeReader &physical)
             : runtime::Runtime<ScanSingleFileDecodeReader>(physical),
-              reader_(physical.source().filename())
+              reader_(physical.context()->environment().gpus().empty()
+                          ? static_cast<std::unique_ptr<video::DecodeReader>>(
+                                  std::make_unique<video::FfmpegFileDecodeReader>(physical.source().filename()))
+                          : std::make_unique<video::FileDecodeReader>(physical.source().filename()))
         { }
 
         std::optional<physical::MaterializedLightFieldReference> read() override {
-            auto packet = reader_.read();
+            auto packet = reader_->read();
             return packet.has_value()
                    ? std::optional<physical::MaterializedLightFieldReference>{
                             physical::MaterializedLightFieldReference::make<CPUEncodedFrameData>(
@@ -35,7 +38,8 @@ private:
                    : std::nullopt;
         }
 
-        FileDecodeReader reader_;
+    private:
+        std::unique_ptr<video::DecodeReader> reader_;
     };
 
     const catalog::Source source_;

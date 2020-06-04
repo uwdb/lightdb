@@ -2,6 +2,7 @@
 #define LIGHTDB_FRAME_H
 
 #include "VideoDecoder.h"
+#include "Format.h"
 #include "lazy.h"
 #include "bytestring.h"
 #include "reference.h"
@@ -53,16 +54,19 @@ using GPUFrameReference = lightdb::shared_reference<GPUFrame>;
 
 class CudaFrame: public GPUFrame {
 public:
-    explicit CudaFrame(const Frame &frame)
-            : CudaFrame(frame, std::tuple_cat(allocate_frame(frame), std::make_tuple(true)))
+    explicit CudaFrame(const Frame &frame, const lightdb::video::Format &format=lightdb::video::Format::nv12())
+            : CudaFrame(frame, std::tuple_cat(allocate_frame(frame, format), std::make_tuple(true)))
     { }
 
     CudaFrame(const Frame &frame, const CUdeviceptr handle, const unsigned int pitch)
             : CudaFrame(frame, handle, pitch, false)
+
     { }
 
-    CudaFrame(const unsigned int height, const unsigned int width, const NV_ENC_PIC_STRUCT type)
-            : CudaFrame(Frame{height, width, type})
+    CudaFrame(const unsigned int height, const unsigned int width,
+              const NV_ENC_PIC_STRUCT type,
+              NV_ENC_BUFFER_FORMAT format=NV_ENC_BUFFER_FORMAT_NV12)
+            : CudaFrame(Frame{height, width, type}, lightdb::video::Format::get_by_nvenc(format).value())
     { }
 
     CudaFrame(const unsigned int height, const unsigned int width,
@@ -206,7 +210,9 @@ private:
             : GPUFrame(frame), handle_(handle), pitch_(pitch), owner_(owner)
     { }
 
-    static std::pair<CUdeviceptr, unsigned int> allocate_frame(const Frame &frame)
+    static std::pair<CUdeviceptr, unsigned int> allocate_frame(
+            const Frame &frame,
+            const lightdb::video::Format &format=lightdb::video::Format::nv12())
     {
         CUresult result;
         CUdeviceptr handle;
@@ -214,8 +220,10 @@ private:
 
         if((result = cuMemAllocPitch(&handle,
                                      &pitch,
-                                     frame.width(),
-                                     frame.height() * 3 / 2,
+                                     format.allocation_width(frame.width()),
+                                     format.allocation_height(frame.height()),
+                                     //frame.width(),
+                                     //frame.height() * 3 / 2,
                                      16)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuMemAllocPitch failed", result);
         else
@@ -298,29 +306,31 @@ private:
 class LocalFrame: public Frame {
 public:
     LocalFrame(const LocalFrame &frame)
-            : LocalFrame(frame, frame.data_)
+            : LocalFrame(frame, frame.data_, frame.format_)
     { }
 
-    LocalFrame(const LocalFrame &frame, const lightdb::bytestring &data)
-            : LocalFrame(frame, std::make_shared<lightdb::bytestring>(data.begin(), data.end()))
+    LocalFrame(const LocalFrame &frame, const lightdb::bytestring &data, const lightdb::video::Format &format)
+            : LocalFrame(frame, std::make_shared<lightdb::bytestring>(data.begin(), data.end()), format)
     { }
 
-    LocalFrame(unsigned int height, unsigned int width, const lightdb::bytestring &data)
-            : LocalFrame(height, width, std::make_shared<lightdb::bytestring>(data.begin(), data.end()))
+    LocalFrame(unsigned int height, unsigned int width, const lightdb::bytestring &data, const lightdb::video::Format &format)
+            : LocalFrame(height, width, std::make_shared<lightdb::bytestring>(data.begin(), data.end()), format)
     { }
 
-    LocalFrame(unsigned int height, unsigned int width, std::shared_ptr<lightdb::bytestring> data)
+    LocalFrame(unsigned int height, unsigned int width, std::shared_ptr<lightdb::bytestring> data, const lightdb::video::Format &format)
             : Frame(height, width, NV_ENC_PIC_STRUCT_FRAME),
-              data_(std::move(data))
+              data_(std::move(data)),
+              format_(format)
     { }
 
-    LocalFrame(const LocalFrame &frame, const size_t size)
-            : LocalFrame(frame, std::make_shared<lightdb::bytestring>(size, 0))
+    LocalFrame(const LocalFrame &frame, const size_t size, const lightdb::video::Format &format)
+            : LocalFrame(frame, std::make_shared<lightdb::bytestring>(size, 0), format)
     { }
 
-    LocalFrame(const LocalFrame &frame, std::shared_ptr<lightdb::bytestring> data)
+    LocalFrame(const LocalFrame &frame, std::shared_ptr<lightdb::bytestring> data, const lightdb::video::Format &format)
             : Frame(frame),
-              data_(std::move(data))
+              data_(std::move(data)),
+              format_(format)
     { }
 
     explicit LocalFrame(const CudaFrame &source)
@@ -328,7 +338,8 @@ public:
 
     explicit LocalFrame(const CudaFrame &source, const Configuration &configuration)
         : Frame(configuration, NV_ENC_PIC_STRUCT_FRAME),
-          data_(std::make_shared<lightdb::bytestring>(width() * height() * 3 / 2, 0))
+          data_(std::make_shared<lightdb::bytestring>(width() * height() * 3 / 2, 0)),
+          format_(lightdb::video::Format::nv12())
     {
         CUresult status;
         auto params = CUDA_MEMCPY2D {
@@ -361,9 +372,11 @@ public:
         return static_cast<unsigned char>(data_->at(x + y * width()));
     }
     const lightdb::bytestring& data() const { return *data_; }
+    const lightdb::video::Format &format() const { return format_; }
 
 private:
     const std::shared_ptr<lightdb::bytestring> data_;
+    const lightdb::video::Format& format_;
 };
 
 //TODO this should be CPUFrameRef

@@ -3,6 +3,7 @@
 #include "AssertVideo.h"
 #include "Display.h"
 #include "TestResources.h"
+#include "AssertUtility.h"
 #include <gtest/gtest.h>
 
 using namespace lightdb;
@@ -41,6 +42,8 @@ protected:
 };
 
 TEST_F(EncodeTestFixture, testEncodeH264) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::h264())
                      .Save(Resources.out.h264);
@@ -55,6 +58,8 @@ TEST_F(EncodeTestFixture, testEncodeH264) {
 }
 
 TEST_F(EncodeTestFixture, testEncodeHEVC) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::hevc())
                      .Save(Resources.out.hevc);
@@ -69,6 +74,8 @@ TEST_F(EncodeTestFixture, testEncodeHEVC) {
 }
 
 TEST_F(EncodeTestFixture, testEncodeRaw) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::raw())
                      .Save(Resources.out.raw);
@@ -87,19 +94,57 @@ TEST_F(EncodeTestFixture, testEncodeRaw) {
     EXPECT_EQ(remove(output_h264.c_str()), 0);
 }
 
+TEST_F(EncodeTestFixture, testEncodeH264ForceCPU) {
+    auto query = Scan(Resources.red10.name)
+            .Encode(Codec::h264())
+            .Save(Resources.out.h264);
+
+    HeuristicOptimizer optimizer{LocalEnvironment(true)};
+    Coordinator().execute(query, optimizer);
+
+    EXPECT_VIDEO_VALID(Resources.out.h264);
+    EXPECT_VIDEO_FRAMES(Resources.out.h264, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.h264, Resources.red10.height, Resources.red10.width);
+    EXPECT_VIDEO_RED(Resources.out.h264);
+    EXPECT_EQ(remove(Resources.out.h264), 0);
+}
+
+TEST_F(EncodeTestFixture, testEncodeHEVCForceCPU) {
+    auto query = Scan(Resources.red10.name)
+            .Encode(Codec::hevc())
+            .Save(Resources.out.hevc);
+
+    HeuristicOptimizer optimizer{LocalEnvironment(true)};
+    Coordinator().execute(query, optimizer);
+
+    EXPECT_VIDEO_VALID(Resources.out.hevc);
+    EXPECT_VIDEO_FRAMES(Resources.out.hevc, Resources.red10.frames);
+    EXPECT_VIDEO_RESOLUTION(Resources.out.hevc, Resources.red10.height, Resources.red10.width);
+    EXPECT_VIDEO_RED(Resources.out.hevc);
+    EXPECT_EQ(remove(Resources.out.hevc), 0);
+}
+
 TEST_F(EncodeTestFixture, testGOP30) {
+    REQUIRE_GPU();
+
     testEncodeGOP(30u);
 }
 
 TEST_F(EncodeTestFixture, testGOP15) {
+    REQUIRE_GPU();
+
     testEncodeGOP(15u);
 }
 
 TEST_F(EncodeTestFixture, testGOP7) {
+    REQUIRE_GPU();
+
     testEncodeGOP(7u);
 }
 
 TEST_F(EncodeTestFixture, testImplicitGOP) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::hevc())
                      .Save(Resources.out.hevc);
@@ -115,6 +160,8 @@ TEST_F(EncodeTestFixture, testImplicitGOP) {
 }
 
 TEST_F(EncodeTestFixture, testInvalidGOPType) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::hevc(), {{EncodeOptions::GOPSize, "invalid"}})
                      .Save(Resources.out.hevc);
@@ -123,6 +170,8 @@ TEST_F(EncodeTestFixture, testInvalidGOPType) {
 }
 
 TEST_F(EncodeTestFixture, testInvalidGOPRange) {
+    REQUIRE_GPU();
+
     auto query = Scan(Resources.red10.name)
                      .Encode(Codec::hevc(), {{EncodeOptions::GOPSize, -1}})
                      .Save(Resources.out.hevc);

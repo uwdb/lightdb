@@ -11,14 +11,14 @@ public:
                         Resources.videos.black.mp4.fps, lightdb::Codec::h264()},
           queue([this]() { return CUVIDFrameQueue(lock); }),
           decoder([this]() { return CudaDecoder(configuration, queue, lock); }),
-          reader([]() { return FileDecodeReader(Resources.videos.black.h264.name); })
+          reader([]() { return lightdb::video::FileDecodeReader(Resources.videos.black.h264.name); })
     { }
 
 protected:
     DecodeConfiguration configuration;
     lightdb::lazy<CUVIDFrameQueue> queue;
     lightdb::lazy<CudaDecoder> decoder;
-    lightdb::lazy<FileDecodeReader> reader;
+    lightdb::lazy<lightdb::video::FileDecodeReader> reader;
 };
 
 

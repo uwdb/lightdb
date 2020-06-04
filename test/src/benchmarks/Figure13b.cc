@@ -35,6 +35,8 @@ public:
         auto configuration = GetStreamConfiguration(filename, 0, true);
         auto frames = COUNT_FRAMES(filename);
 
+        REQUIRE_GPU();
+
 LOG(ERROR)<<"Before query\n";//TODO foo
         auto query = Load(filename, Volume::zero(),  GeometryReference::make<EquirectangularGeometry>(EquirectangularGeometry::Samples()))
                 .Map(Greyscale)

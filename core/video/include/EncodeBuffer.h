@@ -13,12 +13,10 @@ struct EncodeInputBuffer
     unsigned int      width;
     unsigned int      height;
 #if defined (NV_WINDOWS)
-    IDirect3DSurface9 *NV12Surface;
+    IDirect3DSurface9 *surface;
 #endif
-    CUdeviceptr       NV12devPtr;
-    uint32_t          NV12Stride;
-    CUdeviceptr       NV12TempdevPtr;
-    uint32_t          NV12TempStride;
+    CUdeviceptr       device;
+    uint32_t          stride;
     void*             registered_resource;
     NV_ENC_INPUT_PTR  input_surface;
     NV_ENC_BUFFER_FORMAT buffer_format;
@@ -44,16 +42,24 @@ struct EncodeBuffer
     EncodeBuffer(const EncodeBuffer&& other) = delete;
 
     EncodeBuffer(const EncodeBuffer& other)
-            : EncodeBuffer(other.encoder, other.size)
+            : EncodeBuffer(other.encoder, other.input_buffer.buffer_format, other.size)
     { }
 
     // TODO is this size reasonable?
-    explicit EncodeBuffer(VideoEncoder &encoder, size_t size=4*1024*1024)
+    explicit EncodeBuffer(VideoEncoder &encoder,
+                          const NV_ENC_BUFFER_FORMAT format=NV_ENC_BUFFER_FORMAT_NV12_PL,
+                          const size_t size=4*1024*1024)
             : output_buffer{},
               input_buffer{},
               encoder(encoder), size(size) {
         NVENCSTATUS status;
         CUresult result;
+
+        input_buffer.buffer_format = format;
+        input_buffer.width = encoder.configuration().width;
+        input_buffer.height = encoder.configuration().height;
+        output_buffer.bitstreamBufferSize = size;
+        output_buffer.outputEvent = nullptr;
 
         if(encoder.configuration().height % 2 != 0)
             throw InvalidArgumentError("Buffer height must be even", "configuration.height");
@@ -61,26 +67,22 @@ struct EncodeBuffer
             throw InvalidArgumentError("Buffer width must be even", "configuration.width");
         else if(!encoder.api().encoderCreated())
             throw GpuRuntimeError("Encoder not created in API");
-        else if((result = cuMemAllocPitch(&input_buffer.NV12devPtr,
-                                          (size_t*)&input_buffer.NV12Stride,
-                                          encoder.configuration().width,
-                                          encoder.configuration().height * 3 / 2,
+        else if((result = cuMemAllocPitch(&input_buffer.device,
+                                          (size_t*)&input_buffer.stride,
+                                          buffer_width(),
+                                          buffer_height(),
+                                          //encoder.configuration().width,
+                                          //encoder.configuration().height * 3 / 2,
                                           16)) != CUDA_SUCCESS)
             throw GpuCudaRuntimeError("Call to cuMemAllocPitch failed", result);
         else if((status = encoder.api().NvEncRegisterResource(
-                NV_ENC_INPUT_RESOURCE_TYPE_CUDADEVICEPTR, (void *)input_buffer.NV12devPtr,
+                NV_ENC_INPUT_RESOURCE_TYPE_CUDADEVICEPTR, (void *)input_buffer.device,
                 encoder.configuration().width, encoder.configuration().height,
-                input_buffer.NV12Stride, &input_buffer.registered_resource)) != NV_ENC_SUCCESS)
+                input_buffer.stride, &input_buffer.registered_resource, format)) != NV_ENC_SUCCESS)
             throw GpuEncodeRuntimeError("Call to api.NvEncRegisterResource failed", status);
         else if((status = encoder.api().NvEncCreateBitstreamBuffer(
                 size, &output_buffer.bitstreamBuffer)) != NV_ENC_SUCCESS)
             throw GpuEncodeRuntimeError("Call to api.NvEncCreateBitstreamBuffer failed", status);
-
-        input_buffer.buffer_format = NV_ENC_BUFFER_FORMAT_NV12_PL;
-        input_buffer.width = encoder.configuration().width;
-        input_buffer.height = encoder.configuration().height;
-        output_buffer.bitstreamBufferSize = size;
-        output_buffer.outputEvent = nullptr;
     }
 
     ~EncodeBuffer() {
@@ -91,7 +93,7 @@ struct EncodeBuffer
             LOG(ERROR) << "Call to NvEncDestroyBitstreamBuffer failed with status " << status;
         else if((status = encoder.api().NvEncUnregisterResource(input_buffer.registered_resource)) != NV_ENC_SUCCESS)
             LOG(ERROR) << "Call to NvEncUnregisterResource failed with status " << status;
-        else if((result = cuMemFree(input_buffer.NV12devPtr)) != CUDA_SUCCESS)
+        else if((result = cuMemFree(input_buffer.device)) != CUDA_SUCCESS)
             LOG(ERROR) << "Call to cuMemFree failed with result " << result;
     }
 
@@ -120,12 +122,12 @@ struct EncodeBuffer
 
             .dstMemoryType = CU_MEMORYTYPE_DEVICE,
             .dstHost = nullptr,
-            .dstDevice = static_cast<CUdeviceptr>(input_buffer.NV12devPtr),
+            .dstDevice = static_cast<CUdeviceptr>(input_buffer.device),
             .dstArray = nullptr,
-            .dstPitch = input_buffer.NV12Stride,
+            .dstPitch = input_buffer.stride,
 
-            .WidthInBytes = input_buffer.width,
-            .Height = input_buffer.height * 3 / 2
+            .WidthInBytes = buffer_width(), //input_buffer.width,
+            .Height = buffer_height() //input_buffer.height * 3 / 2
         });
     }
 
@@ -133,6 +135,15 @@ struct EncodeBuffer
               size_t frame_top, size_t frame_left,
               size_t buffer_top=0, size_t buffer_left=0) {
         auto cudaFrame = dynamic_cast<GPUFrame&>(frame).cuda();
+
+        if(frame_top == 0 && frame_left == 0 &&
+           buffer_top == 0 && buffer_left == 0 &&
+           frame.width() == input_buffer.width &&
+           frame.height() == input_buffer.height) {
+            copy(lock, frame);
+            return;
+        }
+
         //CudaDecodedFrame cudaFrame(frame);
         CUDA_MEMCPY2D lumaPlaneParameters{
                 srcXInBytes:   frame_left,
@@ -147,9 +158,9 @@ struct EncodeBuffer
                 dstY:          buffer_top,
                 dstMemoryType: CU_MEMORYTYPE_DEVICE,
                 dstHost:       nullptr,
-                dstDevice:     static_cast<CUdeviceptr>(input_buffer.NV12devPtr),
+                dstDevice:     static_cast<CUdeviceptr>(input_buffer.device),
                 dstArray:      nullptr,
-                dstPitch:      input_buffer.NV12Stride,
+                dstPitch:      input_buffer.stride,
 
                 WidthInBytes:  std::min(input_buffer.width - buffer_left, cudaFrame->width() - frame_left),
                 Height:        std::min(input_buffer.height - buffer_top, cudaFrame->height() - frame_top) ,
@@ -168,9 +179,9 @@ struct EncodeBuffer
                 dstY:          input_buffer.height + buffer_top / 2,
                 dstMemoryType: CU_MEMORYTYPE_DEVICE,
                 dstHost:       nullptr,
-                dstDevice:     static_cast<CUdeviceptr>(input_buffer.NV12devPtr),
+                dstDevice:     static_cast<CUdeviceptr>(input_buffer.device),
                 dstArray:      nullptr,
-                dstPitch:      input_buffer.NV12Stride,
+                dstPitch:      input_buffer.stride,
 
                 WidthInBytes:  std::min(input_buffer.width - buffer_left, cudaFrame->width() - frame_left),
                 Height:        std::min(input_buffer.height - buffer_top, cudaFrame->height() - frame_top) / 2
@@ -209,6 +220,30 @@ struct EncodeBuffer
         NVENCSTATUS status;
         if((status = encoder.api().NvEncUnmapInputResource(input_buffer.input_surface)) != NV_ENC_SUCCESS)
             throw GpuEncodeRuntimeError("Call to api.NvEncUnmapInputResource failed", status);
+    }
+
+private:
+    size_t buffer_height() const {
+        switch(input_buffer.buffer_format) {
+            case NV_ENC_BUFFER_FORMAT_NV12:
+            case NV_ENC_BUFFER_FORMAT_IYUV:
+                return encoder.configuration().height * 3 / 2;
+            case NV_ENC_BUFFER_FORMAT_YV12:
+                return encoder.configuration().height * 2;
+            default:
+                throw InvalidArgumentError("Unsupported encoded buffer format", "input_buffer.buffer_format");
+        }
+    }
+
+    size_t buffer_width() const {
+        switch(input_buffer.buffer_format) {
+            case NV_ENC_BUFFER_FORMAT_NV12:
+            case NV_ENC_BUFFER_FORMAT_IYUV:
+            case NV_ENC_BUFFER_FORMAT_YV12:
+                return encoder.configuration().width;
+            default:
+                throw InvalidArgumentError("Unsupported encoded buffer format", "input_buffer.buffer_format");
+        }
     }
 };
 

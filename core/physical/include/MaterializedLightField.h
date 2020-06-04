@@ -153,17 +153,17 @@ namespace lightdb::physical {
         explicit CPUEncodedFrameData(const Codec &codec,
                                      const Configuration& configuration,
                                      const GeometryReference &geometry,
-                                     const DecodeReaderPacket &packet)
+                                     const video::DecodeReaderPacket &packet)
                 : EncodedFrameData(DeviceType::CPU, codec, configuration, geometry,
                                    packet.payload, packet.payload + packet.payload_size),
                   packet_(packet)
         { }
 
-        inline explicit operator const DecodeReaderPacket() const noexcept { return packet_; }
+        inline explicit operator const video::DecodeReaderPacket() const noexcept { return packet_; }
         inline MaterializedLightFieldReference ref() const override { return MaterializedLightFieldReference::make<CPUEncodedFrameData>(*this); }
 
     private:
-        const DecodeReaderPacket packet_;
+        const video::DecodeReaderPacket packet_;
     };
 
     class CPUDecodedFrameData: public FrameData {

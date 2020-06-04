@@ -1,12 +1,17 @@
 #ifndef LIGHTDB_DECODEREADER_H
 #define LIGHTDB_DECODEREADER_H
 
+#include "Format.h"
+#include "Ffmpeg.h"
 #include "spsc_queue.h"
-#include <nvcuvid.h>
+#include <dynlink_nvcuvid.h>
 #include <thread>
+#include <fstream>
 #include <experimental/filesystem>
 
-struct DecodeReaderPacket: public CUVIDSOURCEDATAPACKET {
+namespace lightdb::video {
+
+    struct DecodeReaderPacket: public CUVIDSOURCEDATAPACKET {
 public:
     DecodeReaderPacket() : CUVIDSOURCEDATAPACKET{} { }
 
@@ -79,8 +84,8 @@ public:
     virtual iterator end() { return iterator(); }
 
     virtual std::optional<DecodeReaderPacket> read() = 0;
-    virtual CUVIDEOFORMAT format() const = 0;
-    virtual bool isComplete() const = 0;
+    virtual const lightdb::Codec &codec() const = 0;
+    virtual bool is_complete() const = 0;
 };
 
 class FileDecodeReader: public DecodeReader {
@@ -93,10 +98,11 @@ public:
               packets_(std::make_unique<lightdb::spsc_queue<DecodeReaderPacket>>(4096)), // Must be initialized before source
               source_(CreateVideoSource(filename)),
               format_(GetVideoSourceFormat(source_)),
+              codec_(lightdb::Codec::getByCudaId(format_.codec).value_or(lightdb::Codec::raw())),
               decoded_bytes_(0) {
-        if(format().codec != cudaVideoCodec_H264 && format().codec != cudaVideoCodec_HEVC)
+        if(format_.codec != cudaVideoCodec_H264 && format_.codec != cudaVideoCodec_HEVC)
             throw GpuRuntimeError("FileDecodeReader only supports H264/HEVC input video");
-        else if(format().chroma_format != cudaVideoChromaFormat_420)
+        else if(format_.chroma_format != cudaVideoChromaFormat_420)
             throw GpuRuntimeError("FileDecodeReader only supports 4:2:0 chroma");
     }
 
@@ -106,6 +112,7 @@ public:
           packets_(std::move(other.packets_)),
           source_(other.source_),
           format_(other.format_),
+          codec_(other.codec_),
           decoded_bytes_(other.decoded_bytes_) {
           other.source_ = nullptr;
     }
@@ -125,7 +132,8 @@ public:
             source_ = nullptr;
     }
 
-    inline CUVIDEOFORMAT format() const override { return format_; }
+    inline const lightdb::Codec &codec() const override { return codec_; }
+    //inline CUVIDEOFORMAT format() const override { return format_; }
     inline const std::string &filename() const { return filename_; }
 
     std::optional<DecodeReaderPacket> read() override {
@@ -144,7 +152,7 @@ public:
         }
     }
 
-    inline bool isComplete() const override {
+    inline bool is_complete() const override {
         return !packets_->read_available() && cuvidGetVideoSourceState(source_) != cudaVideoState_Started;
     }
 
@@ -169,7 +177,7 @@ private:
                 .pfnAudioDataHandler = nullptr,
                 {nullptr}
         };
-LOG(ERROR) << "Calling cuvidCreateVideoSource";
+
         if(!std::experimental::filesystem::exists(filename))
             throw InvalidArgumentError("File does not exist", "filename");
         else if(GPUContext::device_count() == 0)
@@ -200,7 +208,73 @@ LOG(ERROR) << "Calling cuvidCreateVideoSource";
     std::unique_ptr<lightdb::spsc_queue<DecodeReaderPacket>> packets_;
     CUvideosource source_;
     CUVIDEOFORMAT format_;
+    const lightdb::Codec codec_;
     size_t decoded_bytes_;
 };
+
+class FfmpegFileDecodeReader: public DecodeReader {
+public:
+    explicit FfmpegFileDecodeReader(const std::string &filename, const size_t buffer_size=1024*1024)
+            : FfmpegFileDecodeReader(filename.c_str()) { }
+
+    explicit FfmpegFileDecodeReader(const char *filename, const size_t buffer_size=1024*1024)
+            : filename_(filename),
+              buffer_size_(buffer_size),
+              codec_(get_codec(filename)),
+              stream_(std::make_unique<std::ifstream>(filename)),
+              decoded_bytes_(0) {
+        buffer_.resize(buffer_size_);
+    }
+
+    FfmpegFileDecodeReader(const FfmpegFileDecodeReader&) = delete;
+    FfmpegFileDecodeReader(FfmpegFileDecodeReader&& other) noexcept
+            : filename_(other.filename_),
+              codec_(other.codec_),
+              buffer_size_(other.buffer_size_),
+              stream_(other.stream_.release()),
+              decoded_bytes_(other.decoded_bytes_) {
+        buffer_.resize(buffer_size_);
+    }
+
+    ~FfmpegFileDecodeReader() {
+        stream_ = nullptr;
+    }
+
+    inline const std::string &filename() const { return filename_; }
+    inline const Codec &codec() const override { return codec_; }
+
+    std::optional<DecodeReaderPacket> read() override {
+        if(!stream_->eof()) {
+            stream_->read(buffer_.data(), buffer_.size());
+            buffer_.resize(static_cast<unsigned long>(stream_->gcount()));
+            decoded_bytes_ += stream_->gcount();
+
+            return DecodeReaderPacket{buffer_};
+        } else {
+            LOG(INFO) << "Decoded " << decoded_bytes_ << " bytes from " << filename();
+            return {};
+        }
+    }
+
+    inline bool is_complete() const override {
+        return stream_->eof();
+    }
+
+private:
+    static Codec get_codec(const char *filename) {
+        auto configuration = ffmpeg::GetStreamConfigurations(filename, true);
+        CHECK_EQ(configuration.size(), 1);
+        return configuration.front().decode.codec;
+    }
+
+    const std::string filename_;
+    const size_t buffer_size_;
+    std::vector<char> buffer_;
+    const Codec codec_;
+    std::unique_ptr<std::ifstream> stream_;
+    size_t decoded_bytes_;
+};
+
+} // namespace lightdb::video
 
 #endif //LIGHTDB_DECODEREADER_H

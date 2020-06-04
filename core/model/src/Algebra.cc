@@ -27,7 +27,15 @@ namespace lightdb::logical {
     }
 
     LightFieldReference Algebra::Save(const std::filesystem::path &filename) {
-        return LightFieldReference::make<SavedLightField>(this_, filename);
+        auto codec = Codec::get(filename.extension());
+        if(codec.has_value())
+            return LightFieldReference::make<SavedLightField>(this_, filename, codec.value());
+        else
+            throw InvalidArgumentError("Could not infer codec from extension", "filename");
+    }
+
+    LightFieldReference Algebra::Save(const std::filesystem::path &filename, const Codec &codec) {
+        return LightFieldReference::make<SavedLightField>(this_, filename, codec);
     }
 
     LightFieldReference Algebra::Select(const Volume &volume) {

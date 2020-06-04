@@ -89,6 +89,8 @@ namespace lightdb::optimization {
                             auto tees = physical::TeedPhysicalOperatorAdapter::make(decode, children.size());
                             for (auto index = 0u; index < children.size(); index++)
                                 plan().add(tees->physical(index));
+                        } else {
+                            plan().add(decode);
                         }
                     } else if(stream.codec() == Codec::boxes()) {
                         auto &scan = plan().emplace<physical::ScanSingleFile<sizeof(Rectangle) * 8192>>(logical, stream);
@@ -160,12 +162,14 @@ namespace lightdb::optimization {
                 //TODO this is silly -- every physical operator should declare an output type and we should just use that
                 else if(physical_parent.is<physical::TeedPhysicalOperatorAdapter::TeedPhysicalOperator>() && physical_parent->parents()[0].is<physical::CPUMap>() && physical_parent->parents()[0].downcast<physical::CPUMap>().transform()(physical::DeviceType::CPU).codec().name() == node.codec().name())
                     plan().emplace<physical::CPUIdentity>(logical, physical_parent);
-                else if(physical_parent->device() == physical::DeviceType::CPU) {
+                else if(physical_parent->device() == physical::DeviceType::CPU && !plan().environment().gpus().empty()) {
                     //auto gpu = plan().environment().gpus()[0];
                     auto gpu = plan().allocator().gpu();
                     auto transfer = plan().emplace<physical::CPUtoGPUTransfer>(logical, physical_parent, gpu);
                     plan().emplace<physical::GPUEncodeToCPU>(plan().lookup(node), transfer, node.codec());
-                } else
+                } else if(physical_parent->device() == physical::DeviceType::CPU)
+                    plan().emplace<physical::CPUEncode>(logical, physical_parent, node.codec());
+                else
                     return false;
                 return true;
             } else {
@@ -758,7 +762,11 @@ namespace lightdb::optimization {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
                 //} else if(parent.is<physical::GPUOperatorAdapter>() && parent->parents()[0].is<physical::GPUAngularSubquery>() && parent->parents()[0].downcast<physical::GPUAngularSubquery>().subqueryType().is<logical::EncodedLightField>()) {
                 //    return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent.is<physical::CPUEncode>()) {
+                return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent.is<physical::GPUEncodeToCPU>()) {
+                return plan().emplace<physical::GPUIdentity>(logical, parent);
+            } else if(parent.is<physical::GPUOperator>() && node.codec() == Codec::raw()) {
                 return plan().emplace<physical::GPUIdentity>(logical, parent);
             } else if(parent.is<physical::GPUOperator>()) {
                 return plan().emplace<physical::GPUEncodeToCPU>(logical, parent, Codec::hevc());
@@ -769,6 +777,10 @@ namespace lightdb::optimization {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
             } else if(parent.is<physical::TeedPhysicalOperatorAdapter::TeedPhysicalOperator>() && parent->parents()[0].is<physical::GPUAngularSubquery>()) {
                 return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent->device() == physical::DeviceType::CPU && plan().environment().gpus().empty() && node.codec() == Codec::raw()) {
+                return plan().emplace<physical::CPUIdentity>(logical, parent);
+            } else if(parent->device() == physical::DeviceType::CPU && plan().environment().gpus().empty()) {
+                return plan().emplace<physical::CPUEncode>(logical, parent, Codec::hevc());
             } else if(parent->device() != physical::DeviceType::GPU) {
                 //auto gpu = plan().environment().gpus()[0];
                 auto gpu = plan().allocator().gpu();
@@ -888,7 +900,8 @@ namespace lightdb::optimization {
             const auto children = plan().children(node);
             return children.size() == 1 &&
                    plan().assignments(children.front()).size() == 1 &&
-                   plan().assignments(children.front()).front().is<physical::ScanSingleFileDecodeReader>();
+                   plan().assignments(children.front()).front().is<physical::SaveToFile>();
+                   //plan().assignments(children.front()).front().is<physical::ScanSingleFileDecodeReader>();
         }
 
         PhysicalOperatorReference CreateIdentity(const LightFieldReference& logical, PhysicalOperatorReference &parent) {

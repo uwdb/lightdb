@@ -47,6 +47,7 @@ namespace lightdb {
                                       const Codec &codec=Codec::hevc(),
                                       const std::optional<GeometryReference> &geometry={});
             LightFieldReference Save(const std::filesystem::path&);
+            LightFieldReference Save(const std::filesystem::path&, const Codec&);
             LightFieldReference Sink();
 
             Algebra& operator=(Algebra&& other) noexcept { return *this; }
