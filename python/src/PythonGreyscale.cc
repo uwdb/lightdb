@@ -6,15 +6,11 @@
 #include "Format.h"
 
 
-namespace bp = boost::python;
-namespace np = boost::python::numpy;
-
 namespace lightdb {
     shared_reference <LightField> Greyscale::GPU::operator()(LightField &input) {
-        // Py_Initialize();
-        // np::Initialize();
+
         const auto channels = 2u;
-        IppiSize makeSize = {static_cast<int>(kernel_size_), static_cast<int>(kernel_size_)};
+        IppiSize makeSize = {static_cast<int>(_kernelSize), static_cast<int>(_kernelSize)};
         auto &data = dynamic_cast<physical::GPUDecodedFrameData&>(input);
         physical::CPUDecodedFrameData output(data.configuration(), data.geometry());
 
@@ -30,22 +26,24 @@ namespace lightdb {
             //                         cuda->width(),
             //                         uv_height), CUDA_SUCCESS);
 
-
+            printf("Allocating memory\n");
             Allocate(frame->height(), frame->width(), channels);
+            printf("Allocated memory\n");
             IppiSize size{static_cast<int>(frame->width()), static_cast<int>(frame->height())};
-            LocalFrame cpuFrame(*(frame->cuda()).get());
+            LocalFrame cpuFrame(*(frame->cuda()));
             auto y_in = reinterpret_cast<const unsigned char*>(cpuFrame.data().data());
-            auto uv_in = y_in + frame_size_;
+            auto uv_in = y_in + _frameSize;
             output.frames().emplace_back(LocalFrameReference::make<LocalFrame>(cpuFrame, cpuFrame.data().size(), video::Format::nv12()));
             auto y_out = output.frames().back()->data().data();
-            auto uv_out = y_out + frame_size_;
+            auto uv_out = y_out + _frameSize;
 
             // NV12 -> RGB
-            CHECK_EQ(ippiYCbCr420ToRGB_8u_P2C3R(y_in, frame->width(), uv_in, frame->width(), rgb_.data(), channels * frame->width(), size), ippStsNoErr);
+            CHECK_EQ(ippiYCbCr420ToRGB_8u_P2C3R(y_in, frame->width(), uv_in, frame->width(), _rgb.data(), channels * frame->width(), size), ippStsNoErr);
 
             // RGB -> NV12
-            CHECK_EQ(ippiRGBToYCbCr420_8u_C3P2R(rgb_.data(), channels * frame->width(), (Ipp8u*)y_out, frame->width(), (Ipp8u*)uv_out, frame->width(), size), ippStsNoErr);                        
+            CHECK_EQ(ippiRGBToYCbCr420_8u_C3P2R(_rgb.data(), channels * frame->width(), (Ipp8u*)y_out, frame->width(), (Ipp8u*)uv_out, frame->width(), size), ippStsNoErr);                        
         }
         return output;
+        // return data;
     }
 }

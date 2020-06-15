@@ -36,6 +36,7 @@ target_compile_options(pylightdb PRIVATE "-fvisibility=default")
 
 message("boost libraries: ${Boost_LIBRARIES}")
 
-target_link_libraries(pylightdb ${Boost_LIBRARIES} ${Python2_LIBRARIES} ${LIGHTDB_LIB_DEPENDENCIES} lightdb_protobuf lightdb_shared)
+target_link_libraries(pylightdb ${Boost_LIBRARIES} ${Python2_LIBRARIES} lightdb_shared)
+#target_link_libraries(pylightdb ${Boost_LIBRARIES} ${Python2_LIBRARIES} ${LIGHTDB_LIB_DEPENDENCIES} lightdb_protobuf lightdb_shared)
 target_link_libraries(pylightdb opencv_core ippi ippcc)
 set_target_properties(pylightdb PROPERTIES PREFIX "")

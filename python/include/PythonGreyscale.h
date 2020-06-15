@@ -13,27 +13,32 @@ namespace lightdb {
                 : lightdb::functor::unaryfunction(lightdb::physical::DeviceType::GPU,
                                                   lightdb::Codec::hevc(),
                                                   true),
-                  kernel_size_(size)
+                  _kernelSize(size)
             { }
             void Allocate(const unsigned int height, const unsigned int width, const unsigned int channels) {
-                if (rgb_size_ != channels * height * width) {
-                    frame_size_ = height * width;
-                    rgb_size_ = channels * frame_size_;
-                    rgb_.resize(rgb_size_);
-                    rgb_greyscale_.resize(rgb_size_);
-                    mask_.resize(rgb_size_);
+                if (_rgbSize != channels * height * width) {
+                    _frameSize = height * width;
+                    _rgbSize = channels * _frameSize;
+                    printf("Resize rgb vector\n");
+                    _rgb.resize(_rgbSize);
+                    printf("Resized\n");
+                    printf("Resize rgbGreyscale vector\n");
+                    _rgbGreyscale.resize(_rgbSize);
+                    printf("Resized Greyscale\n");
+                    // printf("%d\n", _rgbSize);
+                    // _mask.resize(_rgbSize);
                 }
             }
 
             lightdb::shared_reference<lightdb::LightField> operator()(lightdb::LightField& field) override;
 
         private:
-            unsigned int kernel_size_;
-            unsigned int rgb_size_;
-            unsigned int frame_size_;
-            std::vector<unsigned char> rgb_;
-            std::vector<unsigned char> rgb_greyscale_;
-            std::vector<unsigned char> mask_;   
+            unsigned int _kernelSize;
+            unsigned int _rgbSize;
+            unsigned int _frameSize;
+            std::vector<unsigned char> _rgb;
+            std::vector<unsigned char> _rgbGreyscale;
+            std::vector<unsigned char> _mask;   
         };
 
     public:
