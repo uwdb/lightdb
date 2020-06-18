@@ -1,49 +1,47 @@
-#ifndef LIGHTDB_GREYSCALE_H
-#define LIGHTDB_GREYSCALE_H
+#ifndef LIGHTDB_PYTHON_GREYSCALE_H
+#define LIGHTDB_PYTHON_GREYSCALE_H
 
 #include "Functor.h"
 
 
-namespace lightdb {
-    class Greyscale :  public functor::unaryfunctor {
-        class GPU : public functor::unaryfunction {
+namespace lightdb::python {
+    class PythonGreyscale :  public lightdb::functor::unaryfunctor {
+        class CPU : public lightdb::functor::unaryfunction {
         public:
-            GPU() : GPU(2) { }
-            explicit GPU(const unsigned int size)
-                : lightdb::functor::unaryfunction(lightdb::physical::DeviceType::GPU,
-                                                  lightdb::Codec::hevc(),
-                                                  true),
-                  _kernelSize(size)
-            { }
+            explicit CPU(PyObject* const callable, const bool deterministic=true)
+                : lightdb::functor::unaryfunction(lightdb::physical::DeviceType::CPU,
+                                                  lightdb::Codec::raw(),
+                                                  deterministic),
+                  callable_(callable)
+            { 
+                CHECK_NOTNULL(callable);
+                callable->ob_refcnt++; 
+            }
+
             void Allocate(const unsigned int height, const unsigned int width, const unsigned int channels) {
-                if (_rgbSize != channels * height * width) {
-                    _frameSize = height * width;
-                    _rgbSize = channels * _frameSize;
-                    printf("Resize rgb vector\n");
-                    _rgb.resize(_rgbSize);
-                    printf("Resized\n");
-                    printf("Resize rgbGreyscale vector\n");
-                    _rgbGreyscale.resize(_rgbSize);
-                    printf("Resized Greyscale\n");
-                    // printf("%d\n", _rgbSize);
-                    // _mask.resize(_rgbSize);
+                if (rgbSize_ != channels * height * width) {
+                    frameSize_ = height * width;
+                    rgbSize_ = channels * frameSize_;
+                    rgb_.resize(rgbSize_);
+                    mask_.resize(rgbSize_);
                 }
             }
 
             lightdb::shared_reference<lightdb::LightField> operator()(lightdb::LightField& field) override;
 
         private:
-            unsigned int _kernelSize;
-            unsigned int _rgbSize;
-            unsigned int _frameSize;
-            std::vector<unsigned char> _rgb;
-            std::vector<unsigned char> _rgbGreyscale;
-            std::vector<unsigned char> _mask;   
+            PyObject* const callable_;
+            unsigned int kernelSize_;
+            unsigned int rgbSize_;
+            unsigned int frameSize_;
+            std::vector<unsigned char> rgb_;
+            std::vector<unsigned char> mask_;   
         };
 
     public:
-        explicit Greyscale() : functor::unaryfunctor("Greyscale", GPU()) {}    
+        explicit PythonGreyscale(PyObject* const callable, const bool deterministic=true) : functor::unaryfunctor("Greyscale", CPU(callable, deterministic)) {}      
     };
+
 }
 
-#endif //LIGHTDB_GREYSCALE_H
+#endif //LIGHTDB__PYTHON_GREYSCALE_H

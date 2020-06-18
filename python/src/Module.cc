@@ -1,5 +1,6 @@
 #include "PythonLightField.h"
 #include "PythonGeometry.h"
+#include "PythonGreyscale.h"
 #include <boost/python.hpp>
 
 
@@ -81,7 +82,8 @@ namespace lightdb::python {
 
         boost::python::class_<lightdb::functor::naryfunctor<1>>("UnaryFunctor", boost::python::no_init);
         boost::python::class_<class lightdb::Greyscale, boost::python::bases<lightdb::functor::unaryfunctor>>("Greyscale");
-
+        boost::python::class_<PythonGreyscale, boost::shared_ptr<PythonGreyscale>, boost::python::bases<lightdb::functor::unaryfunctor>>("PythonGreyscale", boost::python::init<PyObject*>())
+                .def(boost::python::init<PyObject*, bool>());
         boost::python::class_<typename lightdb::options<>>("PyOptions", boost::python::no_init);
     };
 } // namespace Python

@@ -38,5 +38,5 @@ message("boost libraries: ${Boost_LIBRARIES}")
 
 target_link_libraries(pylightdb ${Boost_LIBRARIES} ${Python2_LIBRARIES} lightdb_shared)
 #target_link_libraries(pylightdb ${Boost_LIBRARIES} ${Python2_LIBRARIES} ${LIGHTDB_LIB_DEPENDENCIES} lightdb_protobuf lightdb_shared)
-target_link_libraries(pylightdb opencv_core ippi ippcc)
+target_link_libraries(pylightdb opencv_core ippi ippcc boost_numpy)
 set_target_properties(pylightdb PROPERTIES PREFIX "")
