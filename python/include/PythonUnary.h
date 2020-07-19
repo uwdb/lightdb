@@ -1,11 +1,14 @@
-#ifndef LIGHTDB_PYTHON_GREYSCALE_H
-#define LIGHTDB_PYTHON_GREYSCALE_H
+#ifndef LIGHTDB_PYTHON_UNARY_H
+#define LIGHTDB_PYTHON_UNARY_H
 
+
+#include "ipp.h"
 #include "Functor.h"
+#include <Python.h>
 
 
 namespace lightdb::python {
-    class PythonGreyscale :  public lightdb::functor::unaryfunctor {
+    class PythonUnary :  public lightdb::functor::unaryfunctor {
         class CPU : public lightdb::functor::unaryfunction {
         public:
             explicit CPU(PyObject* const callable, const bool deterministic=true)
@@ -15,7 +18,8 @@ namespace lightdb::python {
                   callable_(callable)
             { 
                 CHECK_NOTNULL(callable);
-                callable->ob_refcnt++; 
+                callable->ob_refcnt++;
+                // boost::python::incref(callable.ptr()); 
             }
 
             void Allocate(const unsigned int height, const unsigned int width, const unsigned int channels) {
@@ -23,25 +27,24 @@ namespace lightdb::python {
                     frameSize_ = height * width;
                     rgbSize_ = channels * frameSize_;
                     rgb_.resize(rgbSize_);
-                    mask_.resize(rgbSize_);
                 }
             }
+
+            void nv12ToRgb(auto& frame, auto y_in, auto uv_in, const auto channels, const IppiSize& size); 
 
             lightdb::shared_reference<lightdb::LightField> operator()(lightdb::LightField& field) override;
 
         private:
             PyObject* const callable_;
-            unsigned int kernelSize_;
             unsigned int rgbSize_;
             unsigned int frameSize_;
-            std::vector<unsigned char> rgb_;
-            std::vector<unsigned char> mask_;   
+            std::vector<unsigned char> rgb_;  
         };
 
     public:
-        explicit PythonGreyscale(PyObject* const callable, const bool deterministic=true) : functor::unaryfunctor("Greyscale", CPU(callable, deterministic)) {}      
+        explicit PythonUnary(PyObject* const callable, const bool deterministic=true) : functor::unaryfunctor("Unary", CPU(callable, deterministic)) {}      
     };
 
 }
 
-#endif //LIGHTDB__PYTHON_GREYSCALE_H
+#endif //LIGHTDB__PYTHON_UNARY_H

@@ -1,6 +1,6 @@
 #include "PythonLightField.h"
 #include "PythonGeometry.h"
-#include "PythonGreyscale.h"
+#include "PythonUnary.h"
 #include <boost/python.hpp>
 
 
@@ -27,7 +27,6 @@ namespace lightdb::python {
                 .def("Union", static_cast<PythonLightField(PythonLightField::*)(boost::python::list&)>(&PythonLightField::Union))
                 .def("Discretize", &PythonLightField::Discretize)
                 .def("Interpolate", &PythonLightField::Interpolate)
-                .def("Map", static_cast<PythonLightField(PythonLightField::*)(PyObject*, const std::filesystem::path&)>(&PythonLightField::Map))
                 .def("Map", static_cast<PythonLightField(PythonLightField::*)(const lightdb::functor::unaryfunctor&)>(&PythonLightField::Map))
                 .def("Encode", &PythonLightField::Encode)
                 .def("Save", &PythonLightField::Save)
@@ -81,8 +80,7 @@ namespace lightdb::python {
         boost::python::class_<lightdb::interpolation::Linear>("Linear");
 
         boost::python::class_<lightdb::functor::naryfunctor<1>>("UnaryFunctor", boost::python::no_init);
-        boost::python::class_<class lightdb::Greyscale, boost::python::bases<lightdb::functor::unaryfunctor>>("Greyscale");
-        boost::python::class_<PythonGreyscale, boost::shared_ptr<PythonGreyscale>, boost::python::bases<lightdb::functor::unaryfunctor>>("PythonGreyscale", boost::python::init<PyObject*>())
+        boost::python::class_<PythonUnary, boost::shared_ptr<PythonUnary>, boost::python::bases<lightdb::functor::unaryfunctor>>("PythonUnary", boost::python::init<PyObject*>())
                 .def(boost::python::init<PyObject*, bool>());
         boost::python::class_<typename lightdb::options<>>("PyOptions", boost::python::no_init);
     };
