@@ -4,12 +4,9 @@ project(pythonmodules)
 set(CMAKE_CXX_STANDARD 17)
 
 find_package(Python2 COMPONENTS Development)
-message("python2 libraries: ${Python2_LIBRARIES}")
-message("python2 includes: ${Python2_INCLUDE_DIRS}")
 
 # Include core header directories
 file(GLOB LIGHTDB_CORE_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/../core/*/include/")
-message("includes: ${Boost_INCLUDE_DIRS}")
 include_directories(${LIGHTDB_CORE_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${Python2_INCLUDE_DIRS})
 
 # Include ipp
@@ -37,8 +34,6 @@ set(LIGHTDB_SOURCES ${LIGHTDB_PYTHON_SOURCES})
 add_library(pylightdb SHARED ${LIGHTDB_PYTHON_SOURCES})
 target_compile_options(pylightdb PRIVATE "-fvisibility=default")
 
-message("boost libraries: ${Boost_LIBRARIES}")
-message("IPP libraries: ${IPP_LIB_CC}")
 
 target_link_libraries(pylightdb ${Boost_LIBRARIES} ${Python2_LIBRARIES} lightdb_shared)
 target_link_libraries(pylightdb opencv_core ${IPP_LIB_I} ${IPP_LIB_CC} boost_numpy)
