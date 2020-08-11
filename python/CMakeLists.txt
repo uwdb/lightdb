@@ -10,8 +10,6 @@ file(GLOB LIGHTDB_CORE_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/../core/*/include/")
 include_directories(${LIGHTDB_CORE_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${Python2_INCLUDE_DIRS})
 
 # Include ipp
-#include_directories(/opt/intel/ipp/include)
-#link_directories(/opt/intel/ipp/lib/intel64)
 FIND_PACKAGE (IPP REQUIRED )
 include_directories ( ${IPP_INCLUDE_DIRS} )
 link_directories ( ${IPP_LIBRARIES} )

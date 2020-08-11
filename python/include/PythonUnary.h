@@ -1,9 +1,8 @@
 #ifndef LIGHTDB_PYTHON_UNARY_H
 #define LIGHTDB_PYTHON_UNARY_H
 
-
-#include "ipp.h"
 #include "Functor.h"
+#include "ipp.h"
 #include <Python.h>
 
 

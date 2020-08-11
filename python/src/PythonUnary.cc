@@ -1,6 +1,6 @@
 #include "PythonUnary.h"
-#include "npp.h"
 #include "Format.h"
+#include "npp.h"
 #include <boost/python/numpy.hpp>
 #include <iostream>
 #include <vector>
