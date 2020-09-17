@@ -9,7 +9,7 @@ and angular (i.e., orientation) dimensions.
 ontent delivered through LightDB offers improved throughput,
 less bandwidth, and scales to many concurrent connections.
 
-See our [website](http://lightdb.uwdb.io) for more details.
+See our [website](https://db.cs.washington.edu/projects/lightdb) for more details.
 
 ### Installing LightDB
 
