@@ -1,6 +1,7 @@
 #include "PythonLightField.h"
 #include "PythonGeometry.h"
 #include "PythonUnary.h"
+#include "PythonEnvironment.h"
 #include <boost/python.hpp>
 
 
@@ -76,6 +77,8 @@ namespace lightdb::python {
         // Exposing Environment is necessary so LocalEnvironment can inherit from it.
         boost::python::class_<lightdb::execution::Environment>("Environment", boost::python::no_init);
         boost::python::class_<lightdb::execution::LocalEnvironment, boost::python::bases<lightdb::execution::Environment>>("LocalEnvironment");
+        // boost::python::class_<PythonEnvironment>("Environment", boost::python::no_init);
+        // boost::python::class_<LocalEnvironment, boost::python::bases<PythonEnvironment>>("LocalEnvironment");
 
         boost::python::class_<lightdb::interpolation::Linear>("Linear");
 
