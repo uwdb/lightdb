@@ -36,13 +36,13 @@ find_path(IPP_INCLUDE_DIR
 
 if(WIN32)
     set(IPP_SEARCH_LIB ippcoremt.lib)
-    set(IPP_LIBS ippcoremt.lib ippsmt.lib ippdcmt.lib)
+    set(IPP_LIBS ippimt.lib ippccmt.lib ippcoremt.lib ippsmt.lib ippdcmt.lib)
 elseif(APPLE)
     set(IPP_SEARCH_LIB libippcore.a)
-    set(IPP_LIBS libipps.a libippdc.a libippcore.a)
+    set(IPP_LIBS libippi.a libippcc.a libipps.a libippdc.a libippcore.a)
 else() # Linux
     set(IPP_SEARCH_LIB libippcore.so)
-    set(IPP_LIBS ipps ippdc ippcore)
+    set(IPP_LIBS ippi ippcc ipps ippdc ippcore)
 endif()
 
 
