@@ -9,6 +9,15 @@ find_package(Python2 COMPONENTS Development)
 file(GLOB LIGHTDB_CORE_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/../core/*/include/")
 include_directories(${LIGHTDB_CORE_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${Python2_INCLUDE_DIRS})
 
+# Include ipp
+include_directories(/opt/intel/ipp/include)
+link_directories(/opt/intel/ipp/lib/intel64)
+
+# toDo: Fix the IPP error
+#FIND_PACKAGE (IPP REQUIRED )
+#include_directories(${IPP_INCLUDE_DIRS})
+#link_directories(${IPP_LIBRARIES})
+
 # Include python header files
 file(GLOB LIGHTDB_PYTHON_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/../python/include")
 include_directories(${LIGHTDB_PYTHON_INCLUDE_DIRS})
@@ -28,5 +37,5 @@ add_library(pylightdb SHARED ${LIGHTDB_PYTHON_SOURCES})
 target_compile_options(pylightdb PRIVATE "-fvisibility=default")
 
 target_link_libraries(pylightdb ${Boost_LIBRARIES} ${Python2_LIBRARIES} lightdb_shared)
-target_link_libraries(pylightdb opencv_core)
+target_link_libraries(pylightdb opencv_core ippi ippcc boost_numpy)
 set_target_properties(pylightdb PROPERTIES PREFIX "")

@@ -49,12 +49,6 @@ namespace lightdb::python {
         return PythonLightField(_lightField.Interpolate(dimension, lightdb::interpolation::Linear()));
     }
 
-    //TODO : Expose UDFs
-    PythonLightField PythonLightField::Map(PyObject *udf, const std::filesystem::path &path) {
-        auto yolo = lightdb::extensibility::Load("yolo", path);
-        return PythonLightField(_lightField.Map(yolo));
-    }
-
     PythonLightField PythonLightField::Map(const lightdb::functor::unaryfunctor &functor) {
         return PythonLightField(_lightField.Map(functor));
     }

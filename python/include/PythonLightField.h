@@ -26,7 +26,6 @@ namespace lightdb::python {
         PythonLightField Union(boost::python::list &listOfLightFields);
         PythonLightField Discretize(lightdb::Dimension dimension, double interval);
         PythonLightField Interpolate(lightdb::Dimension dimension);
-        PythonLightField Map(PyObject *udf, const std::filesystem::path &path);
         PythonLightField Map(const lightdb::functor::unaryfunctor &functor);
         PythonLightField Encode();
         PythonLightField Save(const std::string &filename);
